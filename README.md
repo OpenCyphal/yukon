@@ -1,2 +1,3 @@
-# kucher2
-I would really love to name this KucherX
+# KucherX
+
+Monitor a Cyphal network and configure Cyphal devices. 

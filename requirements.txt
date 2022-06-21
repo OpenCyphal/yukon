@@ -1,0 +1,2 @@
+dearpygui==1.6.*
+pycyphal==1.8.*
