@@ -20,7 +20,7 @@ nox.options.error_on_external_run = True
 compiled_dir = Path.cwd().resolve() / ".compiled"
 
 src_dirs = [
-    ROOT_DIR / "pycyphal",
+    ROOT_DIR / "kucherx",
     ROOT_DIR / "tests",
 ]
 
@@ -53,20 +53,17 @@ def linting(session):
 
     session.cd(ROOT_DIR / "tests")
 
-    compiled_dir = Path.cwd().resolve() / ".compiled"
-
-    postponed = ROOT_DIR / "pycyphal" / "application"
     env = {
         "PYTHONASYNCIODEBUG": "1",
         "PYTHONPATH": str(compiled_dir),
     }
-    pytest = partial(session.run, "coverage", "run", "-m", "pytest", *session.posargs, env=env)
+    pytest = partial(session.run, "coverage", "run", "-m", "pytest", *session.posargs, env=env, success_codes=[0])
     # Application-layer tests are run separately after the main test suite because they require DSDL for
     # "uavcan" to be transpiled first. That namespace is transpiled as a side-effect of running the main suite.
-    pytest("--ignore", str(postponed), *map(str, src_dirs))
+    pytest()
 
-    session.run("mypy", "--strict", *map(str, src_dirs), str(compiled_dir))
-    session.run("pylint", *map(str, src_dirs), env={"PYTHONPATH": str(compiled_dir)})
+    session.run("mypy", *map(str, src_dirs))
+    session.run("pylint", *map(str, src_dirs))
 
 
 @nox.session()
@@ -90,7 +87,7 @@ def black(session):
 @nox.session(reuse_venv=True)
 def mypy(session):
     session.install("mypy==0.961")
-    session.run("mypy", "--strict", "kucherx")
+    session.run("mypy", "kucherx")
 
 
 @nox.session(reuse_venv=True)
