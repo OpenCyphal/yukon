@@ -11,9 +11,6 @@ from pathlib import Path
 import nox
 
 ROOT_DIR = Path(__file__).resolve().parent
-DEPS_DIR = ROOT_DIR / ".test_deps"
-assert DEPS_DIR.is_dir(), "Invalid configuration"
-os.environ["PATH"] += os.pathsep + str(DEPS_DIR)
 
 PYTHONS = ["3.10"]
 """The newest supported Python shall be listed last."""
@@ -56,18 +53,17 @@ def linting(session):
 
     session.cd(ROOT_DIR / "tests")
 
-    try:
-        compiled_dir = Path.cwd().resolve() / ".compiled"
+    compiled_dir = Path.cwd().resolve() / ".compiled"
 
-        postponed = ROOT_DIR / "pycyphal" / "application"
-        env = {
-            "PYTHONASYNCIODEBUG": "1",
-            "PYTHONPATH": str(compiled_dir),
-        }
-        pytest = partial(session.run, "coverage", "run", "-m", "pytest", *session.posargs, env=env)
-        # Application-layer tests are run separately after the main test suite because they require DSDL for
-        # "uavcan" to be transpiled first. That namespace is transpiled as a side-effect of running the main suite.
-        pytest("--ignore", str(postponed), *map(str, src_dirs))
+    postponed = ROOT_DIR / "pycyphal" / "application"
+    env = {
+        "PYTHONASYNCIODEBUG": "1",
+        "PYTHONPATH": str(compiled_dir),
+    }
+    pytest = partial(session.run, "coverage", "run", "-m", "pytest", *session.posargs, env=env)
+    # Application-layer tests are run separately after the main test suite because they require DSDL for
+    # "uavcan" to be transpiled first. That namespace is transpiled as a side-effect of running the main suite.
+    pytest("--ignore", str(postponed), *map(str, src_dirs))
 
     session.run("mypy", "--strict", *map(str, src_dirs), str(compiled_dir))
     session.run("pylint", *map(str, src_dirs), env={"PYTHONPATH": str(compiled_dir)})
@@ -82,7 +78,7 @@ def demo(session):
     session.install("-r", "requirements.txt")
 
     session.env["STOP_AFTER"] = "10"
-    session.run("python3.10", "main.py", success_codes=[0])
+    session.run("python3.10", "kucherx/main.py", success_codes=[0])
 
 
 @nox.session(reuse_venv=True)
