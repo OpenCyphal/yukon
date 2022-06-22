@@ -1,0 +1,14 @@
+name: KucherX tests
+on: push
+jobs:
+  runtests:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checking out
+        uses: actions/checkout@v2
+      - name: installing dependencies
+        run: |
+          python3.10 -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Testing GUI
+        run: |
+          nox -s demo

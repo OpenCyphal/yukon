@@ -22,11 +22,13 @@ def run_gui_app():
 
 
 def auto_exit_task():
-    stop_after_value = int(os.environ.get("STOP_AFTER"))
-    if stop_after_value:
-        time.sleep(stop_after_value)
-        print("Program should exit!")
-        dpg.stop_dearpygui()
+    if os.environ.get("STOP_AFTER"):
+        stop_after_value = int(os.environ.get("STOP_AFTER"))
+        if stop_after_value:
+            time.sleep(stop_after_value)
+            print("Program should exit!")
+            dpg.stop_dearpygui()
+    return 0
 
 
 async def main():
