@@ -3,6 +3,8 @@ on: push
 jobs:
   runtests:
     runs-on: ubuntu-22.04
+    env:
+      DISPLAY: :1
     steps:
       - name: checking out
         uses: actions/checkout@v2
