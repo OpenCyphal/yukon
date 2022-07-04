@@ -1,11 +1,17 @@
 from high_dpi_handler import configure_font_and_scale
 
 
-def display_close_popup_viewport(dpg, logger, resources_directory):
-
+def display_close_popup_viewport(dpg, logger, resources_directory, screen_resolution):
     dpg.create_context()
     default_font = configure_font_and_scale(dpg, logger, resources_directory)
-    dpg.create_viewport(title='KucherX', width=700, max_height=60,
+    # Calculations for centering the viewport for the popup
+    needed_width = 700
+    needed_center_x_position = int(screen_resolution[0] / 2 - needed_width / 2)
+    needed_height = 100
+    needed_center_y_position = int(screen_resolution[1] / 2 - needed_height / 2)
+    dpg.create_viewport(title='KucherX', width=needed_width, max_height=needed_height, height=needed_height,
+                        x_pos=needed_center_x_position,
+                        y_pos=needed_center_y_position,
                         small_icon=str(resources_directory / "icons/png/KucherX.png"),
                         large_icon=str(resources_directory / "icons/png/KucherX_256.ico"))
     dpg.setup_dearpygui()

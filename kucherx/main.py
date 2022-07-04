@@ -28,6 +28,17 @@ import sentry_sdk
 logger = logging.getLogger(__file__)
 
 
+def get_screen_resolution():
+    """If the screen size is known then the close dialog can be centered via its position"""
+    if os.name == "nt":
+        import ctypes
+        user32 = ctypes.windll.user32
+        return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+    else:
+        logger.warning("Screen resolution detection is not yet implemented for non-windows platforms.")
+        return 1280, 720
+
+
 def get_root_directory():
     from os.path import exists
     current = pathlib.Path(__file__).parent
@@ -94,6 +105,7 @@ def run_gui_app():
     # dpg.configure_app(docking=True, docking_space=dock_space)
 
     settings = CyphalLocalNodeSettings(8, "COM10", 127)
+    screen_resolution = get_screen_resolution()
     main_window_id = make_cyphal_window(dpg, logger, default_font, settings)
     make_main_menubar(dpg, default_font)
     dpg.setup_dearpygui()
@@ -105,7 +117,7 @@ def run_gui_app():
         ensure_window_is_in_viewport(main_window_id)
         dpg.render_dearpygui_frame()
     dpg.destroy_context()
-    display_close_popup_viewport(dpg, logger, get_resources_directory())
+    display_close_popup_viewport(dpg, logger, get_resources_directory(), screen_resolution)
 
 
 def auto_exit_task():
