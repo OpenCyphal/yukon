@@ -1,0 +1,3 @@
+[submodule "kucherx/libraries/DearPyGui"]
+	path = kucherx/libraries/DearPyGui
+	url = git@github.com:hoffstadt/DearPyGui.git
