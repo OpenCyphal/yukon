@@ -11,20 +11,13 @@ import pytest
 import unittest
 
 from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen, configure_font_and_scale
+from sentry_setup import setup_sentry
 from windows.cyphal_window import make_cyphal_window, CyphalLocalNodeSettings, save_cyphal_local_node_settings
 from windows.close_popup_viewport import display_close_popup_viewport
 from menubars.main_menubar import make_main_menubar
 import sentry_sdk
 
-if os.environ.get("SENTRY") == "1":
-    sentry_sdk.init(
-        dsn="https://b594be40049042b0bacfc6a9e0cbfa7e@o86093.ingest.sentry.io/6547831",
-
-        # Set traces_sample_rate to 1.0 to capture 100%
-        # of transactions for performance monitoring.
-        # We recommend adjusting this value in production.
-        traces_sample_rate=1.0
-    )
+setup_sentry(sentry_sdk)
 
 logger = logging.getLogger(__file__)
 
@@ -129,6 +122,7 @@ def run_gui_app():
 
     display_close_popup_viewport(dpg, logger, get_resources_directory(), screen_resolution, save_callback,
                                  dont_save_callback)
+    return 0
 
 
 def auto_exit_task():
@@ -150,10 +144,12 @@ async def main():
         asyncio.to_thread(run_gui_app),
         asyncio.to_thread(auto_exit_task)
     )
+    return 0
 
 
 if __name__ == "__main__":
     asyncio.run(main())
+    exit(0)
 
 
 class MyTest(unittest.TestCase):

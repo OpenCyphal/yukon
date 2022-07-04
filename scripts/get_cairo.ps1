@@ -1,8 +1,9 @@
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+$libcairo_directory = "..\kucherx\libraries\libcairo"
 function Get-And-Unpack-Cairo {
     $file_name = "cairo-1.16.0.tar.xz"
     $source_address = "http://www.cairographics.org/releases/" + $file_name
-    $destination_directory = "lib/libcairo/"
+    $destination_directory = $libcairo_directory
     $destination_location = $destination_directory + $file_name
     Set-ItemProperty -Path $destination_location -Name IsReadOnly -Value $false
 
@@ -19,19 +20,19 @@ function Is-MozillaBuild-Installed {
 }
 function Is-MozillaBuild-Setup-Downloaded {
     $downloaded_file_name = "MozillaBuildSetup-4.0.exe"
-    $path = "lib/libcairo/" + $downloaded_file_name
+    $path = $libcairo_directory + $downloaded_file_name
     return (Test-Path -Path $path -PathType Leaf)
 }
 function Get-MozillaBuild-Setup {
     $downloaded_file_name = "MozillaBuildSetup-4.0.exe"
-    $destination_directory = "lib/libcairo/" 
+    $destination_directory = $libcairo_directory
     $destination_location = $destination_directory + $downloaded_file_name
     $download_link = "https://ftp.mozilla.org/pub/mozilla/libraries/win32/" + $downloaded_file_name
     Invoke-WebRequest -Uri $download_link -OutFile $destination_location
     
 }
 function Run-MozillaBuild-Setup {
-    .\lib\libcairo\MozillaBuildSetup-4.0.exe
+    $libcairo_directory\MozillaBuildSetup-4.0.exe
 }
 try {
     if( -not (Is-MozillaBuild-Setup-Downloaded)) 
