@@ -28,3 +28,18 @@ def is_high_dpi_screen(logger):
     except ImportError as e:
         logger.warn("Unable to import TKinter, it is missing from Python. Can't tell if the screen is high dpi.")
         return False
+
+
+def configure_font_and_scale(dpg, logger, resources):
+    desired_font_size = 20
+
+    if is_high_dpi_screen(logger):
+        dpg.set_global_font_scale(0.8)
+        desired_font_size = 40
+
+    # add a font registry
+    with dpg.font_registry():
+        # first argument ids the path to the .ttf or .otf file
+        default_font = dpg.add_font(file=resources / "Roboto/Roboto-Regular.ttf",
+                                    size=desired_font_size)
+    return default_font

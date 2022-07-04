@@ -10,8 +10,9 @@ import logging
 import pytest
 import unittest
 
-from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen
-from windows.cyphal_window import make_cyphal_window
+from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen, configure_font_and_scale
+from windows.cyphal_window import make_cyphal_window, CyphalLocalNodeSettings
+from windows.close_popup_viewport import display_close_popup_viewport
 from menubars.main_menubar import make_main_menubar
 import sentry_sdk
 
@@ -88,19 +89,12 @@ def run_gui_app():
     dpg.create_viewport(title='KucherX', width=1600, height=900,
                         small_icon=str(get_resources_directory() / "icons/png/KucherX.png"),
                         large_icon=str(get_resources_directory() / "icons/png/KucherX_256.ico"))
-    desired_font_size = 20
+    default_font = configure_font_and_scale(dpg, logger, get_resources_directory())
 
-    if is_high_dpi_screen(logger):
-        dpg.set_global_font_scale(0.8)
-        desired_font_size = 40
+    # dpg.configure_app(docking=True, docking_space=dock_space)
 
-    # add a font registry
-    with dpg.font_registry():
-        # first argument ids the path to the .ttf or .otf file
-        default_font = dpg.add_font(file=get_resources_directory() / "Roboto/Roboto-Regular.ttf",
-                                    size=desired_font_size)
-
-    main_window_id = make_cyphal_window(dpg, logger, default_font)
+    settings = CyphalLocalNodeSettings(8, "COM10", 127)
+    main_window_id = make_cyphal_window(dpg, logger, default_font, settings)
     make_main_menubar(dpg, default_font)
     dpg.setup_dearpygui()
     # Include the following code before showing the viewport/calling `dearpygui.dearpygui.show_viewport`.
@@ -111,6 +105,7 @@ def run_gui_app():
         ensure_window_is_in_viewport(main_window_id)
         dpg.render_dearpygui_frame()
     dpg.destroy_context()
+    display_close_popup_viewport(dpg, logger, get_resources_directory())
 
 
 def auto_exit_task():
@@ -121,6 +116,10 @@ def auto_exit_task():
             logging.info("Program should exit!")
             dpg.stop_dearpygui()
     return 0
+
+
+def scan_for_com_ports_task():
+    pass
 
 
 async def main():
