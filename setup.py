@@ -18,14 +18,14 @@ DSDL_SOURCE_ROOT = Path(__file__).resolve().parent / PACKAGE_NAME / "dsdl_src"
 class BuildPy(distutils.command.build_py.build_py):
     def run(self):
         if not self.dry_run:
-            from pyuavcan.dsdl import compile_all
+            from pycyphal.dsdl import compile_all
 
             compile_all(
                 [
                     DSDL_SOURCE_ROOT / "public_regulated_data_types" / "uavcan",
-                    DSDL_SOURCE_ROOT / "public_unregulated_data_types" / "org_uavcan_yukon",
+                    DSDL_SOURCE_ROOT / "public_regulated_data_types" / "reg",
                 ],
-                Path(self.build_lib, PACKAGE_NAME, ".compiled").resolve(),
+                Path(".compiled").resolve(),
             )
         super().run()
 

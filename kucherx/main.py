@@ -116,11 +116,11 @@ def run_gui_app():
     dpg.destroy_context()
 
     def dont_save_callback():
-        logger.warning("I was asked not to save")
+        logger.info("I was asked not to save")
 
     def save_callback():
         save_cyphal_local_node_settings(settings)
-        logger.warning("I was asked to save")
+        logger.info("I was asked to save")
 
     display_close_popup_viewport(dpg, logger, get_resources_directory(), screen_resolution, save_callback,
                                  dont_save_callback)

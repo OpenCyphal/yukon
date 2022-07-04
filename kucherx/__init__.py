@@ -15,7 +15,8 @@ _SOURCE_PATH = os.path.abspath(os.path.dirname(__file__))
 THIRDPARTY_PATH_ROOT = os.path.join(_SOURCE_PATH, "libraries")
 
 THIRDPARTY_PATH = [
-    _SOURCE_PATH / "dsdl_src"
+    _SOURCE_PATH.parent / ".compiled" / "uavcan",
+    _SOURCE_PATH.parent / ".compiled" / "reg"
     # os.path.join(THIRDPARTY_PATH_ROOT),
     # os.path.join(THIRDPARTY_PATH_ROOT, "DearPyGui"),
 ]
