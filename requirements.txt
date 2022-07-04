@@ -1,2 +1,3 @@
 dearpygui==1.6.*
 pycyphal==1.8.*
+CairoSVG==2.5.*
