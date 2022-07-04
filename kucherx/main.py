@@ -9,6 +9,16 @@ import ctypes
 import logging
 import pytest
 import unittest
+import sentry_sdk
+
+# sentry_sdk.init(
+#     dsn="https://b594be40049042b0bacfc6a9e0cbfa7e@o86093.ingest.sentry.io/6547831",
+#
+#     # Set traces_sample_rate to 1.0 to capture 100%
+#     # of transactions for performance monitoring.
+#     # We recommend adjusting this value in production.
+#     traces_sample_rate=1.0
+# )
 
 logger = logging.getLogger(__file__)
 
@@ -121,16 +131,9 @@ def run_gui_app():
         default_font = dpg.add_font(file=get_resources_directory() / "Roboto/Roboto-Regular.ttf",
                                     size=desired_font_size)
 
-    def mouse_down(sender, app_data):
-        logger.warning(f"Mouse Button: {app_data[0]}, Down Time: {app_data[1]} seconds")
-
-    with dpg.handler_registry():
-        dpg.add_mouse_down_handler(callback=mouse_down)
-
     dpg.show_item_registry()  # This is for debugging so I can see some things
 
-    # no_move is used because I will implement movement myself.
-    with dpg.window(label="Example Window", tag="Primary Window", no_move=True) as main_window_id:
+    with dpg.window(label="Example Window", tag="Primary Window") as main_window_id:
         logger.warning(f"Main window id is {main_window_id}")
         dpg.bind_font(default_font)
         dpg.add_text("Hello, world")
