@@ -9,6 +9,8 @@ import ctypes
 import logging
 import pytest
 import unittest
+from windows.cyphal_window import make_cyphal_window
+from menubars.main_menubar import make_main_menubar
 import sentry_sdk
 
 # sentry_sdk.init(
@@ -45,10 +47,6 @@ def get_sources_directory():
 
 def get_resources_directory():
     return get_kucherx_directory() / "res"
-
-
-def print_me(sender):
-    print(f"Menu Item: {sender}")
 
 
 ID = Union[str, int]
@@ -131,33 +129,8 @@ def run_gui_app():
         default_font = dpg.add_font(file=get_resources_directory() / "Roboto/Roboto-Regular.ttf",
                                     size=desired_font_size)
 
-    dpg.show_item_registry()  # This is for debugging so I can see some things
-
-    with dpg.window(label="Example Window", tag="Primary Window") as main_window_id:
-        logger.warning(f"Main window id is {main_window_id}")
-        dpg.bind_font(default_font)
-        dpg.add_text("Hello, world")
-        dpg.add_button(label="Save")
-        dpg.add_input_text(label="string", default_value="Quick brown fox")
-        dpg.add_slider_float(label="float", default_value=0.273, max_value=1)
-
-    with dpg.viewport_menu_bar():
-        dpg.bind_font(default_font)
-        with dpg.menu(label="File"):
-            dpg.add_menu_item(label="Save", callback=print_me)
-            dpg.add_menu_item(label="Save As", callback=print_me)
-
-            with dpg.menu(label="Settings"):
-                dpg.add_menu_item(label="Setting 1", callback=print_me, check=True)
-                dpg.add_menu_item(label="Setting 2", callback=print_me)
-
-        dpg.add_menu_item(label="Help", callback=print_me)
-
-        with dpg.menu(label="Widget Items"):
-            dpg.add_checkbox(label="Pick Me", callback=print_me)
-            dpg.add_button(label="Press Me", callback=print_me)
-            dpg.add_color_picker(label="Color Me", callback=print_me)
-
+    main_window_id = make_cyphal_window(dpg, logger, default_font)
+    make_main_menubar(dpg, default_font)
     dpg.setup_dearpygui()
     # Include the following code before showing the viewport/calling `dearpygui.dearpygui.show_viewport`.
 
