@@ -11,19 +11,20 @@ import pytest
 import unittest
 
 from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen, configure_font_and_scale
-from windows.cyphal_window import make_cyphal_window, CyphalLocalNodeSettings
+from windows.cyphal_window import make_cyphal_window, CyphalLocalNodeSettings, save_cyphal_local_node_settings
 from windows.close_popup_viewport import display_close_popup_viewport
 from menubars.main_menubar import make_main_menubar
 import sentry_sdk
 
-# sentry_sdk.init(
-#     dsn="https://b594be40049042b0bacfc6a9e0cbfa7e@o86093.ingest.sentry.io/6547831",
-#
-#     # Set traces_sample_rate to 1.0 to capture 100%
-#     # of transactions for performance monitoring.
-#     # We recommend adjusting this value in production.
-#     traces_sample_rate=1.0
-# )
+if os.environ.get("SENTRY") == "1":
+    sentry_sdk.init(
+        dsn="https://b594be40049042b0bacfc6a9e0cbfa7e@o86093.ingest.sentry.io/6547831",
+
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for performance monitoring.
+        # We recommend adjusting this value in production.
+        traces_sample_rate=1.0
+    )
 
 logger = logging.getLogger(__file__)
 
@@ -107,6 +108,7 @@ def run_gui_app():
     settings = CyphalLocalNodeSettings(8, "COM10", 127)
     screen_resolution = get_screen_resolution()
     main_window_id = make_cyphal_window(dpg, logger, default_font, settings)
+    dpg.set_primary_window(main_window_id, True)
     make_main_menubar(dpg, default_font)
     dpg.setup_dearpygui()
     # Include the following code before showing the viewport/calling `dearpygui.dearpygui.show_viewport`.
@@ -117,7 +119,16 @@ def run_gui_app():
         ensure_window_is_in_viewport(main_window_id)
         dpg.render_dearpygui_frame()
     dpg.destroy_context()
-    display_close_popup_viewport(dpg, logger, get_resources_directory(), screen_resolution)
+
+    def dont_save_callback():
+        logger.warning("I was asked not to save")
+
+    def save_callback():
+        save_cyphal_local_node_settings(settings)
+        logger.warning("I was asked to save")
+
+    display_close_popup_viewport(dpg, logger, get_resources_directory(), screen_resolution, save_callback,
+                                 dont_save_callback)
 
 
 def auto_exit_task():
