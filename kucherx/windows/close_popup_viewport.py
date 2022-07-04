@@ -23,19 +23,21 @@ def display_close_popup_viewport(dpg, logger, resources_directory, screen_resolu
     with dpg.window(label="Before you exit") as primary_window:
         dpg.bind_font(default_font)
         dpg.add_text("Do you want to save your Cyphal local node settings?")
+        # defining empty callbacks for the case when callbacks weren't provided
+        # I don't think they can be just left valued to None
         if save_callback is None:
             def save_callback():
                 pass
         if dont_save_callback is None:
             def dont_save_callback():
                 pass
-        dpg.add_button(label="Save", tag="btnSave")
+        dpg.add_button(label="Save", tag="btnSave", width=200)
         dpg.set_item_callback("btnSave", save_callback)
 
         def close_callback():
             dpg.destroy_context()
 
-        dpg.add_button(label="Don't save", tag="btnDontSave")
+        dpg.add_button(label="Don't save", tag="btnDontSave", width=200, )
         dpg.set_item_callback("btnDontSave", dont_save_callback)
 
         dpg.set_item_callback("btnSave", close_callback)

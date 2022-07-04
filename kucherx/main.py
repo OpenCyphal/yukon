@@ -12,6 +12,7 @@ import unittest
 
 from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen, configure_font_and_scale
 from sentry_setup import setup_sentry
+from themes.main_window_theme import get_main_theme
 from windows.cyphal_window import make_cyphal_window, CyphalLocalNodeSettings, save_cyphal_local_node_settings
 from windows.close_popup_viewport import display_close_popup_viewport
 from menubars.main_menubar import make_main_menubar
@@ -100,13 +101,14 @@ def run_gui_app():
 
     settings = CyphalLocalNodeSettings(8, "COM10", 127)
     screen_resolution = get_screen_resolution()
-    main_window_id = make_cyphal_window(dpg, logger, default_font, settings)
+    main_window_id = make_cyphal_window(dpg, logger, default_font, settings, get_main_theme(dpg))
     dpg.set_primary_window(main_window_id, True)
     make_main_menubar(dpg, default_font)
     dpg.setup_dearpygui()
     # Include the following code before showing the viewport/calling `dearpygui.dearpygui.show_viewport`.
 
     dpg.show_viewport()
+    # dpg.show_style_editor()
     # below replaces, start_dearpygui()
     while dpg.is_dearpygui_running():
         ensure_window_is_in_viewport(main_window_id)
