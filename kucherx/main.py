@@ -2,6 +2,7 @@ from typing import Union
 
 import dearpygui.dearpygui as dpg  # type: ignore
 import os
+import sys
 import asyncio
 import time
 import pathlib
@@ -17,8 +18,11 @@ from windows.cyphal_window import make_cyphal_window, CyphalLocalNodeSettings, s
 from windows.close_popup_viewport import display_close_popup_viewport
 from menubars.main_menubar import make_main_menubar
 import sentry_sdk
+# This is to get __init__.py to run
+from kucherx import nonce  # type: ignore
 
 setup_sentry(sentry_sdk)
+paths = sys.path
 
 logger = logging.getLogger(__file__)
 

@@ -2,8 +2,7 @@ import dataclasses
 from dataclasses import dataclass
 import json
 
-import pycyphal
-import pycyphal.application
+
 
 
 @dataclass
@@ -14,6 +13,8 @@ class CyphalLocalNodeSettings:
 
 
 def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSettings, theme):
+    import pycyphal
+    import pycyphal.application
     transport = pycyphal.application.make_transport(reconfigurable=True)
     with dpg.window(label="Cyphal settings", tag="Primary Window", width=400) as main_window_id:
         logger.warning(f"Main window id is {main_window_id}")

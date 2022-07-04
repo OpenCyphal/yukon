@@ -15,8 +15,8 @@ _SOURCE_PATH = os.path.abspath(os.path.dirname(__file__))
 THIRDPARTY_PATH_ROOT = os.path.join(_SOURCE_PATH, "libraries")
 
 THIRDPARTY_PATH = [
-    _SOURCE_PATH.parent / ".compiled" / "uavcan",
-    _SOURCE_PATH.parent / ".compiled" / "reg"
+    # _SOURCE_PATH.parent / ".compiled" / "uavcan",
+    # _SOURCE_PATH.parent / ".compiled" / "reg"
     # os.path.join(THIRDPARTY_PATH_ROOT),
     # os.path.join(THIRDPARTY_PATH_ROOT, "DearPyGui"),
 ]
@@ -31,10 +31,8 @@ __email__ = "silver.valdvee@zubax.com"
 __copyright__ = f"Copyright (c) 2022 {__author__} <{__email__}>"
 __license__ = "MIT"
 
-
 if sys.version_info < (3, 9):  # pragma: no cover
     raise RuntimeError("A newer version of Python is required")
-
 
 logging.basicConfig(
     stream=sys.stderr,
@@ -44,3 +42,7 @@ logging.basicConfig(
 
 # DSDL packages are pre-compiled when the package is built, so we do not need to compile our dependencies at runtime.
 sys.path.insert(0, str(Path(__file__).resolve().parent / ".compiled"))
+
+
+def nonce():
+    pass
