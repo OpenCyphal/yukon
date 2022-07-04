@@ -3,19 +3,21 @@ from dataclasses import dataclass
 import json
 
 
-
-
 @dataclass
 class CyphalLocalNodeSettings:
     UAVCAN__CAN__MTU: int
     UAVCAN__CAN__IFACE: str
     UAVCAN__NODE__ID: int
 
+import pycyphal.application
+
+
 
 def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSettings, theme):
     import pycyphal
     import pycyphal.application
-    transport = pycyphal.application.make_transport(reconfigurable=True)
+    registry = pycyphal.application.make_registry(environment_variables=dataclasses.asdict(settings))
+    transport = pycyphal.application.make_transport(registers=registry, reconfigurable=True)
     with dpg.window(label="Cyphal settings", tag="Primary Window", width=400) as main_window_id:
         logger.warning(f"Main window id is {main_window_id}")
         dpg.bind_item_theme(main_window_id, theme)

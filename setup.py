@@ -9,7 +9,6 @@ import setuptools
 import distutils.command.build_py
 from pathlib import Path
 
-
 PACKAGE_NAME = "kucherx"
 DSDL_SOURCE_ROOT = Path(__file__).resolve().parent / PACKAGE_NAME / "dsdl_src"
 

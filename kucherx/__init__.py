@@ -41,7 +41,7 @@ logging.basicConfig(
 )
 
 # DSDL packages are pre-compiled when the package is built, so we do not need to compile our dependencies at runtime.
-sys.path.insert(0, str(Path(__file__).resolve().parent / ".compiled"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / ".compiled"))
 
 
 def nonce():
