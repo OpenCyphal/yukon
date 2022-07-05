@@ -112,7 +112,7 @@ def run_gui_app():
     # Include the following code before showing the viewport/calling `dearpygui.dearpygui.show_viewport`.
 
     dpg.show_viewport()
-    # dpg.show_style_editor()
+    dpg.show_style_editor()
     # below replaces, start_dearpygui()
     while dpg.is_dearpygui_running():
         ensure_window_is_in_viewport(main_window_id)

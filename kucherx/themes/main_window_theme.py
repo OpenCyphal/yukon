@@ -6,4 +6,6 @@ def get_main_theme(dpg):
             dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 15, 42, category=dpg.mvThemeCat_Core)
             dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 15, 15, category=dpg.mvThemeCat_Core)
             dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, 10, 10, category=dpg.mvThemeCat_Core)
+            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 9, category=dpg.mvThemeCat_Core)
+            dpg.add_theme_style(dpg.mvStyleVar_FrameBorderSize, 1, category=dpg.mvThemeCat_Core)
     return global_theme
