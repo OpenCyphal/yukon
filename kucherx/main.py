@@ -103,7 +103,7 @@ def run_gui_app():
 
     # dpg.configure_app(docking=True, docking_space=dock_space)
 
-    settings = CyphalLocalNodeSettings(8, "COM10", 127)
+    settings = CyphalLocalNodeSettings(8, "", 127, "1000000 1000000")
     screen_resolution = get_screen_resolution()
     main_window_id = make_cyphal_window(dpg, logger, default_font, settings, get_main_theme(dpg))
     dpg.set_primary_window(main_window_id, True)
@@ -112,7 +112,7 @@ def run_gui_app():
     # Include the following code before showing the viewport/calling `dearpygui.dearpygui.show_viewport`.
 
     dpg.show_viewport()
-    dpg.show_style_editor()
+    # dpg.show_style_editor()
     # below replaces, start_dearpygui()
     while dpg.is_dearpygui_running():
         ensure_window_is_in_viewport(main_window_id)
