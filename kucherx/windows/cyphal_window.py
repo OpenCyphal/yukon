@@ -32,26 +32,29 @@ def make_transport(settings: CyphalLocalNodeSettings):
     transport = pycyphal.application.make_transport(registers=registry, reconfigurable=True)
 
 
-def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSettings, theme):
+def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSettings, theme, use_alternative_labels=True):
+    labels={"mtu": "   UAVCAN__CAN__MTU", "iface": "  UAVCAN__CAN__IFACE", "nodeid": "   UAVCAN__NODE__ID"}
+    if use_alternative_labels:
+        labels={"mtu": "   Maximum transmission unit", "iface": "  Interface", "nodeid": "   Node id"}
     with dpg.window(label="Cyphal settings", tag="Primary Window", width=400) as main_window_id:
         logger.warning(f"Main window id is {main_window_id}")
         dpg.bind_item_theme(main_window_id, theme)
         dpg.bind_font(default_font)
         dpg.add_text("Local node settings")
         input_field_width = 490
-        dpg.add_input_text(label="   UAVCAN__CAN__MTU", default_value=str(settings.UAVCAN__CAN__MTU),
+        dpg.add_input_text(label=labels["mtu"], default_value=str(settings.UAVCAN__CAN__MTU),
                            width=input_field_width)
         with dpg.theme() as combobox_theme:
             with dpg.theme_component(dpg.mvAll):
                 # cool color, maybe later?
                 # dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (255, 140, 23), category=dpg.mvThemeCat_Core)
-                dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 0, 0, category=dpg.mvThemeCat_Core)
+                dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 0, 15, category=dpg.mvThemeCat_Core)
                 dpg.add_theme_style(dpg.mvStyleVar_ItemInnerSpacing, 10, 10, category=dpg.mvThemeCat_Core)
-        combobox = dpg.add_combo(label="  UAVCAN__CAN__IFACE", default_value=settings.UAVCAN__CAN__IFACE,
+        combobox = dpg.add_combo(label=labels["iface"], default_value=settings.UAVCAN__CAN__IFACE,
                                  width=input_field_width)
         asyncio.run(update_list_of_comports(dpg, combobox))
         dpg.bind_item_theme(combobox, combobox_theme)
-        dpg.add_input_text(label="   UAVCAN__NODE__ID", default_value=str(settings.UAVCAN__NODE__ID),
+        dpg.add_input_text(label=labels["nodeid"], default_value=str(settings.UAVCAN__NODE__ID),
                            width=input_field_width)
         dpg.add_button(label="Save")
     return main_window_id
