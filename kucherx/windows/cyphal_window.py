@@ -5,13 +5,11 @@ from dataclasses import dataclass
 import json
 from serial.tools import list_ports
 
+from CyphalLocalNodeSettings import CyphalLocalNodeSettings
+from make_node import make_node
 
-@dataclass
-class CyphalLocalNodeSettings:
-    UAVCAN__CAN__MTU: int
-    UAVCAN__CAN__IFACE: str
-    UAVCAN__NODE__ID: int
-    UAVCAN__CAN__BITRATE: str
+
+
 
 
 async def update_list_of_comports(dpg, combobox):
@@ -19,28 +17,13 @@ async def update_list_of_comports(dpg, combobox):
     dpg.configure_item(combobox, items=ports)
 
 
-def make_node(settings: CyphalLocalNodeSettings):
-    import pycyphal
-    import pycyphal.application
-    settings_dictionary = dataclasses.asdict(settings)
-    new_settings_dictionary = {}
-    for key, value in settings_dictionary.items():
-        new_settings_dictionary[str(key).strip()] = str(value)
-    settings_dictionary["UAVCAN__CAN__IFACE"] = settings_dictionary.get("UAVCAN__CAN__IFACE")
-    registry = pycyphal.application.make_registry(environment_variables=new_settings_dictionary)
-    # transport = pycyphal.application.make_transport(registers=registry, reconfigurable=True)
-    from pycyphal.application import make_node
-    from pycyphal.application import NodeInfo
-    node = make_node(NodeInfo(name="com.zubax.sapog.tests.debugger"), registry)
-    node.start()
-    return node
-
-
 def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSettings, theme,
                        use_alternative_labels=True):
-    labels = {"mtu": "   UAVCAN__CAN__MTU", "iface": "  UAVCAN__CAN__IFACE", "nodeid": "   UAVCAN__NODE__ID"}
+    labels = {"mtu": "   UAVCAN__CAN__MTU", "iface": "  UAVCAN__CAN__IFACE", "nodeid": "   UAVCAN__NODE__ID",
+              "arbitration_bitrate": "   Arbitration bitrate", "data_bitrate": "   Data bitrate"}
     if use_alternative_labels:
-        labels = {"mtu": "   Maximum transmission unit", "iface": "  Interface", "nodeid": "   Node id"}
+        labels = {"mtu": "   Maximum transmission unit", "iface": "  Interface", "nodeid": "   Node id",
+                  "arbitration_bitrate": "   Arbitration bitrate", "data_bitrate": "   Data bitrate"}
     with dpg.window(label="Cyphal settings", tag="Primary Window", width=400) as main_window_id:
         logger.warning(f"Main window id is {main_window_id}")
         dpg.bind_item_theme(main_window_id, theme)
@@ -65,6 +48,10 @@ def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSetti
                                  width=input_field_width, callback=combobox_callback)
         asyncio.run(update_list_of_comports(dpg, combobox))
         dpg.bind_item_theme(combobox, combobox_theme)
+        dpg.add_input_text(label=labels["arbitration_bitrate"], default_value=str(settings.arbitration_bitrate),
+                           width=input_field_width)
+        dpg.add_input_text(label=labels["data_bitrate"], default_value=str(settings.data_bitrate),
+                           width=input_field_width)
         dpg.add_input_text(label=labels["nodeid"], default_value=str(settings.UAVCAN__NODE__ID),
                            width=input_field_width)
         lbl_error = dpg.add_text("", tag="lblError")
