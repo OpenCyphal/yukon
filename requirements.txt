@@ -1,3 +1,11 @@
-pycyphal==1.8.*
+pycyphal[transport-can-pythoncan,transport-serial,transport-udp]
 CairoSVG==2.5.*
 sentry-sdk==1.6.*
+dearpygui
+pytest
+pyserial
+setuptools
+numpy
+pywin32
+pydsdl
+nox
