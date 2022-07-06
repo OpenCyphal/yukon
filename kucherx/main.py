@@ -96,9 +96,10 @@ def run_gui_app():
     make_process_dpi_aware(logger)
     prepare_rendered_icons()
     dpg.create_context()
-    dpg.create_viewport(title='KucherX', width=1600, height=900,
+    dpg.create_viewport(title='KucherX', width=920, height=800,
                         small_icon=str(get_resources_directory() / "icons/png/KucherX.png"),
-                        large_icon=str(get_resources_directory() / "icons/png/KucherX_256.ico"))
+                        large_icon=str(get_resources_directory() / "icons/png/KucherX_256.ico"),
+                        resizable=False)
     default_font = configure_font_and_scale(dpg, logger, get_resources_directory())
 
     # dpg.configure_app(docking=True, docking_space=dock_space)
@@ -128,7 +129,7 @@ def run_gui_app():
 
     display_close_popup_viewport(dpg, logger, get_resources_directory(), screen_resolution, save_callback,
                                  dont_save_callback)
-    return 0
+
 
 
 def auto_exit_task():

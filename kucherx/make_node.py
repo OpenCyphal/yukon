@@ -17,10 +17,12 @@ def make_node(settings: CyphalLocalNodeSettings):
         for key, value in settings_dictionary.items():
             new_settings_dictionary[str(key).strip()] = str(value)
         registry = pycyphal.application.make_registry(environment_variables=new_settings_dictionary)
-        # transport = pycyphal.application.make_transport(registers=registry, reconfigurable=True)
         from pycyphal.application import make_node
         from pycyphal.application import NodeInfo
-        node = make_node(NodeInfo(name="com.zubax.sapog.tests.debugger"), registry)
+        import uavcan
+        node = make_node(NodeInfo(name="com.zubax.sapog.tests.debugger"), registry,
+                         info=uavcan.node.GetInfo_1.Response(name="kucherx"),
+                         reconfigurable_transport=True)
         node.start()
         return node
 

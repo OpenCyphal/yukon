@@ -9,9 +9,6 @@ from CyphalLocalNodeSettings import CyphalLocalNodeSettings
 from make_node import make_node
 
 
-
-
-
 async def update_list_of_comports(dpg, combobox):
     ports = list_ports.comports()
     dpg.configure_item(combobox, items=ports)
@@ -35,8 +32,7 @@ def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSetti
 
         def combobox_callback(sender, app_data):
             settings.UAVCAN__CAN__IFACE = "slcan:" + str(app_data).split()[0]
-            logger.warning(f"New UAVCAN__CAN__IFACE is {settings.UAVCAN__CAN__IFACE}")
-            logger.warning("Something was selected")
+            logger.info(f"New UAVCAN__CAN__IFACE is {settings.UAVCAN__CAN__IFACE}")
 
         with dpg.theme() as combobox_theme:
             with dpg.theme_component(dpg.mvAll):
@@ -62,6 +58,7 @@ def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSetti
                 dpg.configure_item(lbl_error, default_value="You haven't set the interface.")
                 return
             make_node(settings)
+            dpg.configure_item(lbl_error, default_value="A reconfigurable node was launched.")
 
         dpg.add_button(label="Launch node", callback=launch_node)
     return main_window_id
