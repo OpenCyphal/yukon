@@ -1,4 +1,4 @@
-from CyphalLocalNodeSettings import CyphalLocalNodeSettings
+from domain.CyphalLocalNodeSettings import CyphalLocalNodeSettings
 from threading import Thread
 
 

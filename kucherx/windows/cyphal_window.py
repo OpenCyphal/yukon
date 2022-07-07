@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import json
 from serial.tools import list_ports
 
-from CyphalLocalNodeSettings import CyphalLocalNodeSettings
+from domain.CyphalLocalNodeSettings import CyphalLocalNodeSettings
 from make_node import make_node
 
 

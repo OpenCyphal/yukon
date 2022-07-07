@@ -14,7 +14,8 @@ import unittest
 from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen, configure_font_and_scale
 from sentry_setup import setup_sentry
 from themes.main_window_theme import get_main_theme
-from windows.cyphal_window import make_cyphal_window, CyphalLocalNodeSettings, save_cyphal_local_node_settings
+from windows.cyphal_window import make_cyphal_window, save_cyphal_local_node_settings
+from domain.CyphalLocalNodeSettings import CyphalLocalNodeSettings
 from windows.close_popup_viewport import display_close_popup_viewport
 from menubars.main_menubar import make_main_menubar
 import sentry_sdk
