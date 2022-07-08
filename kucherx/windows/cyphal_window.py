@@ -8,6 +8,7 @@ import json
 from serial.tools import list_ports
 
 from domain.CyphalLocalNodeSettings import CyphalLocalNodeSettings
+from domain.KucherXState import KucherXState
 from make_node import make_node
 
 
@@ -28,7 +29,7 @@ async def update_list_of_comports(dpg, combobox):
     dpg.configure_item(combobox, items=ports)
 
 
-def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSettings, theme,
+def make_cyphal_window(dpg, logger, default_font, state: KucherXState, theme,
                        use_alternative_labels=True):
     labels = {"mtu": "   UAVCAN__CAN__MTU", "iface": "  UAVCAN__CAN__IFACE", "nodeid": "   UAVCAN__NODE__ID",
               "arbitration_bitrate": "   Arbitration bitrate", "data_bitrate": "   Data bitrate"}
@@ -45,15 +46,19 @@ def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSetti
             dpg.show_item("MonitorWindow")
             dpg.set_primary_window("MonitorWindow", True)
 
-        dpg.add_button(label="Switch to monitor", callback=switch_to_monitor)
+        with dpg.texture_registry(show=False):
+            width, height, channels, data = dpg.load_image(
+                str((get_root_directory() / "kucherx/res/icons/png/monitor_32.png").resolve()))
+            dpg.add_static_texture(width=width, height=height, default_value=data, tag="monitor_image")
+        dpg.add_image_button(label="Switch to monitor", callback=switch_to_monitor, texture_tag="monitor_image")
         dpg.add_text("Local node settings")
         input_field_width = 490
-        dpg.add_input_text(label=labels["mtu"], default_value=str(settings.UAVCAN__CAN__MTU),
+        dpg.add_input_text(label=labels["mtu"], default_value=str(state.settings.UAVCAN__CAN__MTU),
                            width=input_field_width)
 
         def combobox_callback(sender, app_data):
-            settings.UAVCAN__CAN__IFACE = "slcan:" + str(app_data).split()[0]
-            logger.info(f"New UAVCAN__CAN__IFACE is {settings.UAVCAN__CAN__IFACE}")
+            state.settings.UAVCAN__CAN__IFACE = "slcan:" + str(app_data).split()[0]
+            logger.info(f"New UAVCAN__CAN__IFACE is {state.settings.UAVCAN__CAN__IFACE}")
 
         with dpg.theme() as combobox_theme:
             with dpg.theme_component(dpg.mvAll):
@@ -61,7 +66,7 @@ def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSetti
                 # dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (255, 140, 23), category=dpg.mvThemeCat_Core)
                 dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 0, 15, category=dpg.mvThemeCat_Core)
                 dpg.add_theme_style(dpg.mvStyleVar_ItemInnerSpacing, 10, 10, category=dpg.mvThemeCat_Core)
-        combobox = dpg.add_combo(label=labels["iface"], default_value=settings.UAVCAN__CAN__IFACE,
+        combobox = dpg.add_combo(label=labels["iface"], default_value=state.settings.UAVCAN__CAN__IFACE,
                                  width=input_field_width, callback=combobox_callback)
 
         def clear_combobox():
@@ -76,37 +81,50 @@ def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSetti
             dpg.add_button(label="Clear", callback=clear_combobox)
         update_combobox()
         dpg.bind_item_theme(combobox, combobox_theme)
-        dpg.add_input_text(label=labels["arbitration_bitrate"], default_value=str(settings.arbitration_bitrate),
+        dpg.add_input_text(label=labels["arbitration_bitrate"], default_value=str(state.settings.arbitration_bitrate),
                            width=input_field_width)
-        dpg.add_input_text(label=labels["data_bitrate"], default_value=str(settings.data_bitrate),
+        dpg.add_input_text(label=labels["data_bitrate"], default_value=str(state.settings.data_bitrate),
                            width=input_field_width)
-        dpg.add_input_text(label=labels["nodeid"], default_value=str(settings.UAVCAN__NODE__ID),
+        dpg.add_input_text(label=labels["nodeid"], default_value=str(state.settings.UAVCAN__NODE__ID),
                            width=input_field_width)
         with dpg.group(horizontal=True) as error_group:
-            width, height, channels, data = dpg.load_image(
-                str((get_root_directory() / "kucherx/res/icons/png/warning_64.png").resolve()))
-
-            with dpg.texture_registry(show=True):
+            dpg.add_text("")  # This is a workaround for the bug below with images hidden and shown
+            with dpg.texture_registry(show=False):
+                width, height, channels, data = dpg.load_image(
+                    str((get_root_directory() / "kucherx/res/icons/png/warning_64.png").resolve()))
                 dpg.add_static_texture(width=width, height=height, default_value=data, tag="warning_image")
+
+            with dpg.texture_registry(show=False):
+                width, height, channels, data = dpg.load_image(
+                    str((get_root_directory() / "kucherx/res/icons/png/success_64.png").resolve()))
+                dpg.add_static_texture(width=width, height=height, default_value=data, tag="success_image")
             warning_image_item_id = dpg.add_image("warning_image")
+            success_image_item_id = dpg.add_image("success_image")
             lbl_error = dpg.add_text("", tag="lblError")
             warning_image_item_id2 = dpg.add_image("warning_image")
+            success_image_item_id2 = dpg.add_image("success_image")
             dpg.hide_item(warning_image_item_id)
             dpg.hide_item(warning_image_item_id2)
+            dpg.hide_item(success_image_item_id)
+            dpg.hide_item(success_image_item_id2)
 
         with dpg.group(horizontal=True) as group_save_launch:
             dpg.add_button(label="Save")
 
             def launch_node():
-                if settings.UAVCAN__CAN__IFACE == "":
+                if state.settings.UAVCAN__CAN__IFACE == "":
                     dpg.configure_item(lbl_error, default_value="You haven't set the interface.")
                     dpg.show_item(warning_image_item_id)
                     dpg.show_item(warning_image_item_id2)
                     return
-                make_node(settings)
+                make_node(state.settings)
                 dpg.configure_item(lbl_error, default_value="A reconfigurable node was launched.")
-                # dpg.hide_item(warning_image_item_id)
-                # dpg.hide_item(warning_image_item_id2)
+                # dpg.show_item(error_group)
+                dpg.hide_item(warning_image_item_id)  # unable due to a bug in dearpygui, fix the bug and uncomment
+                # dpg.show_item(warning_image_item_id)
+                dpg.hide_item(warning_image_item_id2)
+                dpg.show_item(success_image_item_id)
+                dpg.show_item(success_image_item_id2)
 
             dpg.add_button(label="Launch node", callback=launch_node)
 

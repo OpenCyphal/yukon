@@ -11,6 +11,7 @@ import logging
 import pytest
 import unittest
 
+from domain.KucherXState import KucherXState
 from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen, configure_font_and_scale
 from sentry_setup import setup_sentry
 from themes.main_window_theme import get_main_theme
@@ -105,10 +106,10 @@ def run_gui_app():
     default_font = configure_font_and_scale(dpg, logger, get_resources_directory())
 
     # dpg.configure_app(docking=True, docking_space=dock_space)
-
-    settings = CyphalLocalNodeSettings(8, "", 127, "", arbitration_bitrate=1000000, data_bitrate=1000000)
+    state = KucherXState(False,
+                         CyphalLocalNodeSettings(8, "", 127, "", arbitration_bitrate=1000000, data_bitrate=1000000))
     screen_resolution = get_screen_resolution()
-    main_window_id = make_cyphal_window(dpg, logger, default_font, settings, get_main_theme(dpg))
+    main_window_id = make_cyphal_window(dpg, logger, default_font, state, get_main_theme(dpg))
     monitor_window_id = make_monitor_window(dpg, logger)
     dpg.hide_item(monitor_window_id)
     dpg.set_primary_window(main_window_id, True)
@@ -120,7 +121,7 @@ def run_gui_app():
         logger.info("I was asked not to save")
 
     def save_callback():
-        save_cyphal_local_node_settings(settings)
+        save_cyphal_local_node_settings(state.settings)
         logger.info("I was asked to save")
 
     # dpg.show_style_editor()
