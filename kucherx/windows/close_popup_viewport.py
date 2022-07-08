@@ -37,7 +37,7 @@ def display_close_popup_viewport(dpg, logger, resources_directory, screen_resolu
         def close_callback():
             dpg.stop_dearpygui()
 
-        with dpg.group() as group_btns:
+        with dpg.group(horizontal=True) as group_btns:
             with dpg.theme() as theme_group:
                 with dpg.theme_component(dpg.mvAll):
                     dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, 10, 10, category=dpg.mvThemeCat_Core)
@@ -47,7 +47,7 @@ def display_close_popup_viewport(dpg, logger, resources_directory, screen_resolu
             primary_window_configuration_size = dpg.get_item_rect_size(primary_window)
             btn_save_size = dpg.get_item_rect_size(btn_save)
             btn_dont_save_size = dpg.get_item_rect_size(btn_dont_save)
-            dpg.configure_item(group_btns, pos=(240, 80))
+            # dpg.configure_item(group_btns, pos=(240, 80))
         dpg.set_item_callback("btnDontSave", dont_save_callback)
         dpg.set_item_callback("btnSave", save_callback)
 

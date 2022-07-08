@@ -1,12 +1,26 @@
 import asyncio
 import dataclasses
 import os
+import pathlib
+import time
 from dataclasses import dataclass
 import json
 from serial.tools import list_ports
 
 from domain.CyphalLocalNodeSettings import CyphalLocalNodeSettings
 from make_node import make_node
+
+
+def get_root_directory():
+    from os.path import exists
+    current = pathlib.Path(__file__).parent
+    time_started = time.time()
+    while time_started - time.time() < 0.1:
+        if exists(current / "LICENSE") or exists(current / ".gitignore"):
+            return current.resolve()
+        else:
+            current = current.parent
+    return None
 
 
 async def update_list_of_comports(dpg, combobox):
@@ -49,7 +63,18 @@ def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSetti
                 dpg.add_theme_style(dpg.mvStyleVar_ItemInnerSpacing, 10, 10, category=dpg.mvThemeCat_Core)
         combobox = dpg.add_combo(label=labels["iface"], default_value=settings.UAVCAN__CAN__IFACE,
                                  width=input_field_width, callback=combobox_callback)
-        asyncio.run(update_list_of_comports(dpg, combobox))
+
+        def clear_combobox():
+            dpg.configure_item(combobox, items=[])
+            dpg.configure_item(combobox, default_value="")
+
+        def update_combobox():
+            asyncio.run(update_list_of_comports(dpg, combobox))
+
+        with dpg.group(horizontal=True) as combobox_action_group:
+            dpg.add_button(label="Refresh", callback=update_combobox)
+            dpg.add_button(label="Clear", callback=clear_combobox)
+        update_combobox()
         dpg.bind_item_theme(combobox, combobox_theme)
         dpg.add_input_text(label=labels["arbitration_bitrate"], default_value=str(settings.arbitration_bitrate),
                            width=input_field_width)
@@ -57,17 +82,33 @@ def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSetti
                            width=input_field_width)
         dpg.add_input_text(label=labels["nodeid"], default_value=str(settings.UAVCAN__NODE__ID),
                            width=input_field_width)
-        lbl_error = dpg.add_text("", tag="lblError")
-        dpg.add_button(label="Save")
+        with dpg.group(horizontal=True) as error_group:
+            width, height, channels, data = dpg.load_image(
+                str((get_root_directory() / "kucherx/res/icons/png/warning_64.png").resolve()))
 
-        def launch_node():
-            if settings.UAVCAN__CAN__IFACE == "":
-                dpg.configure_item(lbl_error, default_value="You haven't set the interface.")
-                return
-            make_node(settings)
-            dpg.configure_item(lbl_error, default_value="A reconfigurable node was launched.")
+            with dpg.texture_registry(show=True):
+                dpg.add_static_texture(width=width, height=height, default_value=data, tag="warning_image")
+            warning_image_item_id = dpg.add_image("warning_image")
+            lbl_error = dpg.add_text("", tag="lblError")
+            warning_image_item_id2 = dpg.add_image("warning_image")
+            dpg.hide_item(warning_image_item_id)
+            dpg.hide_item(warning_image_item_id2)
 
-        dpg.add_button(label="Launch node", callback=launch_node)
+        with dpg.group(horizontal=True) as group_save_launch:
+            dpg.add_button(label="Save")
+
+            def launch_node():
+                if settings.UAVCAN__CAN__IFACE == "":
+                    dpg.configure_item(lbl_error, default_value="You haven't set the interface.")
+                    dpg.show_item(warning_image_item_id)
+                    dpg.show_item(warning_image_item_id2)
+                    return
+                make_node(settings)
+                dpg.configure_item(lbl_error, default_value="A reconfigurable node was launched.")
+                # dpg.hide_item(warning_image_item_id)
+                # dpg.hide_item(warning_image_item_id2)
+
+            dpg.add_button(label="Launch node", callback=launch_node)
 
     return main_window_id
 

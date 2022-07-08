@@ -98,7 +98,7 @@ def run_gui_app():
     make_process_dpi_aware(logger)
     prepare_rendered_icons()
     dpg.create_context()
-    dpg.create_viewport(title='KucherX', width=920, height=850,
+    dpg.create_viewport(title='KucherX', width=920, height=870,
                         small_icon=str(get_resources_directory() / "icons/png/KucherX.png"),
                         large_icon=str(get_resources_directory() / "icons/png/KucherX_256.ico"),
                         resizable=False)
@@ -123,8 +123,6 @@ def run_gui_app():
         save_cyphal_local_node_settings(settings)
         logger.info("I was asked to save")
 
-
-
     # dpg.show_style_editor()
     # below replaces, start_dearpygui()
     while dpg.is_dearpygui_running():
@@ -138,10 +136,10 @@ def run_gui_app():
                                  dont_save_callback)
 
     while dpg.is_dearpygui_running():
-        # ensure_window_is_in_viewport(main_window_id)
         dpg.render_dearpygui_frame()
 
     dpg.destroy_context()
+
 
 def auto_exit_task():
     if os.environ.get("STOP_AFTER"):
