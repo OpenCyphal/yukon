@@ -4,7 +4,6 @@ from windows.cyphal_window import save_cyphal_local_node_settings
 
 def display_close_popup_viewport(dpg, logger, resources_directory, screen_resolution, save_callback=None,
                                  dont_save_callback=None):
-    dpg.create_context()
     default_font = configure_font_and_scale(dpg, logger, resources_directory)
     # Calculations for centering the viewport for the popup
     needed_width = 730
@@ -36,7 +35,7 @@ def display_close_popup_viewport(dpg, logger, resources_directory, screen_resolu
                 pass
 
         def close_callback():
-            dpg.destroy_context()
+            dpg.stop_dearpygui()
 
         with dpg.group() as group_btns:
             with dpg.theme() as theme_group:

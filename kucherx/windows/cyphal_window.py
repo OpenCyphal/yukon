@@ -21,10 +21,17 @@ def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSetti
     if use_alternative_labels:
         labels = {"mtu": "   Maximum transmission unit", "iface": "  Interface", "nodeid": "   Node id",
                   "arbitration_bitrate": "   Arbitration bitrate", "data_bitrate": "   Data bitrate"}
-    with dpg.window(label="Cyphal settings", tag="Primary Window", width=400) as main_window_id:
+    with dpg.window(label="Cyphal settings", tag="CyphalConfig", width=400) as main_window_id:
         logger.warning(f"Main window id is {main_window_id}")
         dpg.bind_item_theme(main_window_id, theme)
         dpg.bind_font(default_font)
+
+        def switch_to_monitor():
+            dpg.hide_item(main_window_id)
+            dpg.show_item("MonitorWindow")
+            dpg.set_primary_window("MonitorWindow", True)
+
+        dpg.add_button(label="Switch to monitor", callback=switch_to_monitor)
         dpg.add_text("Local node settings")
         input_field_width = 490
         dpg.add_input_text(label=labels["mtu"], default_value=str(settings.UAVCAN__CAN__MTU),
@@ -61,6 +68,7 @@ def make_cyphal_window(dpg, logger, default_font, settings: CyphalLocalNodeSetti
             dpg.configure_item(lbl_error, default_value="A reconfigurable node was launched.")
 
         dpg.add_button(label="Launch node", callback=launch_node)
+
     return main_window_id
 
 

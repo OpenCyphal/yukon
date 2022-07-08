@@ -21,6 +21,7 @@ from menubars.main_menubar import make_main_menubar
 import sentry_sdk
 # This is to get __init__.py to run
 from kucherx import nonce  # type: ignore
+from windows.monitor_window import make_monitor_window
 
 setup_sentry(sentry_sdk)
 paths = sys.path
@@ -97,7 +98,7 @@ def run_gui_app():
     make_process_dpi_aware(logger)
     prepare_rendered_icons()
     dpg.create_context()
-    dpg.create_viewport(title='KucherX', width=920, height=800,
+    dpg.create_viewport(title='KucherX', width=920, height=850,
                         small_icon=str(get_resources_directory() / "icons/png/KucherX.png"),
                         large_icon=str(get_resources_directory() / "icons/png/KucherX_256.ico"),
                         resizable=False)
@@ -108,18 +109,12 @@ def run_gui_app():
     settings = CyphalLocalNodeSettings(8, "", 127, "", arbitration_bitrate=1000000, data_bitrate=1000000)
     screen_resolution = get_screen_resolution()
     main_window_id = make_cyphal_window(dpg, logger, default_font, settings, get_main_theme(dpg))
+    monitor_window_id = make_monitor_window(dpg, logger)
+    dpg.hide_item(monitor_window_id)
     dpg.set_primary_window(main_window_id, True)
     make_main_menubar(dpg, default_font)
     dpg.setup_dearpygui()
-    # Include the following code before showing the viewport/calling `dearpygui.dearpygui.show_viewport`.
-
     dpg.show_viewport()
-    # dpg.show_style_editor()
-    # below replaces, start_dearpygui()
-    while dpg.is_dearpygui_running():
-        ensure_window_is_in_viewport(main_window_id)
-        dpg.render_dearpygui_frame()
-    dpg.destroy_context()
 
     def dont_save_callback():
         logger.info("I was asked not to save")
@@ -128,10 +123,25 @@ def run_gui_app():
         save_cyphal_local_node_settings(settings)
         logger.info("I was asked to save")
 
+
+
+    # dpg.show_style_editor()
+    # below replaces, start_dearpygui()
+    while dpg.is_dearpygui_running():
+        # ensure_window_is_in_viewport(main_window_id)
+        dpg.render_dearpygui_frame()
+
+    dpg.stop_dearpygui()
+    dpg.destroy_context()
+    dpg.create_context()
     display_close_popup_viewport(dpg, logger, get_resources_directory(), screen_resolution, save_callback,
                                  dont_save_callback)
 
+    while dpg.is_dearpygui_running():
+        # ensure_window_is_in_viewport(main_window_id)
+        dpg.render_dearpygui_frame()
 
+    dpg.destroy_context()
 
 def auto_exit_task():
     if os.environ.get("STOP_AFTER"):
