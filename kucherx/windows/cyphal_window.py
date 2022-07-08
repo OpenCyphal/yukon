@@ -117,7 +117,7 @@ def make_cyphal_window(dpg, logger, default_font, state: KucherXState, theme,
                     dpg.show_item(warning_image_item_id)
                     dpg.show_item(warning_image_item_id2)
                     return
-                make_node(state.settings)
+                make_node(state)
                 dpg.configure_item(lbl_error, default_value="A reconfigurable node was launched.")
                 # dpg.show_item(error_group)
                 dpg.hide_item(warning_image_item_id)  # unable due to a bug in dearpygui, fix the bug and uncomment
