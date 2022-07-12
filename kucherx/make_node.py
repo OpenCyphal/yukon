@@ -10,11 +10,14 @@ from trace import Trace
 import pycyphal
 from pycyphal.application.node_tracker import NodeTracker, Entry
 from pycyphal.transport import Tracer, _tracer, TransferTrace
-from pycyphal.transport.can import CANErrorTrace
+from pycyphal.transport.can import CANErrorTrace, CANTransport
+from pycyphal.transport.redundant import RedundantTransport
 from pycyphal.util import iter_descendants
 
 from domain.KucherXState import KucherXState
 
+from pycyphal.application import make_node
+from pycyphal.application import NodeInfo
 
 def fill_ids():
     ids = {}
@@ -109,9 +112,8 @@ def make_capture_handler(tracer: Tracer, ids: typing.Dict[int, typing.Any], debu
                     is_service_request: bool = hasattr(
                         transfer_trace.transfer.metadata.session_specifier.data_specifier,
                         "service_id")
-                    if ignore_traffic_by_debugger and \
-                            transfer_trace.transfer.metadata.session_specifier.source_node_id == debugger_id_for_filtering \
-                            and not is_service_request:
+                    is_sending_node_debugger = transfer_trace.transfer.metadata.session_specifier.source_node_id == debugger_id_for_filtering
+                    if ignore_traffic_by_debugger and is_sending_node_debugger and not is_service_request:
                         return
                     if is_service_request:
                         subject_id = transfer_trace.transfer.metadata.session_specifier.data_specifier.service_id
@@ -156,9 +158,9 @@ def make_node(state: KucherXState):
         new_settings_dictionary = {}
         for key, value in settings_dictionary.items():
             new_settings_dictionary[str(key).strip()] = str(value)
-        registry = pycyphal.application.make_registry(environment_variables=new_settings_dictionary)
-        from pycyphal.application import make_node
-        from pycyphal.application import NodeInfo
+        registry = pycyphal.application.make_registry()
+        registry["uavcan.node.id"] = 123
+
         import uavcan
         state.local_node = make_node(NodeInfo(name="com.zubax.sapog.tests.debugger"), registry,
                                      reconfigurable_transport=True)
@@ -168,6 +170,10 @@ def make_node(state: KucherXState):
                                  debugger_id_for_filtering=state.local_node.id))
         state.tracker = NodeTracker(state.local_node)
         state.tracker.add_update_handler(make_handler_for_getinfo_update())
+
+        tr = state.local_node.presentation.transport
+        assert isinstance(tr, RedundantTransport)
+        tr.attach_inferior(CANTransport(...))
 
         state.local_node.start()
         return state.local_node

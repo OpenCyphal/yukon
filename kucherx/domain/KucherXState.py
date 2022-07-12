@@ -1,19 +1,28 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from queue import Queue
+from typing import Optional, Any, Callable
 from pycyphal.application.node_tracker import NodeTracker
 
 import pycyphal
 from pycyphal.application import Node
+from pycyphal.transport.redundant import RedundantTransport
 
-from domain.CyphalLocalNodeSettings import CyphalLocalNodeSettings
+from domain.Interface import Interface
 from domain.NodeState import NodeState
 
 
-@dataclass
+@dataclass(init=False)
 class KucherXState:
-    is_local_node_launched: bool
-    settings: CyphalLocalNodeSettings
+    def __init__(self):
+        pass
+    interfaces: list[Interface]
+    event_loop: Any
+    add_transport: Callable[[Interface], None]
+    pseudo_transport: Optional[RedundantTransport]
     local_node: Optional[Node] = None
     tracer: Optional[pycyphal.transport.Tracer] = None
     tracker: Optional[NodeTracker] = None
     known_node_states: list[NodeState] = field(default_factory=list)
+    queue_add_interfaces: Queue[Interface] = field(default_factory=Queue)
+    is_local_node_launched: bool = False
+    is_close_dialog_enabled: bool = False

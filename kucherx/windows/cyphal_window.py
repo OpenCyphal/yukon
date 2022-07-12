@@ -7,8 +7,8 @@ from dataclasses import dataclass
 import json
 from serial.tools import list_ports
 
-from domain.CyphalLocalNodeSettings import CyphalLocalNodeSettings
 from domain.KucherXState import KucherXState
+from domain.WindowStyleState import WindowStyleState
 from make_node import make_node
 
 
@@ -23,37 +23,34 @@ def get_root_directory():
             current = current.parent
     return None
 
-
-async def update_list_of_comports(dpg, combobox):
-    ports = list_ports.comports()
-    dpg.configure_item(combobox, items=ports)
-
-
-def make_cyphal_window(dpg, logger, default_font, state: KucherXState, theme,
-                       use_alternative_labels=True):
-    labels = {"mtu": "   UAVCAN__CAN__MTU", "iface": "  UAVCAN__CAN__IFACE", "nodeid": "   UAVCAN__NODE__ID",
-              "arbitration_bitrate": "   Arbitration bitrate", "data_bitrate": "   Data bitrate"}
-    if use_alternative_labels:
-        labels = {"mtu": "   Maximum transmission unit", "iface": "  Interface", "nodeid": "   Node id",
-                  "arbitration_bitrate": "   Arbitration bitrate", "data_bitrate": "   Data bitrate"}
+def make_interface_config_window(dpg, logger, state: KucherXState, wss: WindowStyleState):
     with dpg.window(label="Cyphal settings", tag="CyphalConfig", width=400) as main_window_id:
         logger.warning(f"Main window id is {main_window_id}")
-        dpg.bind_item_theme(main_window_id, theme)
-        dpg.bind_font(default_font)
+        dpg.bind_item_theme(main_window_id, wss.theme)
+        dpg.bind_font(wss.font)
 
         def switch_to_monitor():
             dpg.hide_item(main_window_id)
             dpg.show_item("MonitorWindow")
             dpg.set_primary_window("MonitorWindow", True)
 
+        def add_interface():
+            pass
+
         with dpg.texture_registry(show=False):
             width, height, channels, data = dpg.load_image(
                 str((get_root_directory() / "kucherx/res/icons/png/monitor_32.png").resolve()))
             dpg.add_static_texture(width=width, height=height, default_value=data, tag="monitor_image")
-        dpg.add_image_button(label="Switch to monitor", callback=switch_to_monitor, texture_tag="monitor_image")
+        with dpg.texture_registry(show=False):
+            width, height, channels, data = dpg.load_image(
+                str((get_root_directory() / "kucherx/res/icons/png/plus.png").resolve()))
+            dpg.add_static_texture(width=width, height=height, default_value=data, tag="plus_image")
+        with dpg.group(horizontal=True) as toolbar_group:
+            dpg.add_image_button(label="Add interface", callback=add_interface(), texture_tag="plus_image")
+            dpg.add_image_button(label="Switch to monitor", callback=switch_to_monitor, texture_tag="monitor_image")
         dpg.add_text("Local node settings")
         input_field_width = 490
-        dpg.add_input_text(label=labels["mtu"], default_value=str(state.settings.UAVCAN__CAN__MTU),
+        dpg.add_input_text(label="Maximum transmission unit (MTU)", default_value=str(state.settings.UAVCAN__CAN__MTU),
                            width=input_field_width)
 
         def combobox_callback(sender, app_data):
@@ -66,7 +63,7 @@ def make_cyphal_window(dpg, logger, default_font, state: KucherXState, theme,
                 # dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (255, 140, 23), category=dpg.mvThemeCat_Core)
                 dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 0, 15, category=dpg.mvThemeCat_Core)
                 dpg.add_theme_style(dpg.mvStyleVar_ItemInnerSpacing, 10, 10, category=dpg.mvThemeCat_Core)
-        combobox = dpg.add_combo(label=labels["iface"], default_value=state.settings.UAVCAN__CAN__IFACE,
+        combobox = dpg.add_combo(label="Interface", default_value=state.settings.UAVCAN__CAN__IFACE,
                                  width=input_field_width, callback=combobox_callback)
 
         def clear_combobox():
@@ -81,11 +78,11 @@ def make_cyphal_window(dpg, logger, default_font, state: KucherXState, theme,
             dpg.add_button(label="Clear", callback=clear_combobox)
         update_combobox()
         dpg.bind_item_theme(combobox, combobox_theme)
-        dpg.add_input_text(label=labels["arbitration_bitrate"], default_value=str(state.settings.arbitration_bitrate),
+        dpg.add_input_text(label="Arbitration bitrate", default_value=str(state.settings.arbitration_bitrate),
                            width=input_field_width)
-        dpg.add_input_text(label=labels["data_bitrate"], default_value=str(state.settings.data_bitrate),
+        dpg.add_input_text(label="Data bitrate", default_value=str(state.settings.data_bitrate),
                            width=input_field_width)
-        dpg.add_input_text(label=labels["nodeid"], default_value=str(state.settings.UAVCAN__NODE__ID),
+        dpg.add_input_text(label="Node id", default_value=str(state.settings.UAVCAN__NODE__ID),
                            width=input_field_width)
         with dpg.group(horizontal=True) as error_group:
             dpg.add_text("")  # This is a workaround for the bug below with images hidden and shown
@@ -126,8 +123,6 @@ def make_cyphal_window(dpg, logger, default_font, state: KucherXState, theme,
                 dpg.show_item(success_image_item_id)
                 dpg.show_item(success_image_item_id2)
 
-            dpg.add_button(label="Launch node", callback=launch_node)
-
     return main_window_id
 
 
@@ -138,6 +133,6 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-def save_cyphal_local_node_settings(settings: CyphalLocalNodeSettings):
-    with open("settings.json", "w") as f:
-        f.write(json.dumps(settings, cls=EnhancedJSONEncoder))
+# def save_cyphal_local_node_settings(settings: CyphalLocalNodeSettings):
+#     with open("settings.json", "w") as f:
+#         f.write(json.dumps(settings, cls=EnhancedJSONEncoder))

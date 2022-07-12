@@ -1,11 +1,23 @@
-from typing import Union
+import threading
+from queue import Queue
+from threading import Thread
+from typing import Union, Optional
 
 import dearpygui.dearpygui as dpg  # type: ignore
 import os
 import sys
 import asyncio
-import time
-import pathlib
+
+from pycyphal.application import make_node, NodeInfo
+from pycyphal.transport.can import CANTransport
+from pycyphal.transport.can.media.pythoncan import PythonCANMedia
+
+from domain.Interface import Interface
+from domain.UID import UID
+from domain.ViewPortInfo import ViewPortInfo
+from domain.WindowStyleState import WindowStyleState
+from services.InterfaceService import interface_added
+from services.folder_recognition.get_common_folders import *
 
 import logging
 import pytest
@@ -14,9 +26,9 @@ import unittest
 from domain.KucherXState import KucherXState
 from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen, configure_font_and_scale
 from sentry_setup import setup_sentry
+from services.render_icons import prepare_rendered_icons
 from themes.main_window_theme import get_main_theme
-from windows.cyphal_window import make_cyphal_window, save_cyphal_local_node_settings
-from domain.CyphalLocalNodeSettings import CyphalLocalNodeSettings
+from windows.add_interface_window import make_add_interface_window
 from windows.close_popup_viewport import display_close_popup_viewport
 from menubars.main_menubar import make_main_menubar
 import sentry_sdk
@@ -41,87 +53,54 @@ def get_screen_resolution():
         return 1280, 720
 
 
-def get_root_directory():
-    from os.path import exists
-    current = pathlib.Path(__file__).parent
-    time_started = time.time()
-    while time_started - time.time() < 0.1:
-        if exists(current / "LICENSE") or exists(current / ".gitignore"):
-            return current.resolve()
-        else:
-            current = current.parent
-    return None
+def _adding_interfaces_thread(state, queue):
+    """It also starts the node"""
+    state.local_node = make_node(NodeInfo(name="com.zubax.sapog.tests.debugger"), reconfigurable_transport=True)
+    state.local_node.start()
+    state.pseudo_transport = state.local_node.presentation.transport
+    while True:
+        interface = queue.get()
+        new_media = PythonCANMedia(interface.iface, (interface.rate_arb, interface.rate_data), interface.mtu)
+        state.pseudo_transport.attach_inferior(CANTransport(media=new_media, local_node_id=state.local_node.id))
 
 
-def get_kucherx_directory():
-    return get_root_directory() / "kucherx"
-
-
-def get_sources_directory():
-    return pathlib.Path(__file__).parent.resolve()
-
-
-def get_resources_directory():
-    return get_kucherx_directory() / "res"
-
-
-ID = Union[str, int]
-
-
-def ensure_window_is_in_viewport(window_id: ID):
-    window_x_pos = dpg.get_item_pos(window_id)[0]
-    window_y_pos = dpg.get_item_pos(window_id)[1]
-    if window_x_pos < 0:
-        # dpg.configure_item(window_id, no_move=True)
-        dpg.set_item_pos(window_id, [0, window_y_pos])
-
-
-def prepare_rendered_icons():
-    from os import walk
-    try:
-        import cairosvg
-        svg_files = []
-        for (dir_path, dir_names, filenames) in walk(get_resources_directory() / "icons" / "svg"):
-            for file_name in filenames:
-                if ".svg" in file_name:
-                    svg_files.append(file_name)
-            break
-    except Exception as e:
-        if type(e) == OSError and "no library called \"cairo-2\" was found" in repr(e):
-            logger.error("Was unable to find the cairo-2 dlls. This means that I am unable to convert SVG icons to "
-                         "PNG for display.")
-            return
-        else:
-            raise e
-
-
-def run_gui_app():
+async def run_gui_app():
     make_process_dpi_aware(logger)
-    prepare_rendered_icons()
+    prepare_rendered_icons(logger)
     dpg.create_context()
-    dpg.create_viewport(title='KucherX', width=920, height=870,
-                        small_icon=str(get_resources_directory() / "icons/png/KucherX.png"),
-                        large_icon=str(get_resources_directory() / "icons/png/KucherX_256.ico"),
-                        resizable=False)
-    default_font = configure_font_and_scale(dpg, logger, get_resources_directory())
+
+    vpi: ViewPortInfo = ViewPortInfo(title='KucherX', width=920, height=870,
+                                     small_icon=str(get_resources_directory() / "icons/png/KucherX.png"),
+                                     large_icon=str(get_resources_directory() / "icons/png/KucherX_256.ico"),
+                                     resizable=False)
+    dpg.create_viewport(**vpi.__dict__, decorated=True)
 
     # dpg.configure_app(docking=True, docking_space=dock_space)
-    state = KucherXState(False,
-                         CyphalLocalNodeSettings(8, "", 127, "", arbitration_bitrate=1000000, data_bitrate=1000000))
+    wss: WindowStyleState = WindowStyleState(font=configure_font_and_scale(dpg, logger, get_resources_directory()),
+                                             theme=get_main_theme(dpg))
+    state = KucherXState()
+    queue_add_interfaces: Queue = Queue()
+    threading.Thread(target=_adding_interfaces_thread, args=(state, queue_add_interfaces))
     screen_resolution = get_screen_resolution()
-    main_window_id = make_cyphal_window(dpg, logger, default_font, state, get_main_theme(dpg))
     monitor_window_id = make_monitor_window(dpg, logger)
-    dpg.hide_item(monitor_window_id)
-    dpg.set_primary_window(main_window_id, True)
-    make_main_menubar(dpg, default_font)
+    dpg.set_primary_window(monitor_window_id, True)
+
+    def add_interface(interface: Interface):
+        queue_add_interfaces.put(interface)
+
+    def open_interface_menu():
+        make_add_interface_window(dpg, state, logger, wss, interface_added_callback=add_interface)
+
+    make_main_menubar(dpg, wss.font, new_interface_callback=open_interface_menu)
     dpg.setup_dearpygui()
     dpg.show_viewport()
+    dpg.maximize_viewport()
 
     def dont_save_callback():
         logger.info("I was asked not to save")
 
     def save_callback():
-        save_cyphal_local_node_settings(state.settings)
+        # save_cyphal_local_node_settings(state.settings)
         logger.info("I was asked to save")
 
     # dpg.show_style_editor()
@@ -132,14 +111,15 @@ def run_gui_app():
 
     dpg.stop_dearpygui()
     dpg.destroy_context()
-    dpg.create_context()
-    display_close_popup_viewport(dpg, logger, get_resources_directory(), screen_resolution, save_callback,
-                                 dont_save_callback)
+    if state.is_close_dialog_enabled:
+        dpg.create_context()
+        display_close_popup_viewport(dpg, logger, get_resources_directory(), screen_resolution, save_callback,
+                                     dont_save_callback)
 
-    while dpg.is_dearpygui_running():
-        dpg.render_dearpygui_frame()
+        while dpg.is_dearpygui_running():
+            dpg.render_dearpygui_frame()
 
-    dpg.destroy_context()
+        dpg.destroy_context()
 
 
 def auto_exit_task():
@@ -157,10 +137,8 @@ def scan_for_com_ports_task():
 
 
 async def main():
-    await asyncio.gather(
-        asyncio.to_thread(run_gui_app),
-        asyncio.to_thread(auto_exit_task)
-    )
+    # threading.Thread(target=auto_exit_task).start()
+    await run_gui_app()
     return 0
 
 
