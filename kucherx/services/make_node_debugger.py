@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import json
+import logging
 import re
 import typing
 from itertools import chain
@@ -18,6 +19,9 @@ from domain.KucherXState import KucherXState
 
 from pycyphal.application import make_node
 from pycyphal.application import NodeInfo
+
+logger = logging.getLogger("can_debugger")
+logger.setLevel("NOTSET")
 
 
 def format_payload_hex_view(fragmented_payload: typing.Sequence[memoryview]) -> str:
@@ -90,9 +94,12 @@ def deserialize_trace(trace: Trace, ids: typing.Dict[int, typing.Any], subject_i
     return transfer_deserialized
 
 
-def make_capture_handler(tracer: Tracer, ids: typing.Dict[int, typing.Any], debugger_id_for_filtering: int, log_to_logger = None,
+def make_capture_handler(tracer: Tracer, ids: typing.Dict[int, typing.Any], debugger_id_for_filtering: int,
+                         log_to_logger=None,
                          log_to_file=True, log_to_print=True, ignore_traffic_by_debugger=True):
+    logger.info("Capture handler was registered.")
     def capture_handler(capture: _tracer.Capture):
+        logger.info("Something was received.")
         with open("rx_frm.txt", "a") as log_file:
             # Checking to see if a transfer has finished, then assigning the value to transfer_trace
             if (transfer_trace := tracer.update(capture)) is not None:
@@ -136,8 +143,8 @@ def make_handler_for_getinfo_update():
     return handle_getinfo_handler_format
 
 
-def make_node_debugger(state: KucherXState, logger):
-    logger.warning("Debugger is being set up")
+def make_node_debugger(state: KucherXState):
+    logger.info("Debugger is being set up")
     state.tracer = state.local_node.presentation.transport.make_tracer()
     state.local_node.presentation.transport.begin_capture(
         make_capture_handler(state.tracer, {}, log_to_file=False, log_to_print=True,
