@@ -23,6 +23,5 @@ class KucherXState:
     tracer: Optional[pycyphal.transport.Tracer] = None
     tracker: Optional[NodeTracker] = None
     known_node_states: list[NodeState] = field(default_factory=list)
-    queue_add_interfaces: Queue[Interface] = field(default_factory=Queue)
     is_local_node_launched: bool = False
     is_close_dialog_enabled: bool = False

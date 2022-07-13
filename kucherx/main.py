@@ -26,6 +26,7 @@ import unittest
 from domain.KucherXState import KucherXState
 from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen, configure_font_and_scale
 from sentry_setup import setup_sentry
+from services.make_node_debugger import make_node_debugger
 from services.render_icons import prepare_rendered_icons
 from themes.main_window_theme import get_main_theme
 from windows.add_interface_window import make_add_interface_window
@@ -40,6 +41,7 @@ setup_sentry(sentry_sdk)
 paths = sys.path
 
 logger = logging.getLogger(__file__)
+logger.setLevel("NOTSET")
 
 
 def get_screen_resolution():
@@ -53,10 +55,12 @@ def get_screen_resolution():
         return 1280, 720
 
 
-def _adding_interfaces_thread(state, queue):
+def _adding_interfaces_thread(state, queue, logger):
     """It also starts the node"""
+    asyncio.set_event_loop(asyncio.new_event_loop())
     state.local_node = make_node(NodeInfo(name="com.zubax.sapog.tests.debugger"), reconfigurable_transport=True)
     state.local_node.start()
+    make_node_debugger(state, logger)
     state.pseudo_transport = state.local_node.presentation.transport
     while True:
         interface = queue.get()
@@ -80,7 +84,7 @@ async def run_gui_app():
                                              theme=get_main_theme(dpg))
     state = KucherXState()
     queue_add_interfaces: Queue = Queue()
-    threading.Thread(target=_adding_interfaces_thread, args=(state, queue_add_interfaces))
+    threading.Thread(target=_adding_interfaces_thread, args=(state, queue_add_interfaces, logger)).start()
     screen_resolution = get_screen_resolution()
     monitor_window_id = make_monitor_window(dpg, logger)
     dpg.set_primary_window(monitor_window_id, True)

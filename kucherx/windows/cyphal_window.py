@@ -9,7 +9,7 @@ from serial.tools import list_ports
 
 from domain.KucherXState import KucherXState
 from domain.WindowStyleState import WindowStyleState
-from make_node import make_node
+from make_node_debugger import make_node
 
 
 def get_root_directory():
