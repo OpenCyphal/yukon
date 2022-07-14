@@ -1,5 +1,5 @@
 import asyncio
-import datetime
+from datetime import datetime
 import json
 import logging
 import re
@@ -98,6 +98,7 @@ def make_capture_handler(tracer: Tracer, ids: typing.Dict[int, typing.Any], debu
                          log_to_logger=None,
                          log_to_file=True, log_to_print=True, ignore_traffic_by_debugger=True):
     logger.info("Capture handler was registered.")
+
     def capture_handler(capture: _tracer.Capture):
         logger.info("Something was received.")
         with open("rx_frm.txt", "a") as log_file:
@@ -146,7 +147,8 @@ def make_handler_for_getinfo_update():
 def make_node_debugger(state: KucherXState):
     logger.info("Debugger is being set up")
     state.tracer = state.local_node.presentation.transport.make_tracer()
-    state.local_node.presentation.transport.begin_capture(
+    current_transport = state.local_node.presentation.transport
+    current_transport.begin_capture(
         make_capture_handler(state.tracer, {}, log_to_file=False, log_to_print=True,
                              debugger_id_for_filtering=state.local_node.id, log_to_logger=logger))
     state.tracker = NodeTracker(state.local_node)

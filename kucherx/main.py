@@ -3,20 +3,21 @@ from queue import Queue, Empty
 from threading import Thread
 from typing import Union, Optional
 
+import can
 import dearpygui.dearpygui as dpg  # type: ignore
 import os
 import sys
 import asyncio
 
+import serial
 from pycyphal.application import make_node, NodeInfo
+from pycyphal.transport import InvalidMediaConfigurationError
 from pycyphal.transport.can import CANTransport
 from pycyphal.transport.can.media.pythoncan import PythonCANMedia
 
 from domain.Interface import Interface
-from domain.UID import UID
 from domain.ViewPortInfo import ViewPortInfo
 from domain.WindowStyleState import WindowStyleState
-from services.InterfaceService import interface_added
 from services.TerminateHandler import make_terminate_handler
 from services.folder_recognition.get_common_folders import *
 
@@ -27,6 +28,7 @@ import unittest
 from domain.KucherXState import KucherXState
 from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen, configure_font_and_scale
 from sentry_setup import setup_sentry
+from services.get_screen_resolution import get_screen_resolution
 from services.make_node_debugger import make_node_debugger
 from services.render_icons import prepare_rendered_icons
 from themes.main_window_theme import get_main_theme
@@ -45,35 +47,32 @@ logger = logging.getLogger(__file__)
 logger.setLevel("NOTSET")
 
 
-def get_screen_resolution():
-    """If the screen size is known then the close dialog can be centered via its position"""
-    if os.name == "nt":
-        import ctypes
-        user32 = ctypes.windll.user32
-        return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
-    else:
-        logger.warning("Screen resolution detection is not yet implemented for non-windows platforms.")
-        return 1280, 720
-
-
-def _adding_interfaces_thread(state, queue):
+def _adding_interfaces_thread(state: KucherXState, queue: Queue):
     """It also starts the node"""
-    asyncio.set_event_loop(asyncio.new_event_loop())
-    state.local_node = make_node(NodeInfo(name="com.zubax.sapog.tests.debugger"), reconfigurable_transport=True)
-    state.local_node.start()
-    make_node_debugger(state)
-    state.pseudo_transport = state.local_node.presentation.transport
-    while state.gui_running:
-        try:
-            interface = queue.get(timeout=0.05)
-            new_media = PythonCANMedia(interface.iface, (interface.rate_arb, interface.rate_data), interface.mtu)
-            new_transport = CANTransport(media=new_media, local_node_id=state.local_node.id)
-            state.pseudo_transport.attach_inferior(new_transport)
-        except Empty:
-            pass
+    async def _internal_method():
+        state.local_node = make_node(NodeInfo(name="com.zubax.sapog.tests.debugger"), reconfigurable_transport=True)
+        state.local_node.start()
+        state.pseudo_transport = state.local_node.presentation.transport
+        make_node_debugger(state)
+        while state.gui_running:
+            try:
+                await asyncio.sleep(0.05)
+                interface = queue.get_nowait()
+                new_media = PythonCANMedia(interface.iface, (interface.rate_arb, interface.rate_data), interface.mtu)
+                new_transport = CANTransport(media=new_media, local_node_id=state.local_node.id)
+                state.pseudo_transport.attach_inferior(new_transport)
+                print("Added a new interface")
+            except Empty as e:
+                pass
+            except (PermissionError, can.exceptions.CanInitializationError, InvalidMediaConfigurationError,
+                    can.exceptions.CanOperationError, serial.serialutil.SerialException) as pe:
+                logger.error(pe)
+
+    result = _internal_method()
+    asyncio.run(result)
 
 
-async def run_gui_app():
+def run_gui_app():
     make_process_dpi_aware(logger)
     prepare_rendered_icons(logger)
     dpg.create_context()
@@ -89,15 +88,15 @@ async def run_gui_app():
                                              theme=get_main_theme(dpg))
     state = KucherXState()
 
-    def exit_handler(arg1, arg2):
+    def exit_handler(_arg1, _arg2):
         state.gui_running = False
 
     make_terminate_handler(exit_handler)
 
-    queue_add_interfaces: Queue = Queue()
+    queue_add_interfaces = Queue()
     node_thread = threading.Thread(target=_adding_interfaces_thread, args=(state, queue_add_interfaces))
     node_thread.start()
-    logging.getLogger('pycyphal').setLevel(logging.CRITICAL)
+    logging.getLogger('pycyphal').setLevel(logging.DEBUG)
     logging.getLogger('asyncio').setLevel(logging.CRITICAL)
     screen_resolution = get_screen_resolution()
     monitor_window_id = make_monitor_window(dpg, logger)
@@ -167,7 +166,7 @@ async def main():
     if get_stop_after_value():
         auto_exit_thread = threading.Thread(target=auto_exit_task)
         auto_exit_thread.start()
-    await run_gui_app()
+    run_gui_app()
     if get_stop_after_value():
         auto_exit_thread.join()
     return 0
