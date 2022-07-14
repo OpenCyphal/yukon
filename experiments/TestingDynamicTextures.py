@@ -30,6 +30,7 @@ plt.rcParams["backend"] = "TkAgg"
 figure = plt.figure(figsize=(image_size * px, image_size * px))
 canvas = FigureCanvas(figure)
 nx.draw(G, pos=pos, with_labels=True, node_shape="p", node_size=2600)
+# https://stackoverflow.com/questions/47094949/labeling-edges-in-networkx
 edge_labels = dict([((n1, n2), f'{n1}->{n2}')
                     for n1, n2 in G.edges])
 nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)

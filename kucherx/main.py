@@ -1,7 +1,7 @@
 import threading
 from queue import Queue, Empty
 from threading import Thread
-from typing import Union, Optional
+from typing import Union, Optional, Any
 
 import can
 import dearpygui.dearpygui as dpg  # type: ignore
@@ -46,7 +46,7 @@ logger = logging.getLogger(__file__)
 logger.setLevel("NOTSET")
 
 
-def _adding_interfaces_thread(state: KucherXState, queue: Queue):
+def _cyphal_worker_thread(state: KucherXState, queue: Queue) -> None:
     """It also starts the node"""
     async def _internal_method():
         state.local_node = make_node(NodeInfo(name="com.zubax.sapog.tests.debugger"), reconfigurable_transport=True)
@@ -71,7 +71,7 @@ def _adding_interfaces_thread(state: KucherXState, queue: Queue):
     asyncio.run(result)
 
 
-def run_gui_app():
+def run_gui_app() -> None:
     make_process_dpi_aware(logger)
     dpg.create_context()
 
@@ -86,14 +86,14 @@ def run_gui_app():
                                              theme=get_main_theme(dpg))
     state = KucherXState()
 
-    def exit_handler(_arg1, _arg2):
+    def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui_running = False
 
     make_terminate_handler(exit_handler)
 
-    queue_add_interfaces = Queue()
-    node_thread = threading.Thread(target=_adding_interfaces_thread, args=(state, queue_add_interfaces))
-    node_thread.start()
+    queue_add_interfaces: Queue = Queue()
+    cyphal_worker_thread = threading.Thread(target=_cyphal_worker_thread, args=(state, queue_add_interfaces))
+    cyphal_worker_thread.start()
     logging.getLogger('pycyphal').setLevel(logging.CRITICAL)
     logging.getLogger('can').setLevel(logging.ERROR)
     logging.getLogger('asyncio').setLevel(logging.CRITICAL)
@@ -101,10 +101,10 @@ def run_gui_app():
     monitor_window_id = make_monitor_window(dpg, logger)
     dpg.set_primary_window(monitor_window_id, True)
 
-    def add_interface(interface: Interface):
+    def add_interface(interface: Interface) -> None:
         queue_add_interfaces.put(interface)
 
-    def open_interface_menu():
+    def open_interface_menu() -> None:
         make_add_interface_window(dpg, state, logger, wss, interface_added_callback=add_interface)
 
     make_main_menubar(dpg, wss.font, new_interface_callback=open_interface_menu)
@@ -112,10 +112,10 @@ def run_gui_app():
     dpg.show_viewport()
     dpg.maximize_viewport()
 
-    def dont_save_callback():
+    def dont_save_callback() -> None:
         logger.info("I was asked not to save")
 
-    def save_callback():
+    def save_callback() -> None:
         # save_cyphal_local_node_settings(state.settings)
         logger.info("I was asked to save")
 
@@ -139,15 +139,15 @@ def run_gui_app():
         dpg.destroy_context()
     state.gui_running = False
     logger.info("Gui was set to not running")
-    node_thread.join()
+    cyphal_worker_thread.join()
     print("Node thread joined")
 
 
-def get_stop_after_value():
+def get_stop_after_value() -> str:
     return os.environ.get("STOP_AFTER")
 
 
-def auto_exit_task():
+def auto_exit_task() -> int:
     if get_stop_after_value():
         stop_after_value = int(get_stop_after_value())
         if stop_after_value:
