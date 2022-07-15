@@ -33,9 +33,9 @@ def format_payload_hex_view(fragmented_payload: typing.Sequence[memoryview]) -> 
     for memory_view in fragmented_payload:
         my_list = memory_view.tolist()
         for byte in bytes(my_list):
-            payload += '{:02X} '.format(byte)
+            payload += "{:02X} ".format(byte)
         else:
-            payload = payload[:len(payload) - 1]
+            payload = payload[: len(payload) - 1]
         count += 1
         if count >= 4:
             payload += "\n"
@@ -43,7 +43,7 @@ def format_payload_hex_view(fragmented_payload: typing.Sequence[memoryview]) -> 
         else:
             payload += " | "
     else:
-        payload = payload[:len(payload) - len(" |")]
+        payload = payload[: len(payload) - len(" |")]
     return payload
 
 
@@ -54,9 +54,11 @@ def format_payload_hex_view_trace(trace: Trace):
 def deserialize_trace(trace: Trace, ids: typing.Dict[int, typing.Any], subject_id: int, debugger_id: int):
     transfer_type = "service" if "service" in str(trace.transfer).lower() else "message"
     if ids.get(subject_id) is None:
-        return f"{transfer_type} CONFIGURED {subject_id}, from {trace.transfer.metadata.session_specifier.source_node_id} " \
-               f"to {trace.transfer.metadata.session_specifier.destination_node_id}" \
-               f"\n{str(trace.transfer)}"
+        return (
+            f"{transfer_type} CONFIGURED {subject_id}, from {trace.transfer.metadata.session_specifier.source_node_id} "
+            f"to {trace.transfer.metadata.session_specifier.destination_node_id}"
+            f"\n{str(trace.transfer)}"
+        )
     try:
         obj = pycyphal.dsdl.deserialize(ids[subject_id], trace.transfer.fragmented_payload)
         built_in_representation = pycyphal.dsdl.to_builtin(obj)
@@ -69,21 +71,26 @@ def deserialize_trace(trace: Trace, ids: typing.Dict[int, typing.Any], subject_i
 
     transfer_deserialized = str(trace.transfer)
     if trace.transfer.metadata.session_specifier.source_node_id == debugger_id:
-        transfer_deserialized = transfer_deserialized.replace(f"source_node_id={debugger_id}",
-                                                              f"source_node_id={debugger_id} (this)")
+        transfer_deserialized = transfer_deserialized.replace(
+            f"source_node_id={debugger_id}", f"source_node_id={debugger_id} (this)"
+        )
     if trace.transfer.metadata.session_specifier.destination_node_id == debugger_id:
-        transfer_deserialized = transfer_deserialized.replace(f"destination_node_id={debugger_id}",
-                                                              f"destination_node_id={debugger_id} (this)")
+        transfer_deserialized = transfer_deserialized.replace(
+            f"destination_node_id={debugger_id}", f"destination_node_id={debugger_id} (this)"
+        )
     transfer_deserialized = transfer_deserialized.replace(
-        "AlienTransfer(AlienTransferMetadata(AlienSessionSpecifier(",
-        "transfer(")
+        "AlienTransfer(AlienTransferMetadata(AlienSessionSpecifier(", "transfer("
+    )
     for key, value in ids.items():
-        transfer_deserialized = transfer_deserialized.replace("subject_id=" + str(key),
-                                                              "subject_id=" + value.__name__ + f"({str(key)})")
-        transfer_deserialized = transfer_deserialized.replace("service_id=" + str(key),
-                                                              "service_id=" + value.__name__ + f"({str(key)})")
-    transfer_deserialized = re.sub(r"fragmented_payload=\[[^\[\]]+?\]", json.dumps(built_in_representation),
-                                   transfer_deserialized)
+        transfer_deserialized = transfer_deserialized.replace(
+            "subject_id=" + str(key), "subject_id=" + value.__name__ + f"({str(key)})"
+        )
+        transfer_deserialized = transfer_deserialized.replace(
+            "service_id=" + str(key), "service_id=" + value.__name__ + f"({str(key)})"
+        )
+    transfer_deserialized = re.sub(
+        r"fragmented_payload=\[[^\[\]]+?\]", json.dumps(built_in_representation), transfer_deserialized
+    )
     transfer_deserialized = transfer_deserialized.replace("transfer(ServiceDataSpecifier(", "")
     transfer_deserialized = transfer_deserialized.replace("source_node_id", "src_id")
     transfer_deserialized = transfer_deserialized.replace("destination_node_id", "dest_id")
@@ -97,9 +104,15 @@ def deserialize_trace(trace: Trace, ids: typing.Dict[int, typing.Any], subject_i
     return transfer_deserialized
 
 
-def make_capture_handler(tracer: Tracer, ids: typing.Dict[int, typing.Any], debugger_id_for_filtering: int,
-                         log_to_logger=None,
-                         log_to_file=True, log_to_print=True, ignore_traffic_by_debugger=True):
+def make_capture_handler(
+    tracer: Tracer,
+    ids: typing.Dict[int, typing.Any],
+    debugger_id_for_filtering: int,
+    log_to_logger=None,
+    log_to_file=True,
+    log_to_print=True,
+    ignore_traffic_by_debugger=True,
+):
     def capture_handler(capture: _tracer.Capture):
         with open("rx_frm.txt", "a") as log_file:
             # Checking to see if a transfer has finished, then assigning the value to transfer_trace
@@ -108,9 +121,11 @@ def make_capture_handler(tracer: Tracer, ids: typing.Dict[int, typing.Any], debu
                     print(transfer_trace)
                 elif isinstance(transfer_trace, TransferTrace):
                     is_service_request: bool = hasattr(
-                        transfer_trace.transfer.metadata.session_specifier.data_specifier,
-                        "service_id")
-                    is_sending_node_debugger = transfer_trace.transfer.metadata.session_specifier.source_node_id == debugger_id_for_filtering
+                        transfer_trace.transfer.metadata.session_specifier.data_specifier, "service_id"
+                    )
+                    is_sending_node_debugger = (
+                        transfer_trace.transfer.metadata.session_specifier.source_node_id == debugger_id_for_filtering
+                    )
                     if ignore_traffic_by_debugger and is_sending_node_debugger and not is_service_request:
                         return
                     if is_service_request:
@@ -132,8 +147,9 @@ def make_capture_handler(tracer: Tracer, ids: typing.Dict[int, typing.Any], debu
 
 
 def make_handler_for_node_detected(state, iface, avatars_list):
-    def handle_getinfo_handler_format(node_id: int, previous_entry: typing.Optional[Entry],
-                                      next_entry: typing.Optional[Entry]):
+    def handle_getinfo_handler_format(
+        node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
+    ):
         if previous_entry is None:
             logger.info(f"Node with id {node_id} became visible.")
             avatars_list[node_id] = Avatar(iface, node_id=node_id)
@@ -147,11 +163,16 @@ def make_node_debugger(state: KucherXState):
     state.tracer = state.local_node.presentation.transport.make_tracer()
     current_transport = state.local_node.presentation.transport
     current_transport.begin_capture(
-        make_capture_handler(state.tracer, {}, log_to_file=False, log_to_print=True,
-                             debugger_id_for_filtering=state.local_node.id, log_to_logger=logger))
+        make_capture_handler(
+            state.tracer,
+            {},
+            log_to_file=False,
+            log_to_print=True,
+            debugger_id_for_filtering=state.local_node.id,
+            log_to_logger=logger,
+        )
+    )
     state.tracker = NodeTracker(state.local_node)
     iface = Iface(state.local_node)
 
     state.tracker.add_update_handler(make_handler_for_node_detected(state, iface, avatars_list))
-
-

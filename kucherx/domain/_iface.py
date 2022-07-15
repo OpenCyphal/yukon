@@ -52,10 +52,10 @@ class Iface:
             self._subscriptions.append(dtype)
 
     def try_request(
-            self,
-            dtype: Type[Any],
-            server_node_id: int,
-            request: Any,
+        self,
+        dtype: Type[Any],
+        server_node_id: int,
+        request: Any,
     ) -> None:
         """
         The expectation is that the response will be read via the packet capture interface.

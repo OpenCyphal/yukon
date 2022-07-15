@@ -1,4 +1,5 @@
 import threading
+import typing
 from dataclasses import dataclass, field
 from queue import Queue
 from typing import Optional, Any, Callable, Dict
@@ -20,6 +21,7 @@ from domain.NodeState import NodeState
 class KucherXState:
     def __init__(self):
         pass
+
     interfaces: list[Interface]
     event_loop: Any
     add_transport: Callable[[Interface], None]
@@ -27,6 +29,7 @@ class KucherXState:
     update_monitor_image_queue: Queue[GraphImage]
     update_graph_from_avatar_queue: Queue[Avatar]
     update_image_from_graph: Queue[DiGraph]
+    current_requested_image_size: typing.Tuple[int, int] = field(default_factory=lambda: (600, 600))
     avatars: Dict[int, Avatar] = field(default_factory=dict)
     avatars_lock: threading.RLock = field(default_factory=threading.RLock)
     current_graph_lock: threading.RLock = field(default_factory=threading.RLock)

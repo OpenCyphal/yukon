@@ -1,5 +1,6 @@
 def make_process_dpi_aware(logger):
     import ctypes
+
     try:
         result = ctypes.windll.shcore.SetProcessDpiAwareness(2)  # if your windows version >= 8.1
     except:
@@ -13,16 +14,19 @@ def make_process_dpi_aware(logger):
         case 1:
             logger.warning("The value passed in for DPI awareness is not valid.")
         case 2:
-            logger.warning("E_ACCESSDENIED. The DPI awareness is already set, either by calling this API previously"
-                           " or through the application (.exe) manifest. ")
+            logger.warning(
+                "E_ACCESSDENIED. The DPI awareness is already set, either by calling this API previously"
+                " or through the application (.exe) manifest. "
+            )
 
 
 def is_high_dpi_screen(logger):
     make_process_dpi_aware(logger)
     try:
         import tkinter
+
         root = tkinter.Tk()
-        dpi = root.winfo_fpixels('1i')
+        dpi = root.winfo_fpixels("1i")
         logger.warning("DPI is " + str(dpi) + " on screen " + root.winfo_screen())
         return dpi > 100
     except ImportError as e:
@@ -40,6 +44,5 @@ def configure_font_and_scale(dpg, logger, resources):
     # add a font registry
     with dpg.font_registry():
         # first argument ids the path to the .ttf or .otf file
-        default_font = dpg.add_font(file=resources / "Roboto/Roboto-Regular.ttf",
-                                    size=desired_font_size)
+        default_font = dpg.add_font(file=resources / "Roboto/Roboto-Regular.ttf", size=desired_font_size)
     return default_font

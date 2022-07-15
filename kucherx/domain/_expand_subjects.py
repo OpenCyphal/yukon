@@ -10,7 +10,7 @@ from pycyphal.transport import MessageDataSpecifier, ServiceDataSpecifier
 import uavcan
 
 
-def expand_subjects(m: Any) -> AbstractSet[int]: # Any here is uavcan.node.port.SubjectIDList_0_1
+def expand_subjects(m: Any) -> AbstractSet[int]:  # Any here is uavcan.node.port.SubjectIDList_0_1
     if m.sparse_list is not None:
         return frozenset(int(x.value) for x in m.sparse_list)
     if m.mask:

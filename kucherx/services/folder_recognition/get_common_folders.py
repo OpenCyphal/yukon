@@ -4,6 +4,7 @@ import time
 
 def get_root_directory():
     from os.path import exists
+
     current = pathlib.Path(__file__).parent
     time_started = time.time()
     while time_started - time.time() < 0.1:

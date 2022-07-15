@@ -18,13 +18,11 @@ from pycyphal.transport.can import CANTransport
 
 
 def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyleState, interface_added_callback):
-    with dpg.window(label="Configure interface", width=560, height=500, no_close=True) \
-            as new_interface_window_id:
+    with dpg.window(label="Configure interface", width=560, height=500, no_close=True) as new_interface_window_id:
         interface: Interface = Interface()
         input_field_width = 490
         dpg.add_text("Maximum transmission unit (MTU)")
-        tfMTU = dpg.add_input_text(default_value="8",
-                                   width=input_field_width)
+        tfMTU = dpg.add_input_text(default_value="8", width=input_field_width)
 
         def combobox_callback(sender, app_data):
             # state.settings.UAVCAN__CAN__IFACE = "slcan:" + str(app_data).split()[0]
@@ -32,8 +30,9 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
             interface.iface = "slcan:" + str(app_data).split()[0]
 
         dpg.add_text("Interface")
-        combobox = dpg.add_combo(default_value="Select an interface",
-                                 width=input_field_width, callback=combobox_callback)
+        combobox = dpg.add_combo(
+            default_value="Select an interface", width=input_field_width, callback=combobox_callback
+        )
 
         def clear_combobox():
             dpg.configure_item(combobox, items=[])
@@ -46,11 +45,9 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
             dpg.add_button(label="Refresh", callback=update_combobox)
             dpg.add_button(label="Clear", callback=clear_combobox)
         dpg.add_text("Arbitration bitrate")
-        tfArbRate = dpg.add_input_text(default_value="1000000",
-                                       width=input_field_width)
+        tfArbRate = dpg.add_input_text(default_value="1000000", width=input_field_width)
         dpg.add_text("Data bitrate")
-        tfDatarate = dpg.add_input_text(default_value="1000000",
-                                        width=input_field_width)
+        tfDatarate = dpg.add_input_text(default_value="1000000", width=input_field_width)
 
         def finalize():
             interface.mtu = int(dpg.get_value(tfMTU))

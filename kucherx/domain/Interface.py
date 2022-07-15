@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class Interface:
     def __init__(self):
         pass
+
     iface: str
     mtu: int
     rate_data: int

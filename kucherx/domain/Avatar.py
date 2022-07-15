@@ -16,10 +16,10 @@ logger = logging.getLogger()
 
 class Avatar:  # pylint: disable=too-many-instance-attributes
     def __init__(
-            self,
-            iface: Iface,
-            node_id: Optional[int],
-            info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
+        self,
+        iface: Iface,
+        node_id: Optional[int],
+        info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
     ) -> None:
         import uavcan.node
         import uavcan.node.port
@@ -86,7 +86,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
         # Invalidate the node info if the uptime goes backwards or if we received a heartbeat after a long pause.
         restart = self._heartbeat and (
-                (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
+            (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
         )
         if restart:
             logger.info("%r: Restart detected: %r", self, obj)
