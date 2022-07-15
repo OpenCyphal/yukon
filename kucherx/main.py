@@ -30,7 +30,6 @@ from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen, configu
 from sentry_setup import setup_sentry
 from services.get_screen_resolution import get_screen_resolution
 from services.make_node_debugger import make_node_debugger
-from services.render_icons import prepare_rendered_icons
 from themes.main_window_theme import get_main_theme
 from windows.add_interface_window import make_add_interface_window
 from windows.close_popup_viewport import display_close_popup_viewport
@@ -74,7 +73,6 @@ def _adding_interfaces_thread(state: KucherXState, queue: Queue):
 
 def run_gui_app():
     make_process_dpi_aware(logger)
-    prepare_rendered_icons(logger)
     dpg.create_context()
 
     vpi: ViewPortInfo = ViewPortInfo(title='KucherX', width=920, height=870,
@@ -96,7 +94,8 @@ def run_gui_app():
     queue_add_interfaces = Queue()
     node_thread = threading.Thread(target=_adding_interfaces_thread, args=(state, queue_add_interfaces))
     node_thread.start()
-    logging.getLogger('pycyphal').setLevel(logging.DEBUG)
+    logging.getLogger('pycyphal').setLevel(logging.CRITICAL)
+    logging.getLogger('can').setLevel(logging.ERROR)
     logging.getLogger('asyncio').setLevel(logging.CRITICAL)
     screen_resolution = get_screen_resolution()
     monitor_window_id = make_monitor_window(dpg, logger)

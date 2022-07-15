@@ -1,19 +1,25 @@
+import logging
 import math
 from typing import Optional, Any, Callable
 
-from pycyphal.transport import ServiceDataSpecifier
+import pycyphal
+from pycyphal.transport import ServiceDataSpecifier, Timestamp, AlienTransfer, MessageDataSpecifier
 
+from domain.NodeState import NodeState
 from domain.PortSet import PortSet
-from domain._iface import Iface, _logger
+from domain._expand_subjects import expand_subjects, expand_mask
+from domain._iface import Iface
 import uavcan
+
+logger = logging.getLogger()
 
 
 class Avatar:  # pylint: disable=too-many-instance-attributes
     def __init__(
-        self,
-        iface: Iface,
-        node_id: Optional[int],
-        info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
+            self,
+            iface: Iface,
+            node_id: Optional[int],
+            info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
     ) -> None:
         import uavcan.node
         import uavcan.node.port
@@ -50,7 +56,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     def _on_info_response(self, ts: float, obj: Any) -> None:
         import uavcan.node
 
-        _logger.info("%r: Received node info", self)
+        logger.info("%r: Received node info", self)
         assert isinstance(obj, uavcan.node.GetInfo_1_0.Response)
         _ = ts
         self._info = obj
@@ -80,16 +86,16 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
         # Invalidate the node info if the uptime goes backwards or if we received a heartbeat after a long pause.
         restart = self._heartbeat and (
-            (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
+                (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
         )
         if restart:
-            _logger.info("%r: Restart detected: %r", self, obj)
+            logger.info("%r: Restart detected: %r", self, obj)
             self._restart()
 
         if not self._info and self._node_id is not None:
             timeout = 2 ** (self._num_info_requests + 2)
             if ts - self._ts_info_request >= timeout:
-                _logger.debug("%r: Would request info; timeout=%.1f", self, timeout)
+                logger.debug("%r: Would request info; timeout=%.1f", self, timeout)
                 self._num_info_requests += 1
                 self._ts_info_request = ts
                 self._iface.try_request(GetInfo, self._node_id, GetInfo.Request())
@@ -114,13 +120,13 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                 if isinstance(ds, ServiceDataSpecifier) and ds.role == role and ds.service_id == get_fixed_port_id(ty):
                     rr = getattr(ty, role.name.capitalize())
                     obj = pycyphal.dsdl.deserialize(rr, tr.fragmented_payload)
-                    _logger.debug("%r: Service snoop: %r from %r", self, obj, tr)
+                    logger.debug("%r: Service snoop: %r from %r", self, obj, tr)
                     if obj is not None:
                         handler(float(ts.monotonic), obj)
             elif isinstance(ty, type) and (fpid := get_fixed_port_id(ty)) is not None:
                 if isinstance(ds, MessageDataSpecifier) and ds.subject_id == fpid:
                     obj = pycyphal.dsdl.deserialize(ty, tr.fragmented_payload)
-                    _logger.debug("%r: Message snoop: %r from %r", self, obj, tr)
+                    logger.debug("%r: Message snoop: %r from %r", self, obj, tr)
                     if obj is not None:
                         handler(float(ts.monotonic), obj)
             else:
@@ -131,7 +137,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         from uavcan.node.port import List_0_1 as PortList
 
         if self._heartbeat and self._ts_activity - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT:
-            _logger.info("%r: Much more recent activity than the last heartbeat, we've gone zombie", self)
+            logger.info("%r: Much more recent activity than the last heartbeat, we've gone zombie", self)
             self._heartbeat = None
 
         online = (ts - max(self._ts_heartbeat, self._ts_activity)) <= Heartbeat.OFFLINE_TIMEOUT

@@ -4,14 +4,16 @@
 
 from __future__ import annotations
 import asyncio
+import logging
 from typing import TYPE_CHECKING, Callable, Any, Type
 import threading
 import pycyphal
 from pycyphal.transport import Timestamp, AlienTransfer
-import yakut
 
 if TYPE_CHECKING:
     import pycyphal.application  # pylint: disable=ungrouped-imports
+
+logger = logging.getLogger()
 
 
 class Iface:
@@ -28,7 +30,7 @@ class Iface:
         self._transport_error_handlers: list[Callable[[pycyphal.transport.ErrorTrace], None]] = []
         self._tracer = node.presentation.transport.make_tracer()
 
-        _logger.info("Starting packet capture on %r", self._node)
+        logger.info("Starting packet capture on %r", self._node)
         node.presentation.transport.begin_capture(self._process_capture)
 
     def add_trace_handler(self, cb: Callable[[Timestamp, AlienTransfer], None]) -> None:
@@ -45,15 +47,15 @@ class Iface:
         because we need to let the underlying layers publish the relevant IGMP states.
         """
         if dtype not in self._subscriptions:  # This is just to avoid excessive subscriptions.
-            _logger.info("Subscribing to the fixed subject-ID of %r", dtype.__name__)
+            logger.info("Subscribing to the fixed subject-ID of %r", dtype.__name__)
             self._node.make_subscriber(dtype).receive_in_background(self._dummy_subscription_handler)
             self._subscriptions.append(dtype)
 
     def try_request(
-        self,
-        dtype: Type[Any],
-        server_node_id: int,
-        request: Any,
+            self,
+            dtype: Type[Any],
+            server_node_id: int,
+            request: Any,
     ) -> None:
         """
         The expectation is that the response will be read via the packet capture interface.
@@ -62,7 +64,7 @@ class Iface:
         """
         if self._node.id is None or self._node.id == server_node_id:
             return
-        _logger.info("Requesting fixed service-ID of %r at %r", dtype.__name__, server_node_id)
+        logger.info("Requesting fixed service-ID of %r at %r", dtype.__name__, server_node_id)
         try:
             client = self._clients[dtype, server_node_id]
         except LookupError:
@@ -92,6 +94,3 @@ class Iface:
     @staticmethod
     async def _dummy_subscription_handler(*_: Any) -> None:
         pass
-
-
-_logger = yakut.get_logger(__name__)

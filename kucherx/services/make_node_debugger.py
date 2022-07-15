@@ -15,10 +15,13 @@ from pycyphal.transport.can import CANErrorTrace, CANTransport
 from pycyphal.transport.redundant import RedundantTransport
 from pycyphal.util import iter_descendants
 
+from domain.Avatar import Avatar
 from domain.KucherXState import KucherXState
 
 from pycyphal.application import make_node
 from pycyphal.application import NodeInfo
+
+from domain._iface import Iface
 
 logger = logging.getLogger("can_debugger")
 logger.setLevel("NOTSET")
@@ -97,10 +100,7 @@ def deserialize_trace(trace: Trace, ids: typing.Dict[int, typing.Any], subject_i
 def make_capture_handler(tracer: Tracer, ids: typing.Dict[int, typing.Any], debugger_id_for_filtering: int,
                          log_to_logger=None,
                          log_to_file=True, log_to_print=True, ignore_traffic_by_debugger=True):
-    logger.info("Capture handler was registered.")
-
     def capture_handler(capture: _tracer.Capture):
-        logger.info("Something was received.")
         with open("rx_frm.txt", "a") as log_file:
             # Checking to see if a transfer has finished, then assigning the value to transfer_trace
             if (transfer_trace := tracer.update(capture)) is not None:
@@ -131,7 +131,7 @@ def make_capture_handler(tracer: Tracer, ids: typing.Dict[int, typing.Any], debu
     return capture_handler
 
 
-def make_handler_for_getinfo_update():
+def make_handler_for_getinfo_update(iface):
     def handle_getinfo_handler_format(node_id: int, previous_entry: typing.Optional[Entry],
                                       next_entry: typing.Optional[Entry]):
         async def handle_inner_function():
@@ -152,4 +152,8 @@ def make_node_debugger(state: KucherXState):
         make_capture_handler(state.tracer, {}, log_to_file=False, log_to_print=True,
                              debugger_id_for_filtering=state.local_node.id, log_to_logger=logger))
     state.tracker = NodeTracker(state.local_node)
-    state.tracker.add_update_handler(make_handler_for_getinfo_update())
+    iface = Iface(state.local_node)
+    avatars_list = {}
+    state.tracker.add_update_handler(make_handler_for_getinfo_update(iface))
+
+
