@@ -26,6 +26,7 @@ G.add_edge(125, 7519)
 pos = nx.spring_layout(G)
 
 px = 1 / plt.rcParams['figure.dpi']  # pixel in inches
+plt.rcParams["backend"] = "TkAgg"
 figure = plt.figure(figsize=(image_size * px, image_size * px))
 canvas = FigureCanvas(figure)
 nx.draw(G, pos=pos, with_labels=True, node_shape="p", node_size=2600)

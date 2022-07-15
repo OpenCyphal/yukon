@@ -1,6 +1,6 @@
 pycyphal[transport-can-pythoncan,transport-serial,transport-udp]
 sentry-sdk==1.6.*
-dearpygui
+dearpygui==1.6.2
 pytest
 pyserial
 setuptools
