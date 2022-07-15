@@ -1,6 +1,6 @@
 from logging import Logger
 
-from dearpygui import dearpygui
+import dearpygui.dearpygui
 
 from domain.UID import UID
 from themes.main_window_theme import get_main_theme

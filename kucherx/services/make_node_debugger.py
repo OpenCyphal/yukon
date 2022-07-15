@@ -131,15 +131,13 @@ def make_capture_handler(tracer: Tracer, ids: typing.Dict[int, typing.Any], debu
     return capture_handler
 
 
-def make_handler_for_getinfo_update(iface):
+def make_handler_for_node_detected(state, iface, avatars_list):
     def handle_getinfo_handler_format(node_id: int, previous_entry: typing.Optional[Entry],
                                       next_entry: typing.Optional[Entry]):
-        async def handle_inner_function():
-            if node_id and next_entry and next_entry.info is not None:
-                # print("Debugger sees an allocation request")
-                await asyncio.sleep(2)
-
-        asyncio.get_event_loop().create_task(handle_inner_function())
+        if previous_entry is None:
+            logger.info(f"Node with id {node_id} became visible.")
+            avatars_list[node_id] = Avatar(iface, node_id=node_id)
+            state.update_graph_from_avatar_queue.put(avatars_list[node_id])
 
     return handle_getinfo_handler_format
 
@@ -153,7 +151,7 @@ def make_node_debugger(state: KucherXState):
                              debugger_id_for_filtering=state.local_node.id, log_to_logger=logger))
     state.tracker = NodeTracker(state.local_node)
     iface = Iface(state.local_node)
-    avatars_list = {}
-    state.tracker.add_update_handler(make_handler_for_getinfo_update(iface))
+
+    state.tracker.add_update_handler(make_handler_for_node_detected(state, iface, avatars_list))
 
 

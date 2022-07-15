@@ -1,7 +1,8 @@
+import copy
 import threading
 from queue import Queue, Empty
 from threading import Thread
-from typing import Union, Optional, Any
+from typing import Union, Optional, Any, Dict
 
 import can
 import dearpygui.dearpygui as dpg  # type: ignore
@@ -10,20 +11,25 @@ import sys
 import asyncio
 
 import serial
+from networkx import DiGraph
 from pycyphal.application import make_node, NodeInfo
 from pycyphal.transport import InvalidMediaConfigurationError
 from pycyphal.transport.can import CANTransport
 from pycyphal.transport.can.media.pythoncan import PythonCANMedia
 
+from domain.Avatar import Avatar
 from domain.Interface import Interface
+from domain.NodeState import NodeState
 from domain.ViewPortInfo import ViewPortInfo
 from domain.WindowStyleState import WindowStyleState
 from services.TerminateHandler import make_terminate_handler
-from services.folder_recognition.get_common_folders import *
+from services.folder_recognition.get_common_folders import get_resources_directory, get_root_directory, \
+    get_sources_directory, get_kucherx_directory
 
 import logging
 import pytest
 import unittest
+from time import sleep
 
 from domain.KucherXState import KucherXState
 from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen, configure_font_and_scale
@@ -48,6 +54,7 @@ logger.setLevel("NOTSET")
 
 def _cyphal_worker_thread(state: KucherXState, queue: Queue) -> None:
     """It also starts the node"""
+
     async def _internal_method():
         state.local_node = make_node(NodeInfo(name="com.zubax.sapog.tests.debugger"), reconfigurable_transport=True)
         state.local_node.start()
@@ -61,14 +68,38 @@ def _cyphal_worker_thread(state: KucherXState, queue: Queue) -> None:
                 new_transport = CANTransport(media=new_media, local_node_id=state.local_node.id)
                 state.pseudo_transport.attach_inferior(new_transport)
                 print("Added a new interface")
-            except Empty as e:
+            except Empty:
                 pass
             except (PermissionError, can.exceptions.CanInitializationError, InvalidMediaConfigurationError,
-                    can.exceptions.CanOperationError, serial.serialutil.SerialException) as pe:
-                logger.error(pe)
+                    can.exceptions.CanOperationError, serial.serialutil.SerialException) as e:
+                logger.error(e)
 
-    result = _internal_method()
-    asyncio.run(result)
+    asyncio.run(_internal_method())
+
+
+def _graph_from_avatars_thread(state: KucherXState) -> None:
+    async def _internal_method():
+        while state.gui_running:
+            try:
+                await asyncio.sleep(0.05)
+                new_avatar = state.update_graph_from_avatar_queue.get_nowait()
+                state.avatars_lock.acquire()
+                avatars_copy: Dict[int, Avatar] = copy.deepcopy(state.avatars)
+                state.avatars_lock.release()
+                state.current_graph = DiGraph()
+                for node_id_publishing, avatar_publishing in avatars_copy.items():
+                    node_state: NodeState = avatar_publishing.update()
+                    for subject_id in node_state.ports.pub:
+                        state.current_graph.add_edge(node_id_publishing, subject_id)
+                        for node_id_subscribing, avatar2_subscribing in avatars_copy.items():
+                            subscribing_node_state = avatar2_subscribing.update()
+                            if subject_id in subscribing_node_state.ports.sub:
+                                state.current_graph.add_edge(subject_id, node_id_subscribing)
+                    state.current_graph.add_edge()
+            except Empty:
+                pass
+
+    asyncio.run(_internal_method())
 
 
 def run_gui_app() -> None:
@@ -94,6 +125,8 @@ def run_gui_app() -> None:
     queue_add_interfaces: Queue = Queue()
     cyphal_worker_thread = threading.Thread(target=_cyphal_worker_thread, args=(state, queue_add_interfaces))
     cyphal_worker_thread.start()
+    avatars_to_graph_thread = threading.Thread(target=_graph_from_avatars_thread, args=(state))
+    avatars_to_graph_thread.start()
     logging.getLogger('pycyphal').setLevel(logging.CRITICAL)
     logging.getLogger('can').setLevel(logging.ERROR)
     logging.getLogger('asyncio').setLevel(logging.CRITICAL)
@@ -143,25 +176,21 @@ def run_gui_app() -> None:
     print("Node thread joined")
 
 
-def get_stop_after_value() -> str:
+def get_stop_after_value() -> Optional[str]:
     return os.environ.get("STOP_AFTER")
 
 
 def auto_exit_task() -> int:
     if get_stop_after_value():
-        stop_after_value = int(get_stop_after_value())
+        stop_after_value = int(get_stop_after_value())  # type: ignore
         if stop_after_value:
-            time.sleep(stop_after_value)
+            sleep(stop_after_value)
             logging.info("Program should exit!")
             dpg.stop_dearpygui()
     return 0
 
 
-def scan_for_com_ports_task():
-    pass
-
-
-async def main():
+async def main() -> int:
     if get_stop_after_value():
         auto_exit_thread = threading.Thread(target=auto_exit_task)
         auto_exit_thread.start()
