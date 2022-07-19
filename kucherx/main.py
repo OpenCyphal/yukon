@@ -10,6 +10,7 @@ import os
 import sys
 import asyncio
 
+import networkx as nx
 import serial
 from networkx import DiGraph
 from pycyphal.application import make_node, NodeInfo
@@ -17,12 +18,12 @@ from pycyphal.transport import InvalidMediaConfigurationError
 from pycyphal.transport.can import CANTransport
 from pycyphal.transport.can.media.pythoncan import PythonCANMedia
 
-from domain.Avatar import Avatar
-from domain.Interface import Interface
-from domain.NodeState import NodeState
-from domain.ViewPortInfo import ViewPortInfo
-from domain.WindowStyleState import WindowStyleState
-from services.TerminateHandler import make_terminate_handler
+from domain.avatar import Avatar
+from domain.interface import Interface
+from domain.note_state import NodeState
+from domain.viewport_info import ViewPortInfo
+from domain.window_style_state import WindowStyleState
+from services.terminate_handler import make_terminate_handler
 from services.folder_recognition.get_common_folders import (
     get_resources_directory,
     get_root_directory,
@@ -33,9 +34,9 @@ from services.folder_recognition.get_common_folders import (
 import logging
 import pytest
 import unittest
-from time import sleep
+from time import sleep, time
 
-from domain.KucherXState import KucherXState
+from domain.kucherx_state import KucherXState
 from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen, configure_font_and_scale
 from sentry_setup import setup_sentry
 from services.get_screen_resolution import get_screen_resolution
@@ -50,6 +51,9 @@ import sentry_sdk
 from kucherx import nonce  # type: ignore
 from windows.monitor_window import make_monitor_window
 
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+
 setup_sentry(sentry_sdk)
 paths = sys.path
 
@@ -58,7 +62,7 @@ logger.setLevel("NOTSET")
 
 
 def _cyphal_worker_thread(state: KucherXState, queue: Queue) -> None:
-    """It also starts the node"""
+    """It starts the node and keeps adding any transports that are queued for adding"""
 
     async def _internal_method():
         state.local_node = make_node(NodeInfo(name="com.zubax.sapog.tests.debugger"), reconfigurable_transport=True)
@@ -88,36 +92,55 @@ def _cyphal_worker_thread(state: KucherXState, queue: Queue) -> None:
 
 
 def _graph_from_avatars_thread(state: KucherXState) -> None:
-    async def _internal_method():
-        while state.gui_running:
-            try:
-                await asyncio.sleep(0.05)
-                new_avatar = state.update_graph_from_avatar_queue.get_nowait()
-                state.avatars_lock.acquire()
-                avatars_copy: Dict[int, Avatar] = copy.deepcopy(state.avatars)
-                state.avatars_lock.release()
-                state.current_graph = DiGraph()
-                for node_id_publishing, avatar_publishing in avatars_copy.items():
-                    node_state: NodeState = avatar_publishing.update()
-                    for subject_id in node_state.ports.pub:
-                        state.current_graph.add_edge(node_id_publishing, subject_id)
-                        for node_id_subscribing, avatar2_subscribing in avatars_copy.items():
-                            subscribing_node_state = avatar2_subscribing.update()
-                            if subject_id in subscribing_node_state.ports.sub:
-                                state.current_graph.add_edge(subject_id, node_id_subscribing)
-                state.update_image_from_graph.put(copy.deepcopy(state.current_graph))
-            except Empty:
-                pass
+    while state.gui_running:
+        new_avatar = state.update_graph_from_avatar_queue.get()
+        state.avatars_lock.acquire()
+        avatars_copy: Dict[int, Avatar] = copy.copy(state.avatars)
+        state.avatars_lock.release()
+        state.current_graph = DiGraph()
+        for node_id_publishing, avatar_publishing in avatars_copy.items():
+            node_state: NodeState = avatar_publishing.update(time())
+            for subject_id in node_state.ports.pub:
+                state.current_graph.add_edge(node_id_publishing, subject_id)
+                for node_id_subscribing, avatar2_subscribing in avatars_copy.items():
+                    subscribing_node_state = avatar2_subscribing.update(time())
+                    if subject_id in subscribing_node_state.ports.sub:
+                        state.current_graph.add_edge(subject_id, node_id_subscribing)
+        state.update_image_from_graph.put(copy.copy(state.current_graph))
 
-    asyncio.run(_internal_method())
+
+def _get_current_monitor_image_size():
+    return 600
+
+
+def bti(byte):
+    """Byte to int"""
+    return byte / 255
 
 
 def _image_from_graph_thread(state: KucherXState) -> None:
-    async def _internal_method():
-        while state.gui_running:
-            new_graph = state.update_image_from_graph.get()
-
-    asyncio.run(_internal_method())
+    while state.gui_running:
+        G = state.update_image_from_graph.get()
+        image_size = _get_current_monitor_image_size()
+        px = 1 / plt.rcParams["figure.dpi"]  # pixel in inches
+        plt.rcParams["backend"] = "TkAgg"
+        figure = plt.figure(figsize=(image_size * px, image_size * px))
+        canvas = FigureCanvas(figure)
+        pos = nx.spring_layout(G)
+        nx.draw(G, pos=pos, with_labels=True, node_shape="p", node_size=2600)
+        # https://stackoverflow.com/questions/47094949/labeling-edges-in-networkx
+        edge_labels = dict([((n1, n2), f"{n1}->{n2}") for n1, n2 in G.edges])
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+        canvas.draw()
+        new_texture_data2 = canvas.tostring_rgb()
+        plt.show()
+        new_texture_data = []
+        for i in range(0, image_size * image_size * 3, 3):
+            new_texture_data.append(bti(new_texture_data2[i]))
+            new_texture_data.append(bti(new_texture_data2[i + 1]))
+            new_texture_data.append(bti(new_texture_data2[i + 2]))
+            new_texture_data.append(1)
+        dpg.set_value("monitor_graph_texture_tag", new_texture_data)
 
 
 def run_gui_app() -> None:
@@ -148,9 +171,9 @@ def run_gui_app() -> None:
     queue_add_interfaces: Queue = Queue()
     cyphal_worker_thread = threading.Thread(target=_cyphal_worker_thread, args=(state, queue_add_interfaces))
     cyphal_worker_thread.start()
-    avatars_to_graph_thread = threading.Thread(target=_graph_from_avatars_thread, args=(state))
+    avatars_to_graph_thread = threading.Thread(target=_graph_from_avatars_thread, args=[state])
     avatars_to_graph_thread.start()
-    graphs_to_images_thread = threading.Thread(target=_image_from_graph_thread, args=(state))
+    graphs_to_images_thread = threading.Thread(target=_image_from_graph_thread, args=[state])
     graphs_to_images_thread.start()
     logging.getLogger("pycyphal").setLevel(logging.CRITICAL)
     logging.getLogger("can").setLevel(logging.ERROR)
@@ -198,7 +221,7 @@ def run_gui_app() -> None:
         dpg.destroy_context()
     state.gui_running = False
     logger.info("Gui was set to not running")
-    cyphal_worker_thread.join()
+    # cyphal_worker_thread.join()
     print("Node thread joined")
 
 
@@ -217,12 +240,12 @@ def auto_exit_task() -> int:
 
 
 async def main() -> int:
-    if get_stop_after_value():
-        auto_exit_thread = threading.Thread(target=auto_exit_task)
-        auto_exit_thread.start()
+    # if get_stop_after_value():
+    #     auto_exit_thread = threading.Thread(target=auto_exit_task)
+    #     auto_exit_thread.start()
     run_gui_app()
-    if get_stop_after_value():
-        auto_exit_thread.join()
+    # if get_stop_after_value():
+    #     auto_exit_thread.join()
     return 0
 
 

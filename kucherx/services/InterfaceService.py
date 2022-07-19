@@ -1,7 +1,7 @@
 from pycyphal.application import Node
 from pycyphal.transport import Transport
 
-from domain.KucherXState import KucherXState
+from domain.kucherx_state import KucherXState
 from domain.UID import UID
 
 

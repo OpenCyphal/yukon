@@ -5,8 +5,8 @@ from typing import Optional, Any, Callable
 import pycyphal
 from pycyphal.transport import ServiceDataSpecifier, Timestamp, AlienTransfer, MessageDataSpecifier
 
-from domain.NodeState import NodeState
-from domain.PortSet import PortSet
+from domain.note_state import NodeState
+from domain.port_set import PortSet
 from domain._expand_subjects import expand_subjects, expand_mask
 from domain._iface import Iface
 import uavcan
@@ -141,7 +141,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             self._heartbeat = None
 
         online = (ts - max(self._ts_heartbeat, self._ts_activity)) <= Heartbeat.OFFLINE_TIMEOUT
-        port_introspection_valid = (ts - self._ts_port_list) <= PortList.MAX_PUBLICATION_PERIOD * 2
+        port_introspection_valid = True  # (ts - self._ts_port_list) <= PortList.MAX_PUBLICATION_PERIOD * 2
 
         return NodeState(
             online=online,

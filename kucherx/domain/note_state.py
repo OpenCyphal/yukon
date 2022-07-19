@@ -5,7 +5,7 @@ import dataclasses
 from typing import Optional
 
 import uavcan
-from domain.PortSet import PortSet
+from domain.port_set import PortSet
 
 
 @dataclasses.dataclass(frozen=True)

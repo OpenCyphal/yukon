@@ -7,8 +7,8 @@ from dataclasses import dataclass
 import json
 from serial.tools import list_ports
 
-from domain.KucherXState import KucherXState
-from domain.WindowStyleState import WindowStyleState
+from domain.kucherx_state import KucherXState
+from domain.window_style_state import WindowStyleState
 from make_node_debugger import make_node
 
 

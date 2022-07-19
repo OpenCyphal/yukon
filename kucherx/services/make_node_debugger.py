@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, time
 import json
 import logging
 import re
@@ -15,8 +15,8 @@ from pycyphal.transport.can import CANErrorTrace, CANTransport
 from pycyphal.transport.redundant import RedundantTransport
 from pycyphal.util import iter_descendants
 
-from domain.Avatar import Avatar
-from domain.KucherXState import KucherXState
+from domain.avatar import Avatar
+from domain.kucherx_state import KucherXState
 
 from pycyphal.application import make_node
 from pycyphal.application import NodeInfo
@@ -114,34 +114,33 @@ def make_capture_handler(
     ignore_traffic_by_debugger=True,
 ):
     def capture_handler(capture: _tracer.Capture):
-        with open("rx_frm.txt", "a") as log_file:
-            # Checking to see if a transfer has finished, then assigning the value to transfer_trace
-            if (transfer_trace := tracer.update(capture)) is not None:
-                if isinstance(transfer_trace, CANErrorTrace):
-                    print(transfer_trace)
-                elif isinstance(transfer_trace, TransferTrace):
-                    is_service_request: bool = hasattr(
-                        transfer_trace.transfer.metadata.session_specifier.data_specifier, "service_id"
-                    )
-                    is_sending_node_debugger = (
-                        transfer_trace.transfer.metadata.session_specifier.source_node_id == debugger_id_for_filtering
-                    )
-                    if ignore_traffic_by_debugger and is_sending_node_debugger and not is_service_request:
-                        return
-                    if is_service_request:
-                        subject_id = transfer_trace.transfer.metadata.session_specifier.data_specifier.service_id
-                    else:
-                        subject_id = transfer_trace.transfer.metadata.session_specifier.data_specifier.subject_id
-                    deserialized_trace = deserialize_trace(transfer_trace, ids, subject_id, debugger_id_for_filtering)
-                    if deserialized_trace is None:
-                        return
-                    message = f"{datetime.now().strftime('%H:%M:%S:%f')} {deserialized_trace}"
-                    if log_to_logger:
-                        log_to_logger.info(message)
-                    elif log_to_print:
-                        print(message)
-                    if log_to_file:
-                        log_file.write(deserialized_trace + "\n")
+        # Checking to see if a transfer has finished, then assigning the value to transfer_trace
+        if (transfer_trace := tracer.update(capture)) is not None:
+            if isinstance(transfer_trace, CANErrorTrace):
+                print(transfer_trace)
+            elif isinstance(transfer_trace, TransferTrace):
+                is_service_request: bool = hasattr(
+                    transfer_trace.transfer.metadata.session_specifier.data_specifier, "service_id"
+                )
+                is_sending_node_debugger = (
+                    transfer_trace.transfer.metadata.session_specifier.source_node_id == debugger_id_for_filtering
+                )
+                if ignore_traffic_by_debugger and is_sending_node_debugger and not is_service_request:
+                    return
+                if is_service_request:
+                    subject_id = transfer_trace.transfer.metadata.session_specifier.data_specifier.service_id
+                else:
+                    subject_id = transfer_trace.transfer.metadata.session_specifier.data_specifier.subject_id
+                deserialized_trace = deserialize_trace(transfer_trace, ids, subject_id, debugger_id_for_filtering)
+                if deserialized_trace is None:
+                    return
+                message = f"{datetime.now().strftime('%H:%M:%S:%f')} {deserialized_trace}"
+                if log_to_logger:
+                    log_to_logger.info(message)
+                elif log_to_print:
+                    print(message)
+                if log_to_file:
+                    logger.info(deserialized_trace + "\n")
 
     return capture_handler
 
@@ -153,6 +152,7 @@ def make_handler_for_node_detected(state, iface, avatars_list):
         if previous_entry is None:
             logger.info(f"Node with id {node_id} became visible.")
             avatars_list[node_id] = Avatar(iface, node_id=node_id)
+            time.sleep(6)
             state.update_graph_from_avatar_queue.put(avatars_list[node_id])
 
     return handle_getinfo_handler_format
@@ -175,4 +175,4 @@ def make_node_debugger(state: KucherXState):
     state.tracker = NodeTracker(state.local_node)
     iface = Iface(state.local_node)
 
-    state.tracker.add_update_handler(make_handler_for_node_detected(state, iface, avatars_list))
+    state.tracker.add_update_handler(make_handler_for_node_detected(state, iface, state.avatars))

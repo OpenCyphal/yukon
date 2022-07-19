@@ -1,12 +1,17 @@
 import asyncio
+import time
 
 from pycyphal.transport.can.media import Media
 from pycyphal.transport.can.media.pythoncan import PythonCANMedia
 from serial.tools import list_ports
 
-from domain.Interface import Interface
-from domain.KucherXState import KucherXState
-from domain.WindowStyleState import WindowStyleState
+from domain.interface import Interface
+from domain.kucherx_state import KucherXState
+from domain.window_style_state import WindowStyleState
+
+from pycyphal.transport.can import CANTransport
+
+import re
 
 
 def update_list_of_comports(dpg, combobox):
@@ -14,22 +19,59 @@ def update_list_of_comports(dpg, combobox):
     dpg.configure_item(combobox, items=ports)
 
 
-from pycyphal.transport.can import CANTransport
-
-
 def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyleState, interface_added_callback):
-    with dpg.window(label="Configure interface", width=560, height=500, no_close=True) as new_interface_window_id:
+    with dpg.window(label="Configure interface", width=560, height=540, no_close=False) as new_interface_window_id:
         interface: Interface = Interface()
         input_field_width = 490
         dpg.add_text("Maximum transmission unit (MTU)")
-        tfMTU = dpg.add_input_text(default_value="8", width=input_field_width)
+        tfMTU = None
+        time_modified = time.time()
+
+        def new_text_entered():
+            nonlocal time_modified, tfMTU, dpg
+            if time.time() - time_modified > 0.06:
+                current_value = dpg.get_value(tfMTU)
+                new_value = re.sub("\\D", "", current_value)
+                print("New value " + new_value)
+                time_modified = time.time()
+                return new_value
+
+        tfMTU = dpg.add_input_text(default_value="8", width=input_field_width, callback=new_text_entered)
 
         def combobox_callback(sender, app_data):
             # state.settings.UAVCAN__CAN__IFACE = "slcan:" + str(app_data).split()[0]
             dpg.configure_item(new_interface_window_id, label=app_data)
             interface.iface = "slcan:" + str(app_data).split()[0]
 
-        dpg.add_text("Interface")
+        dpg.add_text("Read in data from a candump")
+        combobox = None
+        combobox_action_group = None
+        interface_combobox_text = None
+        tb_candump_path = None
+        checked = False
+
+        def toggle_tb():
+            nonlocal checked
+            if checked:
+                checked = False
+                dpg.hide_item(tb_candump_path)
+                dpg.show_item(interface_combobox_text)
+                dpg.show_item(combobox)
+                dpg.show_item(combobox_action_group)
+            else:
+                checked = True
+                dpg.show_item(tb_candump_path)
+                dpg.hide_item(interface_combobox_text)
+                dpg.hide_item(combobox)
+                dpg.hide_item(combobox_action_group)
+
+        dpg.add_checkbox(
+            label="Candump input",
+            callback=toggle_tb,
+        )
+        tb_candump_path = dpg.add_input_text(default_value="candump:path", width=input_field_width)
+        dpg.hide_item(tb_candump_path)
+        interface_combobox_text = dpg.add_text("Interface")
         combobox = dpg.add_combo(
             default_value="Select an interface", width=input_field_width, callback=combobox_callback
         )
@@ -55,6 +97,6 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
             interface.rate_data = int(dpg.get_value(tfDatarate))
             interface_added_callback(interface)
 
-        dpg.add_button(label="Finalize", callback=finalize)
+        dpg.add_button(label="Add interface", callback=finalize)
 
         update_combobox()

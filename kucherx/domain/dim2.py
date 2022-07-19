@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from domain.Dim import Dim
+from domain.dim import Dim
 
 
 @dataclass
