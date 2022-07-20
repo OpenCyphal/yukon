@@ -12,6 +12,11 @@ import asyncio
 
 import networkx as nx
 import serial
+
+sys.path += ["."]
+# This is to get __init__.py to run
+from kucherx import nonce  # type: ignore
+
 from networkx import DiGraph
 from pycyphal.application import make_node, NodeInfo
 from pycyphal.transport import InvalidMediaConfigurationError
@@ -47,8 +52,7 @@ from windows.close_popup_viewport import display_close_popup_viewport
 from menubars.main_menubar import make_main_menubar
 import sentry_sdk
 
-# This is to get __init__.py to run
-from kucherx import nonce  # type: ignore
+
 from windows.monitor_window import make_monitor_window
 
 import matplotlib.pyplot as plt
@@ -60,6 +64,8 @@ paths = sys.path
 logger = logging.getLogger(__file__)
 logger.setLevel("NOTSET")
 
+class QueueQuitObject:
+    pass
 
 def _cyphal_worker_thread(state: KucherXState, queue: Queue) -> None:
     """It starts the node and keeps adding any transports that are queued for adding"""
@@ -94,6 +100,10 @@ def _cyphal_worker_thread(state: KucherXState, queue: Queue) -> None:
 def _graph_from_avatars_thread(state: KucherXState) -> None:
     while state.gui_running:
         new_avatar = state.update_graph_from_avatar_queue.get()
+        if isinstance(new_avatar, QueueQuitObject):
+            break
+        else:
+            print("This is not a queue quit object")
         state.avatars_lock.acquire()
         avatars_copy: Dict[int, Avatar] = copy.copy(state.avatars)
         state.avatars_lock.release()
@@ -121,6 +131,10 @@ def bti(byte):
 def _image_from_graph_thread(state: KucherXState) -> None:
     while state.gui_running:
         G = state.update_image_from_graph.get()
+        if isinstance(G, QueueQuitObject):
+            break
+        else:
+            print("This is not a queue quit object")
         image_size = _get_current_monitor_image_size()
         px = 1 / plt.rcParams["figure.dpi"]  # pixel in inches
         plt.rcParams["backend"] = "TkAgg"
@@ -153,9 +167,9 @@ def run_gui_app() -> None:
         height=870,
         small_icon=str(get_resources_directory() / "icons/png/KucherX.png"),
         large_icon=str(get_resources_directory() / "icons/png/KucherX_256.ico"),
-        resizable=False,
+        resizable=True,
     )
-    dpg.create_viewport(**vpi.__dict__, decorated=True)
+    dpg.create_viewport(**vpi.__dict__, decorated=True, x_pos=500, y_pos=500)
 
     # dpg.configure_app(docking=True, docking_space=dock_space)
     wss: WindowStyleState = WindowStyleState(
@@ -165,6 +179,9 @@ def run_gui_app() -> None:
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui_running = False
+        print("Registering an exit!")
+        state.update_graph_from_avatar_queue.put(QueueQuitObject())
+        state.update_image_from_graph.put(QueueQuitObject())
 
     make_terminate_handler(exit_handler)
 
@@ -206,6 +223,8 @@ def run_gui_app() -> None:
         # ensure_window_is_in_viewport(main_window_id)
         dpg.render_dearpygui_frame()
 
+    print("Exiting via the easy route")
+    exit_handler(None, None)
     dpg.stop_dearpygui()
 
     dpg.destroy_context()

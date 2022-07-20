@@ -5,7 +5,6 @@ pytest
 pyserial
 setuptools
 numpy
-pywin32
 pydsdl
 nox
 networkx==2.*

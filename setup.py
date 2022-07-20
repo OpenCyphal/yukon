@@ -13,6 +13,8 @@ PACKAGE_NAME = "kucherx"
 DSDL_SOURCE_ROOT = Path(__file__).resolve().parent / PACKAGE_NAME / "dsdl_src"
 
 
+# Please prefer setup.sh and setup.ps and setup.bat instead
+
 # noinspection PyUnresolvedReferences
 class BuildPy(distutils.command.build_py.build_py):
     def run(self):

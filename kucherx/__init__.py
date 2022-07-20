@@ -14,6 +14,11 @@ if sys.version_info[:2] < (3, 10):
 _SOURCE_PATH = os.path.abspath(os.path.dirname(__file__))
 THIRDPARTY_PATH_ROOT = os.path.join(_SOURCE_PATH, "libraries")
 
+
+def get_root_directory():
+    return Path(__file__).resolve().parent.parent
+
+
 THIRDPARTY_PATH = [
     # _SOURCE_PATH.parent / ".compiled" / "uavcan",
     # _SOURCE_PATH.parent / ".compiled" / "reg"
@@ -41,7 +46,9 @@ logging.basicConfig(
 )
 
 # DSDL packages are pre-compiled when the package is built, so we do not need to compile our dependencies at runtime.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / ".compiled"))
+dsdl_compiled_directory = str(get_root_directory() / ".compiled")
+print(f"Adding {dsdl_compiled_directory} to Python path")
+sys.path.insert(0, dsdl_compiled_directory)
 
 
 def nonce():

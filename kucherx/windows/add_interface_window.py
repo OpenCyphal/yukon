@@ -34,25 +34,35 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
                 new_value = re.sub("\\D", "", current_value)
                 print("New value " + new_value)
                 time_modified = time.time()
-                dpg.set_value("tfMTU", new_value)
+                dpg.set_value(tfMTU, new_value)
 
-        tfMTU = dpg.add_input_text(default_value="8", width=input_field_width, callback=new_text_entered, tag="tfMTU")
+        tfMTU = dpg.add_input_text(default_value="8", width=input_field_width, callback=new_text_entered)
 
         def combobox_callback(sender, app_data):
             # state.settings.UAVCAN__CAN__IFACE = "slcan:" + str(app_data).split()[0]
             dpg.configure_item(new_interface_window_id, label=app_data)
             interface.iface = "slcan:" + str(app_data).split()[0]
-        interface_selection_related_stuff = []
-        dpg.add_text("Read in data from a candump")
+
         combobox = None
         combobox_action_group = None
         interface_combobox_text = None
         tb_candump_path = None
+        slcan_group = None
+        candump_group = None
         checked = False
         combobox_options = ["slcan", "candump"]
-        def connection_method_selected(sender, item_selected: str):
-            if item_selected == "slcan":
+        groups = None
 
+        dpg.add_text("The kind of connection")
+
+        def connection_method_selected(sender, item_selected: str):
+            nonlocal groups
+            for group in groups:
+                dpg.hide_item(group)
+            if item_selected == "slcan":
+                dpg.show_item(slcan_group)
+            elif item_selected == "candump":
+                dpg.show_item(candump_group)
 
         def toggle_tb():
             nonlocal checked
@@ -70,13 +80,8 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
                 dpg.hide_item(combobox_action_group)
 
         combobox_connection_method = dpg.add_combo(
-            default_value="Select connection method", width=input_field_width, callback=connection_method_selected
-        )
-        tb_candump_path = dpg.add_input_text(default_value="candump:path", width=input_field_width)
-        dpg.hide_item(tb_candump_path)
-        interface_combobox_text = dpg.add_text("Interface")
-        combobox = dpg.add_combo(
-            default_value="Select an interface", width=input_field_width, callback=combobox_callback
+            default_value="Select connection method", width=input_field_width, callback=connection_method_selected,
+            items=combobox_options
         )
 
         def clear_combobox():
@@ -86,9 +91,29 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
         def update_combobox():
             update_list_of_comports(dpg, combobox)
 
-        with dpg.group(horizontal=True) as combobox_action_group:
-            dpg.add_button(label="Refresh", callback=update_combobox)
-            dpg.add_button(label="Clear", callback=clear_combobox)
+        with dpg.group(horizontal=False) as slcan_group:
+            interface_combobox_text = dpg.add_text("Interface")
+            combobox = dpg.add_combo(
+                default_value="Select an interface", width=input_field_width, callback=combobox_callback
+            )
+            with dpg.group(horizontal=True) as combobox_action_group:
+                dpg.add_button(label="Refresh", callback=update_combobox)
+                dpg.add_button(label="Clear", callback=clear_combobox)
+        with dpg.group(horizontal=False) as candump_group:
+            interface_combobox_text = dpg.add_text("Candump path")
+            combobox = None
+            tb_candump_path = dpg.add_input_text(default_value="candump:path", width=input_field_width)
+            with dpg.group(horizontal=False) as combobox_action_group:
+                dpg.add_button(label="Look for .candump files around KucherX", callback=lambda: dpg.show_item(combobox))
+                dpg.add_button(label="Just type paste in the path of a candump", callback=lambda: dpg.hide_item(combobox))
+            combobox = dpg.add_combo(
+                default_value="Candump files found", width=input_field_width, callback=combobox_callback
+            )
+            dpg.hide_item(combobox)
+
+        groups = [slcan_group, candump_group]
+        connection_method_selected(None, "slcan")
+
         dpg.add_text("Arbitration bitrate")
         tfArbRate = dpg.add_input_text(default_value="1000000", width=input_field_width)
         dpg.add_text("Data bitrate")
