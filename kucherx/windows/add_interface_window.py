@@ -34,21 +34,25 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
                 new_value = re.sub("\\D", "", current_value)
                 print("New value " + new_value)
                 time_modified = time.time()
-                return new_value
+                dpg.set_value("tfMTU", new_value)
 
-        tfMTU = dpg.add_input_text(default_value="8", width=input_field_width, callback=new_text_entered)
+        tfMTU = dpg.add_input_text(default_value="8", width=input_field_width, callback=new_text_entered, tag="tfMTU")
 
         def combobox_callback(sender, app_data):
             # state.settings.UAVCAN__CAN__IFACE = "slcan:" + str(app_data).split()[0]
             dpg.configure_item(new_interface_window_id, label=app_data)
             interface.iface = "slcan:" + str(app_data).split()[0]
-
+        interface_selection_related_stuff = []
         dpg.add_text("Read in data from a candump")
         combobox = None
         combobox_action_group = None
         interface_combobox_text = None
         tb_candump_path = None
         checked = False
+        combobox_options = ["slcan", "candump"]
+        def connection_method_selected(sender, item_selected: str):
+            if item_selected == "slcan":
+
 
         def toggle_tb():
             nonlocal checked
@@ -65,9 +69,8 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
                 dpg.hide_item(combobox)
                 dpg.hide_item(combobox_action_group)
 
-        dpg.add_checkbox(
-            label="Candump input",
-            callback=toggle_tb,
+        combobox_connection_method = dpg.add_combo(
+            default_value="Select connection method", width=input_field_width, callback=connection_method_selected
         )
         tb_candump_path = dpg.add_input_text(default_value="candump:path", width=input_field_width)
         dpg.hide_item(tb_candump_path)

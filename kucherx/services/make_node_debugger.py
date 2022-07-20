@@ -152,7 +152,6 @@ def make_handler_for_node_detected(state, iface, avatars_list):
         if previous_entry is None:
             logger.info(f"Node with id {node_id} became visible.")
             avatars_list[node_id] = Avatar(iface, node_id=node_id)
-            time.sleep(6)
             state.update_graph_from_avatar_queue.put(avatars_list[node_id])
 
     return handle_getinfo_handler_format
