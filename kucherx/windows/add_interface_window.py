@@ -5,6 +5,7 @@ from pycyphal.transport.can.media import Media
 from pycyphal.transport.can.media.pythoncan import PythonCANMedia
 from serial.tools import list_ports
 
+from DearPyGui.thirdparty.cpython.Lib import tkinter
 from domain.interface import Interface
 from domain.kucherx_state import KucherXState
 from domain.window_style_state import WindowStyleState
@@ -45,13 +46,8 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
             dpg.configure_item(new_interface_window_id, label=app_data)
             interface.iface = "slcan:" + str(app_data).split()[0]
 
-        combobox = None
-        combobox_action_group = None
-        interface_combobox_text = None
-        tb_candump_path = None
         slcan_group = None
         candump_group = None
-        checked = False
         combobox_options = ["slcan", "candump"]
         groups = None
 
@@ -65,21 +61,6 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
                 dpg.show_item(slcan_group)
             elif item_selected == "candump":
                 dpg.show_item(candump_group)
-
-        def toggle_tb():
-            nonlocal checked
-            if checked:
-                checked = False
-                dpg.hide_item(tb_candump_path)
-                dpg.show_item(interface_combobox_text)
-                dpg.show_item(combobox)
-                dpg.show_item(combobox_action_group)
-            else:
-                checked = True
-                dpg.show_item(tb_candump_path)
-                dpg.hide_item(interface_combobox_text)
-                dpg.hide_item(combobox)
-                dpg.hide_item(combobox_action_group)
 
         combobox_connection_method = dpg.add_combo(
             default_value="Select connection method", width=input_field_width, callback=connection_method_selected,
@@ -124,6 +105,9 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
             def use_textbox():
                 dpg.hide_item(combobox)
                 dpg.show_item(tb_candump_path)
+
+            def file_selected(file_name):
+                print("File name: " + file_name)
 
             with dpg.group(horizontal=False) as combobox_action_group:
                 dpg.add_button(label="Look for .candump files around KucherX", callback=use_combobox)

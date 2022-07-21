@@ -259,12 +259,12 @@ def auto_exit_task() -> int:
 
 
 async def main() -> int:
-    # if get_stop_after_value():
-    #     auto_exit_thread = threading.Thread(target=auto_exit_task)
-    #     auto_exit_thread.start()
+    if get_stop_after_value():
+        auto_exit_thread = threading.Thread(target=auto_exit_task)
+        auto_exit_thread.start()
     run_gui_app()
-    # if get_stop_after_value():
-    #     auto_exit_thread.join()
+    if get_stop_after_value():
+        auto_exit_thread.join()
     return 0
 
 
