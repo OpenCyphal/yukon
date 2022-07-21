@@ -13,6 +13,8 @@ from pycyphal.transport.can import CANTransport
 
 import re
 
+from services.folder_recognition.get_common_folders import get_root_directory
+
 
 def update_list_of_comports(dpg, combobox):
     ports = list_ports.comports()
@@ -100,16 +102,36 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
                 dpg.add_button(label="Refresh", callback=update_combobox)
                 dpg.add_button(label="Clear", callback=clear_combobox)
         with dpg.group(horizontal=False) as candump_group:
+            def get_candump_files():
+                from os import listdir
+                from os.path import isfile, join
+                root_dir = get_root_directory()
+                onlyfiles = [f for f in listdir(root_dir) if isfile(join(root_dir, f)) and ".candump" in f]
+                return onlyfiles
+
             interface_combobox_text = dpg.add_text("Candump path")
             combobox = None
             tb_candump_path = dpg.add_input_text(default_value="candump:path", width=input_field_width)
-            with dpg.group(horizontal=False) as combobox_action_group:
-                dpg.add_button(label="Look for .candump files around KucherX", callback=lambda: dpg.show_item(combobox))
-                dpg.add_button(label="Just type paste in the path of a candump", callback=lambda: dpg.hide_item(combobox))
             combobox = dpg.add_combo(
-                default_value="Candump files found", width=input_field_width, callback=combobox_callback
+                default_value="Search not performed", width=input_field_width, callback=combobox_callback,
+                items=get_candump_files()
             )
+
+            def use_combobox():
+                dpg.hide_item(tb_candump_path)
+                dpg.show_item(combobox)
+
+            def use_textbox():
+                dpg.hide_item(combobox)
+                dpg.show_item(tb_candump_path)
+
+            with dpg.group(horizontal=False) as combobox_action_group:
+                dpg.add_button(label="Look for .candump files around KucherX", callback=use_combobox)
+                dpg.add_button(label="Just type paste in the path of a candump",
+                               callback=use_textbox)
+
             dpg.hide_item(combobox)
+            dpg.show_item(tb_candump_path)
 
         groups = [slcan_group, candump_group]
         connection_method_selected(None, "slcan")
