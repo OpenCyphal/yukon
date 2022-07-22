@@ -9,7 +9,7 @@ from pycyphal.transport.can.media.pythoncan import PythonCANMedia
 from domain.kucherx_state import KucherXState
 from services.make_tracers_trackers import make_tracers_trackers
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
 
 

@@ -14,11 +14,12 @@ from domain.attach_transport_request import AttachTransportRequest
 from domain.queue_quit_object import QueueQuitObject
 from domain.viewport_info import ViewPortInfo
 from domain.window_style_state import WindowStyleState
+from services.errors_thread import _errors_thread
 from services.threads.cyphal_worker import _cyphal_worker_thread
 from services.threads.graph_from_avatars import _graph_from_avatars_thread
 from services.threads.image_from_graph import _image_from_graph_thread
 from services.terminate_handler import make_terminate_handler
-from services.folder_recognition.get_common_folders import (
+from services.folder_recognition.common_folders import (
     get_resources_directory,
     get_root_directory,
 )
@@ -33,21 +34,19 @@ from high_dpi_handler import make_process_dpi_aware, configure_font_and_scale
 from sentry_setup import setup_sentry
 from services.get_screen_resolution import get_screen_resolution
 from themes.main_window_theme import get_main_theme
+from windows.errors import make_errors_window
 from windows.request_inferior_transport import make_request_inferior_transport_window
-from windows.close_popup_viewport import display_close_popup_viewport
+from close_popup_viewport import display_close_popup_viewport
 from menubars.main_menubar import make_main_menubar
 import sentry_sdk
 
-from windows.monitor_window import make_monitor_window
+from windows.monitor import make_monitor_window
 
 setup_sentry(sentry_sdk)
 paths = sys.path
 
 logger = logging.getLogger(__file__)
 logger.setLevel("NOTSET")
-
-
-
 
 
 def run_gui_app() -> None:
@@ -75,12 +74,15 @@ def run_gui_app() -> None:
         print("Registering an exit!")
         state.update_graph_from_avatar_queue.put(QueueQuitObject())
         state.update_image_from_graph.put(QueueQuitObject())
+        state.errors_queue.put(QueueQuitObject())
 
     make_terminate_handler(exit_handler)
-
+    display_error_callback = make_errors_window(dpg, state)
     # Creating 3 new threads
     cyphal_worker_thread = threading.Thread(target=_cyphal_worker_thread, args=[state])
     cyphal_worker_thread.start()
+    errors_thread = threading.Thread(target=_errors_thread, args=[state, display_error_callback])
+    errors_thread.start()
     avatars_to_graph_thread = threading.Thread(target=_graph_from_avatars_thread, args=[state])
     avatars_to_graph_thread.start()
     graphs_to_images_thread = threading.Thread(target=_image_from_graph_thread, args=[state])
@@ -101,11 +103,12 @@ def run_gui_app() -> None:
         state.queue_detach_transports.put(request)
 
     def open_interface_menu() -> None:
-        make_request_inferior_transport_window(dpg, state, logger, wss,
-                                               notify_transport_added=add_transport,
-                                               notify_transport_removed=remove_transport)
+        make_request_inferior_transport_window(
+            dpg, state, logger, wss, notify_transport_added=add_transport, notify_transport_removed=remove_transport
+        )
 
     make_main_menubar(dpg, wss.font, new_interface_callback=open_interface_menu)
+
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.maximize_viewport()
@@ -131,7 +134,7 @@ def run_gui_app() -> None:
     if state.is_close_dialog_enabled:
         dpg.create_context()
         display_close_popup_viewport(
-            dpg, logger, get_resources_directory(), screen_resolution, save_callback, dont_save_callback
+            dpg, get_resources_directory(), screen_resolution, save_callback, dont_save_callback
         )
 
         while dpg.is_dearpygui_running():

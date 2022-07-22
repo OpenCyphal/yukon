@@ -2,8 +2,6 @@ import asyncio
 import time
 import typing
 
-from pycyphal.transport.can.media import Media
-from pycyphal.transport.can.media.pythoncan import PythonCANMedia
 from serial.tools import list_ports
 
 from domain.UID import UID
@@ -11,11 +9,9 @@ from domain.interface import Interface
 from domain.kucherx_state import KucherXState
 from domain.window_style_state import WindowStyleState
 
-from pycyphal.transport.can import CANTransport
-
 import re
 
-from services.folder_recognition.get_common_folders import get_root_directory
+from services.folder_recognition.common_folders import get_root_directory
 
 
 def update_list_of_comports(dpg, combobox) -> None:
@@ -23,9 +19,9 @@ def update_list_of_comports(dpg, combobox) -> None:
     dpg.configure_item(combobox, items=ports)
 
 
-def make_request_inferior_transport_window(dpg, state: KucherXState, logger, wss: WindowStyleState,
-                                           notify_transport_added,
-                                           notify_transport_removed):
+def make_request_inferior_transport_window(
+    dpg, state: KucherXState, logger, wss: WindowStyleState, notify_transport_added, notify_transport_removed
+):
     with dpg.window(label="Configure interface", width=560, height=540, no_close=False) as current_window_id:
         dpg.set_exit_callback(notify_transport_removed)
         interface: Interface = Interface()
@@ -44,7 +40,8 @@ def make_request_inferior_transport_window(dpg, state: KucherXState, logger, wss
                 new_value = re.sub("\\D", "", current_value)
                 print("New value " + new_value)
                 time_modified = time.time()
-                dpg.set_value(tf_mtu, new_value)
+                if dpg.get_value(tf_mtu) != new_value:
+                    dpg.set_value(tf_mtu, new_value)
 
         tf_mtu = dpg.add_input_text(default_value="8", width=input_field_width, callback=new_text_entered)
 
@@ -94,13 +91,13 @@ def make_request_inferior_transport_window(dpg, state: KucherXState, logger, wss
             with dpg.group(horizontal=True) as combobox_action_group:
                 dpg.add_button(label="Refresh", callback=update_combobox)
         with dpg.group(horizontal=False) as candump_group:
+
             def get_candump_files():
                 from os import listdir
                 from os.path import isfile, join
 
                 root_dir = get_root_directory()
-                onlyfiles = [f for f in listdir(root_dir) if isfile(join(root_dir, f)) and ".candump" in f]
-                return onlyfiles
+                return [f for f in listdir(root_dir) if isfile(join(root_dir, f)) and ".candump" in f]
 
             interface_combobox_text = dpg.add_text("Candump path")
             candump_files_select_combobox = None
@@ -118,6 +115,7 @@ def make_request_inferior_transport_window(dpg, state: KucherXState, logger, wss
 
             def use_combobox():
                 """The user can select to see candump files located around the KucherX executable."""
+                state.errors_queue.put("This is an error because you pressed this specific button. Oh no!")
                 dpg.hide_item(tb_candump_path)
                 dpg.show_item(candump_files_select_combobox)
                 items = get_candump_files()

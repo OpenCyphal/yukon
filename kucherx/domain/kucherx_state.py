@@ -32,6 +32,7 @@ class KucherXState:
         self.current_requested_image_size = (600, 600)
         self.queue_add_transports = Queue()
         self.queue_detach_transports = Queue()
+        self.errors_queue = Queue()
 
     interfaces: list[Interface]
     event_loop: Any
@@ -40,6 +41,7 @@ class KucherXState:
     update_monitor_image_queue: Queue[GraphImage]
     update_graph_from_avatar_queue: Queue[Avatar]
     update_image_from_graph: Queue[DiGraph]
+    errors_queue: Queue[str]
     transports_of_windows: typing.Dict[UID, pycyphal.transport.Transport]
     queue_add_transports: Queue
     queue_detach_transports: Queue
