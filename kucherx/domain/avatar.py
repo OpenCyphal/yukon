@@ -8,7 +8,7 @@ from pycyphal.transport import ServiceDataSpecifier, Timestamp, AlienTransfer, M
 from domain.note_state import NodeState
 from domain.port_set import PortSet
 from domain._expand_subjects import expand_subjects, expand_mask
-from domain._iface import Iface
+from domain.iface import Iface
 import uavcan
 
 logger = logging.getLogger()

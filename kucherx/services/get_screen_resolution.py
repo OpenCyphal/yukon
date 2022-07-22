@@ -14,3 +14,4 @@ def get_screen_resolution():
     else:
         logger.warning("Screen resolution detection is not yet implemented for non-windows platforms.")
         return 1280, 720
+
