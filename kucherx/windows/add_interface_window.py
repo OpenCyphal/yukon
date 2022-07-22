@@ -29,6 +29,7 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
         input_field_width = 490
         dpg.add_text("Maximum transmission unit (MTU)")
         tfMTU = None
+        slcan_port_selection_combobox = None
         time_modified = time.time()
 
         def new_text_entered() -> None:
@@ -64,7 +65,8 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
             elif item_selected == "candump":
                 dpg.show_item(candump_group)
             elif item_selected == "3rd":
-                dpg.show_item(third_group)
+                pass
+                # dpg.show_item(third_group)
 
         combobox_connection_method = dpg.add_combo(
             default_value="Select connection method",
@@ -74,15 +76,15 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
         )
 
         def clear_combobox():
-            dpg.configure_item(combobox, items=[])
-            dpg.configure_item(combobox, default_value="")
+            dpg.configure_item(slcan_port_selection_combobox, items=[])
+            dpg.configure_item(slcan_port_selection_combobox, default_value="")
 
         def update_combobox():
-            update_list_of_comports(dpg, combobox)
+            update_list_of_comports(dpg, slcan_port_selection_combobox)
 
         with dpg.group(horizontal=False) as slcan_group:
             interface_combobox_text = dpg.add_text("Interface")
-            combobox = dpg.add_combo(
+            slcan_port_selection_combobox = dpg.add_combo(
                 default_value="Select an interface", width=input_field_width, callback=combobox_callback
             )
             with dpg.group(horizontal=True) as combobox_action_group:
