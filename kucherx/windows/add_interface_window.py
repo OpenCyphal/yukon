@@ -6,8 +6,8 @@ from pycyphal.transport.can.media import Media
 from pycyphal.transport.can.media.pythoncan import PythonCANMedia
 from serial.tools import list_ports
 
-from kucherx.domain.UID import UID
-from ..domain.interface import Interface
+from domain.UID import UID
+from domain.interface import Interface
 from domain.kucherx_state import KucherXState
 from domain.window_style_state import WindowStyleState
 
@@ -18,7 +18,7 @@ import re
 from services.folder_recognition.get_common_folders import get_root_directory
 
 
-def update_list_of_comports(dpg, combobox):
+def update_list_of_comports(dpg, combobox) -> None:
     ports = list_ports.comports()
     dpg.configure_item(combobox, items=ports)
 
@@ -31,7 +31,7 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
         tfMTU = None
         time_modified = time.time()
 
-        def new_text_entered():
+        def new_text_entered() -> None:
             nonlocal time_modified, tfMTU, dpg
             if time.time() - time_modified > 0.06:
                 current_value = dpg.get_value(tfMTU)
@@ -42,7 +42,7 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
 
         tfMTU = dpg.add_input_text(default_value="8", width=input_field_width, callback=new_text_entered)
 
-        def combobox_callback(sender, app_data):
+        def combobox_callback(sender, app_data) -> None:
             # state.settings.UAVCAN__CAN__IFACE = "slcan:" + str(app_data).split()[0]
             dpg.configure_item(new_interface_window_id, label=app_data)
             interface.iface = "slcan:" + str(app_data).split()[0]

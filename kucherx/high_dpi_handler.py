@@ -1,5 +1,7 @@
 import os
 
+from kucherx.domain.UID import UID
+
 
 def make_process_dpi_aware(logger):
     if os.name == "nt":
@@ -24,7 +26,7 @@ def make_process_dpi_aware(logger):
                 )
 
 
-def is_high_dpi_screen(logger):
+def is_high_dpi_screen(logger) -> bool:
     make_process_dpi_aware(logger)
     try:
         import tkinter
@@ -38,7 +40,7 @@ def is_high_dpi_screen(logger):
         return False
 
 
-def configure_font_and_scale(dpg, logger, resources):
+def configure_font_and_scale(dpg, logger, resources) -> UID:
     desired_font_size = 20
 
     if is_high_dpi_screen(logger) and os.name == "nt":

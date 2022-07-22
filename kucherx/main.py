@@ -13,9 +13,8 @@ import asyncio
 import networkx as nx
 import serial
 
-sys.path += ["."]
 # This is to get __init__.py to run
-from kucherx import nonce  # type: ignore
+from __init__ import nonce  # type: ignore
 
 from networkx import DiGraph
 from pycyphal.application import make_node, NodeInfo
@@ -52,7 +51,6 @@ from windows.close_popup_viewport import display_close_popup_viewport
 from menubars.main_menubar import make_main_menubar
 import sentry_sdk
 
-
 from windows.monitor_window import make_monitor_window
 
 import matplotlib.pyplot as plt
@@ -64,8 +62,10 @@ paths = sys.path
 logger = logging.getLogger(__file__)
 logger.setLevel("NOTSET")
 
+
 class QueueQuitObject:
     pass
+
 
 def _cyphal_worker_thread(state: KucherXState, queue: Queue) -> None:
     """It starts the node and keeps adding any transports that are queued for adding"""
@@ -86,11 +86,11 @@ def _cyphal_worker_thread(state: KucherXState, queue: Queue) -> None:
             except Empty:
                 pass
             except (
-                PermissionError,
-                can.exceptions.CanInitializationError,
-                InvalidMediaConfigurationError,
-                can.exceptions.CanOperationError,
-                serial.serialutil.SerialException,
+                    PermissionError,
+                    can.exceptions.CanInitializationError,
+                    InvalidMediaConfigurationError,
+                    can.exceptions.CanOperationError,
+                    serial.serialutil.SerialException,
             ) as e:
                 logger.error(e)
 
@@ -275,7 +275,7 @@ if __name__ == "__main__":
 
 class MyTest(unittest.TestCase):
     @pytest.mark.timeout(0.1)
-    def test_get_root_directory(self):
+    def test_get_root_directory(self) -> None:
         root_dir = get_root_directory()
         logging.info(root_dir)
         assert root_dir
