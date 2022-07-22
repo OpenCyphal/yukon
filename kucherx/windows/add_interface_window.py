@@ -1,12 +1,13 @@
 import asyncio
 import time
+import typing
 
 from pycyphal.transport.can.media import Media
 from pycyphal.transport.can.media.pythoncan import PythonCANMedia
 from serial.tools import list_ports
 
-from DearPyGui.thirdparty.cpython.Lib import tkinter
-from domain.interface import Interface
+from kucherx.domain.UID import UID
+from ..domain.interface import Interface
 from domain.kucherx_state import KucherXState
 from domain.window_style_state import WindowStyleState
 
@@ -49,22 +50,27 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
         slcan_group = None
         candump_group = None
         combobox_options = ["slcan", "candump"]
-        groups = None
+        groups: typing.Optional[typing.List[UID]] = None
 
         dpg.add_text("The kind of connection")
 
         def connection_method_selected(sender, item_selected: str):
             nonlocal groups
-            for group in groups:
-                dpg.hide_item(group)
+            if groups:
+                for group in groups:
+                    dpg.hide_item(group)
             if item_selected == "slcan":
                 dpg.show_item(slcan_group)
             elif item_selected == "candump":
                 dpg.show_item(candump_group)
+            elif item_selected == "3rd":
+                dpg.show_item(third_group)
 
         combobox_connection_method = dpg.add_combo(
-            default_value="Select connection method", width=input_field_width, callback=connection_method_selected,
-            items=combobox_options
+            default_value="Select connection method",
+            width=input_field_width,
+            callback=connection_method_selected,
+            items=combobox_options,
         )
 
         def clear_combobox():
@@ -83,9 +89,11 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
                 dpg.add_button(label="Refresh", callback=update_combobox)
                 dpg.add_button(label="Clear", callback=clear_combobox)
         with dpg.group(horizontal=False) as candump_group:
+
             def get_candump_files():
                 from os import listdir
                 from os.path import isfile, join
+
                 root_dir = get_root_directory()
                 onlyfiles = [f for f in listdir(root_dir) if isfile(join(root_dir, f)) and ".candump" in f]
                 return onlyfiles
@@ -94,13 +102,18 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
             combobox = None
             tb_candump_path = dpg.add_input_text(default_value="candump:path", width=input_field_width)
             combobox = dpg.add_combo(
-                default_value="Search not performed", width=input_field_width, callback=combobox_callback,
-                items=get_candump_files()
+                default_value="Search not performed",
+                width=input_field_width,
+                callback=combobox_callback,
+                items=get_candump_files(),
             )
 
             def use_combobox():
                 dpg.hide_item(tb_candump_path)
                 dpg.show_item(combobox)
+                items = get_candump_files()
+                dpg.configure_item(combobox, default_value=f"{len(items)} files found.")
+                dpg.configure_item(combobox, items=items)
 
             def use_textbox():
                 dpg.hide_item(combobox)
@@ -111,8 +124,7 @@ def make_add_interface_window(dpg, state: KucherXState, logger, wss: WindowStyle
 
             with dpg.group(horizontal=False) as combobox_action_group:
                 dpg.add_button(label="Look for .candump files around KucherX", callback=use_combobox)
-                dpg.add_button(label="Just type paste in the path of a candump",
-                               callback=use_textbox)
+                dpg.add_button(label="Just type paste in the path of a candump", callback=use_textbox)
 
             dpg.hide_item(combobox)
             dpg.show_item(tb_candump_path)
