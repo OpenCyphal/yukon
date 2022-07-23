@@ -7,7 +7,7 @@ logger.setLevel("NOTSET")
 
 
 def make_errors_window(dpg, state: KucherXState):
-    with dpg.window(label="Configure interface", width=700, height=400, no_close=False) as current_window_id:
+    with dpg.window(label="List of errors and messages", width=700, height=400, no_close=False) as current_window_id:
         counter = 0
 
         def hide_errors():

@@ -143,11 +143,15 @@ def make_request_inferior_transport_window(
         tf_data_rate = dpg.add_input_text(default_value="1000000", width=input_field_width)
 
         def finalize():
-            interface.mtu = int(dpg.get_value(tf_mtu))
-            interface.rate_arb = int(dpg.get_value(tf_arb_rate))
-            interface.rate_data = int(dpg.get_value(tf_data_rate))
-            notify_transport_added(interface)
-
+            if interface.iface == "":
+                state.errors_queue.put("No interface selected")
+            try:
+                interface.mtu = int(dpg.get_value(tf_mtu))
+                interface.rate_arb = int(dpg.get_value(tf_arb_rate))
+                interface.rate_data = int(dpg.get_value(tf_data_rate))
+                notify_transport_added(interface)
+            except ValueError as e:
+                state.errors_queue.put(e)
         dpg.add_button(label="Add interface", callback=finalize)
 
         update_combobox()
