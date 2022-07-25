@@ -49,7 +49,3 @@ logging.basicConfig(
 dsdl_compiled_directory = str(get_root_directory() / ".compiled")
 print(f"Adding {dsdl_compiled_directory} to Python path")
 sys.path.insert(0, dsdl_compiled_directory)
-
-
-def nonce() -> None:
-    pass

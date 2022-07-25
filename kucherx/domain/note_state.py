@@ -5,6 +5,7 @@ import dataclasses
 from typing import Optional
 
 import uavcan
+from uavcan import node
 from kucherx.domain.port_set import PortSet
 
 

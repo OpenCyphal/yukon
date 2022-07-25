@@ -6,16 +6,12 @@ import os
 import sys
 import asyncio
 
-# This is to get __init__.py to run
-from __init__ import nonce  # type: ignore
-
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 
 from kucherx.domain.queue_quit_object import QueueQuitObject
 from kucherx.domain.viewport_info import ViewPortInfo
 from kucherx.domain.window_style_state import WindowStyleState
-from kucherx.services.threads.errors_thread import errors_thread
-from kucherx.services.threads.cyphal_worker import cyphal_worker_thread
+
 from kucherx.services.threads.graph_from_avatars import graph_from_avatars_thread
 from kucherx.services.threads.image_from_graph import image_from_graph_thread
 from kucherx.services.terminate_handler import make_terminate_handler
@@ -79,6 +75,8 @@ def run_gui_app() -> None:
     make_terminate_handler(exit_handler)
     display_error_callback = make_errors_window(dpg, state)
     # Creating 3 new threads
+    from kucherx.services.threads.errors_thread import errors_thread
+    from kucherx.services.threads.cyphal_worker import cyphal_worker_thread
     cyphal_worker_thread = threading.Thread(target=cyphal_worker_thread, args=[state])
     cyphal_worker_thread.start()
     errors_thread = threading.Thread(target=errors_thread, args=[state, display_error_callback])
