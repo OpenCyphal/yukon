@@ -57,17 +57,17 @@ def demo(session):
 
 @nox.session(reuse_venv=True)
 def black(session):
-    session.install("black == 22.*")
+    session.run("pip", "install", "black == 22.*")
     session.run("black", "--check", ".")
 
 
 @nox.session(reuse_venv=True)
 def mypy(session):
-    session.install("mypy==0.961")
+    session.run("pip", "install", "mypy==0.961")
     session.run("mypy", "kucherx")
 
 
 @nox.session(reuse_venv=True)
 def pylint(session):
-    session.install("mypy==0.961")
+    session.run("pip", "install", "mypy==0.961")
     session.run("pylint", *map(str, src_dirs), env={"PYTHONPATH": str(compiled_dir)})
