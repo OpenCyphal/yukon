@@ -6,17 +6,17 @@ from pycyphal.application import make_node, NodeInfo
 from pycyphal.transport.can import CANTransport
 from pycyphal.transport.can.media.pythoncan import PythonCANMedia
 
-from domain.kucherx_state import KucherXState
-from services.make_tracers_trackers import make_tracers_trackers
+from kucherx.domain.kucherx_state import KucherXState
+from kucherx.services.make_tracers_trackers import make_tracers_trackers
 
 logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
 
 
-def _cyphal_worker_thread(state: KucherXState) -> None:
+def cyphal_worker_thread(state: KucherXState) -> None:
     """It starts the node and keeps adding any transports that are queued for adding"""
 
-    async def _internal_method():
+    async def _internal_method() -> None:
         state.local_node = make_node(NodeInfo(name="com.zubax.sapog.tests.debugger"), reconfigurable_transport=True)
         state.local_node.start()
         state.pseudo_transport = state.local_node.presentation.transport

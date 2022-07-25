@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from domain.UID import UID
+from kucherx.domain.UID import UID
 
 
 @dataclass

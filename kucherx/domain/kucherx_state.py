@@ -12,23 +12,22 @@ from pycyphal.application import Node
 from pycyphal.transport.can import CANTransport
 from pycyphal.transport.redundant import RedundantTransport
 
-from domain.UID import UID
-from domain.avatar import Avatar
-from domain.graph_image import GraphImage
-from domain.interface import Interface
-from domain.note_state import NodeState
+from kucherx.domain.UID import UID
+from kucherx.domain.avatar import Avatar
+from kucherx.domain.graph_image import GraphImage
+from kucherx.domain.interface import Interface
+from kucherx.domain.note_state import NodeState
 
 
 @dataclass(init=False)
 class KucherXState:
-    def __init__(self):
+    def __init__(self) -> None:
         self.avatars = {}
         self.update_monitor_image_queue = Queue()
         self.update_image_from_graph = Queue()
         self.update_graph_from_avatar_queue = Queue()
         self.avatars_lock = threading.RLock()
         self.current_graph_lock = threading.RLock()
-        self.transports_of_interfaces = {}
         self.current_requested_image_size = (600, 600)
         self.queue_add_transports = Queue()
         self.queue_detach_transports = Queue()

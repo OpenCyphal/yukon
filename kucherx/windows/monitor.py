@@ -1,10 +1,11 @@
+import typing
 from logging import Logger
 
 from domain.UID import UID
 from themes.main_window_theme import get_main_theme
 
 
-def make_monitor_window(dpg, logger: Logger) -> UID:
+def make_monitor_window(dpg: typing.Any, logger: Logger) -> UID:
     with dpg.texture_registry(show=False):
         dpg.add_dynamic_texture(
             width=600, height=600, tag="monitor_graph_texture_tag", default_value=[1 for i in range(0, 600 * 600 * 4)]

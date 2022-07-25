@@ -1,4 +1,9 @@
-def get_main_theme(dpg):
+import typing
+
+from kucherx.domain.UID import UID
+
+
+def get_main_theme(dpg: typing.Any) -> UID:
     with dpg.theme() as global_theme:
         with dpg.theme_component(dpg.mvAll):
             # cool color, maybe later?

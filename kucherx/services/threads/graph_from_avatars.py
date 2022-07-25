@@ -4,13 +4,13 @@ from typing import Dict
 
 from networkx import DiGraph
 
-from domain.avatar import Avatar
-from domain.kucherx_state import KucherXState
-from domain.note_state import NodeState
-from domain.queue_quit_object import QueueQuitObject
+from kucherx.domain.avatar import Avatar
+from kucherx.domain.kucherx_state import KucherXState
+from kucherx.domain.note_state import NodeState
+from kucherx.domain.queue_quit_object import QueueQuitObject
 
 
-def _graph_from_avatars_thread(state: KucherXState) -> None:
+def graph_from_avatars_thread(state: KucherXState) -> None:
     while state.gui_running:
         new_avatar = state.update_graph_from_avatar_queue.get()
         if isinstance(new_avatar, QueueQuitObject):

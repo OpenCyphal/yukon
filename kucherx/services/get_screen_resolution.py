@@ -1,10 +1,11 @@
 import logging
 import os
+import typing
 
 logger = logging.getLogger(__file__)
 
 
-def get_screen_resolution():
+def get_screen_resolution() -> typing.Tuple[int, int]:
     """If the screen size is known then the close dialog can be centered via its position"""
     if os.name == "nt":
         import ctypes

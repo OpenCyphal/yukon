@@ -1,27 +1,34 @@
 import asyncio
+import logging
 import time
 import typing
 
 from serial.tools import list_ports
 
-from domain.UID import UID
-from domain.interface import Interface
-from domain.kucherx_state import KucherXState
-from domain.window_style_state import WindowStyleState
+from kucherx.domain.UID import UID
+from kucherx.domain.attach_transport_request import AttachTransportRequest
+from kucherx.domain.interface import Interface
+from kucherx.domain.kucherx_state import KucherXState
+from kucherx.domain.window_style_state import WindowStyleState
 
 import re
 
-from services.folder_recognition.common_folders import get_root_directory
+from kucherx.services.folder_recognition.common_folders import get_root_directory
 
 
-def update_list_of_comports(dpg, combobox) -> None:
+def update_list_of_comports(dpg: typing.Any, combobox: UID) -> None:
     ports = list_ports.comports()
     dpg.configure_item(combobox, items=ports)
 
 
 def make_request_inferior_transport_window(
-    dpg, state: KucherXState, logger, wss: WindowStyleState, notify_transport_added, notify_transport_removed
-):
+    dpg: typing.Any,
+    state: KucherXState,
+    logger: logging.Logger,
+    wss: WindowStyleState,
+    notify_transport_added: typing.Callable[[AttachTransportRequest], None],
+    notify_transport_removed: typing.Callable[[AttachTransportRequest], None],
+) -> UID:
     with dpg.window(label="Configure interface", width=560, height=540, no_close=False) as current_window_id:
         dpg.set_exit_callback(notify_transport_removed)
         interface: Interface = Interface()
@@ -45,7 +52,7 @@ def make_request_inferior_transport_window(
 
         tf_mtu = dpg.add_input_text(default_value="8", width=input_field_width, callback=new_text_entered)
 
-        def interface_selected_from_combobox(sender, app_data) -> None:
+        def interface_selected_from_combobox(sender: UID, app_data: str) -> None:
             """When an slcan interface is selected then the name of the interface will arrive as app_data"""
             # state.settings.UAVCAN__CAN__IFACE = "slcan:" + str(app_data).split()[0]
             # The name of the interface is displayed on the title bar of the window
@@ -59,7 +66,7 @@ def make_request_inferior_transport_window(
 
         dpg.add_text("The kind of connection")
 
-        def connection_method_selected(sender, item_selected: str):
+        def connection_method_selected(sender: UID, item_selected: str) -> None:
             """There are currently three connection methods, I forgot the name of the third one."""
             nonlocal groups
             if groups:
@@ -80,7 +87,7 @@ def make_request_inferior_transport_window(
             items=combobox_options,
         )
 
-        def update_combobox():
+        def update_combobox() -> None:
             update_list_of_comports(dpg, slcan_port_selection_combobox)
 
         with dpg.group(horizontal=False) as slcan_group:
@@ -92,7 +99,7 @@ def make_request_inferior_transport_window(
                 dpg.add_button(label="Refresh", callback=update_combobox)
         with dpg.group(horizontal=False) as candump_group:
 
-            def get_candump_files():
+            def get_candump_files() -> typing.List[str]:
                 from os import listdir
                 from os.path import isfile, join
 
@@ -103,7 +110,7 @@ def make_request_inferior_transport_window(
             candump_files_select_combobox = None
             tb_candump_path = dpg.add_input_text(default_value="candump:path", width=input_field_width)
 
-            def file_selected(file_name):
+            def file_selected(file_name: str) -> None:
                 print("File name: " + file_name)
 
             candump_files_select_combobox = dpg.add_combo(
@@ -113,7 +120,7 @@ def make_request_inferior_transport_window(
                 items=get_candump_files(),
             )
 
-            def use_combobox():
+            def use_combobox() -> None:
                 """The user can select to see candump files located around the KucherX executable."""
                 state.errors_queue.put("This is an error because you pressed this specific button. Oh no!")
                 dpg.hide_item(tb_candump_path)
@@ -122,7 +129,7 @@ def make_request_inferior_transport_window(
                 dpg.configure_item(candump_files_select_combobox, default_value=f"{len(items)} files found.")
                 dpg.configure_item(candump_files_select_combobox, items=items)
 
-            def use_textbox():
+            def use_textbox() -> None:
                 """The user can select to use just a text as the path to a candump file."""
                 dpg.hide_item(candump_files_select_combobox)
                 dpg.show_item(tb_candump_path)
@@ -142,7 +149,7 @@ def make_request_inferior_transport_window(
         dpg.add_text("Data bitrate")
         tf_data_rate = dpg.add_input_text(default_value="1000000", width=input_field_width)
 
-        def finalize():
+        def finalize() -> None:
             if interface.iface == "":
                 state.errors_queue.put("No interface selected")
             try:
@@ -152,6 +159,8 @@ def make_request_inferior_transport_window(
                 notify_transport_added(interface)
             except ValueError as e:
                 state.errors_queue.put(e)
+
         dpg.add_button(label="Add interface", callback=finalize)
 
         update_combobox()
+    return current_window_id

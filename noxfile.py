@@ -64,7 +64,7 @@ def black(session):
 @nox.session(reuse_venv=True)
 def mypy(session):
     session.run("pip", "install", "mypy==0.961")
-    session.run("mypy", "kucherx")
+    session.run("mypy", "kucherx", "--exclude", "kucherx/libraries")
 
 
 @nox.session(reuse_venv=True)

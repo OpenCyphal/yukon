@@ -2,16 +2,16 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
-from domain.kucherx_state import KucherXState
-from domain.queue_quit_object import QueueQuitObject
+from kucherx.domain.kucherx_state import KucherXState
+from kucherx.domain.queue_quit_object import QueueQuitObject
 
 
-def bti(byte):
+def pixel_conversion(input: int) -> float:
     """Byte to int"""
-    return byte / 255
+    return input / 255
 
 
-def _image_from_graph_thread(state: KucherXState) -> None:
+def image_from_graph_thread(state: KucherXState) -> None:
     while state.gui_running:
         G = state.update_image_from_graph.get()
         if isinstance(G, QueueQuitObject):
@@ -33,8 +33,8 @@ def _image_from_graph_thread(state: KucherXState) -> None:
         plt.show()
         new_texture_data = []
         for i in range(0, image_size * image_size * 3, 3):
-            new_texture_data.append(bti(new_texture_data2[i]))
-            new_texture_data.append(bti(new_texture_data2[i + 1]))
-            new_texture_data.append(bti(new_texture_data2[i + 2]))
+            new_texture_data.append(pixel_conversion(new_texture_data2[i]))
+            new_texture_data.append(pixel_conversion(new_texture_data2[i + 1]))
+            new_texture_data.append(pixel_conversion(new_texture_data2[i + 2]))
             new_texture_data.append(1)
         state.dpg.set_value("monitor_graph_texture_tag", new_texture_data)

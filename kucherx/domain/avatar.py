@@ -5,10 +5,10 @@ from typing import Optional, Any, Callable
 import pycyphal
 from pycyphal.transport import ServiceDataSpecifier, Timestamp, AlienTransfer, MessageDataSpecifier
 
-from domain.note_state import NodeState
-from domain.port_set import PortSet
-from domain._expand_subjects import expand_subjects, expand_mask
-from domain.iface import Iface
+from kucherx.domain.note_state import NodeState
+from kucherx.domain.port_set import PortSet
+from kucherx.domain._expand_subjects import expand_subjects, expand_mask
+from kucherx.domain.iface import Iface
 import uavcan
 
 logger = logging.getLogger()

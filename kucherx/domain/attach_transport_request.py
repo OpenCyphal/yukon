@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from domain.UID import UID
-from domain.interface import Interface
+from kucherx.domain.UID import UID
+from kucherx.domain.interface import Interface
 
 
 @dataclass

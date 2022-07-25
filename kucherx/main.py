@@ -9,17 +9,17 @@ import asyncio
 # This is to get __init__.py to run
 from __init__ import nonce  # type: ignore
 
-from domain.attach_transport_request import AttachTransportRequest
+from kucherx.domain.attach_transport_request import AttachTransportRequest
 
-from domain.queue_quit_object import QueueQuitObject
-from domain.viewport_info import ViewPortInfo
-from domain.window_style_state import WindowStyleState
-from services.errors_thread import _errors_thread
-from services.threads.cyphal_worker import _cyphal_worker_thread
-from services.threads.graph_from_avatars import _graph_from_avatars_thread
-from services.threads.image_from_graph import _image_from_graph_thread
-from services.terminate_handler import make_terminate_handler
-from services.folder_recognition.common_folders import (
+from kucherx.domain.queue_quit_object import QueueQuitObject
+from kucherx.domain.viewport_info import ViewPortInfo
+from kucherx.domain.window_style_state import WindowStyleState
+from kucherx.services.threads.errors_thread import errors_thread
+from kucherx.services.threads.cyphal_worker import cyphal_worker_thread
+from kucherx.services.threads.graph_from_avatars import graph_from_avatars_thread
+from kucherx.services.threads.image_from_graph import image_from_graph_thread
+from kucherx.services.terminate_handler import make_terminate_handler
+from kucherx.services.folder_recognition.common_folders import (
     get_resources_directory,
     get_root_directory,
 )
@@ -29,18 +29,18 @@ import pytest
 import unittest
 from time import sleep
 
-from domain.kucherx_state import KucherXState
-from high_dpi_handler import make_process_dpi_aware, configure_font_and_scale
+from kucherx.domain.kucherx_state import KucherXState
+from kucherx.high_dpi_handler import make_process_dpi_aware, configure_font_and_scale
 from sentry_setup import setup_sentry
-from services.get_screen_resolution import get_screen_resolution
-from themes.main_window_theme import get_main_theme
-from windows.errors import make_errors_window
-from windows.request_inferior_transport import make_request_inferior_transport_window
-from close_popup_viewport import display_close_popup_viewport
-from menubars.main_menubar import make_main_menubar
+from kucherx.services.get_screen_resolution import get_screen_resolution
+from kucherx.themes.main_window_theme import get_main_theme
+from kucherx.windows.errors import make_errors_window
+from kucherx.windows.request_inferior_transport import make_request_inferior_transport_window
+from kucherx.close_popup_viewport import display_close_popup_viewport
+from kucherx.menubars.main_menubar import make_main_menubar
 import sentry_sdk
 
-from windows.monitor import make_monitor_window
+from kucherx.windows.monitor import make_monitor_window
 
 setup_sentry(sentry_sdk)
 paths = sys.path
@@ -79,13 +79,13 @@ def run_gui_app() -> None:
     make_terminate_handler(exit_handler)
     display_error_callback = make_errors_window(dpg, state)
     # Creating 3 new threads
-    cyphal_worker_thread = threading.Thread(target=_cyphal_worker_thread, args=[state])
+    cyphal_worker_thread = threading.Thread(target=cyphal_worker_thread, args=[state])
     cyphal_worker_thread.start()
-    errors_thread = threading.Thread(target=_errors_thread, args=[state, display_error_callback])
+    errors_thread = threading.Thread(target=errors_thread, args=[state, display_error_callback])
     errors_thread.start()
-    avatars_to_graph_thread = threading.Thread(target=_graph_from_avatars_thread, args=[state])
+    avatars_to_graph_thread = threading.Thread(target=graph_from_avatars_thread, args=[state])
     avatars_to_graph_thread.start()
-    graphs_to_images_thread = threading.Thread(target=_image_from_graph_thread, args=[state])
+    graphs_to_images_thread = threading.Thread(target=image_from_graph_thread, args=[state])
     graphs_to_images_thread.start()
 
     logging.getLogger("pycyphal").setLevel(logging.CRITICAL)

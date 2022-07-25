@@ -15,11 +15,11 @@ _SOURCE_PATH = os.path.abspath(os.path.dirname(__file__))
 THIRDPARTY_PATH_ROOT = os.path.join(_SOURCE_PATH, "libraries")
 
 
-def get_root_directory():
+def get_root_directory() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-THIRDPARTY_PATH = [
+THIRDPARTY_PATH: typing.List[Path] = [
     # _SOURCE_PATH.parent / ".compiled" / "uavcan",
     # _SOURCE_PATH.parent / ".compiled" / "reg"
     # os.path.join(THIRDPARTY_PATH_ROOT),
@@ -27,7 +27,7 @@ THIRDPARTY_PATH = [
 ]
 
 for tp in THIRDPARTY_PATH:
-    sys.path.insert(0, tp)
+    sys.path.insert(0, str(tp))
 
 __version__: str = (Path(__file__).parent / "VERSION").read_text().strip()
 __version_info__: typing.Tuple[int, ...] = tuple(map(int, __version__.split(".")[:3]))
@@ -51,5 +51,5 @@ print(f"Adding {dsdl_compiled_directory} to Python path")
 sys.path.insert(0, dsdl_compiled_directory)
 
 
-def nonce():
+def nonce() -> None:
     pass

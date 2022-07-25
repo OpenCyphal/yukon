@@ -1,4 +1,6 @@
 import logging
+import typing
+from pathlib import Path
 
 from high_dpi_handler import configure_font_and_scale
 
@@ -7,8 +9,10 @@ logger.setLevel("NOTSET")
 
 
 def display_close_popup_viewport(
-    dpg, resources_directory, screen_resolution, save_callback=None, dont_save_callback=None
-):
+        dpg: typing.Any, resources_directory: Path, screen_resolution: typing.Tuple,
+        save_callback: typing.Optional[typing.Callable] = None,
+        dont_save_callback: typing.Optional[typing.Callable] = None
+) -> None:
     default_font = configure_font_and_scale(dpg, logger, resources_directory)
     # Calculations for centering the viewport for the popup
     needed_width = 730
@@ -34,16 +38,14 @@ def display_close_popup_viewport(
         dpg.bind_font(default_font)
         dpg.add_text("Do you want to save your Cyphal local node settings?")
         if save_callback is None:
-
-            def save_callback():
+            def save_callback() -> None:
                 pass
 
         if dont_save_callback is None:
-
-            def dont_save_callback():
+            def dont_save_callback() -> None:
                 pass
 
-        def close_callback():
+        def close_callback() -> None:
             dpg.stop_dearpygui()
 
         btn_save = dpg.add_button(label="Save", tag="btnSave", width=200)
