@@ -15,4 +15,6 @@ jobs:
           python3.10 -m pip install -r requirements.txt -r requirements-dev.txt
       - name: Testing GUI
         run: |
-          PYTHONPATH=".:.." nox -s demo
+          PYTHONPATH=".:.." nox -s mypy
+          PYTHONPATH=".:.." nox -s black
+          PYTHONPATH=".:.." nox -s pylint
