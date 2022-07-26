@@ -1,6 +1,8 @@
+import logging
 import threading
 import typing
 from dataclasses import dataclass, field
+from pathlib import Path
 from queue import Queue
 from typing import Optional, Any, Callable, Dict
 
@@ -18,6 +20,8 @@ from kucherx.domain.graph_image import GraphImage
 from kucherx.domain.interface import Interface
 from kucherx.domain.note_state import NodeState
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass(init=False)
 class KucherXState:
@@ -32,9 +36,15 @@ class KucherXState:
         self.queue_add_transports = Queue()
         self.queue_detach_transports = Queue()
         self.errors_queue = Queue()
+        self.default_font = None
+        self.theme = None
+        self.display_errors_callback = lambda message: logger.error(message)
 
     interfaces: list[Interface]
+    default_font: Optional[UID]
+    theme: Optional[UID]
     event_loop: Any
+    display_errors_callback: typing.Callable[[str], None]
     add_transport: Callable[[Interface], None]
     pseudo_transport: Optional[RedundantTransport]
     update_monitor_image_queue: Queue[GraphImage]

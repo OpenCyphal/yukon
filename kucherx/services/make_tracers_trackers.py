@@ -5,10 +5,10 @@ import typing
 import pycyphal
 from pycyphal.application.node_tracker import NodeTracker, Entry
 
-from domain.avatar import Avatar
-from domain.kucherx_state import KucherXState
+from kucherx.domain.avatar import Avatar
+from kucherx.domain.kucherx_state import KucherXState
 
-from domain.iface import Iface
+from kucherx.domain.iface import Iface
 
 logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")

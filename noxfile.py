@@ -58,7 +58,7 @@ def demo(session):
 @nox.session(reuse_venv=True)
 def black(session):
     session.run("pip", "install", "black == 22.*")
-    session.run("black", "--check", ".")
+    session.run("black", "--check", "kucherx", "--exclude", "kucherx/libraries")
 
 
 @nox.session(reuse_venv=True)
@@ -69,5 +69,5 @@ def mypy(session):
 
 @nox.session(reuse_venv=True)
 def pylint(session):
-    session.run("pip", "install", "mypy==0.961")
+    session.run("pip", "install", "pylint==2.*")
     session.run("pylint", *map(str, src_dirs), env={"PYTHONPATH": str(compiled_dir)})

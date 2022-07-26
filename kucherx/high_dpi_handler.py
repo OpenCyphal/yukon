@@ -12,7 +12,8 @@ def make_process_dpi_aware(logger: logging.Logger) -> None:
 
         try:
             result = ctypes.windll.shcore.SetProcessDpiAwareness(2)  # if your windows version >= 8.1
-        except:
+        except Exception:
+            logger.info("Running on a windows version 8.0 or less")
             result = ctypes.windll.user32.SetProcessDPIAware()  # win 8.0 or less
         # https://docs.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-setprocessdpiawareness
         match result:
@@ -38,7 +39,7 @@ def is_high_dpi_screen(logger: logging.Logger) -> bool:
         dpi = root.winfo_fpixels("1i")
         logger.warning("DPI is " + str(dpi) + " on screen " + root.winfo_screen())
         return dpi > 100
-    except ImportError as e:
+    except ImportError:
         logger.warn("Unable to import TKinter, it is missing from Python. Can't tell if the screen is high dpi.")
         return False
 

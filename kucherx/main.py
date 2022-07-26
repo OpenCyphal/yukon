@@ -1,16 +1,19 @@
 import threading
 from typing import Optional, Any
-
-import dearpygui.dearpygui as dpg  # type: ignore
 import os
 import sys
 import asyncio
+import logging
+import unittest
+from time import sleep
 
+import pytest
+import dearpygui.dearpygui as dpg  # type: ignore
+import sentry_sdk
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 
 from kucherx.domain.queue_quit_object import QueueQuitObject
 from kucherx.domain.viewport_info import ViewPortInfo
-from kucherx.domain.window_style_state import WindowStyleState
 
 from kucherx.services.threads.graph_from_avatars import graph_from_avatars_thread
 from kucherx.services.threads.image_from_graph import image_from_graph_thread
@@ -20,21 +23,14 @@ from kucherx.services.folder_recognition.common_folders import (
     get_root_directory,
 )
 
-import logging
-import pytest
-import unittest
-from time import sleep
-
 from kucherx.domain.kucherx_state import KucherXState
 from kucherx.high_dpi_handler import make_process_dpi_aware, configure_font_and_scale
-from sentry_setup import setup_sentry
+from kucherx.sentry_setup import setup_sentry
 from kucherx.services.get_screen_resolution import get_screen_resolution
 from kucherx.themes.main_window_theme import get_main_theme
 from kucherx.windows.errors import make_errors_window
 from kucherx.windows.request_inferior_transport import make_request_inferior_transport_window
 from kucherx.close_popup_viewport import display_close_popup_viewport
-from kucherx.menubars.main_menubar import make_main_menubar
-import sentry_sdk
 
 from kucherx.windows.monitor import make_monitor_window
 
@@ -43,6 +39,21 @@ paths = sys.path
 
 logger = logging.getLogger(__file__)
 logger.setLevel("NOTSET")
+
+
+def start_threads(state):
+    # Creating 3 new threads
+    from kucherx.services.threads.errors_thread import errors_thread
+    from kucherx.services.threads.cyphal_worker import cyphal_worker_thread
+
+    cyphal_worker_thread = threading.Thread(target=cyphal_worker_thread, args=[state])
+    cyphal_worker_thread.start()
+    errors_thread = threading.Thread(target=errors_thread, args=[state])
+    errors_thread.start()
+    avatars_to_graph_thread = threading.Thread(target=graph_from_avatars_thread, args=[state])
+    avatars_to_graph_thread.start()
+    graphs_to_images_thread = threading.Thread(target=image_from_graph_thread, args=[state])
+    graphs_to_images_thread.start()
 
 
 def run_gui_app() -> None:
@@ -58,12 +69,11 @@ def run_gui_app() -> None:
         resizable=True,
     )
     dpg.create_viewport(**vpi.__dict__, decorated=True, x_pos=500, y_pos=500)
+    state = KucherXState()
+    state.default_font = configure_font_and_scale(dpg, logger, get_resources_directory())
+    state.theme = get_main_theme(dpg)
 
     # dpg.configure_app(docking=True, docking_space=dock_space)
-    wss: WindowStyleState = WindowStyleState(
-        font=configure_font_and_scale(dpg, logger, get_resources_directory()), theme=get_main_theme(dpg)
-    )
-    state = KucherXState()
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui_running = False
@@ -72,40 +82,34 @@ def run_gui_app() -> None:
         state.update_image_from_graph.put(QueueQuitObject())
         state.errors_queue.put(QueueQuitObject())
 
+    dpg.enable_docking(dock_space=False)
     make_terminate_handler(exit_handler)
-    display_error_callback = make_errors_window(dpg, state)
-    # Creating 3 new threads
-    from kucherx.services.threads.errors_thread import errors_thread
-    from kucherx.services.threads.cyphal_worker import cyphal_worker_thread
-    cyphal_worker_thread = threading.Thread(target=cyphal_worker_thread, args=[state])
-    cyphal_worker_thread.start()
-    errors_thread = threading.Thread(target=errors_thread, args=[state, display_error_callback])
-    errors_thread.start()
-    avatars_to_graph_thread = threading.Thread(target=graph_from_avatars_thread, args=[state])
-    avatars_to_graph_thread.start()
-    graphs_to_images_thread = threading.Thread(target=image_from_graph_thread, args=[state])
-    graphs_to_images_thread.start()
+    make_errors_window(dpg, state)
+
+    start_threads(state)
 
     logging.getLogger("pycyphal").setLevel(logging.CRITICAL)
     logging.getLogger("can").setLevel(logging.ERROR)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
     screen_resolution = get_screen_resolution()
-    monitor_window_id = make_monitor_window(dpg, logger)
-    dpg.set_primary_window(monitor_window_id, True)
+
+    def open_interface_menu() -> None:
+        make_request_inferior_transport_window(
+            dpg, state, notify_transport_added=add_transport, notify_transport_removed=remove_transport
+        )
+
+    make_monitor_window(dpg, state, open_interface_menu)
+    dpg.set_primary_window(dpg.add_window(label="Just the primary window"), True)
+
+    # dpg.set_primary_window(dpg.add_window(label="Just another primary window", tag="nonce"), True)
+    # dpg.hide_item("nonce")
 
     def add_transport(request: AttachTransportRequest) -> None:
         state.queue_add_transports.put(request)
 
     def remove_transport(request: AttachTransportRequest) -> None:
         state.queue_detach_transports.put(request)
-
-    def open_interface_menu() -> None:
-        make_request_inferior_transport_window(
-            dpg, state, logger, wss, notify_transport_added=add_transport, notify_transport_removed=remove_transport
-        )
-
-    make_main_menubar(dpg, wss.font, new_interface_callback=open_interface_menu)
 
     dpg.setup_dearpygui()
     dpg.show_viewport()
@@ -132,7 +136,7 @@ def run_gui_app() -> None:
     if state.is_close_dialog_enabled:
         dpg.create_context()
         display_close_popup_viewport(
-            dpg, get_resources_directory(), screen_resolution, save_callback, dont_save_callback
+            dpg, state, get_resources_directory(), screen_resolution, save_callback, dont_save_callback
         )
 
         while dpg.is_dearpygui_running():
@@ -171,7 +175,7 @@ async def main() -> int:
 
 if __name__ == "__main__":
     asyncio.run(main())
-    exit(0)
+    sys.exit(0)
 
 
 class MyTest(unittest.TestCase):

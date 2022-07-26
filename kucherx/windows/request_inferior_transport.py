@@ -9,7 +9,6 @@ from kucherx.domain.UID import UID
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 from kucherx.domain.interface import Interface
 from kucherx.domain.kucherx_state import KucherXState
-from kucherx.domain.window_style_state import WindowStyleState
 
 import re
 
@@ -24,12 +23,11 @@ def update_list_of_comports(dpg: typing.Any, combobox: UID) -> None:
 def make_request_inferior_transport_window(
     dpg: typing.Any,
     state: KucherXState,
-    logger: logging.Logger,
-    wss: WindowStyleState,
     notify_transport_added: typing.Callable[[AttachTransportRequest], None],
     notify_transport_removed: typing.Callable[[AttachTransportRequest], None],
 ) -> UID:
     with dpg.window(label="Configure interface", width=560, height=540, no_close=False) as current_window_id:
+        dpg.bind_font(state.default_font)
         dpg.set_exit_callback(notify_transport_removed)
         interface: Interface = Interface()
         input_field_width = 490
@@ -122,7 +120,6 @@ def make_request_inferior_transport_window(
 
             def use_combobox() -> None:
                 """The user can select to see candump files located around the KucherX executable."""
-                state.errors_queue.put("This is an error because you pressed this specific button. Oh no!")
                 dpg.hide_item(tb_candump_path)
                 dpg.show_item(candump_files_select_combobox)
                 items = get_candump_files()

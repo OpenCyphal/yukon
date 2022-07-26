@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
 
 
-def make_errors_window(dpg: typing.Any, state: KucherXState) -> typing.Callable[[str], None]:
+def make_errors_window(dpg: typing.Any, state: KucherXState) -> None:
     with dpg.window(label="List of errors and messages", width=700, height=400, no_close=False) as current_window_id:
         counter = 0
 
@@ -26,4 +26,4 @@ def make_errors_window(dpg: typing.Any, state: KucherXState) -> typing.Callable[
             dpg.add_text(default_value=error, tag=f"error{counter}", parent=current_window_id, show=True)
             counter += 1
 
-    return add_error_to_display
+        state.display_errors_callback = add_error_to_display
