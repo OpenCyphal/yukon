@@ -3,7 +3,7 @@ rm -rf .compiled
 git submodule update --init --recursive
 python3 -m venv venv
 . venv/bin/activate
-pip install -r requirements.txt
+pip install .
 pip install -r requirements-dev.txt
 sudo apt install libjack-jackd2-dev libasound2-dev
 pip install yakut

@@ -49,7 +49,7 @@ def demo(session):
     Test the demo app orchestration example.
     This is a separate session because it is dependent on Yakut.
     """
-    session.install("-r", "requirements.txt")
+    session.install(".")
 
     session.env["STOP_AFTER"] = "10"
     session.run("python3.10", "kucherx/main.py", success_codes=[0])
