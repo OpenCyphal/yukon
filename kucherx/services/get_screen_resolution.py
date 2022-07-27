@@ -10,8 +10,8 @@ def get_screen_resolution() -> typing.Tuple[int, int]:
     if os.name == "nt":
         import ctypes
 
-        user32 = ctypes.windll.user32
-        return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+        user32 = ctypes.windll.user32 # type: ignore
+        return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1) # type: ignore
     else:
         logger.warning("Screen resolution detection is not yet implemented for non-windows platforms.")
         return 1280, 720
