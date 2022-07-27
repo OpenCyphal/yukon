@@ -1,4 +1,9 @@
-def get_close_popup_theme(dpg):
+import typing
+
+from kucherx.domain.UID import UID
+
+
+def get_close_popup_theme(dpg: typing.Any) -> UID:
     with dpg.theme() as close_popup_theme:
         with dpg.theme_component(dpg.mvAll):
             dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 30, 15, category=dpg.mvThemeCat_Core)

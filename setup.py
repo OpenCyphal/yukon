@@ -12,24 +12,4 @@ from pathlib import Path
 PACKAGE_NAME = "kucherx"
 DSDL_SOURCE_ROOT = Path(__file__).resolve().parent / PACKAGE_NAME / "dsdl_src"
 
-
-# noinspection PyUnresolvedReferences
-class BuildPy(distutils.command.build_py.build_py):
-    def run(self):
-        if not self.dry_run:
-            from pycyphal.dsdl import compile_all
-
-            compile_all(
-                [
-                    DSDL_SOURCE_ROOT / "public_regulated_data_types" / "uavcan",
-                    DSDL_SOURCE_ROOT / "public_regulated_data_types" / "reg",
-                ],
-                Path(".compiled").resolve(),
-            )
-        super().run()
-
-
-logging.basicConfig(level=logging.INFO, format="%(levelname)-3.3s %(name)s: %(message)s")
-setuptools.setup(
-    cmdclass={"build_py": BuildPy},
-)
+setuptools.setup()

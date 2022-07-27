@@ -1,167 +1,186 @@
-from typing import Union
-
-import dearpygui.dearpygui as dpg  # type: ignore
+import threading
+from typing import Optional, Any
 import os
 import sys
 import asyncio
-import time
-import pathlib
-
 import logging
-import pytest
 import unittest
+from time import sleep
 
-from high_dpi_handler import make_process_dpi_aware, is_high_dpi_screen, configure_font_and_scale
-from sentry_setup import setup_sentry
-from themes.main_window_theme import get_main_theme
-from windows.cyphal_window import make_cyphal_window, CyphalLocalNodeSettings, save_cyphal_local_node_settings
-from windows.close_popup_viewport import display_close_popup_viewport
-from menubars.main_menubar import make_main_menubar
+import pytest
+import dearpygui.dearpygui as dpg
 import sentry_sdk
-# This is to get __init__.py to run
-from kucherx import nonce  # type: ignore
+from kucherx.domain.attach_transport_request import AttachTransportRequest
+
+from kucherx.domain.queue_quit_object import QueueQuitObject
+from kucherx.domain.viewport_info import ViewPortInfo
+
+from kucherx.services.threads.graph_from_avatars import graph_from_avatars_thread
+from kucherx.services.threads.image_from_graph import image_from_graph_thread
+from kucherx.services.terminate_handler import make_terminate_handler
+from kucherx.services.folder_recognition.common_folders import (
+    get_resources_directory,
+    get_root_directory,
+)
+
+from kucherx.domain.kucherx_state import KucherXState
+from kucherx.high_dpi_handler import make_process_dpi_aware, configure_font_and_scale
+from kucherx.sentry_setup import setup_sentry
+from kucherx.services.get_screen_resolution import get_screen_resolution
+from kucherx.themes.main_window_theme import get_main_theme
+from kucherx.windows.errors import make_errors_window
+from kucherx.windows.request_inferior_transport import make_request_inferior_transport_window
+from kucherx.close_popup_viewport import display_close_popup_viewport
+
+from kucherx.windows.monitor import make_monitor_window
 
 setup_sentry(sentry_sdk)
 paths = sys.path
 
 logger = logging.getLogger(__file__)
+logger.setLevel("NOTSET")
 
 
-def get_screen_resolution():
-    """If the screen size is known then the close dialog can be centered via its position"""
-    if os.name == "nt":
-        import ctypes
-        user32 = ctypes.windll.user32
-        return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
-    else:
-        logger.warning("Screen resolution detection is not yet implemented for non-windows platforms.")
-        return 1280, 720
+def start_threads(state: KucherXState) -> None:
+    # Creating 3 new threads
+    from kucherx.services.threads.errors_thread import errors_thread
+    from kucherx.services.threads.cyphal_worker import cyphal_worker_thread
+
+    cyphal_worker_thread = threading.Thread(target=cyphal_worker_thread, args=[state])
+    cyphal_worker_thread.start()
+    errors_thread = threading.Thread(target=errors_thread, args=[state])
+    errors_thread.start()
+    avatars_to_graph_thread = threading.Thread(target=graph_from_avatars_thread, args=[state])
+    avatars_to_graph_thread.start()
+    graphs_to_images_thread = threading.Thread(target=image_from_graph_thread, args=[state])
+    graphs_to_images_thread.start()
 
 
-def get_root_directory():
-    from os.path import exists
-    current = pathlib.Path(__file__).parent
-    time_started = time.time()
-    while time_started - time.time() < 0.1:
-        if exists(current / "LICENSE") or exists(current / ".gitignore"):
-            return current.resolve()
-        else:
-            current = current.parent
-    return None
-
-
-def get_kucherx_directory():
-    return get_root_directory() / "kucherx"
-
-
-def get_sources_directory():
-    return pathlib.Path(__file__).parent.resolve()
-
-
-def get_resources_directory():
-    return get_kucherx_directory() / "res"
-
-
-ID = Union[str, int]
-
-
-def ensure_window_is_in_viewport(window_id: ID):
-    window_x_pos = dpg.get_item_pos(window_id)[0]
-    window_y_pos = dpg.get_item_pos(window_id)[1]
-    if window_x_pos < 0:
-        # dpg.configure_item(window_id, no_move=True)
-        dpg.set_item_pos(window_id, [0, window_y_pos])
-
-
-def prepare_rendered_icons():
-    from os import walk
-    try:
-        import cairosvg
-        svg_files = []
-        for (dir_path, dir_names, filenames) in walk(get_resources_directory() / "icons" / "svg"):
-            for file_name in filenames:
-                if ".svg" in file_name:
-                    svg_files.append(file_name)
-            break
-    except Exception as e:
-        if type(e) == OSError and "no library called \"cairo-2\" was found" in repr(e):
-            logger.error("Was unable to find the cairo-2 dlls. This means that I am unable to convert SVG icons to "
-                         "PNG for display.")
-            return
-        else:
-            raise e
-
-
-def run_gui_app():
+def run_gui_app() -> None:
     make_process_dpi_aware(logger)
-    prepare_rendered_icons()
     dpg.create_context()
-    dpg.create_viewport(title='KucherX', width=920, height=800,
-                        small_icon=str(get_resources_directory() / "icons/png/KucherX.png"),
-                        large_icon=str(get_resources_directory() / "icons/png/KucherX_256.ico"),
-                        resizable=False)
-    default_font = configure_font_and_scale(dpg, logger, get_resources_directory())
+
+    vpi: ViewPortInfo = ViewPortInfo(
+        title="KucherX",
+        width=920,
+        height=870,
+        small_icon=str(get_resources_directory() / "icons/png/KucherX.png"),
+        large_icon=str(get_resources_directory() / "icons/png/KucherX_256.ico"),
+        resizable=True,
+    )
+    dpg.create_viewport(**vpi.__dict__, decorated=True, x_pos=500, y_pos=500)
+    state = KucherXState()
+    state.default_font = configure_font_and_scale(dpg, logger, get_resources_directory())
+    state.theme = get_main_theme(dpg)
 
     # dpg.configure_app(docking=True, docking_space=dock_space)
 
-    settings = CyphalLocalNodeSettings(8, "", 127, "", arbitration_bitrate=1000000, data_bitrate=1000000)
+    def exit_handler(_arg1: Any, _arg2: Any) -> None:
+        state.gui_running = False
+        print("Registering an exit!")
+        state.update_graph_from_avatar_queue.put(QueueQuitObject())
+        state.update_image_from_graph.put(QueueQuitObject())
+        state.errors_queue.put(QueueQuitObject())
+
+    dpg.enable_docking(dock_space=False)
+    make_terminate_handler(exit_handler)
+    make_errors_window(dpg, state)
+
+    start_threads(state)
+
+    logging.getLogger("pycyphal").setLevel(logging.CRITICAL)
+    logging.getLogger("can").setLevel(logging.ERROR)
+    logging.getLogger("asyncio").setLevel(logging.CRITICAL)
+
     screen_resolution = get_screen_resolution()
-    main_window_id = make_cyphal_window(dpg, logger, default_font, settings, get_main_theme(dpg))
-    dpg.set_primary_window(main_window_id, True)
-    make_main_menubar(dpg, default_font)
+
+    def open_interface_menu() -> None:
+        make_request_inferior_transport_window(
+            dpg, state, notify_transport_added=add_transport, notify_transport_removed=remove_transport
+        )
+
+    make_monitor_window(dpg, state, open_interface_menu)
+    dpg.set_primary_window(dpg.add_window(label="Just the primary window"), True)
+
+    # dpg.set_primary_window(dpg.add_window(label="Just another primary window", tag="nonce"), True)
+    # dpg.hide_item("nonce")
+
+    def add_transport(request: AttachTransportRequest) -> None:
+        state.queue_add_transports.put(request)
+
+    def remove_transport(request: AttachTransportRequest) -> None:
+        state.queue_detach_transports.put(request)
+
     dpg.setup_dearpygui()
-    # Include the following code before showing the viewport/calling `dearpygui.dearpygui.show_viewport`.
-
     dpg.show_viewport()
-    # dpg.show_style_editor()
-    # below replaces, start_dearpygui()
-    while dpg.is_dearpygui_running():
-        ensure_window_is_in_viewport(main_window_id)
-        dpg.render_dearpygui_frame()
-    dpg.destroy_context()
+    dpg.maximize_viewport()
 
-    def dont_save_callback():
+    def dont_save_callback() -> None:
         logger.info("I was asked not to save")
 
-    def save_callback():
-        save_cyphal_local_node_settings(settings)
+    def save_callback() -> None:
+        # save_cyphal_local_node_settings(state.settings)
         logger.info("I was asked to save")
 
-    display_close_popup_viewport(dpg, logger, get_resources_directory(), screen_resolution, save_callback,
-                                 dont_save_callback)
+    # dpg.show_style_editor()
+    # below replaces, start_dearpygui()
+    while dpg.is_dearpygui_running() and state.gui_running:
+        # ensure_window_is_in_viewport(main_window_id)
+        dpg.render_dearpygui_frame()
+
+    print("Exiting via the easy route")
+    exit_handler(None, None)
+    dpg.stop_dearpygui()
+
+    dpg.destroy_context()
+    if state.is_close_dialog_enabled:
+        dpg.create_context()
+        display_close_popup_viewport(
+            dpg, state, get_resources_directory(), screen_resolution, save_callback, dont_save_callback
+        )
+
+        while dpg.is_dearpygui_running():
+            dpg.render_dearpygui_frame()
+
+        dpg.destroy_context()
+    state.gui_running = False
+    logger.info("Gui was set to not running")
+    # cyphal_worker_thread.join()
+    print("Node thread joined")
 
 
+def get_stop_after_value() -> Optional[str]:
+    return os.environ.get("STOP_AFTER")
 
-def auto_exit_task():
-    if os.environ.get("STOP_AFTER"):
-        stop_after_value = int(os.environ.get("STOP_AFTER"))
+
+def auto_exit_task() -> int:
+    if get_stop_after_value():
+        stop_after_value = int(get_stop_after_value())  # type: ignore
         if stop_after_value:
-            time.sleep(stop_after_value)
+            sleep(stop_after_value)
             logging.info("Program should exit!")
             dpg.stop_dearpygui()
     return 0
 
 
-def scan_for_com_ports_task():
-    pass
-
-
-async def main():
-    await asyncio.gather(
-        asyncio.to_thread(run_gui_app),
-        asyncio.to_thread(auto_exit_task)
-    )
+async def main() -> int:
+    if get_stop_after_value():
+        auto_exit_thread = threading.Thread(target=auto_exit_task)
+        auto_exit_thread.start()
+    run_gui_app()
+    if get_stop_after_value():
+        auto_exit_thread.join()
     return 0
 
 
 if __name__ == "__main__":
     asyncio.run(main())
-    exit(0)
+    sys.exit(0)
 
 
 class MyTest(unittest.TestCase):
     @pytest.mark.timeout(0.1)
-    def test_get_root_directory(self):
+    def test_get_root_directory(self) -> None:
         root_dir = get_root_directory()
         logging.info(root_dir)
         assert root_dir
