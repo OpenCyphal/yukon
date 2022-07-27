@@ -8,7 +8,7 @@ import unittest
 from time import sleep
 
 import pytest
-import dearpygui.dearpygui as dpg  # type: ignore
+import dearpygui.dearpygui as dpg
 import sentry_sdk
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 
@@ -41,7 +41,7 @@ logger = logging.getLogger(__file__)
 logger.setLevel("NOTSET")
 
 
-def start_threads(state: KucherXState):
+def start_threads(state: KucherXState) -> None:
     # Creating 3 new threads
     from kucherx.services.threads.errors_thread import errors_thread
     from kucherx.services.threads.cyphal_worker import cyphal_worker_thread
