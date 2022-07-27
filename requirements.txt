@@ -6,6 +6,5 @@ pyserial
 setuptools
 numpy
 pydsdl
-nox
 networkx==2.*
 matplotlib==3.*
