@@ -11,10 +11,10 @@ def make_process_dpi_aware(logger: logging.Logger) -> None:
         import ctypes
 
         try:
-            result = ctypes.windll.shcore.SetProcessDpiAwareness(2)  # if your windows version >= 8.1
+            result = ctypes.windll.shcore.SetProcessDpiAwareness(2) # type: ignore
         except Exception:
             logger.info("Running on a windows version 8.0 or less")
-            result = ctypes.windll.user32.SetProcessDPIAware()  # win 8.0 or less
+            result = ctypes.windll.user32.SetProcessDPIAware()  # type: ignore
         # https://docs.microsoft.com/en-us/windows/win32/api/shellscalingapi/nf-shellscalingapi-setprocessdpiawareness
         match result:
             case None:
