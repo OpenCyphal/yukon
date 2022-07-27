@@ -13,7 +13,8 @@ jobs:
         run: |
           pip install yakut
           yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
-          python3.10 -m pip install -r requirements.txt -r requirements-dev.txt
+          python3.10 -m pip install -r requirements-dev.txt
+          python3.10 -m pip install .
       - name: Testing GUI
         run: |
           PYTHONPATH=".:.." nox -s mypy
