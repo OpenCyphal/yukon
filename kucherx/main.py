@@ -41,7 +41,7 @@ logger = logging.getLogger(__file__)
 logger.setLevel("NOTSET")
 
 
-def start_threads(state):
+def start_threads(state: KucherXState):
     # Creating 3 new threads
     from kucherx.services.threads.errors_thread import errors_thread
     from kucherx.services.threads.cyphal_worker import cyphal_worker_thread
