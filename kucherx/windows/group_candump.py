@@ -6,11 +6,15 @@ from kucherx.domain import UID
 from kucherx.services.folder_recognition.common_folders import get_root_directory
 
 
-def make_candump_group(dpg, input_field_width, current_window_id: UID, interface: Interface, state: GodState):
+def make_candump_group(
+    dpg: typing.Any, input_field_width: int, current_window_id: UID, interface: Interface, state: GodState
+) -> UID:
     with dpg.group(horizontal=False) as candump_group:
+
         def get_candump_files() -> typing.List[str]:
             from os import listdir
             from os.path import isfile, join
+
             root_dir = get_root_directory()
             return [f for f in listdir(root_dir) if isfile(join(root_dir, f)) and ".candump" in f]
 

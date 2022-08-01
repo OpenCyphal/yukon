@@ -10,9 +10,7 @@ logger = logging.getLogger(__file__)
 logger.setLevel("NOTSET")
 
 
-def make_monitor_window(
-    dpg: typing.Any, state: GodState, open_interface_menu: typing.Callable[[None], None]
-) -> UID:
+def make_monitor_window(dpg: typing.Any, state: GodState, open_interface_menu: typing.Callable[[None], None]) -> UID:
     dpg.bind_font(state.default_font)
     with dpg.texture_registry(show=False):
         dpg.add_dynamic_texture(

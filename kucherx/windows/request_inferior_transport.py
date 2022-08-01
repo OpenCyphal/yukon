@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 
 
 def make_request_inferior_transport_window(
-        dpg: typing.Any,
-        state: GodState,
-        notify_transport_requested: typing.Callable[[AttachTransportRequest], None],
-        notify_transport_removal: typing.Callable[[AttachTransportRequest], None],
+    dpg: typing.Any,
+    state: GodState,
+    notify_transport_requested: typing.Callable[[AttachTransportRequest], None],
+    notify_transport_removal: typing.Callable[[AttachTransportRequest], None],
 ) -> UID:
     with dpg.window(label="Configure interface", width=560, height=595, no_close=False) as current_window_id:
         dpg.bind_font(state.default_font)

@@ -2,6 +2,7 @@ import logging
 import os
 import typing
 import platform
+
 logger = logging.getLogger(__file__)
 import re
 
@@ -16,10 +17,11 @@ def get_screen_resolution() -> typing.Tuple[int, int]:
     # else:
     try:
         import tkinter
+
         root = tkinter.Tk()
         root.update_idletasks()
-        root.attributes('-fullscreen', True)
-        root.state('iconic')
+        root.attributes("-fullscreen", True)
+        root.state("iconic")
         geometry = root.winfo_geometry()
         # '3840x2160+0+0'
         root.destroy()
@@ -28,4 +30,3 @@ def get_screen_resolution() -> typing.Tuple[int, int]:
     except ImportError:
         logger.warn("Unable to import TKinter, it is missing from Python. Can't tell what resolution your screen is.")
         return 1280, 720
-

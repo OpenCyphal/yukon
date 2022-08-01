@@ -7,7 +7,9 @@ from kucherx.domain.interface import Interface
 from kucherx.domain import UID
 
 
-def make_slcan_group(dpg, input_field_width: int, current_window_id: UID, interface: Interface, state: GodState):
+def make_slcan_group(
+    dpg: typing.Any, input_field_width: int, current_window_id: UID, interface: Interface, state: GodState
+) -> UID:
     def update_list_of_comports(dpg: typing.Any, combobox: UID) -> None:
         ports = list_ports.comports()
         dpg.configure_item(combobox, items=ports)
@@ -25,8 +27,9 @@ def make_slcan_group(dpg, input_field_width: int, current_window_id: UID, interf
     with dpg.group(horizontal=False) as slcan_group:
         dpg.add_text("Interface")
         slcan_port_selection_combobox = dpg.add_combo(
-            default_value="Select an slcan interface", width=input_field_width,
-            callback=interface_selected_from_combobox
+            default_value="Select an slcan interface",
+            width=input_field_width,
+            callback=interface_selected_from_combobox,
         )
         with dpg.group(horizontal=True) as combobox_action_group:
             dpg.add_button(label="Refresh", callback=update_combobox)

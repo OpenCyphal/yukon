@@ -1,5 +1,4 @@
 import threading
-from queue import Empty
 from typing import Optional, Any
 import os
 import sys
@@ -11,8 +10,6 @@ from time import sleep
 import pytest
 import dearpygui.dearpygui as dpg
 import sentry_sdk
-from matplotlib import pyplot as plt
-from matplotlib.backends.backend_template import FigureCanvas
 
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 
@@ -29,7 +26,6 @@ from kucherx.services.folder_recognition.common_folders import (
 from kucherx.domain.god_state import GodState
 from kucherx.high_dpi_handler import make_process_dpi_aware, configure_font_and_scale
 from kucherx.sentry_setup import setup_sentry
-from kucherx.services.get_screen_resolution import get_screen_resolution
 from kucherx.themes.main_window_theme import get_main_theme
 from kucherx.windows.message_log import make_errors_window
 from kucherx.windows.request_inferior_transport import make_request_inferior_transport_window
@@ -57,9 +53,9 @@ def start_threads(state: GodState) -> None:
     avatars_to_graph_thread.start()
 
 
-def pixel_conversion(input: int) -> float:
+def pixel_conversion(_input: int) -> float:
     """Byte to int"""
-    return input / 255
+    return _input / 255
 
 
 def run_gui_app() -> None:
@@ -94,8 +90,6 @@ def run_gui_app() -> None:
     logging.getLogger("pycyphal").setLevel(logging.INFO)
     logging.getLogger("can").setLevel(logging.ERROR)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
-
-    screen_resolution = get_screen_resolution()
 
     def open_interface_menu() -> None:
         make_request_inferior_transport_window(

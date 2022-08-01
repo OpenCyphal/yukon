@@ -55,19 +55,19 @@ def demo(session):
     session.run("python3.10", "kucherx/main.py", success_codes=[0])
 
 
-@nox.session(reuse_venv=False)
+@nox.session(reuse_venv=True)
 def black(session):
     session.run("pip", "install", "black == 22.*")
     session.run("black", "--check", "kucherx", "--exclude", "kucherx/libraries")
 
 
-@nox.session(reuse_venv=False)
+@nox.session(reuse_venv=True)
 def mypy(session):
     session.run("pip", "install", "mypy==0.961")
     session.run("mypy", "kucherx", "--exclude", "kucherx/libraries")
 
 
-@nox.session(reuse_venv=False)
+@nox.session(reuse_venv=True)
 def pylint(session):
     session.run("pip", "install", "pylint==2.*")
     session.run("pylint", *map(str, src_dirs), env={"PYTHONPATH": str(compiled_dir)})

@@ -1,12 +1,11 @@
 import logging
 import typing
 from dataclasses import dataclass
-from pathlib import Path
 
-from high_dpi_handler import configure_font_and_scale
+from kucherx.high_dpi_handler import configure_font_and_scale
 from kucherx.domain.god_state import GodState
-from services.folder_recognition.common_folders import get_resources_directory
-from services.get_screen_resolution import get_screen_resolution
+from kucherx.services.folder_recognition.common_folders import get_resources_directory
+from kucherx.services.get_screen_resolution import get_screen_resolution
 
 logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
@@ -20,27 +19,28 @@ class _ViewportParams:
     center_y_px: int
 
 
-def get_needed_vieport_params() -> _ViewportParams:
+def get_needed_viewport_params() -> _ViewportParams:
     screen_resolution = get_screen_resolution()
     needed_width = 730
     needed_height = 300
     needed_center_x_position = int(screen_resolution[0] / 2 - needed_width / 2)
     needed_center_y_position = int(screen_resolution[1] / 2 - needed_height / 2)
-    new_params: _ViewportParams = _ViewportParams(needed_width, needed_height, needed_center_x_position,
-                                                needed_center_y_position)
+    new_params: _ViewportParams = _ViewportParams(
+        needed_width, needed_height, needed_center_x_position, needed_center_y_position
+    )
     return new_params
 
 
 def display_save_viewport(
-        dpg: typing.Any,
-        state: GodState,
+    dpg: typing.Any,
+    state: GodState,
 ) -> None:
     if state.is_close_dialog_enabled:
         print("Save dialog is enabled")
         dpg.create_context()
     # Calculations for centering the viewport for the popup
     resources_directory = get_resources_directory()
-    vpp: _ViewportParams = get_needed_vieport_params()
+    vpp: _ViewportParams = get_needed_viewport_params()
     state.default_font = configure_font_and_scale(dpg, logger, get_resources_directory())
     dpg.create_viewport(
         title="KucherX is closing",
