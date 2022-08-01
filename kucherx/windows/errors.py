@@ -1,14 +1,15 @@
 import logging
 import typing
 
+from kucherx.domain import UID
 from kucherx.domain.kucherx_state import KucherXState
 
 logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
 
 
-def make_errors_window(dpg: typing.Any, state: KucherXState) -> None:
-    with dpg.window(label="List of errors and messages", width=700, height=400, no_close=False) as current_window_id:
+def make_errors_window(dpg: typing.Any, state: KucherXState, monitor_window: UID) -> UID:
+    with dpg.child_window(label="List of errors and messages", parent=state.second_row, show=True) as errors_group_id:
         counter = 0
 
         def hide_errors() -> None:
@@ -23,7 +24,8 @@ def make_errors_window(dpg: typing.Any, state: KucherXState) -> None:
 
         def add_error_to_display(error: str) -> None:
             nonlocal counter
-            dpg.add_text(default_value=error, tag=f"error{counter}", parent=current_window_id, show=True)
+            dpg.add_text(default_value=error, tag=f"error{counter}", parent=errors_group_id, show=True)
             counter += 1
 
         state.display_errors_callback = add_error_to_display
+    return errors_group_id

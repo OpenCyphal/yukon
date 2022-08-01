@@ -20,10 +20,24 @@ def make_monitor_window(
         )
     with dpg.window(label="Cyphal monitor", tag="MonitorWindow") as monitor_window_id:
         # dpg.add_text("")
-        with dpg.group(horizontal=True):
-            dpg.add_text("Monitoring!")
-            dpg.add_button(label="Open an interface", callback=open_interface_menu)
-
-        dpg.add_image("monitor_graph_texture_tag")
+        with dpg.table(
+            header_row=False,
+            resizable=True,
+            policy=dpg.mvTable_SizingStretchProp,
+            borders_outerH=True,
+            borders_innerV=True,
+            borders_innerH=True,
+            borders_outerV=True,
+        ) as state.main_screen_table_uid:
+            dpg.add_table_column()
+            dpg.add_table_column()
+            with dpg.table_row() as first_row:
+                with dpg.table_cell():
+                    with dpg.group(horizontal=True):
+                        dpg.add_text("Monitoring!")
+                        dpg.add_button(label="Open an interface", callback=open_interface_menu)
+                    dpg.add_image("monitor_graph_texture_tag")
+                with dpg.table_cell() as state.second_row:
+                    pass
 
     return monitor_window_id

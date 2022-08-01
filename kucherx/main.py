@@ -73,8 +73,6 @@ def run_gui_app() -> None:
     state.default_font = configure_font_and_scale(dpg, logger, get_resources_directory())
     state.theme = get_main_theme(dpg)
 
-    # dpg.configure_app(docking=True, docking_space=dock_space)
-
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui_running = False
         print("Registering an exit!")
@@ -82,9 +80,8 @@ def run_gui_app() -> None:
         state.update_image_from_graph.put(QueueQuitObject())
         state.errors_queue.put(QueueQuitObject())
 
-    dpg.enable_docking(dock_space=False)
+    # dpg.enable_docking(dock_space=False)
     make_terminate_handler(exit_handler)
-    make_errors_window(dpg, state)
 
     start_threads(state)
 
@@ -99,11 +96,9 @@ def run_gui_app() -> None:
             dpg, state, notify_transport_added=add_transport, notify_transport_removed=remove_transport
         )
 
-    make_monitor_window(dpg, state, open_interface_menu)
-    dpg.set_primary_window(dpg.add_window(label="Just the primary window"), True)
-
-    # dpg.set_primary_window(dpg.add_window(label="Just another primary window", tag="nonce"), True)
-    # dpg.hide_item("nonce")
+    monitor_uid = make_monitor_window(dpg, state, open_interface_menu)
+    dpg.set_primary_window(monitor_uid, True)
+    make_errors_window(dpg, state, monitor_uid)
 
     def add_transport(request: AttachTransportRequest) -> None:
         state.queue_add_transports.put(request)

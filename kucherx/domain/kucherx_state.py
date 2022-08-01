@@ -39,7 +39,11 @@ class KucherXState:
         self.default_font = None
         self.theme = None
         self.display_errors_callback = lambda message: logger.error(message)
+        self.main_screen_table_uid = None
+        self.second_row = None
 
+    main_screen_table_uid: Optional[UID]
+    second_row: Optional[UID]
     interfaces: list[Interface]
     default_font: Optional[UID]
     theme: Optional[UID]
