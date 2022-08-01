@@ -1,5 +1,5 @@
 import logging
-import os
+import platform
 import typing
 from pathlib import Path
 
@@ -7,7 +7,7 @@ from kucherx.domain.UID import UID
 
 
 def make_process_dpi_aware(logger: logging.Logger) -> None:
-    if os.name == "nt":
+    if platform.system() == "Windows":
         import ctypes
 
         try:
@@ -38,6 +38,7 @@ def is_high_dpi_screen(logger: logging.Logger) -> bool:
         root = tkinter.Tk()
         dpi = root.winfo_fpixels("1i")
         logger.warning("DPI is " + str(dpi) + " on screen " + root.winfo_screen())
+        root.destroy()
         return dpi > 100
     except ImportError:
         logger.warn("Unable to import TKinter, it is missing from Python. Can't tell if the screen is high dpi.")
@@ -46,8 +47,8 @@ def is_high_dpi_screen(logger: logging.Logger) -> bool:
 
 def configure_font_and_scale(dpg: typing.Any, logger: logging.Logger, resources: Path) -> UID:
     desired_font_size = 20
-
-    if is_high_dpi_screen(logger) and os.name == "nt":
+    default_font = None
+    if is_high_dpi_screen(logger) and platform.system() == "Windows":
         dpg.set_global_font_scale(0.8)
         desired_font_size = 40
 

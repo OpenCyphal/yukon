@@ -1,19 +1,11 @@
-import asyncio
 import logging
-import os
-import time
 import typing
-
-from serial.tools import list_ports
 
 from kucherx.domain.UID import UID
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 from kucherx.domain.interface import Interface
 from kucherx.domain.god_state import GodState
 
-import re
-
-from kucherx.services.folder_recognition.common_folders import get_root_directory
 from windows.group_candump import make_candump_group
 from windows.group_slcan import make_slcan_group
 from windows.group_socketcan import make_socketcan_group
@@ -27,7 +19,7 @@ def make_request_inferior_transport_window(
         notify_transport_requested: typing.Callable[[AttachTransportRequest], None],
         notify_transport_removal: typing.Callable[[AttachTransportRequest], None],
 ) -> UID:
-    with dpg.window(label="Configure interface", width=560, height=540, no_close=False) as current_window_id:
+    with dpg.window(label="Configure interface", width=560, height=595, no_close=False) as current_window_id:
         dpg.bind_font(state.default_font)
         dpg.set_exit_callback(notify_transport_removal)
         interface: Interface = Interface()
@@ -79,10 +71,11 @@ def make_request_inferior_transport_window(
                 interface.rate_data = int(dpg.get_value(tf_data_rate))
                 logger.info("Notifying that transport was added")
                 notify_transport_requested(interface)
+                dpg.configure_item(add_interface_button, enabled=False)
             except ValueError as e:
                 state.messages_queue.put(e)
 
         dpg.add_checkbox(label="Notify when transmissions are received")
 
-        dpg.add_button(label="Add interface", callback=finalize)
+        add_interface_button = dpg.add_button(label="Add interface", callback=finalize)
     return current_window_id

@@ -8,7 +8,6 @@ import logging
 import unittest
 from time import sleep
 
-import networkx as nx
 import pytest
 import dearpygui.dearpygui as dpg
 import sentry_sdk

@@ -45,6 +45,7 @@ class GodState:
         self.dpg = None
         self.px = 0
 
+    queue_interface_successfully_added_messages: Queue[str]
     main_screen_table_uid: Optional[UID]
     second_row: Optional[UID]
     dpg: Any
@@ -75,3 +76,4 @@ class GodState:
     known_node_states: list[NodeState] = field(default_factory=list)
     is_local_node_launched: bool = False
     is_close_dialog_enabled: bool = True
+    save_dialog_open: bool = False
