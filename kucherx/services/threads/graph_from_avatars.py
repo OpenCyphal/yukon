@@ -21,12 +21,20 @@ def graph_from_avatars_thread(state: KucherXState) -> None:
         avatars_copy: Dict[int, Avatar] = copy.copy(state.avatars)
         state.avatars_lock.release()
         state.current_graph = DiGraph()
-        for node_id_publishing, avatar_publishing in avatars_copy.items():
-            node_state: NodeState = avatar_publishing.update(time())
-            for subject_id in node_state.ports.pub:
-                state.current_graph.add_edge(node_id_publishing, subject_id)
-                for node_id_subscribing, avatar2_subscribing in avatars_copy.items():
-                    subscribing_node_state = avatar2_subscribing.update(time())
-                    if subject_id in subscribing_node_state.ports.sub:
-                        state.current_graph.add_edge(subject_id, node_id_subscribing)
+        state.current_graph.add_node(125)
+        state.current_graph.add_node(7519)
+        state.current_graph.add_node(100)
+        state.current_graph.add_node(80)
+        state.current_graph.add_edge(100, 7519)
+        state.current_graph.add_edge(7519, 80)
+        state.current_graph.add_edge(125, 7519)
+
+        # for node_id_publishing, avatar_publishing in avatars_copy.items():
+        #     node_state: NodeState = avatar_publishing.update(time())
+        #     for subject_id in node_state.ports.pub:
+        #         state.current_graph.add_edge(node_id_publishing, subject_id)
+        #         for node_id_subscribing, avatar2_subscribing in avatars_copy.items():
+        #             subscribing_node_state = avatar2_subscribing.update(time())
+        #             if subject_id in subscribing_node_state.ports.sub:
+        #                 state.current_graph.add_edge(subject_id, node_id_subscribing)
         state.update_image_from_graph.put(copy.copy(state.current_graph))

@@ -1,4 +1,5 @@
 import threading
+from queue import Empty
 from typing import Optional, Any
 import os
 import sys
@@ -7,16 +8,19 @@ import logging
 import unittest
 from time import sleep
 
+import networkx as nx
 import pytest
 import dearpygui.dearpygui as dpg
 import sentry_sdk
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_template import FigureCanvas
+
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 
 from kucherx.domain.queue_quit_object import QueueQuitObject
 from kucherx.domain.viewport_info import ViewPortInfo
 
 from kucherx.services.threads.graph_from_avatars import graph_from_avatars_thread
-from kucherx.services.threads.image_from_graph import image_from_graph_thread
 from kucherx.services.terminate_handler import make_terminate_handler
 from kucherx.services.folder_recognition.common_folders import (
     get_resources_directory,
@@ -52,8 +56,11 @@ def start_threads(state: KucherXState) -> None:
     errors_thread.start()
     avatars_to_graph_thread = threading.Thread(target=graph_from_avatars_thread, args=[state])
     avatars_to_graph_thread.start()
-    graphs_to_images_thread = threading.Thread(target=image_from_graph_thread, args=[state])
-    graphs_to_images_thread.start()
+
+
+def pixel_conversion(input: int) -> float:
+    """Byte to int"""
+    return input / 255
 
 
 def run_gui_app() -> None:
@@ -77,12 +84,12 @@ def run_gui_app() -> None:
         state.gui_running = False
         print("Registering an exit!")
         state.update_graph_from_avatar_queue.put(QueueQuitObject())
-        state.update_image_from_graph.put(QueueQuitObject())
         state.errors_queue.put(QueueQuitObject())
 
     # dpg.enable_docking(dock_space=False)
     make_terminate_handler(exit_handler)
 
+    state.dpg = dpg
     start_threads(state)
 
     logging.getLogger("pycyphal").setLevel(logging.CRITICAL)
@@ -135,6 +142,37 @@ def run_gui_app() -> None:
         )
 
         while dpg.is_dearpygui_running():
+            try:
+                G = state.update_image_from_graph.get_nowait()
+                image_size = 600
+                state.px = 1 / plt.rcParams["figure.dpi"]  # pixel in inches
+                state.figure = plt.figure(
+                    figsize=(
+                        state.current_requested_image_size[0] * state.px,
+                        state.current_requested_image_size[1] * state.px,
+                    )
+                )
+
+                plt.rcParams["backend"] = "TkAgg"
+
+                canvas = FigureCanvas(state.figure)
+                pos = nx.spring_layout(G)
+                nx.draw(G, pos=pos, with_labels=True, node_shape="p", node_size=2600)
+                # https://stackoverflow.com/questions/47094949/labeling-edges-in-networkx
+                edge_labels = dict([((n1, n2), f"{n1}->{n2}") for n1, n2 in G.edges])
+                nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+                canvas.draw()
+                new_texture_data2 = canvas.tostring_rgb()
+                plt.show()
+                new_texture_data = []
+                for i in range(0, state.current_requested_image_size[0] * state.current_requested_image_size[1] * 3, 3):
+                    new_texture_data.append(pixel_conversion(new_texture_data2[i]))
+                    new_texture_data.append(pixel_conversion(new_texture_data2[i + 1]))
+                    new_texture_data.append(pixel_conversion(new_texture_data2[i + 2]))
+                    new_texture_data.append(1)
+                state.dpg.set_value("monitor_graph_texture_tag", new_texture_data)
+            except Empty:
+                pass
             dpg.render_dearpygui_frame()
 
         dpg.destroy_context()

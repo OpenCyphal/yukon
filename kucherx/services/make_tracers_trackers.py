@@ -29,7 +29,7 @@ def make_handler_for_node_detected(
 
 
 def make_tracers_trackers(state: KucherXState) -> None:
-    logger.info("Debugger is being set up")
+    logger.info("Trackers and tracers are being set up")
     state.tracer = state.local_node.presentation.transport.make_tracer()
     current_transport = state.local_node.presentation.transport
     state.tracker = NodeTracker(state.local_node)

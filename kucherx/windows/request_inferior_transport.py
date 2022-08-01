@@ -14,6 +14,8 @@ import re
 
 from kucherx.services.folder_recognition.common_folders import get_root_directory
 
+logger = logging.getLogger(__name__)
+
 
 def update_list_of_comports(dpg: typing.Any, combobox: UID) -> None:
     ports = list_ports.comports()
@@ -153,6 +155,7 @@ def make_request_inferior_transport_window(
                 interface.mtu = int(dpg.get_value(tf_mtu))
                 interface.rate_arb = int(dpg.get_value(tf_arb_rate))
                 interface.rate_data = int(dpg.get_value(tf_data_rate))
+                logger.info("Notifying that transport was added")
                 notify_transport_added(interface)
             except ValueError as e:
                 state.errors_queue.put(e)

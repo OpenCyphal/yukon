@@ -25,7 +25,11 @@ def cyphal_worker_thread(state: KucherXState) -> None:
             try:
                 await asyncio.sleep(0.05)
                 interface = state.queue_add_transports.get_nowait()
-                new_media = PythonCANMedia(interface.iface, (interface.rate_arb, interface.rate_data), interface.mtu)
+                new_media = PythonCANMedia(
+                    interface.iface,
+                    (interface.rate_arb, interface.rate_data),
+                    interface.mtu,
+                )
                 new_transport = CANTransport(media=new_media, local_node_id=state.local_node.id)
                 state.pseudo_transport.attach_inferior(new_transport)
                 print("Added a new interface")
