@@ -5,18 +5,18 @@ from typing import Dict
 from networkx import DiGraph
 
 from kucherx.domain.avatar import Avatar
-from kucherx.domain.kucherx_state import KucherXState
+from kucherx.domain.god_state import GodState
 from kucherx.domain.note_state import NodeState
 from kucherx.domain.queue_quit_object import QueueQuitObject
 
 
-def graph_from_avatars_thread(state: KucherXState) -> None:
+def graph_from_avatars_thread(state: GodState) -> None:
     while state.gui_running:
         new_avatar = state.update_graph_from_avatar_queue.get()
         if isinstance(new_avatar, QueueQuitObject):
+            print("Graph from avatars received a quit queue item!")
             break
-        else:
-            print("This is not a queue quit object")
+        print("This is not a queue quit object")
         state.avatars_lock.acquire()
         avatars_copy: Dict[int, Avatar] = copy.copy(state.avatars)
         state.avatars_lock.release()
@@ -37,4 +37,4 @@ def graph_from_avatars_thread(state: KucherXState) -> None:
         #             subscribing_node_state = avatar2_subscribing.update(time())
         #             if subject_id in subscribing_node_state.ports.sub:
         #                 state.current_graph.add_edge(subject_id, node_id_subscribing)
-        state.update_image_from_graph.put(copy.copy(state.current_graph))
+        state.update_image_from_graph.put(state.current_graph)

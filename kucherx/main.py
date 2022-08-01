@@ -27,14 +27,14 @@ from kucherx.services.folder_recognition.common_folders import (
     get_root_directory,
 )
 
-from kucherx.domain.kucherx_state import KucherXState
+from kucherx.domain.god_state import GodState
 from kucherx.high_dpi_handler import make_process_dpi_aware, configure_font_and_scale
 from kucherx.sentry_setup import setup_sentry
 from kucherx.services.get_screen_resolution import get_screen_resolution
 from kucherx.themes.main_window_theme import get_main_theme
-from kucherx.windows.errors import make_errors_window
+from kucherx.windows.message_log import make_errors_window
 from kucherx.windows.request_inferior_transport import make_request_inferior_transport_window
-from kucherx.close_popup_viewport import display_close_popup_viewport
+from kucherx.save_viewport import display_save_viewport
 
 from kucherx.windows.monitor import make_monitor_window
 
@@ -45,7 +45,7 @@ logger = logging.getLogger(__file__)
 logger.setLevel("NOTSET")
 
 
-def start_threads(state: KucherXState) -> None:
+def start_threads(state: GodState) -> None:
     # Creating 3 new threads
     from kucherx.services.threads.errors_thread import errors_thread
     from kucherx.services.threads.cyphal_worker import cyphal_worker_thread
@@ -76,7 +76,7 @@ def run_gui_app() -> None:
         resizable=True,
     )
     dpg.create_viewport(**vpi.__dict__, decorated=True, x_pos=500, y_pos=500)
-    state = KucherXState()
+    state = GodState()
     state.default_font = configure_font_and_scale(dpg, logger, get_resources_directory())
     state.theme = get_main_theme(dpg)
 
@@ -84,7 +84,7 @@ def run_gui_app() -> None:
         state.gui_running = False
         print("Registering an exit!")
         state.update_graph_from_avatar_queue.put(QueueQuitObject())
-        state.errors_queue.put(QueueQuitObject())
+        state.messages_queue.put(QueueQuitObject())
 
     # dpg.enable_docking(dock_space=False)
     make_terminate_handler(exit_handler)
@@ -92,7 +92,7 @@ def run_gui_app() -> None:
     state.dpg = dpg
     start_threads(state)
 
-    logging.getLogger("pycyphal").setLevel(logging.CRITICAL)
+    logging.getLogger("pycyphal").setLevel(logging.INFO)
     logging.getLogger("can").setLevel(logging.ERROR)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
@@ -100,7 +100,7 @@ def run_gui_app() -> None:
 
     def open_interface_menu() -> None:
         make_request_inferior_transport_window(
-            dpg, state, notify_transport_added=add_transport, notify_transport_removed=remove_transport
+            dpg, state, notify_transport_requested=add_transport, notify_transport_removal=remove_transport
         )
 
     monitor_uid = make_monitor_window(dpg, state, open_interface_menu)
@@ -117,13 +117,6 @@ def run_gui_app() -> None:
     dpg.show_viewport()
     dpg.maximize_viewport()
 
-    def dont_save_callback() -> None:
-        logger.info("I was asked not to save")
-
-    def save_callback() -> None:
-        # save_cyphal_local_node_settings(state.settings)
-        logger.info("I was asked to save")
-
     # dpg.show_style_editor()
     # below replaces, start_dearpygui()
     while dpg.is_dearpygui_running() and state.gui_running:
@@ -135,47 +128,7 @@ def run_gui_app() -> None:
     dpg.stop_dearpygui()
 
     dpg.destroy_context()
-    if state.is_close_dialog_enabled:
-        dpg.create_context()
-        display_close_popup_viewport(
-            dpg, state, get_resources_directory(), screen_resolution, save_callback, dont_save_callback
-        )
-
-        while dpg.is_dearpygui_running():
-            try:
-                G = state.update_image_from_graph.get_nowait()
-                image_size = 600
-                state.px = 1 / plt.rcParams["figure.dpi"]  # pixel in inches
-                state.figure = plt.figure(
-                    figsize=(
-                        state.current_requested_image_size[0] * state.px,
-                        state.current_requested_image_size[1] * state.px,
-                    )
-                )
-
-                plt.rcParams["backend"] = "TkAgg"
-
-                canvas = FigureCanvas(state.figure)
-                pos = nx.spring_layout(G)
-                nx.draw(G, pos=pos, with_labels=True, node_shape="p", node_size=2600)
-                # https://stackoverflow.com/questions/47094949/labeling-edges-in-networkx
-                edge_labels = dict([((n1, n2), f"{n1}->{n2}") for n1, n2 in G.edges])
-                nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
-                canvas.draw()
-                new_texture_data2 = canvas.tostring_rgb()
-                plt.show()
-                new_texture_data = []
-                for i in range(0, state.current_requested_image_size[0] * state.current_requested_image_size[1] * 3, 3):
-                    new_texture_data.append(pixel_conversion(new_texture_data2[i]))
-                    new_texture_data.append(pixel_conversion(new_texture_data2[i + 1]))
-                    new_texture_data.append(pixel_conversion(new_texture_data2[i + 2]))
-                    new_texture_data.append(1)
-                state.dpg.set_value("monitor_graph_texture_tag", new_texture_data)
-            except Empty:
-                pass
-            dpg.render_dearpygui_frame()
-
-        dpg.destroy_context()
+    display_save_viewport(dpg, state)
     state.gui_running = False
     logger.info("Gui was set to not running")
     # cyphal_worker_thread.join()

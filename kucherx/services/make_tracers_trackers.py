@@ -6,7 +6,7 @@ import pycyphal
 from pycyphal.application.node_tracker import NodeTracker, Entry
 
 from kucherx.domain.avatar import Avatar
-from kucherx.domain.kucherx_state import KucherXState
+from kucherx.domain.god_state import GodState
 
 from kucherx.domain.iface import Iface
 
@@ -15,21 +15,22 @@ logger.setLevel("NOTSET")
 
 
 def make_handler_for_node_detected(
-    state: KucherXState, iface: Iface, avatars: typing.Dict[int, Avatar]
+    state: GodState, iface: Iface, avatars: typing.Dict[int, Avatar]
 ) -> typing.Callable[[int, typing.Optional[Entry], typing.Optional[Entry]], None]:
     def handle_getinfo_handler_format(
         node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
     ) -> None:
+        print("Some getinfo entry was received")
         if previous_entry is None:
-            logger.info(f"Node with id {node_id} became visible.")
+            print(f"Node with id {node_id} became visible.")
             avatars[node_id] = Avatar(iface, node_id=node_id)
             state.update_graph_from_avatar_queue.put(avatars[node_id])
 
     return handle_getinfo_handler_format
 
 
-def make_tracers_trackers(state: KucherXState) -> None:
-    logger.info("Trackers and tracers are being set up")
+def make_tracers_trackers(state: GodState) -> None:
+    print("Trackers and tracers are being set up")
     state.tracer = state.local_node.presentation.transport.make_tracer()
     current_transport = state.local_node.presentation.transport
     state.tracker = NodeTracker(state.local_node)

@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(init=False)
-class KucherXState:
+class GodState:
     def __init__(self) -> None:
         self.avatars = {}
         self.update_monitor_image_queue = Queue()
@@ -34,8 +34,9 @@ class KucherXState:
         self.current_graph_lock = threading.RLock()
         self.current_requested_image_size = (600, 600)
         self.queue_add_transports = Queue()
+        self.queue_interface_successfully_added_messages = Queue()
         self.queue_detach_transports = Queue()
-        self.errors_queue = Queue()
+        self.messages_queue = Queue()
         self.default_font = None
         self.theme = None
         self.display_errors_callback = lambda message: logger.error(message)
@@ -58,7 +59,7 @@ class KucherXState:
     update_monitor_image_queue: Queue[GraphImage]
     update_graph_from_avatar_queue: Queue[Avatar]
     update_image_from_graph: Queue[DiGraph]
-    errors_queue: Queue[str]
+    messages_queue: Queue[str]
     transports_of_windows: typing.Dict[UID, pycyphal.transport.Transport]
     queue_add_transports: Queue
     queue_detach_transports: Queue
@@ -73,4 +74,4 @@ class KucherXState:
     gui_running: bool = True
     known_node_states: list[NodeState] = field(default_factory=list)
     is_local_node_launched: bool = False
-    is_close_dialog_enabled: bool = False
+    is_close_dialog_enabled: bool = True
