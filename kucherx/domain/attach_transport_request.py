@@ -1,7 +1,8 @@
+import copy
 from dataclasses import dataclass
-from typing import MutableMapping
+from typing import MutableMapping, Any
 
-from pycyphal.application.register import ValueProxy
+from pycyphal.application import make_registry
 
 from kucherx.domain.UID import UID
 from kucherx.domain.interface import Interface
@@ -11,16 +12,13 @@ from kucherx.domain.interface import Interface
 class AttachTransportRequest:
     requesting_window_id: UID
     requested_interface: Interface
-    requested_mtu: int
-    requested_data_rate: int
-    requested_arb_rate: int
     local_node_id: int
 
-    def get_registers(self) -> MutableMapping[str, ValueProxy]:
-        registers = {"uavcan.can.iface": ValueProxy(self.requested_interface),
-                     "uavcan.can.bitrate": ValueProxy(f"{self.requested_arb_rate} {self.requested_data_rate}"),
-                     "uavcan.node.id": ValueProxy(self.local_node_id),
-                     "uavcan.can.mtu": ValueProxy(self.requested_mtu)
-                     }
-        return registers
-
+    def get_registers(self) -> MutableMapping[str, Any]:
+        registry = make_registry()
+        registry["uavcan.can.iface"] = copy.copy(self.requested_interface.iface)
+        registry["uavcan.can.mtu"] = self.requested_interface.mtu
+        registry["uavcan.can.bitrate"] = [self.requested_interface.rate_arb,
+                                                     self.requested_interface.rate_data]
+        registry["uavcan.can.node_id"] = self.local_node_id
+        return registry

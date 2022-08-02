@@ -14,14 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 def make_request_inferior_transport_window(
-    dpg: typing.Any,
-    state: GodState,
-    notify_transport_requested: typing.Callable[[AttachTransportRequest], None],
-    notify_transport_removal: typing.Callable[[AttachTransportRequest], None],
+        dpg: typing.Any,
+        state: GodState,
 ) -> UID:
     with dpg.window(label="Configure interface", width=560, height=595, no_close=False) as current_window_id:
         dpg.bind_font(state.gui.default_font)
-        dpg.set_exit_callback(notify_transport_removal)
+        dpg.set_exit_callback(
+            lambda: state.queues.detach_transport.put(state.gui.transports_of_windows[current_window_id]))
         interface: Interface = Interface()
         input_field_width = 490
         dpg.add_text("Maximum transmission unit (MTU)")
@@ -70,6 +69,8 @@ def make_request_inferior_transport_window(
                 interface.rate_arb = int(dpg.get_value(tf_arb_rate))
                 interface.rate_data = int(dpg.get_value(tf_data_rate))
                 logger.info("Notifying that transport was added")
+                new_request = AttachTransportRequest(current_window_id, interface, 1)
+                state.queues.attach_transport.put(new_request)
                 dpg.configure_item(add_interface_button, enabled=False)
             except ValueError as e:
                 state.queues.messages.put(e)

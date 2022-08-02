@@ -39,9 +39,9 @@ class QueuesState:
     image_from_graph: Queue[DiGraph] = field(default_factory=Queue)
     next_monitor_images: Queue[GraphImage] = field(default_factory=Queue)
     messages: Queue[str] = field(default_factory=Queue)
-    interface_successfully_added_messages: Queue[str] = field(default_factory=Queue)
-    add_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
-    detach_transports: Queue[AttachTransportRequest] = field(default_factory=Queue)
+    transport_successfully_added_messages: Queue[str] = field(default_factory=Queue)
+    attach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
+    detach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
 
 
 @dataclass
@@ -55,13 +55,13 @@ class GuiState:
     pixel_in_inches: float = 0.0
     gui_running: bool = True
     is_local_node_launched: bool = False
-    is_close_dialog_enabled: bool = True
     save_dialog_open: bool = False
     display_errors_callback: typing.Optional[typing.Callable[[str], None]] = field(default_factory=EmptyField)
     main_screen_table_uid: Optional[UID] = field(default_factory=EmptyField)
     second_row: Optional[UID] = field(default_factory=EmptyField)
     default_font: Optional[UID] = field(default_factory=EmptyField)
     theme: Optional[UID] = field(default_factory=EmptyField)
+    is_close_dialog_enabled: bool = False
 
 
 @dataclass

@@ -27,5 +27,5 @@ def make_errors_window(dpg: typing.Any, state: GodState, monitor_window: UID) ->
             dpg.add_text(default_value=error, tag=f"error{counter}", parent=errors_group_id, show=True)
             counter += 1
 
-        state.display_errors_callback = add_message_to_display
+        state.gui.display_errors_callback = add_message_to_display
     return errors_group_id

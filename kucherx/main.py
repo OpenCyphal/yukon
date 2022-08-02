@@ -42,12 +42,12 @@ logger.setLevel("NOTSET")
 
 def start_threads(state: GodState) -> None:
     # Creating 3 new threads
-    from kucherx.services.threads.errors_thread import errors_thread
+    from kucherx.services.threads.messages_thread import messages_thread
     from kucherx.services.threads.cyphal_worker import cyphal_worker_thread
 
     cyphal_worker_thread = threading.Thread(target=cyphal_worker_thread, args=[state])
     cyphal_worker_thread.start()
-    errors_thread = threading.Thread(target=errors_thread, args=[state])
+    errors_thread = threading.Thread(target=messages_thread, args=[state])
     errors_thread.start()
     avatars_to_graph_thread = threading.Thread(target=graph_from_avatars_thread, args=[state])
     avatars_to_graph_thread.start()
@@ -92,19 +92,11 @@ def run_gui_app() -> None:
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
     def open_interface_menu() -> None:
-        make_request_inferior_transport_window(
-            dpg, state, notify_transport_requested=add_transport, notify_transport_removal=remove_transport
-        )
+        make_request_inferior_transport_window(dpg, state)
 
     monitor_uid = make_monitor_window(dpg, state, open_interface_menu)
     dpg.set_primary_window(monitor_uid, True)
     make_errors_window(dpg, state, monitor_uid)
-
-    def add_transport(request: AttachTransportRequest) -> None:
-        state.queues.add_transport.put(request)
-
-    def remove_transport(request: AttachTransportRequest) -> None:
-        state.queues.detach_transports.put(request)
 
     dpg.setup_dearpygui()
     dpg.show_viewport()

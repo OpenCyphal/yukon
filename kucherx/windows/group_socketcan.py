@@ -32,7 +32,7 @@ def make_socketcan_group(
 
     with dpg.group(horizontal=False) as socketcan_group:
         if os.name == "nt":
-            dpg.add_text("Socketcan is not supported on Windows platforms.")
+            dpg.add_text("Socketcan not supported on Windows.")
         else:
             dpg.add_text("Interface")
             socketcan_port_selection_combobox = dpg.add_combo(
