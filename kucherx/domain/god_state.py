@@ -14,6 +14,7 @@ from pycyphal.application import Node
 from pycyphal.transport.can import CANTransport
 from pycyphal.transport.redundant import RedundantTransport
 
+from kucherx.domain.attach_transport_request import AttachTransportRequest
 from kucherx.domain.UID import UID
 from kucherx.domain.avatar import Avatar
 from kucherx.domain.graph_image import GraphImage
@@ -23,57 +24,70 @@ from kucherx.domain.note_state import NodeState
 logger = logging.getLogger(__name__)
 
 
-@dataclass(init=False)
-class GodState:
-    def __init__(self) -> None:
-        self.avatars = {}
-        self.update_monitor_image_queue = Queue()
-        self.update_image_from_graph = Queue()
-        self.update_graph_from_avatar_queue = Queue()
-        self.avatars_lock = threading.RLock()
-        self.current_graph_lock = threading.RLock()
-        self.current_requested_image_size = (600, 600)
-        self.queue_add_transports = Queue()
-        self.queue_interface_successfully_added_messages = Queue()
-        self.queue_detach_transports = Queue()
-        self.messages_queue = Queue()
-        self.default_font = None
-        self.theme = None
-        self.display_errors_callback = lambda message: logger.error(message)
-        self.main_screen_table_uid = None
-        self.second_row = None
-        self.dpg = None
-        self.px = 0
+class EmptyField:
+    def __init__(self, *args, **kwargs):
+        pass
 
-    queue_interface_successfully_added_messages: Queue[str]
-    main_screen_table_uid: Optional[UID]
-    second_row: Optional[UID]
-    dpg: Any
-    px: float
-    interfaces: list[Interface]
-    default_font: Optional[UID]
-    theme: Optional[UID]
-    event_loop: Any
-    display_errors_callback: typing.Callable[[str], None]
-    add_transport: Callable[[Interface], None]
-    pseudo_transport: Optional[RedundantTransport]
-    update_monitor_image_queue: Queue[GraphImage]
-    update_graph_from_avatar_queue: Queue[Avatar]
-    update_image_from_graph: Queue[DiGraph]
-    messages_queue: Queue[str]
-    transports_of_windows: typing.Dict[UID, pycyphal.transport.Transport]
-    queue_add_transports: Queue
-    queue_detach_transports: Queue
-    avatars: Dict[int, Avatar]
-    avatars_lock: threading.RLock
-    current_graph_lock: threading.RLock
-    current_requested_image_size: typing.Tuple[int, int]
-    current_graph: Optional[DiGraph] = None
-    local_node: Optional[Node] = None
-    tracer: Optional[pycyphal.transport.Tracer] = None
-    tracker: Optional[NodeTracker] = None
+    def __repr__(self):
+        return 'EmptyField()'
+
+
+@dataclass
+class QueuesState:
+    """A class that holds all queues used by the god state."""
+    update_graph_from_avatar_queue: Queue[Avatar] = field(default_factory=Queue)
+    update_image_from_graph: Queue[DiGraph] = field(default_factory=Queue)
+    update_monitor_image_queue: Queue[GraphImage] = field(default_factory=Queue)
+    messages_queue: Queue[str] = field(default_factory=Queue)
+    queue_interface_successfully_added_messages: Queue[str] = field(default_factory=Queue)
+    queue_add_transports: Queue[AttachTransportRequest] = field(default_factory=Queue)
+    queue_detach_transports: Queue[AttachTransportRequest] = field(default_factory=Queue)
+
+
+@dataclass
+class GuiState:
+    """A class that holds all GUI references used by the god state."""
+    dpg: Any = field(default_factory=EmptyField)
+    event_loop: Any = field(default_factory=EmptyField)
+    interfaces: list[Interface] = field(default_factory=list)
+    transports_of_windows: typing.Dict[UID, pycyphal.transport.Transport] = field(default_factory=dict)
+    requested_monitor_image_size: typing.Tuple[int, int] = (600, 600)
+    pixel_in_inches: float = 0.0
     gui_running: bool = True
-    known_node_states: list[NodeState] = field(default_factory=list)
     is_local_node_launched: bool = False
     is_close_dialog_enabled: bool = True
     save_dialog_open: bool = False
+    display_errors_callback: typing.Optional[typing.Callable[[str], None]] = field(default_factory=EmptyField)
+    main_screen_table_uid: Optional[UID] = field(default_factory=EmptyField)
+    second_row: Optional[UID] = field(default_factory=EmptyField)
+    default_font: Optional[UID] = field(default_factory=EmptyField)
+    theme: Optional[UID] = field(default_factory=EmptyField)
+
+
+@dataclass
+class CyphalState:
+    """A class that holds all cyphal references used by the god state."""
+
+    pseudo_transport: Optional[RedundantTransport] = field(default_factory=EmptyField)
+    tracer: Optional[pycyphal.transport.Tracer] = field(default_factory=EmptyField)
+    tracker: Optional[NodeTracker] = field(default_factory=EmptyField)
+    local_node: Optional[Node] = field(default_factory=EmptyField)
+    add_transport: Optional[Callable[[Interface], None]] = field(default_factory=EmptyField)
+    known_node_states: list[NodeState] = field(default_factory=list)
+
+
+@dataclass
+class AvatarState:
+    avatars: Dict[int, Avatar] = field(default_factory=dict)
+    avatars_lock: threading.RLock = field(default_factory=threading.RLock)
+    current_graph_lock: threading.RLock = field(default_factory=threading.RLock)
+    current_requested_image_size: typing.Tuple[int, int] = field(default_factory=lambda: (600, 600))
+    current_graph: Optional[DiGraph] = field(default_factory=EmptyField)
+
+
+class GodState:
+    def __init__(self):
+        self.queues = QueuesState()
+        self.gui = GuiState()
+        self.cyphal = CyphalState()
+        self.avatar = AvatarState()

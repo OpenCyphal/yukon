@@ -11,8 +11,8 @@ from kucherx.domain.queue_quit_object import QueueQuitObject
 
 
 def graph_from_avatars_thread(state: GodState) -> None:
-    while state.gui_running:
-        new_avatar = state.update_graph_from_avatar_queue.get()
+    while state.gui.gui_running:
+        new_avatar = state.queues.update_graph_from_avatar_queue.get()
         if isinstance(new_avatar, QueueQuitObject):
             print("Graph from avatars received a quit queue item!")
             break
@@ -37,4 +37,4 @@ def graph_from_avatars_thread(state: GodState) -> None:
         #             subscribing_node_state = avatar2_subscribing.update(time())
         #             if subject_id in subscribing_node_state.ports.sub:
         #                 state.current_graph.add_edge(subject_id, node_id_subscribing)
-        state.update_image_from_graph.put(state.current_graph)
+        state.queues.update_image_from_graph.put(state.current_graph)

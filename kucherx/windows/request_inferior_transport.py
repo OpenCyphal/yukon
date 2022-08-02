@@ -6,9 +6,9 @@ from kucherx.domain.attach_transport_request import AttachTransportRequest
 from kucherx.domain.interface import Interface
 from kucherx.domain.god_state import GodState
 
-from windows.group_candump import make_candump_group
-from windows.group_slcan import make_slcan_group
-from windows.group_socketcan import make_socketcan_group
+from kucherx.windows.group_candump import make_candump_group
+from kucherx.windows.group_slcan import make_slcan_group
+from kucherx.windows.group_socketcan import make_socketcan_group
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ def make_request_inferior_transport_window(
     notify_transport_removal: typing.Callable[[AttachTransportRequest], None],
 ) -> UID:
     with dpg.window(label="Configure interface", width=560, height=595, no_close=False) as current_window_id:
-        dpg.bind_font(state.default_font)
+        dpg.bind_font(state.gui.default_font)
         dpg.set_exit_callback(notify_transport_removal)
         interface: Interface = Interface()
         input_field_width = 490
@@ -64,16 +64,15 @@ def make_request_inferior_transport_window(
 
         def finalize() -> None:
             if interface.iface == "":
-                state.messages_queue.put("No interface selected")
+                state.queues.messages_queue.put("No interface selected")
             try:
                 interface.mtu = int(dpg.get_value(tf_mtu))
                 interface.rate_arb = int(dpg.get_value(tf_arb_rate))
                 interface.rate_data = int(dpg.get_value(tf_data_rate))
                 logger.info("Notifying that transport was added")
-                notify_transport_requested(interface)
                 dpg.configure_item(add_interface_button, enabled=False)
             except ValueError as e:
-                state.messages_queue.put(e)
+                state.queues.messages_queue.put(e)
 
         dpg.add_checkbox(label="Notify when transmissions are received")
 

@@ -35,7 +35,7 @@ def display_save_viewport(
     dpg: typing.Any,
     state: GodState,
 ) -> None:
-    if state.is_close_dialog_enabled:
+    if state.gui.is_close_dialog_enabled:
         print("Save dialog is enabled")
         dpg.create_context()
     # Calculations for centering the viewport for the popup

@@ -1,16 +1,15 @@
 import os
 import subprocess
 import typing
+import platform
 
 from domain.god_state import GodState
 from kucherx.domain.interface import Interface
 from kucherx.domain import UID
 
-import platform
-
 
 def make_socketcan_group(
-    dpg: typing.Any, input_field_width: int, current_window_id: UID, interface: Interface, state: GodState
+        dpg: typing.Any, input_field_width: int, current_window_id: UID, interface: Interface, state: GodState
 ) -> UID:
     def make_update_combobox_callback(combobox: UID) -> typing.Callable[[], None]:
         def update_combobox() -> None:

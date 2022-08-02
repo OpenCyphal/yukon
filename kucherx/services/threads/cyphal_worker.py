@@ -2,10 +2,11 @@ import asyncio
 import logging
 from queue import Empty
 
-from pycyphal.application import make_node, NodeInfo
+from pycyphal.application import make_node, NodeInfo, make_transport
 from pycyphal.transport.can import CANTransport
 from pycyphal.transport.can.media.pythoncan import PythonCANMedia
 
+from kucherx.domain.attach_transport_request import AttachTransportRequest
 from kucherx.domain.god_state import GodState
 from kucherx.services.make_tracers_trackers import make_tracers_trackers
 
@@ -17,29 +18,26 @@ def cyphal_worker_thread(state: GodState) -> None:
     """It starts the node and keeps adding any transports that are queued for adding"""
 
     async def _internal_method() -> None:
-        state.local_node = make_node(NodeInfo(name="com.zubax.sapog.tests.debugger"), reconfigurable_transport=True)
-        state.local_node.start()
-        state.pseudo_transport = state.local_node.presentation.transport
+        state.cyphal.local_node = make_node(
+            NodeInfo(name="com.zubax.sapog.tests.debugger"),
+            reconfigurable_transport=True)
+        state.cyphal.local_node.start()
+        state.pseudo_transport = state.cyphal.local_node.presentation.transport
         make_tracers_trackers(state)
         print("Tracers should have been set up.")
-        while state.gui_running:
+        while state.gui.gui_running:
             try:
                 await asyncio.sleep(0.05)
-                interface = state.queue_add_transports.get_nowait()
-                new_media = PythonCANMedia(
-                    interface.iface,
-                    (interface.rate_arb, interface.rate_data),
-                    interface.mtu,
-                )
-                new_transport = CANTransport(media=new_media, local_node_id=state.local_node.id)
-                state.pseudo_transport.attach_inferior(new_transport)
-                state.messages_queue.put(f"Interface {interface.iface} was added.")
+                atr: AttachTransportRequest = state.queues.queue_add_transports.get_nowait()
+                new_transport = make_transport(atr.get_registers(), reconfigurable=True)
+                state.cyphal.pseudo_transport.attach_inferior(new_transport)
+                state.queues.messages_queue.put(f"Interface {atr.requested_interface} was added.")
                 print("Added a new interface")
             except Empty:
                 await asyncio.sleep(0.05)
                 try:
-                    transport = state.queue_detach_transports.get_nowait()
-                    state.pseudo_transport.detach_inferior(transport)
+                    transport = state.queues.queue_detach_transports.get_nowait()
+                    state.cyphal.pseudo_transport.detach_inferior(transport)
                 except Empty:
                     pass
                 except Exception as e:

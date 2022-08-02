@@ -6,8 +6,8 @@ from kucherx.domain.queue_quit_object import QueueQuitObject
 
 
 def errors_thread(state: GodState) -> None:
-    while state.gui_running:
-        error = state.messages_queue.get()
+    while state.gui.gui_running:
+        error = state.queues.messages_queue.get()
         if isinstance(error, QueueQuitObject):
             break
-        state.display_errors_callback(error)
+        state.gui.display_errors_callback(error)

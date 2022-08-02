@@ -72,19 +72,19 @@ def run_gui_app() -> None:
     )
     dpg.create_viewport(**vpi.__dict__, decorated=True, x_pos=500, y_pos=500)
     state = GodState()
-    state.default_font = configure_font_and_scale(dpg, logger, get_resources_directory())
-    state.theme = get_main_theme(dpg)
+    state.gui.default_font = configure_font_and_scale(dpg, logger, get_resources_directory())
+    state.gui.theme = get_main_theme(dpg)
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
-        state.gui_running = False
+        state.gui.gui_running = False
         print("Registering an exit!")
-        state.update_graph_from_avatar_queue.put(QueueQuitObject())
-        state.messages_queue.put(QueueQuitObject())
+        state.queues.update_graph_from_avatar_queue.put(QueueQuitObject())
+        state.queues.messages_queue.put(QueueQuitObject())
 
     # dpg.enable_docking(dock_space=False)
     make_terminate_handler(exit_handler)
 
-    state.dpg = dpg
+    state.gui.dpg = dpg
     start_threads(state)
 
     logging.getLogger("pycyphal").setLevel(logging.INFO)
@@ -101,10 +101,10 @@ def run_gui_app() -> None:
     make_errors_window(dpg, state, monitor_uid)
 
     def add_transport(request: AttachTransportRequest) -> None:
-        state.queue_add_transports.put(request)
+        state.queues.queue_add_transports.put(request)
 
     def remove_transport(request: AttachTransportRequest) -> None:
-        state.queue_detach_transports.put(request)
+        state.queues.queue_detach_transports.put(request)
 
     dpg.setup_dearpygui()
     dpg.show_viewport()
@@ -112,7 +112,7 @@ def run_gui_app() -> None:
 
     # dpg.show_style_editor()
     # below replaces, start_dearpygui()
-    while dpg.is_dearpygui_running() and state.gui_running:
+    while dpg.is_dearpygui_running() and state.gui.gui_running:
         # ensure_window_is_in_viewport(main_window_id)
         dpg.render_dearpygui_frame()
 
@@ -122,7 +122,7 @@ def run_gui_app() -> None:
 
     dpg.destroy_context()
     display_save_viewport(dpg, state)
-    state.gui_running = False
+    state.gui.gui_running = False
     logger.info("Gui was set to not running")
     # cyphal_worker_thread.join()
     print("Node thread joined")

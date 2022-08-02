@@ -11,22 +11,24 @@ logger.setLevel("NOTSET")
 
 
 def make_monitor_window(dpg: typing.Any, state: GodState, open_interface_menu: typing.Callable[[None], None]) -> UID:
-    dpg.bind_font(state.default_font)
+    dpg.bind_font(state.gui.default_font)
     with dpg.texture_registry(show=False):
         dpg.add_dynamic_texture(
-            width=600, height=600, tag="monitor_graph_texture_tag", default_value=[1 for i in range(0, 600 * 600 * 4)]
+            tag="monitor_graph_texture_tag",
+            width=state.gui.requested_monitor_image_size[0],
+            height=state.gui.requested_monitor_image_size[1],
+            default_value=[1 for _ in range(0, 600 * 600 * 4)]
         )
     with dpg.window(label="Monitor window", tag="MonitorWindow") as monitor_window_id:
-        # dpg.add_text("")
         with dpg.table(
-            header_row=False,
-            resizable=True,
-            policy=dpg.mvTable_SizingStretchProp,
-            borders_outerH=True,
-            borders_innerV=True,
-            borders_innerH=True,
-            borders_outerV=True,
-        ) as state.main_screen_table_uid:
+                header_row=False,
+                resizable=True,
+                policy=dpg.mvTable_SizingStretchProp,
+                borders_outerH=True,
+                borders_innerV=True,
+                borders_innerH=True,
+                borders_outerV=True,
+        ) as state.gui.main_screen_table_uid:
             dpg.add_table_column()
             dpg.add_table_column()
             with dpg.table_row() as first_row:
