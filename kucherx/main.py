@@ -78,8 +78,8 @@ def run_gui_app() -> None:
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
         print("Registering an exit!")
-        state.queues.update_graph_from_avatar_queue.put(QueueQuitObject())
-        state.queues.messages_queue.put(QueueQuitObject())
+        state.queues.graph_from_avatar.put(QueueQuitObject())
+        state.queues.messages.put(QueueQuitObject())
 
     # dpg.enable_docking(dock_space=False)
     make_terminate_handler(exit_handler)
@@ -101,10 +101,10 @@ def run_gui_app() -> None:
     make_errors_window(dpg, state, monitor_uid)
 
     def add_transport(request: AttachTransportRequest) -> None:
-        state.queues.queue_add_transports.put(request)
+        state.queues.add_transport.put(request)
 
     def remove_transport(request: AttachTransportRequest) -> None:
-        state.queues.queue_detach_transports.put(request)
+        state.queues.detach_transports.put(request)
 
     dpg.setup_dearpygui()
     dpg.show_viewport()

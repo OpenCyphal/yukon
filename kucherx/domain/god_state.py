@@ -35,13 +35,13 @@ class EmptyField:
 @dataclass
 class QueuesState:
     """A class that holds all queues used by the god state."""
-    update_graph_from_avatar_queue: Queue[Avatar] = field(default_factory=Queue)
-    update_image_from_graph: Queue[DiGraph] = field(default_factory=Queue)
-    update_monitor_image_queue: Queue[GraphImage] = field(default_factory=Queue)
-    messages_queue: Queue[str] = field(default_factory=Queue)
-    queue_interface_successfully_added_messages: Queue[str] = field(default_factory=Queue)
-    queue_add_transports: Queue[AttachTransportRequest] = field(default_factory=Queue)
-    queue_detach_transports: Queue[AttachTransportRequest] = field(default_factory=Queue)
+    graph_from_avatar: Queue[Avatar] = field(default_factory=Queue)
+    image_from_graph: Queue[DiGraph] = field(default_factory=Queue)
+    next_monitor_images: Queue[GraphImage] = field(default_factory=Queue)
+    messages: Queue[str] = field(default_factory=Queue)
+    interface_successfully_added_messages: Queue[str] = field(default_factory=Queue)
+    add_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
+    detach_transports: Queue[AttachTransportRequest] = field(default_factory=Queue)
 
 
 @dataclass

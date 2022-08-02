@@ -64,7 +64,7 @@ def make_request_inferior_transport_window(
 
         def finalize() -> None:
             if interface.iface == "":
-                state.queues.messages_queue.put("No interface selected")
+                state.queues.messages.put("No interface selected")
             try:
                 interface.mtu = int(dpg.get_value(tf_mtu))
                 interface.rate_arb = int(dpg.get_value(tf_arb_rate))
@@ -72,7 +72,7 @@ def make_request_inferior_transport_window(
                 logger.info("Notifying that transport was added")
                 dpg.configure_item(add_interface_button, enabled=False)
             except ValueError as e:
-                state.queues.messages_queue.put(e)
+                state.queues.messages.put(e)
 
         dpg.add_checkbox(label="Notify when transmissions are received")
 

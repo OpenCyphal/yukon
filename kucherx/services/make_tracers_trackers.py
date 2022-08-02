@@ -24,7 +24,7 @@ def make_handler_for_node_detected(
         if previous_entry is None:
             print(f"Node with id {node_id} became visible.")
             avatars[node_id] = Avatar(iface, node_id=node_id)
-            state.queues.update_graph_from_avatar_queue.put(avatars[node_id])
+            state.queues.graph_from_avatar.put(avatars[node_id])
 
     return handle_getinfo_handler_format
 
