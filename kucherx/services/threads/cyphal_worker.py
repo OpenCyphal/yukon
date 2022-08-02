@@ -19,8 +19,8 @@ def cyphal_worker_thread(state: GodState) -> None:
 
     async def _internal_method() -> None:
         state.cyphal.local_node = make_node(
-            NodeInfo(name="com.zubax.sapog.tests.debugger"),
-            reconfigurable_transport=True)
+            NodeInfo(name="com.zubax.sapog.tests.debugger"), reconfigurable_transport=True
+        )
         state.cyphal.local_node.start()
         state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
         make_tracers_trackers(state)
@@ -29,7 +29,7 @@ def cyphal_worker_thread(state: GodState) -> None:
             await asyncio.sleep(0.05)
             if not state.queues.attach_transport.empty():
                 atr: AttachTransportRequest = state.queues.attach_transport.get_nowait()
-                new_transport = make_transport(atr.get_registers(), reconfigurable=True)
+                new_transport = make_transport(atr.get_registers())
                 state.gui.transports_of_windows[atr.requesting_window_id] = new_transport
                 state.cyphal.pseudo_transport.attach_inferior(new_transport)
                 state.queues.transport_successfully_added_messages.put(atr.requested_interface.iface)

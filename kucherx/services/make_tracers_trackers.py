@@ -32,7 +32,6 @@ def make_handler_for_node_detected(
 def make_tracers_trackers(state: GodState) -> None:
     print("Trackers and tracers are being set up")
     state.cyphal.tracer = state.cyphal.local_node.presentation.transport.make_tracer()
-    current_transport = state.cyphal.local_node.presentation.transport
     state.cyphal.tracker = NodeTracker(state.cyphal.local_node)
     iface = Iface(state.cyphal.local_node)
 

@@ -24,17 +24,14 @@ from kucherx.domain.note_state import NodeState
 logger = logging.getLogger(__name__)
 
 
-class EmptyField:
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return 'EmptyField()'
+def none_factory() -> None:
+    return None
 
 
 @dataclass
 class QueuesState:
     """A class that holds all queues used by the god state."""
+
     graph_from_avatar: Queue[Avatar] = field(default_factory=Queue)
     image_from_graph: Queue[DiGraph] = field(default_factory=Queue)
     next_monitor_images: Queue[GraphImage] = field(default_factory=Queue)
@@ -47,8 +44,9 @@ class QueuesState:
 @dataclass
 class GuiState:
     """A class that holds all GUI references used by the god state."""
-    dpg: Any = field(default_factory=EmptyField)
-    event_loop: Any = field(default_factory=EmptyField)
+
+    dpg: Any = field(default_factory=none_factory)
+    event_loop: Any = field(default_factory=none_factory)
     interfaces: list[Interface] = field(default_factory=list)
     transports_of_windows: typing.Dict[UID, pycyphal.transport.Transport] = field(default_factory=dict)
     requested_monitor_image_size: typing.Tuple[int, int] = (600, 600)
@@ -56,11 +54,11 @@ class GuiState:
     gui_running: bool = True
     is_local_node_launched: bool = False
     save_dialog_open: bool = False
-    display_errors_callback: typing.Optional[typing.Callable[[str], None]] = field(default_factory=EmptyField)
-    main_screen_table_uid: Optional[UID] = field(default_factory=EmptyField)
-    second_row: Optional[UID] = field(default_factory=EmptyField)
-    default_font: Optional[UID] = field(default_factory=EmptyField)
-    theme: Optional[UID] = field(default_factory=EmptyField)
+    display_errors_callback: typing.Optional[typing.Callable[[str], None]] = field(default_factory=none_factory)
+    main_screen_table_uid: Optional[UID] = field(default_factory=none_factory)
+    second_row: Optional[UID] = field(default_factory=none_factory)
+    default_font: Optional[UID] = field(default_factory=none_factory)
+    theme: Optional[UID] = field(default_factory=none_factory)
     is_close_dialog_enabled: bool = False
 
 
@@ -68,11 +66,11 @@ class GuiState:
 class CyphalState:
     """A class that holds all cyphal references used by the god state."""
 
-    pseudo_transport: Optional[RedundantTransport] = field(default_factory=EmptyField)
-    tracer: Optional[pycyphal.transport.Tracer] = field(default_factory=EmptyField)
-    tracker: Optional[NodeTracker] = field(default_factory=EmptyField)
-    local_node: Optional[Node] = field(default_factory=EmptyField)
-    add_transport: Optional[Callable[[Interface], None]] = field(default_factory=EmptyField)
+    pseudo_transport: Optional[RedundantTransport] = field(default_factory=none_factory)
+    tracer: Optional[pycyphal.transport.Tracer] = field(default_factory=none_factory)
+    tracker: Optional[NodeTracker] = field(default_factory=none_factory)
+    local_node: Optional[Node] = field(default_factory=none_factory)
+    add_transport: Optional[Callable[[Interface], None]] = field(default_factory=none_factory)
     known_node_states: list[NodeState] = field(default_factory=list)
 
 
@@ -82,11 +80,11 @@ class AvatarState:
     avatars_lock: threading.RLock = field(default_factory=threading.RLock)
     current_graph_lock: threading.RLock = field(default_factory=threading.RLock)
     current_requested_image_size: typing.Tuple[int, int] = field(default_factory=lambda: (600, 600))
-    current_graph: Optional[DiGraph] = field(default_factory=EmptyField)
+    current_graph: Optional[DiGraph] = field(default_factory=none_factory)
 
 
 class GodState:
-    def __init__(self):
+    def __init__(self) -> None:
         self.queues = QueuesState()
         self.gui = GuiState()
         self.cyphal = CyphalState()

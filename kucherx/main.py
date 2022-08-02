@@ -11,8 +11,6 @@ import pytest
 import dearpygui.dearpygui as dpg
 import sentry_sdk
 
-from kucherx.domain.attach_transport_request import AttachTransportRequest
-
 from kucherx.domain.queue_quit_object import QueueQuitObject
 from kucherx.domain.viewport_info import ViewPortInfo
 
@@ -88,7 +86,7 @@ def run_gui_app() -> None:
     start_threads(state)
 
     logging.getLogger("pycyphal").setLevel(logging.INFO)
-    logging.getLogger("can").setLevel(logging.ERROR)
+    logging.getLogger("can").setLevel(logging.INFO)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
     def open_interface_menu() -> None:
