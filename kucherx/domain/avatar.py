@@ -113,22 +113,22 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self._ts_activity = float(ts.monotonic)
 
         # Snoop on transfers sent by our node. Even if we can't ask we can still learn things by listening.
-        for ty, handler in self._dispatch.items():
-            if isinstance(ty, tuple):
-                ty, role = ty
-                assert isinstance(ty, type) and isinstance(role, ServiceDataSpecifier.Role)
-                if isinstance(ds, ServiceDataSpecifier) and ds.role == role and ds.service_id == get_fixed_port_id(ty):
-                    rr = getattr(ty, role.name.capitalize())
-                    obj = pycyphal.dsdl.deserialize(rr, tr.fragmented_payload)
-                    logger.debug("%r: Service snoop: %r from %r", self, obj, tr)
-                    if obj is not None:
-                        handler(float(ts.monotonic), obj)
-            elif isinstance(ty, type) and (fpid := get_fixed_port_id(ty)) is not None:
+        for type, handler in self._dispatch.items():
+            if isinstance(type, tuple):
+                type, role = type
+                assert isinstance(type, type) and isinstance(role, ServiceDataSpecifier.Role)
+                if isinstance(ds, ServiceDataSpecifier) and ds.role == role and ds.service_id == get_fixed_port_id(type):
+                    rr = getattr(type, role.name.capitalize())
+                    deserialized_object = pycyphal.dsdl.deserialize(rr, tr.fragmented_payload)
+                    logger.debug("%r: Service snoop: %r from %r", self, deserialized_object, tr)
+                    if deserialized_object is not None:
+                        handler(float(ts.monotonic), deserialized_object)
+            elif isinstance(type, type) and (fpid := get_fixed_port_id(type)) is not None:
                 if isinstance(ds, MessageDataSpecifier) and ds.subject_id == fpid:
-                    obj = pycyphal.dsdl.deserialize(ty, tr.fragmented_payload)
-                    logger.debug("%r: Message snoop: %r from %r", self, obj, tr)
-                    if obj is not None:
-                        handler(float(ts.monotonic), obj)
+                    deserialized_object = pycyphal.dsdl.deserialize(type, tr.fragmented_payload)
+                    logger.debug("%r: Message snoop: %r from %r", self, deserialized_object, tr)
+                    if deserialized_object is not None:
+                        handler(float(ts.monotonic), deserialized_object)
             else:
                 assert False
 

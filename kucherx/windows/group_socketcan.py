@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 import typing
 import platform
 
@@ -13,6 +14,7 @@ def make_socketcan_group(
 ) -> UID:
     def make_update_combobox_callback(combobox: UID) -> typing.Callable[[], None]:
         def update_combobox() -> None:
+            start_time = time.monotonic()
             if platform.system() == "Linux":
                 result = subprocess.run(['netstat -i | tail -n +3 |cut -d" " -f1'], shell=True, stdout=subprocess.PIPE)
                 list_of_interfaces = result.stdout.decode("utf-8").strip().split("\n")
@@ -20,7 +22,8 @@ def make_socketcan_group(
             else:
                 dpg.configure_item(combobox, items=["Socketcan doesn't work on Windows", "use slcan"])
                 state.messages_queue.put("Socketcan doesn't work on Windows use slcan")
-
+            end_time = time.monotonic()
+            print("update_combobox took:", end_time - start_time)
         return update_combobox
 
     def interface_selected_from_combobox(sender: UID, app_data: str) -> None:

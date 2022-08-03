@@ -10,7 +10,8 @@ logger = logging.getLogger(__file__)
 logger.setLevel("NOTSET")
 
 
-def make_monitor_window(dpg: typing.Any, state: GodState, open_interface_menu: typing.Callable[[None], None]) -> UID:
+def make_monitor_window(dpg: typing.Any, state: GodState, open_interface_menu: typing.Callable[[None], None],
+                        open_allocations_window: typing.Callable[[None], None]) -> UID:
     dpg.bind_font(state.gui.default_font)
     with dpg.texture_registry(show=False):
         dpg.add_dynamic_texture(
@@ -36,6 +37,7 @@ def make_monitor_window(dpg: typing.Any, state: GodState, open_interface_menu: t
                     with dpg.group(horizontal=True):
                         dpg.add_text("Monitoring!")
                         dpg.add_button(label="Open an interface", callback=open_interface_menu)
+                        dpg.add_button(label="Open pending node-id allocations", callback=open_allocations_window)
                     dpg.add_image("monitor_graph_texture_tag")
                 with dpg.table_cell() as state.second_row:
                     pass

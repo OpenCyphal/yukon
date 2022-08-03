@@ -30,6 +30,8 @@ from kucherx.windows.request_inferior_transport import make_request_inferior_tra
 from kucherx.save_viewport import display_save_viewport
 
 from kucherx.windows.monitor import make_monitor_window
+from kucherx.services.render_graph import render_graph
+from kucherx.windows.allocations import make_allocations_window
 
 setup_sentry(sentry_sdk)
 paths = sys.path
@@ -51,11 +53,6 @@ def start_threads(state: GodState) -> None:
     avatars_to_graph_thread.start()
 
 
-def pixel_conversion(_input: int) -> float:
-    """Byte to int"""
-    return _input / 255
-
-
 def run_gui_app() -> None:
     make_process_dpi_aware(logger)
     dpg.create_context()
@@ -72,6 +69,8 @@ def run_gui_app() -> None:
     state = GodState()
     state.gui.default_font = configure_font_and_scale(dpg, logger, get_resources_directory())
     state.gui.theme = get_main_theme(dpg)
+
+
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
@@ -92,7 +91,13 @@ def run_gui_app() -> None:
     def open_interface_menu() -> None:
         make_request_inferior_transport_window(dpg, state)
 
-    monitor_uid = make_monitor_window(dpg, state, open_interface_menu)
+    def open_allocations_window() -> None:
+        if not state.gui.allocations_window:
+            make_allocations_window(dpg, state)
+        else:
+            dpg.show_item(state.gui.allocations_window)
+
+    monitor_uid = make_monitor_window(dpg, state, open_interface_menu, open_allocations_window)
     dpg.set_primary_window(monitor_uid, True)
     make_errors_window(dpg, state, monitor_uid)
 
@@ -104,6 +109,7 @@ def run_gui_app() -> None:
     # below replaces, start_dearpygui()
     while dpg.is_dearpygui_running() and state.gui.gui_running:
         # ensure_window_is_in_viewport(main_window_id)
+        render_graph(dpg, state)
         dpg.render_dearpygui_frame()
 
     print("Exiting via the easy route")
