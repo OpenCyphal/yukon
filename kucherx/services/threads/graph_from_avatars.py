@@ -20,9 +20,9 @@ def graph_from_avatars_thread(state: GodState) -> None:
                 print("Graph from avatars received a quit queue item!")
                 break
             print("This is not a queue quit object")
-            state.avatars_lock.acquire()
-            avatars_copy: Dict[int, Avatar] = copy.copy(state.avatars)
-            state.avatars_lock.release()
+            state.avatar.avatars_lock.acquire()
+            # avatars_copy: Dict[int, Avatar] = copy.copy(state.avatars)
+            state.avatar.avatars_lock.release()
             state.current_graph = DiGraph()
             state.current_graph.add_node(125)
             state.current_graph.add_node(7519)

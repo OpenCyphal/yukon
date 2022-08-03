@@ -1,10 +1,8 @@
 import logging
 import typing
-from logging import Logger
 
 from kucherx.domain.god_state import GodState
 from kucherx.domain.UID import UID
-from kucherx.themes.main_window_theme import get_main_theme
 
 logger = logging.getLogger(__file__)
 logger.setLevel("NOTSET")

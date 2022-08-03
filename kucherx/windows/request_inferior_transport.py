@@ -20,7 +20,7 @@ def make_request_inferior_transport_window(
     with dpg.window(label="Configure interface", width=560, height=595, no_close=False) as current_window_id:
         dpg.bind_font(state.gui.default_font)
         dpg.set_exit_callback(
-            lambda: state.queues.detach_transport.put(state.gui.transports_of_windows[current_window_id])
+            lambda: state.queues.detach_transport.put(state.gui.transports_of_windows.get(current_window_id))
         )
         interface: Interface = Interface()
         input_field_width = 490

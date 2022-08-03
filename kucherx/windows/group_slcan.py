@@ -9,14 +9,15 @@ from kucherx.domain import UID
 
 
 def make_slcan_group(
-    dpg: typing.Any, input_field_width: int, current_window_id: UID, interface: Interface, state: GodState
+        dpg: typing.Any, input_field_width: int, current_window_id: UID, interface: Interface, state: GodState
 ) -> UID:
-    def _update_list_of_comports(dpg: typing.Any, combobox: UID) -> None:
-        ports = list_ports.comports()
-        dpg.configure_item(combobox, items=ports)
+    combobox_action_group = None
 
     def update_combobox() -> None:
-        _update_list_of_comports(dpg, combobox_action_group)
+        def _internal():
+            ports = list_ports.comports()
+            dpg.configure_item(slcan_port_selection_combobox, items=ports)
+        threading.Thread(target=_internal).start()
 
     def interface_selected_from_combobox(sender: UID, app_data: str) -> None:
         """When an slcan interface is selected then the name of the interface will arrive as app_data"""
@@ -34,5 +35,5 @@ def make_slcan_group(
         )
         with dpg.group(horizontal=True) as combobox_action_group:
             dpg.add_button(label="Refresh", callback=update_combobox)
-
+    update_combobox()
     return slcan_group

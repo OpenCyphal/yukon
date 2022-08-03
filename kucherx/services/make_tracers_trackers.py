@@ -22,8 +22,9 @@ def make_handler_for_node_detected(
         print("Some getinfo entry was received")
         if previous_entry is None:
             print(f"Node with id {node_id} became visible.")
-            state.avatar.avatars_by_node_id[node_id] = Avatar(iface, node_id=node_id)
-            state.queues.graph_from_avatar.put(state.cyphal.avatars[node_id])
+            new_avatar = Avatar(iface, node_id=node_id)
+            state.avatar.avatars_by_node_id[node_id] = new_avatar
+            state.queues.graph_from_avatar.put(new_avatar)
 
     return handle_getinfo_handler_format
 

@@ -21,7 +21,7 @@ def make_socketcan_group(
                 dpg.configure_item(combobox, items=list_of_interfaces)
             else:
                 dpg.configure_item(combobox, items=["Socketcan doesn't work on Windows", "use slcan"])
-                state.messages_queue.put("Socketcan doesn't work on Windows use slcan")
+                state.messages_queue.put("No socketcan on Windows, use slcan")
             end_time = time.monotonic()
             print("update_combobox took:", end_time - start_time)
         return update_combobox
@@ -35,7 +35,7 @@ def make_socketcan_group(
 
     with dpg.group(horizontal=False) as socketcan_group:
         if os.name == "nt":
-            dpg.add_text("Socketcan not supported on Windows.")
+            dpg.add_text("No socketcan on Windows.")
         else:
             dpg.add_text("Interface")
             socketcan_port_selection_combobox = dpg.add_combo(

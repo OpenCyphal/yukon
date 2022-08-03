@@ -116,14 +116,14 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         for type, handler in self._dispatch.items():
             if isinstance(type, tuple):
                 type, role = type
-                assert isinstance(type, type) and isinstance(role, ServiceDataSpecifier.Role)
+                assert isinstance(role, ServiceDataSpecifier.Role)
                 if isinstance(ds, ServiceDataSpecifier) and ds.role == role and ds.service_id == get_fixed_port_id(type):
                     rr = getattr(type, role.name.capitalize())
                     deserialized_object = pycyphal.dsdl.deserialize(rr, tr.fragmented_payload)
                     logger.debug("%r: Service snoop: %r from %r", self, deserialized_object, tr)
                     if deserialized_object is not None:
                         handler(float(ts.monotonic), deserialized_object)
-            elif isinstance(type, type) and (fpid := get_fixed_port_id(type)) is not None:
+            elif (fpid := get_fixed_port_id(type)) is not None:
                 if isinstance(ds, MessageDataSpecifier) and ds.subject_id == fpid:
                     deserialized_object = pycyphal.dsdl.deserialize(type, tr.fragmented_payload)
                     logger.debug("%r: Message snoop: %r from %r", self, deserialized_object, tr)
