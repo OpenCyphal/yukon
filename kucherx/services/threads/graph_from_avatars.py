@@ -22,22 +22,22 @@ def graph_from_avatars_thread(state: GodState) -> None:
             print("This is not a queue quit object")
             state.avatar.avatars_lock.acquire()
             # avatars_copy: Dict[int, Avatar] = copy.copy(state.avatars)
-            state.avatar.avatars_lock.release()
+            # state.avatar.avatars_lock.release()
             state.current_graph = DiGraph()
-            state.current_graph.add_node(125)
-            state.current_graph.add_node(7519)
-            state.current_graph.add_node(100)
-            state.current_graph.add_node(80)
-            state.current_graph.add_edge(100, 7519)
-            state.current_graph.add_edge(7519, 80)
-            state.current_graph.add_edge(125, 7519)
+            # state.current_graph.add_node(125)
+            # state.current_graph.add_node(7519)
+            # state.current_graph.add_node(100)
+            # state.current_graph.add_node(80)
+            # state.current_graph.add_edge(100, 7519)
+            # state.current_graph.add_edge(7519, 80)
+            # state.current_graph.add_edge(125, 7519)
 
-            # for node_id_publishing, avatar_publishing in avatars_copy.items():
-            #     node_state: NodeState = avatar_publishing.update(time.time())
-            #     for subject_id in node_state.ports.pub:
-            #         state.current_graph.add_edge(node_id_publishing, subject_id)
-            #         for node_id_subscribing, avatar2_subscribing in avatars_copy.items():
-            #             subscribing_node_state = avatar2_subscribing.update(time.time())
-            #             if subject_id in subscribing_node_state.ports.sub:
-            #                 state.current_graph.add_edge(subject_id, node_id_subscribing)
-            state.queues.image_from_graph.put(state.current_graph)
+            for node_id_publishing, avatar_publishing in state.avatar.avatars_by_node_id.items():
+                node_state: NodeState = avatar_publishing.update(time.time())
+                for subject_id in node_state.ports.pub:
+                    state.current_graph.add_edge(node_id_publishing, subject_id)
+                    for node_id_subscribing, avatar2_subscribing in state.avatar.avatars_by_node_id.items():
+                        subscribing_node_state = avatar2_subscribing.update(time.time())
+                        if subject_id in subscribing_node_state.ports.sub:
+                            state.current_graph.add_edge(subject_id, node_id_subscribing)
+            state.queues.image_from_graph.put(state.current_graph.copy(True))
