@@ -46,14 +46,11 @@ logger.setLevel("NOTSET")
 
 def start_threads(state: GodState) -> None:
     # Creating 3 new threads
-    from kucherx.services.threads.messages_thread import messages_thread
     from kucherx.services.threads.cyphal_worker import cyphal_worker_thread
 
     cyphal_worker_thread = threading.Thread(target=cyphal_worker_thread, args=[state])
     cyphal_worker_thread.start()
     print("Cyphal worker was started")
-    errors_thread = threading.Thread(target=messages_thread, args=[state])
-    errors_thread.start()
     avatars_to_graph_thread = threading.Thread(target=graph_from_avatars_thread, args=[state])
     avatars_to_graph_thread.start()
 
@@ -69,6 +66,7 @@ class Api:
         return json.dumps(list(map(str, list_ports.comports())))
 
     def attach_transport(self, interface_string, arb_rate, data_rate, node_id, mtu):
+        state.queues.messages.put("Initiated attach transport")
         interface = Interface()
         interface.rate_arb = int(arb_rate)
         interface.rate_data = int(data_rate)
@@ -85,6 +83,11 @@ class Api:
             else:
                 break
         return state.queues.attach_transport_response.get()
+
+    def get_messages(self):
+        return json.dumps(list(state.queues.messages.queue))
+    def get_avatars(self):
+        return json.dumps(state.avatar.avatars_by_node_id.values())
 
     def toggleFullscreen(self):
         webview.windows[0].toggle_fullscreen()
@@ -103,7 +106,7 @@ def run_gui_app() -> None:
         resizable=True,
     )
     api = Api()
-    webview.create_window('KucherX', 'html/index.html', js_api=api, min_size=(600, 450))
+    webview.create_window('KucherX — monitor', 'html/index.html', js_api=api, min_size=(600, 450))
     # Creating 3 new threads
     start_threads(state)
     webview.start(gui="qt")

@@ -34,9 +34,6 @@ def none_factory() -> None:
 @dataclass
 class QueuesState:
     """A class that holds all queues used by the god state."""
-    graph_from_avatar: Queue[Avatar] = field(default_factory=Queue)
-    image_from_graph: Queue[DiGraph] = field(default_factory=Queue)
-    next_monitor_images: Queue[GraphImage] = field(default_factory=Queue)
     messages: Queue[str] = field(default_factory=Queue)
     attach_transport_response: Queue[str] = field(default_factory=Queue)
     attach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)

@@ -10,9 +10,6 @@
     <title>Document</title>
 </head>
 <body>
-<h1>Monitor</h1>
-<p>Please observe the graph</p>
-
 <div class="stuff">
     <select id="sInterfaces"></select>
     <button id="btnRefresh">Refresh</button>
@@ -23,10 +20,16 @@
     <input type="number" id="iArbRate" value="1000000" min="1000000" max="2000000">
     <label for="iDataRate">Data rate</label>
     <input type="number" id="iDataRate" value="1000000" min="1000000" max="2000000">
-    // Label and input for node id number
     <label for="iNodeId">Node ID</label>
     <input type="number" id="iNodeId" value="1" min="1" max="255">
     <button id="btnStart">Start</button>
+</div>
+<div class="messages">
+    <p>Messages</p>
+    <div id="messages-list">
+
+    </div>
+    <button id="btnFetch">Fetch</button>
 </div>
 <p id="textOut"></p>
 <div id="gd"></div>
