@@ -10,6 +10,7 @@ from kucherx.domain.god_state import GodState
 from kucherx.domain.note_state import NodeState
 from kucherx.domain.queue_quit_object import QueueQuitObject
 
+import jgf.igraph as jig
 
 def graph_from_avatars_thread(state: GodState) -> None:
     while state.gui.gui_running:
