@@ -10,6 +10,7 @@ from time import sleep
 import pytest
 import sentry_sdk
 import webview
+from pycyphal.application import make_transport, make_registry
 
 from kucherx.domain.queue_quit_object import QueueQuitObject
 from kucherx.domain.viewport_info import ViewPortInfo
@@ -32,6 +33,7 @@ from kucherx.save_viewport import display_save_viewport
 from kucherx.windows.monitor import make_monitor_window
 from kucherx.services.render_graph import render_graph
 from kucherx.windows.allocations import make_allocations_window
+from services.make_tracers_trackers import make_tracers_trackers
 
 setup_sentry(sentry_sdk)
 paths = sys.path
@@ -53,7 +55,28 @@ def start_threads(state: GodState) -> None:
     avatars_to_graph_thread.start()
 
 
+def prepare_everything_cyphal_related(state: GodState):
+    state.cyphal.local_node.start()
+    state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
+    make_tracers_trackers(state)
+    registry = make_registry()
+    registry["uavcan.can.iface"] = "slcan:/"
+    registry["uavcan.can.mtu"] = "8"
+    registry["uavcan.can.bitrate"] = [self.requested_interface.rate_arb, self.requested_interface.rate_data]
+    registry["uavcan.can.node_id"] = self.local_node_id
+    new_transport = make_transport()
+    state.gui.transports_of_windows[atr.requesting_window_id] = new_transport
+    state.cyphal.pseudo_transport.attach_inferior(new_transport)
+    state.queues.transport_successfully_added_messages.put(atr.requested_interface.iface)
+
+
+from serial.tools import list_ports
+import json
+
 class Api():
+    def get_ports_list(self):
+        return json.dumps(list(map(str, list_ports.comports())))
+
     def addItem(self, title):
         print('Added item %s' % title)
 
