@@ -29,10 +29,10 @@ def cyphal_worker_thread(state: GodState) -> None:
                 await asyncio.sleep(0.1)
                 if not state.queues.attach_transport.empty():
                     atr: AttachTransportRequest = state.queues.attach_transport.get_nowait()
-                    new_transport = make_transport(atr.get_registers())
+                    new_transport = make_transport(atr.get_registry())
                     state.gui.transports_of_windows[atr.requesting_window_id] = new_transport
                     state.cyphal.pseudo_transport.attach_inferior(new_transport)
-                    state.queues.transport_successfully_added_messages.put(atr.requested_interface.iface)
+                    state.queues.attach_transport_response.put(atr.requested_interface.iface)
                     print("Added a new interface")
                 if not state.queues.detach_transport.empty():
                     transport = state.queues.detach_transport.get_nowait()

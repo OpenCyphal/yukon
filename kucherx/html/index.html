@@ -6,22 +6,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="script.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.13.3.min.js"></script>
-    
+    <link rel="stylesheet" href="style.css">
     <title>Document</title>
 </head>
 <body>
-    <h1>Monitor</h1>
-    <p>Please observe the graph</p>
+<h1>Monitor</h1>
+<p>Please observe the graph</p>
+
+<div class="stuff">
     <select id="sInterfaces"></select>
     <button id="btnRefresh">Refresh</button>
-    <p id="textOut"></p>
-    <div id="gd"></div>
+    <label for="iMtu">MTU</label>
+    <input type="number" id="iMtu" value="8" min="8" max="1500">
+    // Label and input for arbitration rate and data rate
+    <label for="iArbRate">Arbitration rate</label>
+    <input type="number" id="iArbRate" value="1000000" min="1000000" max="2000000">
+    <label for="iDataRate">Data rate</label>
+    <input type="number" id="iDataRate" value="1000000" min="1000000" max="2000000">
+    // Label and input for node id number
+    <label for="iNodeId">Node ID</label>
+    <input type="number" id="iNodeId" value="1" min="1" max="255">
+    <button id="btnStart">Start</button>
+</div>
+<p id="textOut"></p>
+<div id="gd"></div>
 
-    <script>
+<script>
         Plotly.newPlot("gd", /* JSON object */ {
             "data": [{ "y": [1, 2, 3] }],
             "layout": { "width": 600, "height": 400}
         })
-    </script>
+
+</script>
 </body>
 </html>

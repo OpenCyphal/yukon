@@ -14,7 +14,7 @@ class AttachTransportRequest:
     requested_interface: Interface
     local_node_id: int
 
-    def get_registers(self) -> register.Registry:
+    def get_registry(self) -> register.Registry:
         registry = make_registry()
         registry["uavcan.can.iface"] = copy.copy(self.requested_interface.iface)
         registry["uavcan.can.mtu"] = self.requested_interface.mtu

@@ -12,6 +12,8 @@ import sentry_sdk
 import webview
 from pycyphal.application import make_transport, make_registry
 
+from domain.attach_transport_request import AttachTransportRequest
+from domain.interface import Interface
 from kucherx.domain.queue_quit_object import QueueQuitObject
 from kucherx.domain.viewport_info import ViewPortInfo
 
@@ -49,51 +51,47 @@ def start_threads(state: GodState) -> None:
 
     cyphal_worker_thread = threading.Thread(target=cyphal_worker_thread, args=[state])
     cyphal_worker_thread.start()
+    print("Cyphal worker was started")
     errors_thread = threading.Thread(target=messages_thread, args=[state])
     errors_thread.start()
     avatars_to_graph_thread = threading.Thread(target=graph_from_avatars_thread, args=[state])
     avatars_to_graph_thread.start()
 
 
-def prepare_everything_cyphal_related(state: GodState):
-    state.cyphal.local_node.start()
-    state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
-    make_tracers_trackers(state)
-    registry = make_registry()
-    registry["uavcan.can.iface"] = "slcan:/"
-    registry["uavcan.can.mtu"] = "8"
-    registry["uavcan.can.bitrate"] = [self.requested_interface.rate_arb, self.requested_interface.rate_data]
-    registry["uavcan.can.node_id"] = self.local_node_id
-    new_transport = make_transport()
-    state.gui.transports_of_windows[atr.requesting_window_id] = new_transport
-    state.cyphal.pseudo_transport.attach_inferior(new_transport)
-    state.queues.transport_successfully_added_messages.put(atr.requested_interface.iface)
-
-
 from serial.tools import list_ports
 import json
 
-class Api():
+state: GodState = GodState()
+
+
+class Api:
     def get_ports_list(self):
         return json.dumps(list(map(str, list_ports.comports())))
 
-    def addItem(self, title):
-        print('Added item %s' % title)
-
-    def removeItem(self, item):
-        print('Removed item %s' % item)
-
-    def editItem(self, item):
-        print('Edited item %s' % item)
-
-    def toggleItem(self, item):
-        print('Toggled item %s' % item)
+    def attach_transport(self, interface_string, arb_rate, data_rate, node_id, mtu):
+        interface = Interface()
+        interface.rate_arb = int(arb_rate)
+        interface.rate_data = int(data_rate)
+        interface.mtu = int(mtu)
+        interface.iface = "slcan:" + str(interface_string).split()[0]
+        print('Opening port %s' % interface.iface)
+        print('Arb rate %d' % int(interface.rate_arb))
+        print('Data rate %d' % int(interface.rate_data))
+        atr: AttachTransportRequest = AttachTransportRequest(0, interface, node_id)
+        state.queues.attach_transport.put(atr)
+        while True:
+            if state.queues.attach_transport_response.empty():
+                sleep(0.1)
+            else:
+                break
+        return state.queues.attach_transport_response.get()
 
     def toggleFullscreen(self):
         webview.windows[0].toggle_fullscreen()
 
 
 def run_gui_app() -> None:
+    global state
     make_process_dpi_aware(logger)
 
     vpi: ViewPortInfo = ViewPortInfo(
@@ -104,10 +102,11 @@ def run_gui_app() -> None:
         large_icon=str(get_resources_directory() / "icons/png/KucherX_256.ico"),
         resizable=True,
     )
-    state = GodState()
     api = Api()
     webview.create_window('KucherX', 'html/index.html', js_api=api, min_size=(600, 450))
-    webview.start()
+    # Creating 3 new threads
+    start_threads(state)
+    webview.start(gui="qt")
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False

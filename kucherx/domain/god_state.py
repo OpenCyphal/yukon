@@ -38,7 +38,7 @@ class QueuesState:
     image_from_graph: Queue[DiGraph] = field(default_factory=Queue)
     next_monitor_images: Queue[GraphImage] = field(default_factory=Queue)
     messages: Queue[str] = field(default_factory=Queue)
-    transport_successfully_added_messages: Queue[str] = field(default_factory=Queue)
+    attach_transport_response: Queue[str] = field(default_factory=Queue)
     attach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
     detach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
 
