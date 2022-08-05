@@ -32,6 +32,7 @@ def none_factory() -> None:
 @dataclass
 class QueuesState:
     """A class that holds all queues used by the god state."""
+
     messages: Queue[str] = field(default_factory=Queue)
     attach_transport_response: Queue[str] = field(default_factory=Queue)
     attach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
@@ -69,6 +70,7 @@ class AllocationState:
 @dataclass
 class CyphalState:
     """A class that holds all cyphal references used by the god state."""
+
     pseudo_transport: Optional[RedundantTransport] = field(default_factory=none_factory)
     tracer: Optional[pycyphal.transport.Tracer] = field(default_factory=none_factory)
     tracker: Optional[NodeTracker] = field(default_factory=none_factory)
@@ -83,6 +85,7 @@ class AvatarState:
     avatars_by_node_id: Dict[int, Avatar] = field(default_factory=dict)
     avatars_by_hw_id: Dict[int, Avatar] = field(default_factory=dict)
     avatars_lock: threading.RLock = field(default_factory=threading.RLock)
+    current_graph_lock: threading.RLock = field(default_factory=threading.RLock)
 
 
 class GodState:

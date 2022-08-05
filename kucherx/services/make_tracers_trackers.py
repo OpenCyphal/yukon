@@ -15,9 +15,10 @@ logger.setLevel("NOTSET")
 
 
 def make_handler_for_node_detected(
-        state: GodState, iface: Iface) -> typing.Callable[[int, typing.Optional[Entry], typing.Optional[Entry]], None]:
+    state: GodState, iface: Iface
+) -> typing.Callable[[int, typing.Optional[Entry], typing.Optional[Entry]], None]:
     def handle_getinfo_handler_format(
-            node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
+        node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
     ) -> None:
         print("Some getinfo entry was received")
         if previous_entry is None:

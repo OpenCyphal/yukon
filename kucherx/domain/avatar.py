@@ -17,10 +17,10 @@ logger = logging.getLogger()
 
 class Avatar:  # pylint: disable=too-many-instance-attributes
     def __init__(
-            self,
-            iface: Iface,
-            node_id: Optional[int],
-            info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
+        self,
+        iface: Iface,
+        node_id: Optional[int],
+        info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
     ) -> None:
         import uavcan.node
         import uavcan.node.port
@@ -87,7 +87,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
         # Invalidate the node info if the uptime goes backwards or if we received a heartbeat after a long pause.
         restart = self._heartbeat and (
-                (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
+            (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
         )
         if restart:
             logger.info("%r: Restart detected: %r", self, obj)
@@ -118,8 +118,11 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             if isinstance(type, tuple):
                 type, role = type
                 assert isinstance(role, ServiceDataSpecifier.Role)
-                if isinstance(ds, ServiceDataSpecifier) and ds.role == role and ds.service_id == get_fixed_port_id(
-                        type):
+                if (
+                    isinstance(ds, ServiceDataSpecifier)
+                    and ds.role == role
+                    and ds.service_id == get_fixed_port_id(type)
+                ):
                     rr = getattr(type, role.name.capitalize())
                     deserialized_object = pycyphal.dsdl.deserialize(rr, tr.fragmented_payload)
                     logger.debug("%r: Service snoop: %r from %r", self, deserialized_object, tr)
@@ -152,21 +155,15 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ports=self._ports if port_introspection_valid else None,
         )
 
-    def to_builtin(self):
-        json_object = {
+    def to_builtin(self) -> Any:
+        json_object: dict[str, dict[str, list[int]] | int | None] = {
             "node_id": self._node_id,
-            "heartbeat": {
-                "uptime": self._heartbeat.uptime,
-                "health": self._heartbeat.health.value,
-                "mode": self._heartbeat.mode.value,
-                "vendor_specific_status_code": self._heartbeat.vendor_specific_status_code,
-            },
             "ports": {
                 "pub": list(self._ports.pub),
                 "sub": list(self._ports.sub),
                 "cln": list(self._ports.cln),
                 "srv": list(self._ports.srv),
-            }
+            },
         }
         return json_object
 
