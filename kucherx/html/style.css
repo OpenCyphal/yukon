@@ -1,0 +1,43 @@
+#first-block {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    max-width: 800px;
+    width: 100%;
+    max-height: 300px;
+    height: 300px;
+    margin-bottom: 60px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    border: 1px solid #ddd;
+}
+#stuff {
+    display:flex;
+    flex-direction: column;
+    width:50%;
+}
+#messages-list {
+    overflow-y: scroll;
+    height: 270px;
+}
+#messages-list li {
+    list-style: none;
+}
+
+#messages_title {
+    margin-top: 3px;
+}
+#messages {
+    width: 50%;
+    margin-left: 10px;
+}
+#cy {
+  width: 100%;
+  max-height: 900px;
+  min-height: 400px;
+  display: block;
+}

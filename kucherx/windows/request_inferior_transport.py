@@ -1,65 +1,33 @@
-import asyncio
 import logging
-import time
 import typing
-
-from serial.tools import list_ports
 
 from kucherx.domain.UID import UID
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 from kucherx.domain.interface import Interface
-from kucherx.domain.kucherx_state import KucherXState
+from kucherx.domain.god_state import GodState
 
-import re
+from kucherx.windows.group_candump import make_candump_group
+from kucherx.windows.group_slcan import make_slcan_group
+from kucherx.windows.group_socketcan import make_socketcan_group
 
-from kucherx.services.folder_recognition.common_folders import get_root_directory
-
-
-def update_list_of_comports(dpg: typing.Any, combobox: UID) -> None:
-    ports = list_ports.comports()
-    dpg.configure_item(combobox, items=ports)
+logger = logging.getLogger(__name__)
 
 
 def make_request_inferior_transport_window(
     dpg: typing.Any,
-    state: KucherXState,
-    notify_transport_added: typing.Callable[[AttachTransportRequest], None],
-    notify_transport_removed: typing.Callable[[AttachTransportRequest], None],
+    state: GodState,
 ) -> UID:
-    with dpg.window(label="Configure interface", width=560, height=540, no_close=False) as current_window_id:
-        dpg.bind_font(state.default_font)
-        dpg.set_exit_callback(notify_transport_removed)
+    with dpg.window(label="Configure interface", width=560, height=595, no_close=False) as current_window_id:
+        dpg.bind_font(state.gui.default_font)
+        dpg.set_exit_callback(
+            lambda: state.queues.detach_transport.put(state.gui.transports_of_windows.get(current_window_id))
+        )
         interface: Interface = Interface()
         input_field_width = 490
         dpg.add_text("Maximum transmission unit (MTU)")
-        tf_mtu = None
-        slcan_port_selection_combobox = None
-        time_modified = time.time()
+        tf_mtu = dpg.add_input_text(width=input_field_width, default_value="8")
 
-        def new_text_entered() -> None:
-            """This would work is dpg.set_value worked"""
-            nonlocal time_modified, tf_mtu, dpg
-            if time.time() - time_modified > 0.06:
-                current_value = dpg.get_value(tf_mtu)
-                # Replace all nondecimals with nothing
-                new_value = re.sub("\\D", "", current_value)
-                print("New value " + new_value)
-                time_modified = time.time()
-                if dpg.get_value(tf_mtu) != new_value:
-                    dpg.set_value(tf_mtu, new_value)
-
-        tf_mtu = dpg.add_input_text(default_value="8", width=input_field_width, callback=new_text_entered)
-
-        def interface_selected_from_combobox(sender: UID, app_data: str) -> None:
-            """When an slcan interface is selected then the name of the interface will arrive as app_data"""
-            # state.settings.UAVCAN__CAN__IFACE = "slcan:" + str(app_data).split()[0]
-            # The name of the interface is displayed on the title bar of the window
-            dpg.configure_item(current_window_id, label=app_data)
-            interface.iface = "slcan:" + str(app_data).split()[0]
-
-        slcan_group = None
-        candump_group = None
-        combobox_options = ["slcan", "candump"]
+        combobox_options = ["slcan", "candump", "socketcan"]
         groups: typing.Optional[typing.List[UID]] = None
 
         dpg.add_text("The kind of connection")
@@ -74,9 +42,8 @@ def make_request_inferior_transport_window(
                 dpg.show_item(slcan_group)
             elif item_selected == "candump":
                 dpg.show_item(candump_group)
-            elif item_selected == "3rd":
-                pass
-                # dpg.show_item(third_group)
+            elif item_selected == "socketcan":
+                dpg.show_item(socketcan_group)
 
         combobox_connection_method = dpg.add_combo(
             default_value="Select connection method",
@@ -84,61 +51,10 @@ def make_request_inferior_transport_window(
             callback=connection_method_selected,
             items=combobox_options,
         )
-
-        def update_combobox() -> None:
-            update_list_of_comports(dpg, slcan_port_selection_combobox)
-
-        with dpg.group(horizontal=False) as slcan_group:
-            interface_combobox_text = dpg.add_text("Interface")
-            slcan_port_selection_combobox = dpg.add_combo(
-                default_value="Select an interface", width=input_field_width, callback=interface_selected_from_combobox
-            )
-            with dpg.group(horizontal=True) as combobox_action_group:
-                dpg.add_button(label="Refresh", callback=update_combobox)
-        with dpg.group(horizontal=False) as candump_group:
-
-            def get_candump_files() -> typing.List[str]:
-                from os import listdir
-                from os.path import isfile, join
-
-                root_dir = get_root_directory()
-                return [f for f in listdir(root_dir) if isfile(join(root_dir, f)) and ".candump" in f]
-
-            interface_combobox_text = dpg.add_text("Candump path")
-            candump_files_select_combobox = None
-            tb_candump_path = dpg.add_input_text(default_value="candump:path", width=input_field_width)
-
-            def file_selected(file_name: str) -> None:
-                print("File name: " + file_name)
-
-            candump_files_select_combobox = dpg.add_combo(
-                default_value="Search not performed",
-                width=input_field_width,
-                callback=file_selected,
-                items=get_candump_files(),
-            )
-
-            def use_combobox() -> None:
-                """The user can select to see candump files located around the KucherX executable."""
-                dpg.hide_item(tb_candump_path)
-                dpg.show_item(candump_files_select_combobox)
-                items = get_candump_files()
-                dpg.configure_item(candump_files_select_combobox, default_value=f"{len(items)} files found.")
-                dpg.configure_item(candump_files_select_combobox, items=items)
-
-            def use_textbox() -> None:
-                """The user can select to use just a text as the path to a candump file."""
-                dpg.hide_item(candump_files_select_combobox)
-                dpg.show_item(tb_candump_path)
-
-            with dpg.group(horizontal=False) as combobox_action_group:
-                dpg.add_button(label="Look for .candump files around KucherX", callback=use_combobox)
-                dpg.add_button(label="Just type paste in the path of a candump", callback=use_textbox)
-
-            dpg.hide_item(candump_files_select_combobox)
-            dpg.show_item(tb_candump_path)
-
-        groups = [slcan_group, candump_group]
+        slcan_group = make_slcan_group(dpg, input_field_width, current_window_id, interface, state)
+        candump_group = make_candump_group(dpg, input_field_width, current_window_id, interface, state)
+        socketcan_group = make_socketcan_group(dpg, input_field_width, current_window_id, interface, state)
+        groups = [slcan_group, candump_group, socketcan_group]
         connection_method_selected(None, "slcan")
 
         dpg.add_text("Arbitration bitrate")
@@ -148,16 +64,19 @@ def make_request_inferior_transport_window(
 
         def finalize() -> None:
             if interface.iface == "":
-                state.errors_queue.put("No interface selected")
+                state.queues.messages.put("No interface selected")
             try:
                 interface.mtu = int(dpg.get_value(tf_mtu))
                 interface.rate_arb = int(dpg.get_value(tf_arb_rate))
                 interface.rate_data = int(dpg.get_value(tf_data_rate))
-                notify_transport_added(interface)
+                logger.info("Notifying that transport was added")
+                new_request = AttachTransportRequest(current_window_id, interface, 1)
+                state.queues.attach_transport.put(new_request)
+                dpg.configure_item(add_interface_button, enabled=False)
             except ValueError as e:
-                state.errors_queue.put(e)
+                state.queues.messages.put(e)
 
-        dpg.add_button(label="Add interface", callback=finalize)
+        dpg.add_checkbox(label="Notify when transmissions are received")
 
-        update_combobox()
+        add_interface_button = dpg.add_button(label="Add interface", callback=finalize)
     return current_window_id

@@ -1,3 +1,4 @@
+import json
 import logging
 import math
 from typing import Optional, Any, Callable
@@ -16,10 +17,10 @@ logger = logging.getLogger()
 
 class Avatar:  # pylint: disable=too-many-instance-attributes
     def __init__(
-        self,
-        iface: Iface,
-        node_id: Optional[int],
-        info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
+            self,
+            iface: Iface,
+            node_id: Optional[int],
+            info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
     ) -> None:
         import uavcan.node
         import uavcan.node.port
@@ -86,7 +87,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
         # Invalidate the node info if the uptime goes backwards or if we received a heartbeat after a long pause.
         restart = self._heartbeat and (
-            (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
+                (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
         )
         if restart:
             logger.info("%r: Restart detected: %r", self, obj)
@@ -113,22 +114,23 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self._ts_activity = float(ts.monotonic)
 
         # Snoop on transfers sent by our node. Even if we can't ask we can still learn things by listening.
-        for ty, handler in self._dispatch.items():
-            if isinstance(ty, tuple):
-                ty, role = ty
-                assert isinstance(ty, type) and isinstance(role, ServiceDataSpecifier.Role)
-                if isinstance(ds, ServiceDataSpecifier) and ds.role == role and ds.service_id == get_fixed_port_id(ty):
-                    rr = getattr(ty, role.name.capitalize())
-                    obj = pycyphal.dsdl.deserialize(rr, tr.fragmented_payload)
-                    logger.debug("%r: Service snoop: %r from %r", self, obj, tr)
-                    if obj is not None:
-                        handler(float(ts.monotonic), obj)
-            elif isinstance(ty, type) and (fpid := get_fixed_port_id(ty)) is not None:
+        for type, handler in self._dispatch.items():
+            if isinstance(type, tuple):
+                type, role = type
+                assert isinstance(role, ServiceDataSpecifier.Role)
+                if isinstance(ds, ServiceDataSpecifier) and ds.role == role and ds.service_id == get_fixed_port_id(
+                        type):
+                    rr = getattr(type, role.name.capitalize())
+                    deserialized_object = pycyphal.dsdl.deserialize(rr, tr.fragmented_payload)
+                    logger.debug("%r: Service snoop: %r from %r", self, deserialized_object, tr)
+                    if deserialized_object is not None:
+                        handler(float(ts.monotonic), deserialized_object)
+            elif (fpid := get_fixed_port_id(type)) is not None:
                 if isinstance(ds, MessageDataSpecifier) and ds.subject_id == fpid:
-                    obj = pycyphal.dsdl.deserialize(ty, tr.fragmented_payload)
-                    logger.debug("%r: Message snoop: %r from %r", self, obj, tr)
-                    if obj is not None:
-                        handler(float(ts.monotonic), obj)
+                    deserialized_object = pycyphal.dsdl.deserialize(type, tr.fragmented_payload)
+                    logger.debug("%r: Message snoop: %r from %r", self, deserialized_object, tr)
+                    if deserialized_object is not None:
+                        handler(float(ts.monotonic), deserialized_object)
             else:
                 assert False
 
@@ -150,5 +152,23 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ports=self._ports if port_introspection_valid else None,
         )
 
+    def to_builtin(self):
+        json_object = {
+            "node_id": self._node_id,
+            "heartbeat": {
+                "uptime": self._heartbeat.uptime,
+                "health": self._heartbeat.health.value,
+                "mode": self._heartbeat.mode.value,
+                "vendor_specific_status_code": self._heartbeat.vendor_specific_status_code,
+            },
+            "ports": {
+                "pub": list(self._ports.pub),
+                "sub": list(self._ports.sub),
+                "cln": list(self._ports.cln),
+                "srv": list(self._ports.srv),
+            }
+        }
+        return json_object
+
     def __repr__(self) -> str:
-        return str(pycyphal.util.repr_attributes(self, node_id=self._node_id))
+        return str(pycyphal.util.repr_attributes(self, node_id=self._node_id, port_set=self._ports))
