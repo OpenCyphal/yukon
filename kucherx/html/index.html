@@ -5,41 +5,55 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.22.1/cytoscape.min.js" integrity="sha512-KTe+SDYh8ExHDmrSZuoKkFoFQDSU3ywInRi9SkE0ENpJu72GS+UAxd/l0CAXF8DaGGGOLKd7wKRoa7mEirvIpg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdn.plot.ly/plotly-2.13.3.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link rel="stylesheet" href="style.css">
     <title>Document</title>
 </head>
 <body>
-<div class="stuff">
-    <select id="sInterfaces"></select>
-    <button id="btnRefresh">Refresh</button>
-    <label for="iMtu">MTU</label>
-    <input type="number" id="iMtu" value="8" min="8" max="1500">
-    // Label and input for arbitration rate and data rate
-    <label for="iArbRate">Arbitration rate</label>
-    <input type="number" id="iArbRate" value="1000000" min="1000000" max="2000000">
-    <label for="iDataRate">Data rate</label>
-    <input type="number" id="iDataRate" value="1000000" min="1000000" max="2000000">
-    <label for="iNodeId">Node ID</label>
-    <input type="number" id="iNodeId" value="1" min="1" max="255">
-    <button id="btnStart">Start</button>
-</div>
-<div class="messages">
-    <p>Messages</p>
-    <div id="messages-list">
-
+<div id="first-block">
+    <div id="stuff">
+        <select id="sInterfaces"></select>
+        <button id="btnRefresh">Refresh</button>
+        <label for="iMtu">MTU</label>
+        <input type="number" id="iMtu" value="8" min="8" max="1500">
+        <label for="iArbRate">Arbitration rate</label>
+        <input type="number" id="iArbRate" value="1000000" min="1000000" max="2000000">
+        <label for="iDataRate">Data rate</label>
+        <input type="number" id="iDataRate" value="1000000" min="1000000" max="2000000">
+        <label for="iNodeId">Node ID</label>
+        <input type="number" id="iNodeId" value="1" min="1" max="255">
+        <button id="btnStart">Start</button>
     </div>
-    <button id="btnFetch">Fetch</button>
+    <div id="messages">
+        <p id="messages_title">Messages</p>
+        <div id="messages-list">
+
+        </div>
+        <button id="btnFetch">Fetch</button>
+    </div>
 </div>
+<div class="graph-control">
+    <button id="btnRefreshGraphLayout">Refresh layout</button>
+</div>
+<div id="cy"></div>
 <p id="textOut"></p>
-<div id="gd"></div>
+<table id="avatars_table" class="table">
+    <thead class="thead-dark">
+        <tr>
+            <th><strong>Node id</strong></th>
+            <th><strong>Subscribing</strong></th>
+            <th><strong>Publishing</strong></th>
+            <th><strong>Client to</strong></th>
+            <th><strong>Server to</strong></th>
+        </tr>
+    </thead>
+    <tbody>
 
-<script>
-        Plotly.newPlot("gd", /* JSON object */ {
-            "data": [{ "y": [1, 2, 3] }],
-            "layout": { "width": 600, "height": 400}
-        })
+    </tbody>
+</table>
+<div id="plot_placeholder"></div>
 
-</script>
 </body>
 </html>

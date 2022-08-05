@@ -1,4 +1,5 @@
 import threading
+from queue import Queue
 from typing import Optional, Any
 import os
 import sys
@@ -17,7 +18,6 @@ from domain.interface import Interface
 from kucherx.domain.queue_quit_object import QueueQuitObject
 from kucherx.domain.viewport_info import ViewPortInfo
 
-from kucherx.services.threads.graph_from_avatars import graph_from_avatars_thread
 from kucherx.services.terminate_handler import make_terminate_handler
 from kucherx.services.folder_recognition.common_folders import (
     get_resources_directory,
@@ -51,8 +51,6 @@ def start_threads(state: GodState) -> None:
     cyphal_worker_thread = threading.Thread(target=cyphal_worker_thread, args=[state])
     cyphal_worker_thread.start()
     print("Cyphal worker was started")
-    avatars_to_graph_thread = threading.Thread(target=graph_from_avatars_thread, args=[state])
-    avatars_to_graph_thread.start()
 
 
 from serial.tools import list_ports
@@ -85,9 +83,12 @@ class Api:
         return state.queues.attach_transport_response.get()
 
     def get_messages(self):
-        return json.dumps(list(state.queues.messages.queue))
+        messages_serialized = json.dumps(list(state.queues.messages.queue))
+        state.queues.messages = Queue()
+        return messages_serialized
+
     def get_avatars(self):
-        return json.dumps(state.avatar.avatars_by_node_id.values())
+        return json.dumps([x.to_builtin() for x in list(state.avatar.avatars_by_node_id.values())])
 
     def toggleFullscreen(self):
         webview.windows[0].toggle_fullscreen()
@@ -106,10 +107,10 @@ def run_gui_app() -> None:
         resizable=True,
     )
     api = Api()
-    webview.create_window('KucherX — monitor', 'html/index.html', js_api=api, min_size=(600, 450))
+    webview.create_window('KucherX — monitor', 'html/index.html', js_api=api, min_size=(600, 450), text_select=True)
     # Creating 3 new threads
     start_threads(state)
-    webview.start(gui="qt")
+    webview.start(gui="qt", debug=True)
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
