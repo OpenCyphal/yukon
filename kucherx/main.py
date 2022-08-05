@@ -5,27 +5,20 @@ import os
 import sys
 import asyncio
 import logging
-import unittest
 from time import sleep
-
-import pytest
+import json
 import sentry_sdk
 import webview
-from pycyphal.application import make_transport, make_registry
+from serial.tools import list_ports
 
-from domain.attach_transport_request import AttachTransportRequest
-from domain.interface import Interface
+from kucherx.domain.attach_transport_request import AttachTransportRequest
+from kucherx.domain.interface import Interface
 from kucherx.domain.queue_quit_object import QueueQuitObject
-from kucherx.domain.viewport_info import ViewPortInfo
 
 from kucherx.services.terminate_handler import make_terminate_handler
-from kucherx.services.folder_recognition.common_folders import (
-    get_resources_directory,
-    get_root_directory,
-)
 
 from kucherx.domain.god_state import GodState
-from kucherx.high_dpi_handler import make_process_dpi_aware, configure_font_and_scale
+from kucherx.high_dpi_handler import make_process_dpi_aware
 from kucherx.sentry_setup import setup_sentry
 
 setup_sentry(sentry_sdk)
@@ -44,26 +37,23 @@ def start_threads(state: GodState) -> None:
     print("Cyphal worker was started")
 
 
-from serial.tools import list_ports
-import json
-
 state: GodState = GodState()
 
 
 class Api:
-    def get_ports_list(self):
+    def get_ports_list(self) -> str:
         return json.dumps(list(map(str, list_ports.comports())))
 
-    def attach_transport(self, interface_string, arb_rate, data_rate, node_id, mtu):
+    def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
         state.queues.messages.put("Initiated attach transport")
         interface = Interface()
         interface.rate_arb = int(arb_rate)
         interface.rate_data = int(data_rate)
         interface.mtu = int(mtu)
         interface.iface = "slcan:" + str(interface_string).split()[0]
-        print('Opening port %s' % interface.iface)
-        print('Arb rate %d' % int(interface.rate_arb))
-        print('Data rate %d' % int(interface.rate_data))
+        print(f"Opening port {interface.iface}")
+        print(f"Arb rate {interface.rate_arb}")
+        print(f"Data rate {interface.rate_data}")
         atr: AttachTransportRequest = AttachTransportRequest(0, interface, node_id)
         state.queues.attach_transport.put(atr)
         while True:
@@ -71,34 +61,25 @@ class Api:
                 sleep(0.1)
             else:
                 break
-        return state.queues.attach_transport_response.get()
+        return str(state.queues.attach_transport_response.get())
 
-    def get_messages(self):
+    def get_messages(self) -> str:
         messages_serialized = json.dumps(list(state.queues.messages.queue))
         state.queues.messages = Queue()
         return messages_serialized
 
-    def get_avatars(self):
+    def get_avatars(self) -> str:
         return json.dumps([x.to_builtin() for x in list(state.avatar.avatars_by_node_id.values())])
 
-    def toggleFullscreen(self):
+    def toggleFullscreen(self) -> None:
         webview.windows[0].toggle_fullscreen()
 
 
 def run_gui_app() -> None:
-    global state
     make_process_dpi_aware(logger)
 
-    vpi: ViewPortInfo = ViewPortInfo(
-        title="KucherX",
-        width=920,
-        height=870,
-        small_icon=str(get_resources_directory() / "icons/png/KucherX.png"),
-        large_icon=str(get_resources_directory() / "icons/png/KucherX_256.ico"),
-        resizable=True,
-    )
     api = Api()
-    webview.create_window('KucherX — monitor', 'html/index.html', js_api=api, min_size=(600, 450), text_select=True)
+    webview.create_window("KucherX — monitor", "html/index.html", js_api=api, min_size=(600, 450), text_select=True)
     # Creating 3 new threads
     start_threads(state)
     webview.start(gui="qt", debug=True)
@@ -148,11 +129,3 @@ async def main() -> int:
 if __name__ == "__main__":
     asyncio.run(main())
     sys.exit(0)
-
-
-class MyTest(unittest.TestCase):
-    @pytest.mark.timeout(0.1)
-    def test_get_root_directory(self) -> None:
-        root_dir = get_root_directory()
-        logging.info(root_dir)
-        assert root_dir

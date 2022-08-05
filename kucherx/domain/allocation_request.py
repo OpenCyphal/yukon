@@ -7,4 +7,3 @@ from kucherx.domain import HWID
 class AllocationRequest:
     received_at: float
     requesting_device_unique_id: HWID
-    
