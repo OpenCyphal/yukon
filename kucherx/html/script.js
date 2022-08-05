@@ -27,8 +27,12 @@ window.addEventListener('pywebviewready', function () {
                 }, 
                 {
                     selector: 'edge',
-                    style: {
-                        'label': 'data(label)' // maps to data.label
+                    style:
+                    {
+                        width: 2,
+                        targetArrowShape: 'triangle',
+                        curveStyle: 'bezier',
+                        // 'label': 'data(label)' // maps to data.label
                     }
                 }
             ]
@@ -36,7 +40,7 @@ window.addEventListener('pywebviewready', function () {
         });
     }
     function refresh_graph_layout() {
-        var layout = my_graph.layout({name: 'random'});
+        var layout = my_graph.layout({name: 'circle'});
         layout.run();
     }
     function update_avatars_table() {
@@ -60,43 +64,42 @@ window.addEventListener('pywebviewready', function () {
             sub_cell.innerHTML = current_avatars[i].ports.sub.toString();
             cln_cell.innerHTML = current_avatars[i].ports.cln.toString();
             srv_cell.innerHTML = current_avatars[i].ports.srv.toString();
-        }   
+        }
     }
     function update_directed_graph() {
         my_graph.elements().remove();
-        my_graph.add([{data: {id: 'root'}}]);
-
         
         for(avatar of current_avatars) {
             console.log(avatar);
             my_graph.add([{data:{id: avatar.node_id, label: avatar.node_id}}]);
             if(!avatar.ports) { continue; }
             // Add a node for each pub and connect, then connect avatar to every pub node
-            for(pub in avatar.ports.pub) {
+            for(pub of avatar.ports.pub) {
                 my_graph.add([{data:{id: pub}}])
                 my_graph.add([{data:{source: avatar.node_id, target: pub, label: "A nice label"}}]);
             }
-            for(sub in avatar.ports.sub) {
+            for(sub of avatar.ports.sub) {
                 my_graph.add([{data:{id: sub}}])
                 // same as pub but flip direction
                 my_graph.add([{data:{source: sub, target: avatar.node_id, label: "A nice label"}}])
             }
             // clients should point to servers
             // client node --> [port] --> server node
-            for(cln in avatar.ports.cln) {
+            for(cln of avatar.ports.cln) {
                 my_graph.add([{data:{id: cln}}])
 
             }
-            for(srv in avatar.ports.srv) {
+            for(srv of avatar.ports.srv) {
                 my_graph.add([{data:{id: srv}}])
             }
         }
+        refresh_graph_layout();
     }
     function update_plot() {
-        Plotly.newPlot("plot_placeholder", /* JSON object */ {
-            "data": [{ "y": [1, 2, 3] }],
-            "layout": { "width": 600, "height": 400 }
-        })
+        // Plotly.newPlot("plot_placeholder", /* JSON object */ {
+        //     "data": [{ "y": [1, 2, 3] }],
+        //     "layout": { "width": 600, "height": 400 }
+        // })
     }
     pywebview.api.get_ports_list().then(
         function (portsList) {
@@ -104,6 +107,7 @@ window.addEventListener('pywebviewready', function () {
             var btnStart = document.getElementById('btnStart');
             var textOut = document.querySelector("#textOut");
             textOut.innerHTML = "Waiting to start...";
+            addLocalMessage("Waiting to start...");
             var selector = document.querySelector("#sInterfaces");
             var d = JSON.parse(portsList);
             for (el of d) {
@@ -121,7 +125,8 @@ window.addEventListener('pywebviewready', function () {
                 var port = selector.value;
                 pywebview.api.attach_transport(port, data_rate, arb_rate, node_id, mtu).then(
                     function (result) {
-                        textOut.innerHTML = "Now attached: " + result
+                        addLocalMessage("Now attached: " + result);
+                        textOut.innerHTML = "Now attached: " + result;
                         // After 2 seconds hide stuff
                         setTimeout(function () {
                             stuff.style.display = "none";

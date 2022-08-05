@@ -27,15 +27,6 @@ from kucherx.services.folder_recognition.common_folders import (
 from kucherx.domain.god_state import GodState
 from kucherx.high_dpi_handler import make_process_dpi_aware, configure_font_and_scale
 from kucherx.sentry_setup import setup_sentry
-from kucherx.themes.main_window_theme import get_main_theme
-from kucherx.windows.message_log import make_errors_window
-from kucherx.windows.request_inferior_transport import make_request_inferior_transport_window
-from kucherx.save_viewport import display_save_viewport
-
-from kucherx.windows.monitor import make_monitor_window
-from kucherx.services.render_graph import render_graph
-from kucherx.windows.allocations import make_allocations_window
-from services.make_tracers_trackers import make_tracers_trackers
 
 setup_sentry(sentry_sdk)
 paths = sys.path
