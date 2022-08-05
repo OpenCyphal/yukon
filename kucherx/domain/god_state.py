@@ -6,7 +6,6 @@ from pathlib import Path
 from queue import Queue
 from typing import Optional, Any, Callable, Dict
 
-from networkx import DiGraph
 from pycyphal.application.node_tracker import NodeTracker
 
 import pycyphal
@@ -20,7 +19,6 @@ from kucherx.domain import allocation_request
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 from kucherx.domain.UID import UID
 from kucherx.domain.avatar import Avatar
-from kucherx.domain.graph_image import GraphImage
 from kucherx.domain.interface import Interface
 from kucherx.domain.note_state import NodeState
 
@@ -85,9 +83,6 @@ class AvatarState:
     avatars_by_node_id: Dict[int, Avatar] = field(default_factory=dict)
     avatars_by_hw_id: Dict[int, Avatar] = field(default_factory=dict)
     avatars_lock: threading.RLock = field(default_factory=threading.RLock)
-    current_graph_lock: threading.RLock = field(default_factory=threading.RLock)
-    current_requested_image_size: typing.Tuple[int, int] = field(default_factory=lambda: (600, 600))
-    current_graph: Optional[DiGraph] = field(default_factory=none_factory)
 
 
 class GodState:

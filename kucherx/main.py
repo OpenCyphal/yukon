@@ -8,7 +8,6 @@ import logging
 import unittest
 from time import sleep
 
-import pytest
 import sentry_sdk
 import webview
 from pycyphal.application import make_transport, make_registry
@@ -148,11 +147,3 @@ async def main() -> int:
 if __name__ == "__main__":
     asyncio.run(main())
     sys.exit(0)
-
-
-class MyTest(unittest.TestCase):
-    @pytest.mark.timeout(0.1)
-    def test_get_root_directory(self) -> None:
-        root_dir = get_root_directory()
-        logging.info(root_dir)
-        assert root_dir
