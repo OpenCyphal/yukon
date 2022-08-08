@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="../messages/messages.js"></script>
+    <script src="monitor.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.22.1/cytoscape.min.js"
+            integrity="sha512-KTe+SDYh8ExHDmrSZuoKkFoFQDSU3ywInRi9SkE0ENpJu72GS+UAxd/l0CAXF8DaGGGOLKd7wKRoa7mEirvIpg=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.plot.ly/plotly-2.13.3.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="split.css">
+    <link rel="stylesheet" href="table_style.css">
+    <title>Monitor window</title>
+</head>
+<body>
+<div class="split-horizontal">
+    <div id="split-left">
+        <div id="cy"></div>
+    </div>
+    <div id="split-right">
+        <div id="messages">
+            <p id="messages_title">Messages</p>
+            <div id="messages-list">
+
+            </div>
+            <span>
+                <label for="cDeleteOldMessages">Delete old messages</label>
+                <input type="checkbox" id="cDeleteOldMessages" value="">
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="graph-control">
+    <button id="btnRefreshGraphLayout">Refresh layout</button>
+</div>
+
+<p id="textOut"></p>
+<table id="avatars_table">
+    <thead>
+    <tr>
+        <th><strong>Node id</strong></th>
+        <th><strong>Subscribing</strong></th>
+        <th><strong>Publishing</strong></th>
+        <th><strong>Client to</strong></th>
+        <th><strong>Server to</strong></th>
+    </tr>
+    </thead>
+    <tbody>
+
+    </tbody>
+</table>
+<div id="plot_placeholder"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.0/split.min.js"></script>
+<script>
+// Wait for document to be ready, without using jQuery
+window.addEventListener('load', function () {
+    // Initialize splitjs
+    Split(['#split-left', '#split-right']);
+});
+
+</script>
+</body>
+</html>

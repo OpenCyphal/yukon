@@ -14,6 +14,7 @@ from serial.tools import list_ports
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 from kucherx.domain.interface import Interface
 from kucherx.domain.queue_quit_object import QueueQuitObject
+from kucherx.services.enhanced_json_encoder import EnhancedJSONEncoder
 
 from kucherx.services.terminate_handler import make_terminate_handler
 
@@ -40,6 +41,16 @@ def start_threads(state: GodState) -> None:
 state: GodState = GodState()
 
 
+class MessagesPublisher(logging.Handler):
+    def emit(self, record: logging.LogRecord) -> None:
+        state.queues.messages.put(record)
+
+
+messages_publisher = MessagesPublisher()
+messages_publisher.setLevel(logging.INFO)
+logger.root.addHandler(messages_publisher)
+
+
 class Api:
     def get_ports_list(self) -> str:
         return json.dumps(list(map(str, list_ports.comports())))
@@ -50,10 +61,10 @@ class Api:
         interface.rate_arb = int(arb_rate)
         interface.rate_data = int(data_rate)
         interface.mtu = int(mtu)
-        interface.iface = "slcan:" + str(interface_string).split()[0]
-        print(f"Opening port {interface.iface}")
-        print(f"Arb rate {interface.rate_arb}")
-        print(f"Data rate {interface.rate_data}")
+        interface.iface = interface_string
+        state.queues.messages.put(f"Opening port {interface.iface}")
+        state.queues.messages.put(f"Arb rate {interface.rate_arb}")
+        state.queues.messages.put(f"Data rate {interface.rate_data}")
         atr: AttachTransportRequest = AttachTransportRequest(0, interface, node_id)
         state.queues.attach_transport.put(atr)
         while True:
@@ -61,7 +72,7 @@ class Api:
                 sleep(0.1)
             else:
                 break
-        return str(state.queues.attach_transport_response.get())
+        return json.dumps(state.queues.attach_transport_response.get(), cls=EnhancedJSONEncoder)
 
     def get_messages(self) -> str:
         messages_serialized = json.dumps(list(state.queues.messages.queue))
@@ -79,7 +90,10 @@ def run_gui_app() -> None:
     make_process_dpi_aware(logger)
 
     api = Api()
-    webview.create_window("KucherX — monitor", "html/index.html", js_api=api, min_size=(600, 450), text_select=True)
+    webview.create_window("KucherX — monitor", "html/monitor/monitor.html", js_api=api, min_size=(600, 450),
+                          text_select=True)
+    webview.create_window("KucherX — add transport", "html/add_transport/add_transport.html", js_api=api, width=350,
+                          height=500, text_select=True)
     # Creating 3 new threads
     start_threads(state)
     webview.start(gui="qt", debug=True)

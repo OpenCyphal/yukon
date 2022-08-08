@@ -21,10 +21,13 @@ def make_handler_for_node_detected(
         node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
     ) -> None:
         print("Some getinfo entry was received")
-        if previous_entry is None:
+        if previous_entry is None and next_entry is not None:
             print(f"Node with id {node_id} became visible.")
             new_avatar = Avatar(iface, node_id=node_id)
             state.avatar.avatars_by_node_id[node_id] = new_avatar
+        elif previous_entry is not None and next_entry is None:
+            print(f"Node with id {node_id} disappeared.")
+            del state.avatar.avatars_by_node_id[node_id]
 
     return handle_getinfo_handler_format
 

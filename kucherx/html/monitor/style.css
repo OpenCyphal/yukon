@@ -1,0 +1,39 @@
+
+#messages-list {
+    overflow-y: scroll;
+}
+#messages-list textarea {
+    display: block;
+    list-style: none;
+    height: auto;
+    width: 99%;
+    resize: vertical;
+}
+#divSelectInterface {
+    // Vertical flex
+    display: block;
+}
+#divSelectInterface label {
+    display: block;
+    margin-bottom: 0.5em;
+}
+#divSelectInterface select {
+    display: block;
+    width: 100%;
+}
+#divSelectInterface button {
+    display: block;
+    margin-bottom: 0.5em;
+}
+form#interface-selection-form {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+}
+#messages_title {
+    margin-top: 3px;
+}
+#cy {
+  width: 100%;
+  height:100vh;
+  display: block;
+}

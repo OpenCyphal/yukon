@@ -1,5 +1,5 @@
 pycyphal[transport-can-pythoncan,transport-serial,transport-udp]
-sentry-sdk==1.6.*
+sentry-sdk==1.*
 pytest
 pyserial
 setuptools

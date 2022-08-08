@@ -1,0 +1,40 @@
+body {
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+}
+form#transport-selection-form {
+    display: block;
+    margin: 0.5em;
+    margin-right: 0.8em;
+    padding: 0.5em;
+    padding-right: 1em;
+}
+form#transport-selection-form div {
+    display: block;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+form#transport-selection-form div label {
+    display: block;
+    margin-bottom: 0.5em;
+}
+
+form#transport-selection-form div label.inline {
+    display: inline-block;
+    margin-bottom: 0.5em;
+}
+
+form#transport-selection-form div input[type=number],input[type=text] {
+    display: block;
+    width: 100%;
+    padding: 4px;
+}
+
+#sTransport {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.5em;
+    padding-right: 0;
+}
