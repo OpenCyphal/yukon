@@ -15,3 +15,4 @@ QtPy; sys_platform == "openbsd6" or sys_platform == "linux"
 importlib_resources; python_version < "3.7"
 proxy_tools
 pywebview[qt]
+nox==2022.8.*

@@ -1,4 +1,5 @@
 import threading
+import typing
 from queue import Queue
 from typing import Optional, Any
 import os
@@ -12,6 +13,7 @@ import webview
 from serial.tools import list_ports
 
 from kucherx.domain.attach_transport_request import AttachTransportRequest
+from kucherx.domain.avatar import Avatar
 from kucherx.domain.interface import Interface
 from kucherx.domain.queue_quit_object import QueueQuitObject
 from kucherx.services.enhanced_json_encoder import EnhancedJSONEncoder
@@ -52,6 +54,8 @@ logger.root.addHandler(messages_publisher)
 
 
 class Api:
+    last_avatars: typing.List[Avatar] = []
+
     def get_ports_list(self) -> str:
         return json.dumps(list(map(str, list_ports.comports())))
 
@@ -90,10 +94,17 @@ def run_gui_app() -> None:
     make_process_dpi_aware(logger)
 
     api = Api()
-    webview.create_window("KucherX — monitor", "html/monitor/monitor.html", js_api=api, min_size=(600, 450),
-                          text_select=True)
-    webview.create_window("KucherX — add transport", "html/add_transport/add_transport.html", js_api=api, width=350,
-                          height=500, text_select=True)
+    webview.create_window(
+        "KucherX — monitor", "html/monitor/monitor.html", js_api=api, min_size=(600, 450), text_select=True
+    )
+    webview.create_window(
+        "KucherX — add transport",
+        "html/add_transport/add_transport.html",
+        js_api=api,
+        width=350,
+        height=500,
+        text_select=True,
+    )
     # Creating 3 new threads
     start_threads(state)
     webview.start(gui="qt", debug=True)
