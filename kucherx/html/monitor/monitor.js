@@ -274,6 +274,10 @@ try {
                 pywebview.api.show_yakut();
             }
         });
+        btnMonitorTab = document.getElementById('btnMonitorTab');
+        btnMonitorTab.addEventListener('click', function () {
+            refresh_graph_layout();
+        });
     });
 } catch (e) {
     addLocalMessage("Error: " + e);

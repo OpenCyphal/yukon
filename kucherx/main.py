@@ -30,8 +30,9 @@ from kucherx.sentry_setup import setup_sentry
 setup_sentry(sentry_sdk)
 paths = sys.path
 
-logger = logging.getLogger(__file__)
-logger.setLevel("NOTSET")
+logger = logging.getLogger()
+logger.setLevel("INFO")
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 def start_threads(state: GodState) -> None:
@@ -46,7 +47,7 @@ def start_threads(state: GodState) -> None:
 state: GodState = GodState()
 messages_publisher = MessagesPublisher(state)
 messages_publisher.setLevel(logging.NOTSET)
-logger.root.addHandler(messages_publisher)
+logger.addHandler(messages_publisher)
 
 monitor_window: Optional[Window]
 add_transport_window: Optional[Window]
@@ -59,7 +60,7 @@ class Api:
         return json.dumps(list(map(str, list_ports.comports())))
 
     def add_local_message(self, message: str) -> None:
-        logger.root.info(message)
+        logger.info(message)
 
     def open_file_dialog(self):
         import tkinter as tk
@@ -77,9 +78,9 @@ class Api:
         interface.rate_data = int(data_rate)
         interface.mtu = int(mtu)
         interface.iface = interface_string
-        logger.root.info(f"Opening port {interface.iface}")
-        logger.root.info(f"Arb rate {interface.rate_arb}")
-        logger.root.info(f"Data rate {interface.rate_data}")
+        logger.info(f"Opening port {interface.iface}")
+        logger.info(f"Arb rate {interface.rate_arb}")
+        logger.info(f"Data rate {interface.rate_data}")
 
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         state.queues.attach_transport.put(atr)

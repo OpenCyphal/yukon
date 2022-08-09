@@ -1,6 +1,7 @@
 
 #messages-list {
     overflow-y: scroll;
+    height: calc(100vh - 100px);
 }
 #messages-list textarea {
     display: block;
