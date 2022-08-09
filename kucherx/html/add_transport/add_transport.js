@@ -2,12 +2,12 @@ window.addEventListener('pywebviewready', function () {
     pywebview.api.get_ports_list().then(
         function (portsList) {
             var btnStart = document.getElementById('btnStart');
-            addLocalMessage("Waiting to start...");
+            pywebview.api.add_local_message("Waiting to start...");
             var iTransport = document.getElementById('iTransport');
             var sTransport = document.getElementById("sTransport");
             var d = JSON.parse(portsList);
             if (d.length == 0) {
-                addLocalMessage("No interfaces found");
+                pywebview.api.add_local_message("No interfaces found");
             } else {
                 for (el of d) {
                     if (el.length > 0) {
@@ -20,7 +20,28 @@ window.addEventListener('pywebviewready', function () {
             }
         }
     );
+    // Add a function to verify that valid values were entered into the field of the transport-selection-form
+    function validateForm() {
+        pywebview.api.add_local_message("Validating form...");
+        // save into variables all the values of the fields of the form
+        var sTransportValue = document.getElementById("sTransport").value;
+        var iTransportValue = document.getElementById("iTransport").value;
+        var iMtuValue = document.getElementById("iMtu").value;
+        var iArbRateValue = document.getElementById("iArbRate").value;
+        var iDataRateValue = document.getElementById("iDataRate").value;
+        var iNodeIdValue = document.getElementById("iNodeId").value;
+        if (sTransportValue.length == 0) {
+            if(iTransportValue == "") {
+                pywebview.api.add_local_message("Please select a transport");
+                return false;
+            } else if (!iTransportValue.includes(":")) {
+                pywebview.api.add_local_message("Please enter a valid transport");
+                return false;
+            }
+        }
+    }
     btnStart.addEventListener('click', function () {
+//        if (!validateForm()) { return; }
         var port = "";
         if(!iTransport.value) {
             port = "slcan:" + sTransport.value.split(" ")[0];
@@ -35,11 +56,11 @@ window.addEventListener('pywebviewready', function () {
             function (result) {
                 var resultObject = JSON.parse(result);
                 if (resultObject.success) {
-                    addLocalMessage("Now attached: " + resultObject.message);
+                    pywebview.api.add_local_message("Now attached: " + resultObject.message);
                     pywebview.api.hide_transport_window();
                 } else {
                     console.error("Error: " + resultObject.message);
-                    addLocalMessage("Error: " + resultObject.message);
+                    pywebview.api.add_local_message("Error: " + resultObject.message);
                 }
             }
         );
@@ -49,4 +70,8 @@ window.addEventListener('pywebviewready', function () {
     var btnSelectTransport = document.getElementById('btnSelectTransport');
     var divTypeTransport = document.getElementById('divTypeTransport');
     var divSelectTransport = document.getElementById('divSelectTransport');
+    var btnOpenCandumpFile = document.getElementById('btnOpenCandumpFile');
+    btnOpenCandumpFile.addEventListener('click', function () {
+        pywebview.api.open_file_dialog();
+    });
 });

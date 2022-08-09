@@ -1,7 +1,3 @@
-localMessages = [];
-function addLocalMessage(message) {
-    localMessages.push(message.trim());
-}
 function update_messages() {
     pywebview.api.get_avatars().then(
         function (avatars) {
@@ -28,8 +24,6 @@ function update_messages() {
             var d = JSON.parse(messages);
             // Make sure that type of d is array
             console.assert(d instanceof Array);
-            d = d.concat(localMessages)
-            localMessages = [];
             for (el of d) {
                 var li = document.createElement("textarea");
                 li.innerHTML = el;

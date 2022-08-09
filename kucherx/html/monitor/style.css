@@ -41,3 +41,8 @@ form#interface-selection-form {
   height:100vh;
   display: block;
 }
+
+#split-right {
+    min-width: 205px;
+    width: 30%;
+}

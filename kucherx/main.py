@@ -58,6 +58,18 @@ class Api:
     def get_ports_list(self) -> str:
         return json.dumps(list(map(str, list_ports.comports())))
 
+    def add_local_message(self, message: str) -> None:
+        logger.root.info(message)
+
+    def open_file_dialog(self):
+        import tkinter as tk
+        from tkinter import filedialog
+
+        root = tk.Tk()
+        root.withdraw()
+
+        file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
+
     def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
         state.queues.messages.put("Initiated attach transport")
         interface = Interface()
@@ -66,8 +78,9 @@ class Api:
         interface.mtu = int(mtu)
         interface.iface = interface_string
         logger.root.info(f"Opening port {interface.iface}")
-        state.queues.messages.put(f"Arb rate {interface.rate_arb}")
-        state.queues.messages.put(f"Data rate {interface.rate_data}")
+        logger.root.info(f"Arb rate {interface.rate_arb}")
+        logger.root.info(f"Data rate {interface.rate_data}")
+
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         state.queues.attach_transport.put(atr)
         while True:
@@ -85,6 +98,7 @@ class Api:
 
     def get_messages(self) -> str:
         messages_serialized = json.dumps(list(state.queues.messages.queue))
+        # Emptying all messages from the queue
         while not state.queues.messages.empty():
             try:
                 state.queues.messages.get(False)

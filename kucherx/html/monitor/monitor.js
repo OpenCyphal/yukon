@@ -123,7 +123,7 @@ try {
                         routeSelfLoopInside: false, // Whether a self-loop is routed around or inside its node.
                         separateConnectedComponents: true, // Whether each connected component should be processed separately
                         spacing: 50, // Overall setting for the minimal amount of space to be left between objects
-                        thoroughness: 7 // How much effort should be spent to produce a nice layout..
+                        thoroughness: 10 // How much effort should be spent to produce a nice layout..
                     },
                 }
             );

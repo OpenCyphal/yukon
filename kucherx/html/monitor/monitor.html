@@ -93,7 +93,9 @@
         // Wait for document to be ready, without using jQuery
         window.addEventListener('load', function () {
             // Initialize splitjs
-            Split(['#split-left', '#split-right']);
+            Split(['#split-left', '#split-right'], {
+                minSize: 205,
+            });
         });
 
     </script>
