@@ -13,6 +13,7 @@ from kucherx.domain.iface import Iface
 import uavcan
 
 logger = logging.getLogger()
+logger.setLevel("ERROR")
 
 
 class Avatar:  # pylint: disable=too-many-instance-attributes
@@ -21,6 +22,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         iface: Iface,
         node_id: Optional[int],
         info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
+        previous_port_list_hash: Optional[int] = None,
     ) -> None:
         import uavcan.node
         import uavcan.node.port
@@ -159,6 +161,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         json_object: dict[str, dict[str, list[int]] | int | None] = {
             "node_id": self._node_id,
             "hash": self.__hash__(),
+            "name": self._info.name.tobytes().decode() if self._info is not None else None,
             "ports": {
                 "pub": list(self._ports.pub),
                 "sub": list(self._ports.sub),

@@ -82,6 +82,7 @@ class CyphalState:
 
 @dataclass
 class AvatarState:
+    hide_yakut_avatar: bool = False
     avatars_by_node_id: Dict[int, Avatar] = field(default_factory=dict)
     avatars_by_hw_id: Dict[int, Avatar] = field(default_factory=dict)
     avatars_lock: threading.RLock = field(default_factory=threading.RLock)

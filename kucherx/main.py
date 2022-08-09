@@ -1,6 +1,6 @@
 import threading
 import typing
-from queue import Queue
+from queue import Empty
 from typing import Optional, Any
 import os
 import sys
@@ -8,15 +8,18 @@ import asyncio
 import logging
 from time import sleep
 import json
+
 import sentry_sdk
 import webview
 from serial.tools import list_ports
+from webview.window import Window
 
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 from kucherx.domain.avatar import Avatar
 from kucherx.domain.interface import Interface
 from kucherx.domain.queue_quit_object import QueueQuitObject
 from kucherx.services.enhanced_json_encoder import EnhancedJSONEncoder
+from kucherx.services.messages_publisher import MessagesPublisher
 
 from kucherx.services.terminate_handler import make_terminate_handler
 
@@ -41,16 +44,12 @@ def start_threads(state: GodState) -> None:
 
 
 state: GodState = GodState()
-
-
-class MessagesPublisher(logging.Handler):
-    def emit(self, record: logging.LogRecord) -> None:
-        state.queues.messages.put(record)
-
-
-messages_publisher = MessagesPublisher()
-messages_publisher.setLevel(logging.INFO)
+messages_publisher = MessagesPublisher(state)
+messages_publisher.setLevel(logging.NOTSET)
 logger.root.addHandler(messages_publisher)
+
+monitor_window: Optional[Window]
+add_transport_window: Optional[Window]
 
 
 class Api:
@@ -66,10 +65,10 @@ class Api:
         interface.rate_data = int(data_rate)
         interface.mtu = int(mtu)
         interface.iface = interface_string
-        state.queues.messages.put(f"Opening port {interface.iface}")
+        logger.root.info(f"Opening port {interface.iface}")
         state.queues.messages.put(f"Arb rate {interface.rate_arb}")
         state.queues.messages.put(f"Data rate {interface.rate_data}")
-        atr: AttachTransportRequest = AttachTransportRequest(0, interface, node_id)
+        atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         state.queues.attach_transport.put(atr)
         while True:
             if state.queues.attach_transport_response.empty():
@@ -78,26 +77,51 @@ class Api:
                 break
         return json.dumps(state.queues.attach_transport_response.get(), cls=EnhancedJSONEncoder)
 
+    def show_yakut(self) -> None:
+        state.avatar.hide_yakut_avatar = False
+
+    def hide_yakut(self) -> None:
+        state.avatar.hide_yakut_avatar = True
+
     def get_messages(self) -> str:
         messages_serialized = json.dumps(list(state.queues.messages.queue))
-        state.queues.messages = Queue()
+        while not state.queues.messages.empty():
+            try:
+                state.queues.messages.get(False)
+            except Empty:
+                continue
+
+        # state.queues.messages = Queue()
         return messages_serialized
 
     def get_avatars(self) -> str:
-        return json.dumps([x.to_builtin() for x in list(state.avatar.avatars_by_node_id.values())])
+        avatar_list = [avatar.to_builtin() for avatar in list(state.avatar.avatars_by_node_id.values())]
+        if state.avatar.hide_yakut_avatar:
+            for avatar in avatar_list:
+                amount_of_subscriptions = len(avatar["ports"]["sub"])
+                if avatar["name"] and avatar["name"] == "yakut":
+                    avatar_list.remove(avatar)
+                elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
+                    avatar_list.remove(avatar)
+        return json.dumps(avatar_list)
 
     def toggleFullscreen(self) -> None:
         webview.windows[0].toggle_fullscreen()
 
+    def hide_transport_window(self) -> None:
+        if add_transport_window is not None:
+            add_transport_window.hide()
+
 
 def run_gui_app() -> None:
+    global monitor_window, add_transport_window
     make_process_dpi_aware(logger)
 
     api = Api()
-    webview.create_window(
+    monitor_window = webview.create_window(
         "KucherX — monitor", "html/monitor/monitor.html", js_api=api, min_size=(600, 450), text_select=True
     )
-    webview.create_window(
+    add_transport_window = webview.create_window(
         "KucherX — add transport",
         "html/add_transport/add_transport.html",
         js_api=api,
@@ -112,7 +136,6 @@ def run_gui_app() -> None:
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
         print("Registering an exit!")
-        state.queues.graph_from_avatar.put(QueueQuitObject())
         state.queues.messages.put(QueueQuitObject())
 
     # dpg.enable_docking(dock_space=False)

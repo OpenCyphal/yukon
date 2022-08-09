@@ -38,8 +38,6 @@ tbody tr:nth-child(even) {
   background-color: #eee;
 }
 
-
-
 th, td {
   border: 1px solid black;
   padding: 8px;

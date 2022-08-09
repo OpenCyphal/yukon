@@ -18,31 +18,32 @@ window.addEventListener('pywebviewready', function () {
                     }
                 }
             }
-            btnStart.addEventListener('click', function () {
-                var port = "";
-                if(!iTransport.value) {
-                    port = "slcan:" + sTransport.value.split(" ")[0];
-                } else {
-                    port = iTransport.value;
-                }
-                var data_rate = document.getElementById('iDataRate').value;
-                var arb_rate = document.getElementById('iArbRate').value;
-                var node_id = document.getElementById('iNodeId').value;
-                var mtu = document.getElementById('iMtu').value;
-                pywebview.api.attach_transport(port, data_rate, arb_rate, node_id, mtu).then(
-                    function (result) {
-                        var resultObject = JSON.parse(result);
-                        if (resultObject.success) {
-                            addLocalMessage("Now attached: " + resultObject.message);
-                        } else {
-                            console.error("Error: " + resultObject.message);
-                            addLocalMessage("Error: " + resultObject.message);
-                        }
-                    }
-                );
-            });
         }
     );
+    btnStart.addEventListener('click', function () {
+        var port = "";
+        if(!iTransport.value) {
+            port = "slcan:" + sTransport.value.split(" ")[0];
+        } else {
+            port = iTransport.value;
+        }
+        var data_rate = document.getElementById('iDataRate').value;
+        var arb_rate = document.getElementById('iArbRate').value;
+        var node_id = document.getElementById('iNodeId').value;
+        var mtu = document.getElementById('iMtu').value;
+        pywebview.api.attach_transport(port, data_rate, arb_rate, node_id, mtu).then(
+            function (result) {
+                var resultObject = JSON.parse(result);
+                if (resultObject.success) {
+                    addLocalMessage("Now attached: " + resultObject.message);
+                    pywebview.api.hide_transport_window();
+                } else {
+                    console.error("Error: " + resultObject.message);
+                    addLocalMessage("Error: " + resultObject.message);
+                }
+            }
+        );
+    });
     // Toggle between showing divTypeTransport and divSelectTransport by clicking on the respective buttons
     var btnTypeTransport = document.getElementById('btnTypeTransport');
     var btnSelectTransport = document.getElementById('btnSelectTransport');

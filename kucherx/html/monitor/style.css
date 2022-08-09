@@ -7,7 +7,11 @@
     list-style: none;
     height: auto;
     width: 99%;
-    resize: vertical;
+    resize: none;
+    border: none;
+}
+#messages-list textarea:focus {
+    box-shadow: 0 0 5px #ccc;
 }
 #divSelectInterface {
     // Vertical flex

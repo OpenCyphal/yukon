@@ -23,6 +23,7 @@ def cyphal_worker_thread(state: GodState) -> None:
                 NodeInfo(name="com.zubax.sapog.tests.debugger"), reconfigurable_transport=True
             )
             state.cyphal.local_node.start()
+            state.cyphal.local_node.registry["uavcan.node.id"] = 13
             state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
             make_tracers_trackers(state)
             start_listening_for_allocatable_nodes(state)
@@ -33,7 +34,6 @@ def cyphal_worker_thread(state: GodState) -> None:
                     try:
                         atr: AttachTransportRequest = state.queues.attach_transport.get_nowait()
                         new_transport = make_transport(atr.get_registry())
-                        state.gui.transports_of_windows[atr.requesting_window_id] = new_transport
                         state.cyphal.pseudo_transport.attach_inferior(new_transport)
                         attach_transport_response = AttachTransportResponse(True, atr.requested_interface.iface)
                         state.queues.attach_transport_response.put(attach_transport_response)
