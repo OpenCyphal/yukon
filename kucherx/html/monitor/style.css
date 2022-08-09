@@ -10,6 +10,8 @@
     width: 99%;
     resize: none;
     border: none;
+    height: content-box;
+    overflow-y: hidden;
 }
 #messages-list textarea:focus {
     box-shadow: 0 0 5px #ccc;

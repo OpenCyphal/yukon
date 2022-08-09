@@ -32,7 +32,6 @@ paths = sys.path
 
 logger = logging.getLogger()
 logger.setLevel("INFO")
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 def start_threads(state: GodState) -> None:
@@ -47,6 +46,8 @@ def start_threads(state: GodState) -> None:
 state: GodState = GodState()
 messages_publisher = MessagesPublisher(state)
 messages_publisher.setLevel(logging.NOTSET)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+messages_publisher.setFormatter(formatter)
 logger.addHandler(messages_publisher)
 
 monitor_window: Optional[Window]
@@ -62,7 +63,7 @@ class Api:
     def add_local_message(self, message: str) -> None:
         logger.info(message)
 
-    def open_file_dialog(self):
+    def open_file_dialog(self) -> None:
         import tkinter as tk
         from tkinter import filedialog
 
@@ -70,6 +71,7 @@ class Api:
         root.withdraw()
 
         file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
+        _ = file_path
 
     def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
         state.queues.messages.put("Initiated attach transport")

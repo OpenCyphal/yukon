@@ -27,11 +27,8 @@ function update_messages() {
             for (el of d) {
                 var li = document.createElement("textarea");
                 li.innerHTML = el;
-                setTimeout(function () {
-                    li.style.height = "1px";
-                    li.style.height = (li.scrollHeight) + "px";
-                }, 50);
                 // Set an attribute on the list element with current timestamp
+                autosize(li);
                 li.setAttribute("timestamp", new Date().getTime());
                 messagesList.appendChild(li);
             }
