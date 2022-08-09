@@ -106,7 +106,7 @@ try {
                         RIGHTDOWN Chooses the right-down candidate from the four possible candidates.
                         BALANCED Creates a balanced layout from the four possible candidates. */
                         inLayerSpacingFactor: 1.0, // Factor by which the usual spacing is multiplied to determine the in-layer spacing between objects.
-                        layoutHierarchy: false, // Whether the selected layouter should consider the full hierarchy
+                        layoutHierarchy: true, // Whether the selected layouter should consider the full hierarchy
                         linearSegmentsDeflectionDampening: 0.3, // Dampens the movement of nodes to keep the diagram from getting too large.
                         mergeEdges: false, // Edges that have no ports are merged so they touch the connected nodes at the same points.
                         mergeHierarchyCrossingEdges: true, // If hierarchical layout is active, hierarchy-crossing edges use as few hierarchical ports as possible.
@@ -173,16 +173,22 @@ try {
             }
             for (var i = 0; i < current_avatars.length; i++) {
                 var row = table_body.insertRow(i);
-                var cell = row.insertCell(0);
-                cell.innerHTML = current_avatars[i].node_id;
+                var node_id = row.insertCell(0);
+                node_id.innerHTML = current_avatars[i].node_id;
+                var name = row.insertCell(1);
+                name.innerHTML = current_avatars[i].name || "No name";
                 // Insert cells for pub, sub, cln and srv
-                var pub_cell = row.insertCell(1);
                 var sub_cell = row.insertCell(2);
-                var cln_cell = row.insertCell(3);
-                var srv_cell = row.insertCell(4);
+                var pub_cell = row.insertCell(3);
+                var cln_cell = row.insertCell(4);
+                var srv_cell = row.insertCell(5);
                 if (!current_avatars[i].ports) { continue; }
                 pub_cell.innerHTML = current_avatars[i].ports.pub.toString();
-                sub_cell.innerHTML = current_avatars[i].ports.sub.toString();
+                if(current_avatars[i].ports.sub.length == 8192) {
+                    sub_cell.innerHTML = "All";
+                } else {
+                    sub_cell.innerHTML = current_avatars[i].ports.sub.toString();
+                }
                 cln_cell.innerHTML = current_avatars[i].ports.cln.toString();
                 srv_cell.innerHTML = current_avatars[i].ports.srv.toString();
             }

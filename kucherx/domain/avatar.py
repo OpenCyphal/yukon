@@ -178,6 +178,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(frozenset(self._ports.sub))
             ^ hash(frozenset(self._ports.cln))
             ^ hash(frozenset(self._ports.srv))
+            ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
         )
 
     def __repr__(self) -> str:
