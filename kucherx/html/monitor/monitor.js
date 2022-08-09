@@ -5,6 +5,7 @@ try {
         var last_hashes = []
         var my_graph = null;
         function create_directed_graph() {
+            cytoscape.use(cytoscapeKlay);
             my_graph = cytoscape({
                 container: document.getElementById('cy'), // container to render in
 
@@ -12,7 +13,7 @@ try {
                 ],
 
                 layout: {
-                    name: 'grid'
+                    name: 'cose',
                 },
 
                 // so we can see the ids
@@ -20,12 +21,13 @@ try {
                     {
                         selector: 'node',
                         style: {
-                            'label': 'data(id)',
+                            'text-wrap': 'wrap',
+                            'label': 'data(label)',
                             'text-valign': 'center',
                             'text-halign': 'center',
                             'width': '100px',
                             'height': '100px',
-                            'background-color': '#0E6BA8'
+                            'background-color': '#e00000',
                         }
                     },
                     {
@@ -70,12 +72,13 @@ try {
                 ]
 
             });
+
             my_graph.on('mouseover', 'node', function(evt){
               var node = evt.target;
             });
         }
         function refresh_graph_layout() {
-            var layout = my_graph.layout({ name: 'cose' });
+            var layout = my_graph.layout({ name: 'klay' });
             layout.run();
         }
         // Look  through the list of current_avatars
@@ -151,14 +154,15 @@ try {
                 if (!avatar.ports) { continue; }
                 // Add a node for each pub and connect, then connect avatar to every pub node
                 for (pub of avatar.ports.pub) {
-                    my_graph.add([{ data: { id: pub, "publish_subject": true  } }])
+                    my_graph.add([{ data: { id: pub, "publish_subject": true, label:pub + "\npublisher"  } }])
                     available_publishers[pub] = true;
-                    my_graph.add([{ data: { source: avatar.node_id, target: pub, label: "A nice label", "publish_edge": true} }]);
+                    my_graph.add([{ data: { source: avatar.node_id, target: pub, "publish_edge": true} }]);
                 }
                 // clients should point to servers
                 // client node --> [port] --> server node
+                // publisher node --> [port] --> subscriber node
                 for (srv of avatar.ports.srv) {
-                    my_graph.add([{ data: { id: srv, serve_subject: true } }])
+                    my_graph.add([{ data: { id: srv, serve_subject: true, label:srv + "\nserver" } }])
                     my_graph.add([{ data: { source: srv, target: avatar.node_id, label: "A nice label", "serve_edge": true } }])
                 }
 
@@ -166,12 +170,12 @@ try {
             for (avatar of current_avatars) {
                 for (sub of avatar.ports.sub) {
                     if (available_publishers[sub]) {
-                        my_graph.add([{ data: { source: sub, target: avatar.node_id, label: "A nice label" } }]);
+                        my_graph.add([{ data: { source: sub, target: avatar.node_id , label: "A nice label" } }]);
                     }
                 }
                 for (cln of avatar.ports.cln) {
                     if(available_servers[cln]) {
-                        my_graph.add([{ data: { source: cln, target: avatar.node_id, label: "A nice label" } }]);
+                        my_graph.add([{ data: { source: avatar.node_id, target: cln, label: "A nice label" } }]);
                     }
                 }
             }
