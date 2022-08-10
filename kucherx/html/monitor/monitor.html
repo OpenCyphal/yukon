@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="autosize.js"></script>
+    <script src="../messages/messages.js"></script>
+    <script src="monitor.js"></script>
+    <script src="klay.js"></script>
+    <script src="klay-layout.js"></script>
+    <script src="tabs.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.22.1/cytoscape.min.js"
+        integrity="sha512-KTe+SDYh8ExHDmrSZuoKkFoFQDSU3ywInRi9SkE0ENpJu72GS+UAxd/l0CAXF8DaGGGOLKd7wKRoa7mEirvIpg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.plot.ly/plotly-2.13.3.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="split.css">
+    <link rel="stylesheet" href="table_style.css">
+    <link rel="stylesheet" href="tabs.css">
+    <title>Monitor window</title>
+</head>
+
+<body>
+    <div id="tabs" class="c-tabs no-js">
+        <div class="c-tabs-nav">
+            <a href="#" class="c-tabs-nav__link is-active" id="btnMonitorTab">Monitor</a>
+            <a href="#" class="c-tabs-nav__link">Datatypes table</a>
+            <a href="#" class="c-tabs-nav__link">Text output</a>
+            <a href="#" class="c-tabs-nav__link">Port lists table</a>
+        </div>
+        <div class="c-tab is-active">
+            <div class="c-tab__content split-horizontal">
+                <div id="split-left">
+                    <div id="cy"></div>
+                </div>
+                <div id="split-right">
+                    <div id="options">
+                        <div class="option">
+                            <label for="hide-yakut">Hide Yakut</label>
+                            <input type="checkbox" id="hide-yakut">
+                        </div>
+                    </div>
+                    <div id="messages">
+                        <p id="messages_title">Messages</p>
+                        <div id="messages-list">
+
+                        </div>
+                        <span>
+                            <label for="cDeleteOldMessages">Delete old messages</label>
+                            <input type="checkbox" id="cDeleteOldMessages" value="">
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="c-tab">
+            <div id="table" class="c-tab__content">
+                <p>Empty as of now.</p>
+            </div>
+        </div>
+        <div class="c-tab">
+            <p id="textOut"></p>
+        </div>
+        <div class="c-tab">
+            <table id="avatars_table">
+                <thead>
+                    <tr>
+                        <th><strong>Node id</strong></th>
+                        <th><strong>Node name</strong></th>
+                        <th><strong>Subscribing</strong></th>
+                        <th><strong>Publishing</strong></th>
+                        <th><strong>Client to</strong></th>
+                        <th><strong>Server to</strong></th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <div class="graph-control">
+        <button id="btnRefreshGraphLayout">Refresh layout</button>
+    </div>
+
+    
+    
+    <div id="plot_placeholder"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.0/split.min.js"></script>
+    <script>
+        // Wait for document to be ready, without using jQuery
+        window.addEventListener('load', function () {
+            // Initialize splitjs
+            Split(['#split-left', '#split-right'], {
+                minSize: 205,
+            });
+        });
+
+    </script>
+
+    <script>
+        var myTabs = tabs({
+            el: '#tabs',
+            tabNavigationLinks: '.c-tabs-nav__link',
+            tabContentContainers: '.c-tab'
+        });
+        myTabs.init();
+    </script>
+</body>
+
+</html>
