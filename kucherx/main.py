@@ -14,6 +14,7 @@ import webview
 from serial.tools import list_ports
 from webview.window import Window
 
+import uavcan
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 from kucherx.domain.avatar import Avatar
 from kucherx.domain.interface import Interface
@@ -73,6 +74,12 @@ class Api:
         file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
         _ = file_path
 
+    def update_register_values(self, register_name, register_value, node_id) -> None:
+        # make a uavcan.register.Access_1 request to the node
+        client = state.cyphal.local_node.make_client(uavcan.register.Access_1, node_id)
+        request = uavcan.register.Access_1(register_name, register_value)
+        asyncio.create_task(client.call(request))
+        pass
     def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
         state.queues.messages.put("Initiated attach transport")
         interface = Interface()

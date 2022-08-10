@@ -35,6 +35,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self._info = info
         self._register_set = set([])
         self.register_values = {}
+        self.access_requests_names_by_transfer_id = {}
         self._last_register_request_name = ""
         self._num_info_requests = 0
 
@@ -48,6 +49,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self._dispatch: dict[Any | tuple[Any, ServiceDataSpecifier.Role], Callable[[float, Any], None],] = {
             (uavcan.node.GetInfo_1_0, ServiceDataSpecifier.Role.RESPONSE): self._on_info_response,
             (uavcan.register.List_1, ServiceDataSpecifier.Role.RESPONSE): self._on_list_response,
+            (uavcan.register.Access_1, ServiceDataSpecifier.Role.REQUEST): self._on_access_request,
+            (uavcan.register.Access_1, ServiceDataSpecifier.Role.RESPONSE): self._on_access_response,
             uavcan.node.port.List_0_1: self._on_port_list,
             uavcan.node.Heartbeat_1_0: self._on_heartbeat,
         }
@@ -68,6 +71,24 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         assert isinstance(obj, uavcan.node.GetInfo_1_0.Response)
         _ = ts
         self._info = obj
+
+    def _on_access_request(self, ts: float, obj: Any, transfer_id) -> None:
+        import uavcan.register
+        import uavcan.node
+
+        logger.info("%r: Received register access request", self)
+        assert isinstance(obj, uavcan.register.Access_1.Request)
+        _ = ts
+        self.access_requests_names_by_transfer_id[transfer_id] = obj.name.name.tobytes().decode()
+
+    def _on_access_response(self, ts: float, obj: Any, transfer_id) -> None:
+        import uavcan.register
+        import uavcan.node
+
+        logger.info("%r: Received register access response", self)
+        assert isinstance(obj, uavcan.register.Access_1.Response)
+        _ = ts
+        self.register_values[self.access_requests_names_by_transfer_id[transfer_id]] = str(_simplify_value(obj.value))
 
     def _on_list_response(self, ts: float, obj: Any) -> None:
         import uavcan.node
@@ -121,7 +142,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     def _on_trace(self, ts: Timestamp, tr: AlienTransfer) -> None:
         from pycyphal.dsdl import get_fixed_port_id
 
-        own = tr.metadata.session_specifier.source_node_id == self._node_id
+        own = tr.metadata.session_specifier.source_node_id == self._node_id \
+              or tr.metadata.session_specifier.destination_node_id == self._node_id
         if not own:
             return
         ds = tr.metadata.session_specifier.data_specifier
@@ -137,11 +159,18 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                         and ds.role == role
                         and ds.service_id == get_fixed_port_id(type)
                 ):
+                    if handler == self._on_access_request:
+                        logger.info("%r: Received access request", self)
                     rr = getattr(type, role.name.capitalize())
                     deserialized_object = pycyphal.dsdl.deserialize(rr, tr.fragmented_payload)
                     logger.debug("%r: Service snoop: %r from %r", self, deserialized_object, tr)
                     if deserialized_object is not None:
-                        handler(float(ts.monotonic), deserialized_object)
+                        if handler == self._on_access_response:
+                            handler(float(ts.monotonic), deserialized_object, tr.metadata.transfer_id)
+                        elif handler == self._on_access_request:
+                            handler(float(ts.monotonic), deserialized_object, tr.metadata.transfer_id)
+                        else:
+                            handler(float(ts.monotonic), deserialized_object)
             elif (fpid := get_fixed_port_id(type)) is not None:
                 if isinstance(ds, MessageDataSpecifier) and ds.subject_id == fpid:
                     deserialized_object = pycyphal.dsdl.deserialize(type, tr.fragmented_payload)
@@ -182,6 +211,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             },
             "registers": list(self._register_set),
             "registers_values": self.register_values,
+            "registers_hash": hash(frozenset(self.register_values.items()))
         }
         return json_object
 

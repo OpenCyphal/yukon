@@ -160,7 +160,10 @@ try {
                 last_hashes.push(current_avatars[i].hash);
             }
         }
-        function update_registers_table() {
+        function update_register_value(register_name, register_value, node_id) {
+            pywebview.api.update_register_value(register_name, register_value, node_id);
+        }
+        function create_registers_table() {
             addLocalMessage("Updating registers table");
             // Clear the table
             var registers_table = document.querySelector('#registers_table')
@@ -197,11 +200,45 @@ try {
                 // Add table cells for each avatar, containing the value of the register from register_name
                 current_avatars.forEach(function (avatar) {
                     var table_cell = document.createElement('td');
+                    // Set an attribute on td to store the register name
+                    table_cell.setAttribute('id', "register_" + register_name);
                     var register_value = avatar.registers_values[register_name];
+                    var isAlpha = function(str){
+                      return /^[A-Z]+$/i.test(str);
+                    }
                     if(register_value == "65535") {
                         register_value = "65535 (not set)"
                     }
-                    table_cell.innerHTML = register_value || "";
+                    var register_value_as_int = parseInt(register_value);
+                    var is_register_value_number = isAlpha(register_value);
+                    if (is_register_value_number) {
+                        // Create a number input field
+                        var number_input_field = document.createElement('input');
+                        number_input_field.type = 'number';
+                        number_input_field.value = register_value_as_int;
+                        table_cell.appendChild(number_input_field);
+                    } else {
+                        var text_input = document.createElement('input');
+                        text_input.setAttribute('type', 'text');
+                        text_input.value = register_value;
+                        // When the text input is clicked
+                        text_input.addEventListener('click', function () {
+                            // Make a dialog box to enter the new value
+                            var new_value = prompt("Enter new value for " + register_name + ":");
+                            // If the user entered a value
+                            if (new_value != null) {
+                                // Update the value in the table
+                                text_input.value = new_value;
+                                // Update the value in the avatar
+                                avatar.registers_values[register_name] = new_value;
+                                // Update the value in the server
+                                update_register_value(register_name, register_value, avatar.node_id);
+                            }
+                        });
+                        table_cell.appendChild(text_input);
+                    }
+                    // Create a text input element in the table cell
+
                     table_register_row.appendChild(table_cell);
                 });
                 registers_table_body.appendChild(table_register_row);
@@ -296,7 +333,7 @@ try {
         }
         function update_tables() {
             update_avatars_table();
-            update_registers_table();
+            create_registers_table();
         }
         setInterval(update_tables, 1000)
         setInterval(get_and_display_avatars, 1000);
