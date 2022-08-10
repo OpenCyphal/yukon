@@ -21,6 +21,7 @@ from kucherx.domain.UID import UID
 from kucherx.domain.avatar import Avatar
 from kucherx.domain.interface import Interface
 from kucherx.domain.note_state import NodeState
+from kucherx.domain.update_register_request import UpdateRegisterRequest
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ class QueuesState:
     attach_transport_response: Queue[str] = field(default_factory=Queue)
     attach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
     detach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
+    update_registers: Queue[UpdateRegisterRequest] = field(default_factory=Queue)
 
 
 @dataclass

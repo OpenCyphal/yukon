@@ -50,6 +50,15 @@ function update_messages() {
                 // Set an attribute on the list element with current timestamp
                 autosize(li);
                 li.setAttribute("timestamp", new Date().getTime());
+                // If el is the last in d
+                if (d.indexOf(el) == d.length - 1) {
+                    // Scroll to bottom of messages-list
+                    var cbAutoscroll = document.getElementById("cbAutoscroll");
+                    var iAutoscrollFilter = document.getElementById("iAutoscrollFilter");
+                    if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
+                        messagesList.scrollTop = messagesList.scrollHeight;
+                    }
+                }
                 messagesList.appendChild(li);
             }
         }

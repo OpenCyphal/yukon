@@ -1,8 +1,62 @@
 # Copyright (c) 2019 OpenCyphal
 # This software is distributed under the terms of the MIT License.
 # Author: Pavel Kirienko <pavel@opencyphal.org>
-from typing import Any
+from typing import Any, Optional
 import pycyphal
+
+
+def unexplode_value(xpl: Any, prototype: Optional["Value"] = None) -> Optional["Value"]:
+    """
+    Reverse the effect of :func:`explode`.
+    Returns None if the exploded form is invalid or not applicable to the prototype.
+    Some simplified exploded forms can be unexploded only if the prototype
+    is given because simplification erases type information.
+    Some unambiguous simplified forms may be unexploded autonomously.
+    >>> from pycyphal.application.register import Value, Natural16
+    >>> ux = unexplode_value
+    >>> ux(None)                                         # None is a simplified form of Empty.
+    uavcan.register.Value...(empty=...)
+    >>> ux({"integer8": {"value": [1,2,3]}, "_meta_": {"whatever": 0}})  # Metadata ignored.
+    uavcan.register.Value...(integer8=...[1,2,3]))
+    >>> ux({"integer8": {"value": [1,2,3]}})             # Pure Value (same as above)
+    uavcan.register.Value...(integer8=...[1,2,3]))
+    >>> ux([1,2,3]) is None                              # Prototype required.
+    True
+    >>> ux([1,2,3], Value(natural16=Natural16([0,0,0])))
+    uavcan.register.Value...(natural16=...[1,2,3]))
+    >>> ux(123, Value(natural16=Natural16([0])))
+    uavcan.register.Value...(natural16=...[123]))
+    >>> ux("abc", Value(natural16=Natural16([0]))) is None # Not applicable
+    True
+    Roundtrip:
+    >>> unexplode_value(explode_value(Value(natural16=Natural16([0,1,2])), metadata={"a": 654}))
+    uavcan.register.Value...(natural16=...[0,1,2]))
+    """
+    from pycyphal.dsdl import update_from_builtin
+    from pycyphal.application.register import ValueProxy, Value, ValueConversionError
+
+    if xpl is None:
+        return Value()
+    if isinstance(xpl, dict) and xpl:  # Empty dict is not a valid representation.
+        try:
+            res = update_from_builtin(
+                Value(),
+                {k: v for k, v in xpl.items() if k.strip("_") == k},  # Strip metadata fields.
+            )
+            assert isinstance(res, Value)
+            return res
+        except (ValueError, TypeError):
+            pass
+    if prototype is not None:
+        ret = ValueProxy(prototype)
+        try:
+            ret.assign(xpl)
+            assert isinstance(ret.value, Value)
+            return ret.value
+        except ValueConversionError:
+            pass
+    return None
+
 
 def explode_value(val: "Value", *, simplify: bool = False, metadata: dict[str, Any] | None = None) -> Any:
     """

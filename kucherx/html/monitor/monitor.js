@@ -210,6 +210,7 @@ try {
                         register_value = "65535 (not set)"
                     }
                     var register_value_as_int = parseInt(register_value);
+                    // Here we check if the register value is a byte string and then we convert it to hex
                     var is_register_value_number = isAlpha(register_value);
                     if (is_register_value_number) {
                         // Create a number input field
@@ -232,7 +233,7 @@ try {
                                 // Update the value in the avatar
                                 avatar.registers_values[register_name] = new_value;
                                 // Update the value in the server
-                                update_register_value(register_name, register_value, avatar.node_id);
+                                update_register_value(register_name, register_value, avatar.node_id, );
                             }
                         });
                         table_cell.appendChild(text_input);

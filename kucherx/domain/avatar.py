@@ -11,7 +11,7 @@ from kucherx.domain.port_set import PortSet
 from kucherx.domain._expand_subjects import expand_subjects, expand_mask
 from kucherx.domain.iface import Iface
 import uavcan
-from kucherx.services.value_utils import _simplify_value
+from kucherx.services.value_utils import _simplify_value, explode_value
 
 logger = logging.getLogger()
 logger.setLevel("ERROR")
@@ -35,6 +35,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self._info = info
         self._register_set = set([])
         self.register_values = {}
+        self.register_exploded_values = {}
         self.access_requests_names_by_transfer_id = {}
         self._last_register_request_name = ""
         self._num_info_requests = 0
@@ -88,7 +89,16 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         logger.info("%r: Received register access response", self)
         assert isinstance(obj, uavcan.register.Access_1.Response)
         _ = ts
-        self.register_values[self.access_requests_names_by_transfer_id[transfer_id]] = str(_simplify_value(obj.value))
+        register_name = self.access_requests_names_by_transfer_id[transfer_id]
+        if register_name == "uavcan.node.unique_id":
+            unstructured_value = obj.value.unstructured
+            array = bytearray(unstructured_value.value)
+            # Convert to hex string
+            self.register_values[register_name] = "0x" + "".join(
+                "{:02x}".format(c) for c in array
+            )
+        self.register_exploded_values[register_name] = explode_value(obj.value)
+        self.register_values[register_name] = str(_simplify_value(obj.value))
 
     def _on_list_response(self, ts: float, obj: Any) -> None:
         import uavcan.node
@@ -211,7 +221,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             },
             "registers": list(self._register_set),
             "registers_values": self.register_values,
-            "registers_hash": hash(frozenset(self.register_values.items()))
+            "registers_hash": hash(frozenset(self.register_values.items())),
+            "registers_exploded_values": self.register_exploded_values,
         }
         return json_object
 

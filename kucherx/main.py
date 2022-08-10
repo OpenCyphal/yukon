@@ -19,6 +19,7 @@ from kucherx.domain.attach_transport_request import AttachTransportRequest
 from kucherx.domain.avatar import Avatar
 from kucherx.domain.interface import Interface
 from kucherx.domain.queue_quit_object import QueueQuitObject
+from kucherx.domain.update_register_request import UpdateRegisterRequest
 from kucherx.services.enhanced_json_encoder import EnhancedJSONEncoder
 from kucherx.services.messages_publisher import MessagesPublisher
 
@@ -74,12 +75,9 @@ class Api:
         file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
         _ = file_path
 
-    def update_register_values(self, register_name, register_value, node_id) -> None:
-        # make a uavcan.register.Access_1 request to the node
-        client = state.cyphal.local_node.make_client(uavcan.register.Access_1, node_id)
-        request = uavcan.register.Access_1(register_name, register_value)
-        asyncio.create_task(client.call(request))
-        pass
+    def update_register_value(self, register_name, register_value, node_id) -> None:
+        state.queues.update_registers.put(UpdateRegisterRequest(register_name, register_value, node_id))
+
     def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
         state.queues.messages.put("Initiated attach transport")
         interface = Interface()

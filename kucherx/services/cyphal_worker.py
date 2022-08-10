@@ -1,9 +1,11 @@
 import asyncio
 import logging
 import traceback
+from multiprocessing.managers import ValueProxy
 
 from pycyphal.application import make_node, NodeInfo, make_transport
 
+import uavcan
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 from kucherx.domain.attach_transport_response import AttachTransportResponse
 from kucherx.domain.god_state import GodState
@@ -46,6 +48,15 @@ def cyphal_worker_thread(state: GodState) -> None:
                 if not state.queues.detach_transport.empty():
                     transport = state.queues.detach_transport.get_nowait()
                     state.cyphal.pseudo_transport.detach_inferior(transport)
+                if not state.queues.update_registers.empty():
+                    register_update = state.queues.update_registers.get_nowait()
+                    # make a uavcan.register.Access_1 request to the node
+                    client = state.cyphal.local_node.make_client(uavcan.register.Access_1, register_update.node_id)
+                    request = uavcan.register.Access_1.Request()
+                    request.name.name = register_update.register_name
+                    request.value = register_update.value
+                    # We don't need the response here because it is snooped by an avatar anyway
+                    client.call(request)
         except Exception as e:
             logger.exception(e)
             raise e
