@@ -22,39 +22,6 @@ src_dirs = [
 ]
 
 
-@nox.session(python=False)
-def clean(session):
-    wildcards = [
-        "dist",
-        "build",
-        "html*",
-        ".coverage*",
-        ".*cache",
-        ".*compiled",
-        ".*generated",
-        "*.egg-info",
-        "*.log",
-        "*.tmp",
-        ".nox",
-    ]
-    for w in wildcards:
-        for f in Path.cwd().glob(w):
-            session.log(f"Removing: {f}")
-            shutil.rmtree(f, ignore_errors=True)
-
-
-@nox.session()
-def demo(session):
-    """
-    Test the demo app orchestration example.
-    This is a separate session because it is dependent on Yakut.
-    """
-    session.install(".")
-
-    session.env["STOP_AFTER"] = "10"
-    session.run("python3.10", "kucherx/main.py", success_codes=[0])
-
-
 @nox.session(reuse_venv=True)
 def black(session):
     session.run("pip", "install", "black == 22.*")
