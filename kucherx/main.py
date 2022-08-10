@@ -34,11 +34,11 @@ logger = logging.getLogger()
 logger.setLevel("INFO")
 
 
-def start_threads(state: GodState) -> None:
+def start_threads(_state: GodState) -> None:
     # Creating 3 new threads
     from kucherx.services.threads.cyphal_worker import cyphal_worker_thread
 
-    cyphal_worker_thread = threading.Thread(target=cyphal_worker_thread, args=[state])
+    cyphal_worker_thread = threading.Thread(target=cyphal_worker_thread, args=[_state])
     cyphal_worker_thread.start()
     print("Cyphal worker was started")
 
@@ -80,9 +80,9 @@ class Api:
         interface.rate_data = int(data_rate)
         interface.mtu = int(mtu)
         interface.iface = interface_string
-        logger.info(f"Opening port {interface.iface}")
-        logger.info(f"Arb rate {interface.rate_arb}")
-        logger.info(f"Data rate {interface.rate_data}")
+        logger.info(f"Opening port {interface.iface}") # pylint: disable=logging-fstring-interpolation
+        logger.info(f"Arb rate {interface.rate_arb}") # pylint: disable=logging-fstring-interpolation
+        logger.info(f"Data rate {interface.rate_data}") # pylint: disable=logging-fstring-interpolation
 
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         state.queues.attach_transport.put(atr)
@@ -131,7 +131,7 @@ class Api:
 
 
 def run_gui_app() -> None:
-    global monitor_window, add_transport_window
+    global monitor_window, add_transport_window # pylint: disable: global-statement
     make_process_dpi_aware(logger)
 
     api = Api()
