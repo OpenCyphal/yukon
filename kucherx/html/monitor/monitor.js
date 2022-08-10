@@ -251,8 +251,7 @@ try {
         setInterval(get_and_display_avatars, 1000);
         create_directed_graph();
         update_directed_graph();
-        // Call update_messages every second
-        setInterval(update_messages, 1000);
+
         //        var btnFetch = document.getElementById('btnFetch');
         //        btnFetch.addEventListener('click', function () {
         //            update_messages()

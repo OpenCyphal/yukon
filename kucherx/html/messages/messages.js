@@ -1,3 +1,23 @@
+function addLocalMessage(message) {
+    pywebview.api.add_local_message(message)
+}
+window.addEventListener('pywebviewready', function () {
+    var messagesList = document.querySelector("#messages-list");
+    // On resize event
+    addLocalMessage("Found messageList")
+    // at interval of 3 seconds
+    let messagesListWidth = messagesList.getBoundingClientRect().width
+
+    setInterval(function() {
+        let currentWidth = messagesList.getBoundingClientRect().width
+        if(currentWidth != messagesListWidth) {
+            messagesListWidth = currentWidth
+            for (child of messagesList.children) {
+                autosize.update(child);
+            }
+        }
+    }, 500);
+});
 function update_messages() {
     pywebview.api.get_avatars().then(
         function (avatars) {
@@ -35,3 +55,5 @@ function update_messages() {
         }
     );
 }
+// Call update_messages every second
+setInterval(update_messages, 1000);

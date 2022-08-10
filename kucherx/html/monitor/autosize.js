@@ -174,7 +174,6 @@ function assign(ta) {
 		ta.removeEventListener('keyup', update, false);
 		ta.removeEventListener('autosize:destroy', destroy, false);
 		ta.removeEventListener('autosize:update', update, false);
-
 		Object.keys(style).forEach(key => {
 			ta.style[key] = style[key];
 		});

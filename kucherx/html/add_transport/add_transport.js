@@ -1,13 +1,16 @@
 window.addEventListener('pywebviewready', function () {
+    function addLocalMessage(message) {
+        pywebview.api.add_local_message(message)
+    }
     pywebview.api.get_ports_list().then(
         function (portsList) {
             var btnStart = document.getElementById('btnStart');
-            pywebview.api.add_local_message("Waiting to start...");
+            addLocalMessage("Waiting to start...");
             var iTransport = document.getElementById('iTransport');
             var sTransport = document.getElementById("sTransport");
             var d = JSON.parse(portsList);
             if (d.length == 0) {
-                pywebview.api.add_local_message("No interfaces found");
+                addLocalMessage("No interfaces found");
             } else {
                 for (el of d) {
                     if (el.length > 0) {
@@ -22,7 +25,7 @@ window.addEventListener('pywebviewready', function () {
     );
     // Add a function to verify that valid values were entered into the field of the transport-selection-form
     function validateForm() {
-        pywebview.api.add_local_message("Validating form...");
+        addLocalMessage("Validating form...");
         // save into variables all the values of the fields of the form
         var sTransportValue = document.getElementById("sTransport").value;
         var iTransportValue = document.getElementById("iTransport").value;
@@ -32,10 +35,10 @@ window.addEventListener('pywebviewready', function () {
         var iNodeIdValue = document.getElementById("iNodeId").value;
         if (sTransportValue.length == 0) {
             if(iTransportValue == "") {
-                pywebview.api.add_local_message("Please select a transport");
+                addLocalMessage("Please select a transport");
                 return false;
             } else if (!iTransportValue.includes(":")) {
-                pywebview.api.add_local_message("Please enter a valid transport");
+                addLocalMessage("Please enter a valid transport");
                 return false;
             }
         }
@@ -56,11 +59,11 @@ window.addEventListener('pywebviewready', function () {
             function (result) {
                 var resultObject = JSON.parse(result);
                 if (resultObject.success) {
-                    pywebview.api.add_local_message("Now attached: " + resultObject.message);
+                    addLocalMessage("Now attached: " + resultObject.message);
                     pywebview.api.hide_transport_window();
                 } else {
                     console.error("Error: " + resultObject.message);
-                    pywebview.api.add_local_message("Error: " + resultObject.message);
+                    addLocalMessage("Error: " + resultObject.message);
                 }
             }
         );

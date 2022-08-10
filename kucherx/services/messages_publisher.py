@@ -9,5 +9,4 @@ class MessagesPublisher(logging.Handler):
         self._state = state
 
     def emit(self, record: logging.LogRecord) -> None:
-        print("Yes")
         self._state.queues.messages.put(record.getMessage())
