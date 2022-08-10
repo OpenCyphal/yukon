@@ -36,7 +36,7 @@ logger.setLevel("INFO")
 
 def start_threads(_state: GodState) -> None:
     # Creating 3 new threads
-    from kucherx.services.threads.cyphal_worker import cyphal_worker_thread
+    from kucherx.services.cyphal_worker import cyphal_worker_thread
 
     cyphal_worker_thread = threading.Thread(target=cyphal_worker_thread, args=[_state])
     cyphal_worker_thread.start()
