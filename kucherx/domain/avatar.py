@@ -11,6 +11,7 @@ from kucherx.domain.port_set import PortSet
 from kucherx.domain._expand_subjects import expand_subjects, expand_mask
 from kucherx.domain.iface import Iface
 import uavcan
+from kucherx.services.value_utils import _simplify_value
 
 logger = logging.getLogger()
 logger.setLevel("ERROR")
@@ -18,11 +19,11 @@ logger.setLevel("ERROR")
 
 class Avatar:  # pylint: disable=too-many-instance-attributes
     def __init__(
-        self,
-        iface: Iface,
-        node_id: Optional[int],
-        info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
-        previous_port_list_hash: Optional[int] = None,
+            self,
+            iface: Iface,
+            node_id: Optional[int],
+            info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
+            previous_port_list_hash: Optional[int] = None,
     ) -> None:
         import uavcan.node
         import uavcan.node.port
@@ -32,6 +33,9 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self._heartbeat: Optional[uavcan.node.Heartbeat_1_0] = None
         self._iface = iface
         self._info = info
+        self._register_set = set([])
+        self.register_values = {}
+        self._last_register_request_name = ""
         self._num_info_requests = 0
 
         self._ts_activity = -math.inf
@@ -43,6 +47,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
         self._dispatch: dict[Any | tuple[Any, ServiceDataSpecifier.Role], Callable[[float, Any], None],] = {
             (uavcan.node.GetInfo_1_0, ServiceDataSpecifier.Role.RESPONSE): self._on_info_response,
+            (uavcan.register.List_1, ServiceDataSpecifier.Role.RESPONSE): self._on_list_response,
             uavcan.node.port.List_0_1: self._on_port_list,
             uavcan.node.Heartbeat_1_0: self._on_heartbeat,
         }
@@ -63,6 +68,13 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         assert isinstance(obj, uavcan.node.GetInfo_1_0.Response)
         _ = ts
         self._info = obj
+
+    def _on_list_response(self, ts: float, obj: Any) -> None:
+        import uavcan.node
+
+        assert isinstance(obj, uavcan.register.List_1.Response)
+        _ = ts
+        self._register_set.add(obj.name.name.tobytes().decode())
 
     def _on_port_list(self, ts: float, obj: Any) -> None:
         import uavcan.node.port
@@ -89,7 +101,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
         # Invalidate the node info if the uptime goes backwards or if we received a heartbeat after a long pause.
         restart = self._heartbeat and (
-            (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
+                (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
         )
         if restart:
             logger.info("%r: Restart detected: %r", self, obj)
@@ -121,9 +133,9 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                 type, role = type
                 assert isinstance(role, ServiceDataSpecifier.Role)
                 if (
-                    isinstance(ds, ServiceDataSpecifier)
-                    and ds.role == role
-                    and ds.service_id == get_fixed_port_id(type)
+                        isinstance(ds, ServiceDataSpecifier)
+                        and ds.role == role
+                        and ds.service_id == get_fixed_port_id(type)
                 ):
                     rr = getattr(type, role.name.capitalize())
                     deserialized_object = pycyphal.dsdl.deserialize(rr, tr.fragmented_payload)
@@ -168,17 +180,19 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                 "cln": list(self._ports.cln),
                 "srv": list(self._ports.srv),
             },
+            "registers": list(self._register_set),
+            "registers_values": self.register_values,
         }
         return json_object
 
     def __hash__(self) -> int:
         # Create a hash from __ports.pub, __ports.sub, __ports.cln and __ports.srv
         return (
-            hash(frozenset(self._ports.pub))
-            ^ hash(frozenset(self._ports.sub))
-            ^ hash(frozenset(self._ports.cln))
-            ^ hash(frozenset(self._ports.srv))
-            ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
+                hash(frozenset(self._ports.pub))
+                ^ hash(frozenset(self._ports.sub))
+                ^ hash(frozenset(self._ports.cln))
+                ^ hash(frozenset(self._ports.srv))
+                ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
         )
 
     def __repr__(self) -> str:

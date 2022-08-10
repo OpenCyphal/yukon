@@ -29,6 +29,7 @@
             <a href="#" class="c-tabs-nav__link">Datatypes table</a>
             <a href="#" class="c-tabs-nav__link">Text output</a>
             <a href="#" class="c-tabs-nav__link">Port lists table</a>
+            <a href="#" class="c-tabs-nav__link">Registers view</a>
         </div>
         <div class="c-tab is-active">
             <div class="c-tab__content split-horizontal">
@@ -53,6 +54,9 @@
                         </span>
                     </div>
                 </div>
+            </div>
+            <div class="graph-control">
+                <button id="btnRefreshGraphLayout">Refresh layout</button>
             </div>
         </div>
         <div class="c-tab">
@@ -79,13 +83,16 @@
                 </tbody>
             </table>
         </div>
+        <div class="c-tab">
+            <h1>Registers view</h1>
+            <table id="registers_table">
+                <thead>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
     </div>
-
-
-    <div class="graph-control">
-        <button id="btnRefreshGraphLayout">Refresh layout</button>
-    </div>
-
     
     
     <div id="plot_placeholder"></div>

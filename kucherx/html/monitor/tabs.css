@@ -61,7 +61,6 @@
    */
   .c-tab {
     display: none;
-    background-color: #e7e7e7;
   }
   .c-tab.is-active {
     display: block;

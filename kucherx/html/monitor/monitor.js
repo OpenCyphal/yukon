@@ -160,6 +160,53 @@ try {
                 last_hashes.push(current_avatars[i].hash);
             }
         }
+        function update_registers_table() {
+            addLocalMessage("Updating registers table");
+            // Clear the table
+            var registers_table = document.querySelector('#registers_table')
+            registers_table.innerHTML = '';
+            var registers_table_body = document.createElement('tbody');
+            registers_table.appendChild(registers_table_body);
+            var registers_table_header = document.createElement('thead');
+            registers_table.appendChild(registers_table_header);
+            // Add the table headers
+            var table_header_row = document.createElement('tr');
+            var empty_table_header_row_cell = document.createElement('th');
+            table_header_row.appendChild(empty_table_header_row_cell);
+            current_avatars.forEach(function (avatar) {
+                var table_header_cell = document.createElement('th');
+                table_header_cell.innerHTML = avatar.node_id;
+                table_header_row.appendChild(table_header_cell);
+            });
+            registers_table_header.appendChild(table_header_row);
+            // Combine all register names from avatar.registers into an array
+            var register_names = [];
+            current_avatars.forEach(function (avatar) {
+                avatar.registers.forEach(function (register) {
+                    if (register != "" && !register_names.includes(register)) {
+                        register_names.push(register);
+                    }
+                });
+            });
+            // Add the table row headers for each register name
+            register_names.forEach(function (register_name) {
+                var table_register_row = document.createElement('tr');
+                var table_header_cell = document.createElement('th');
+                table_header_cell.innerHTML = register_name;
+                table_register_row.appendChild(table_header_cell);
+                // Add table cells for each avatar, containing the value of the register from register_name
+                current_avatars.forEach(function (avatar) {
+                    var table_cell = document.createElement('td');
+                    var register_value = avatar.registers_values[register_name];
+                    if(register_value == "65535") {
+                        register_value = "65535 (not set)"
+                    }
+                    table_cell.innerHTML = register_value || "";
+                    table_register_row.appendChild(table_cell);
+                });
+                registers_table_body.appendChild(table_register_row);
+            });
+        }
         function update_avatars_table() {
             var table_body = document.querySelector('#avatars_table tbody');
             table_body.innerHTML = "";
@@ -240,7 +287,6 @@ try {
 
 
         function get_and_display_avatars() {
-            update_avatars_table();
             pywebview.api.get_avatars().then(
                 function (avatars) {
                     current_avatars = JSON.parse(avatars);
@@ -248,6 +294,11 @@ try {
                 }
             );
         }
+        function update_tables() {
+            update_avatars_table();
+            update_registers_table();
+        }
+        setInterval(update_tables, 1000)
         setInterval(get_and_display_avatars, 1000);
         create_directed_graph();
         update_directed_graph();
