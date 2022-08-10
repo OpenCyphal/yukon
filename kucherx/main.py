@@ -80,9 +80,9 @@ class Api:
         interface.rate_data = int(data_rate)
         interface.mtu = int(mtu)
         interface.iface = interface_string
-        logger.info(f"Opening port {interface.iface}") # pylint: disable=logging-fstring-interpolation
-        logger.info(f"Arb rate {interface.rate_arb}") # pylint: disable=logging-fstring-interpolation
-        logger.info(f"Data rate {interface.rate_data}") # pylint: disable=logging-fstring-interpolation
+        logger.info(f"Opening port {interface.iface}")  # pylint: disable=logging-fstring-interpolation
+        logger.info(f"Arb rate {interface.rate_arb}")  # pylint: disable=logging-fstring-interpolation
+        logger.info(f"Data rate {interface.rate_data}")  # pylint: disable=logging-fstring-interpolation
 
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         state.queues.attach_transport.put(atr)
@@ -131,7 +131,7 @@ class Api:
 
 
 def run_gui_app() -> None:
-    global monitor_window, add_transport_window # pylint: disable: global-statement
+    global monitor_window, add_transport_window  # pylint: disable: global-statement
     make_process_dpi_aware(logger)
 
     api = Api()
