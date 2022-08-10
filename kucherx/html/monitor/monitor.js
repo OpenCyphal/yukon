@@ -9,10 +9,6 @@ try {
             my_graph = cytoscape({
                 wheelSensitivity: 0.2,
                 container: document.getElementById('cy'), // container to render in
-
-                elements: [ // flat array of nodes and edges
-                ],
-
                 // so we can see the ids
                 style: [
                     {
@@ -25,7 +21,7 @@ try {
                             'width': '250px',
                             'height': '65px',
                             'background-color': '#e00000',
-                            'shape': 'cut-rectangle'
+                            'shape': 'cut-rectangle',
                         }
                     },
                     {
@@ -274,6 +270,7 @@ try {
                 pywebview.api.show_yakut();
             }
         });
+        // This is actually one of the tabs in the tabbed interface but it also acts as a refresh layout button
         btnMonitorTab = document.getElementById('btnMonitorTab');
         btnMonitorTab.addEventListener('click', function () {
             refresh_graph_layout();
