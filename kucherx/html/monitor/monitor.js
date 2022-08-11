@@ -229,7 +229,7 @@ try {
                     }
                     inputFieldReference.addEventListener('click', function () {
                         // Make a dialog box to enter the new value
-                        var new_value = prompt("Enter new value for " + register_name + ":");
+                        var new_value = prompt("Enter new value for " + register_name + ":", register_value);
                         // If the user entered a value
                         if (new_value != null) {
                             // Update the value in the table
