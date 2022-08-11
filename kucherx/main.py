@@ -118,6 +118,10 @@ class Api:
 
     def get_avatars(self) -> str:
         avatar_list = [avatar.to_builtin() for avatar in list(state.avatar.avatars_by_node_id.values())]
+        avatar_dto = {
+            "avatars": avatar_list,
+            "hash": hash(json.dumps(avatar_list, sort_keys=True))
+        }
         if state.avatar.hide_yakut_avatar:
             for avatar in avatar_list:
                 amount_of_subscriptions = len(avatar["ports"]["sub"])
@@ -125,7 +129,7 @@ class Api:
                     avatar_list.remove(avatar)
                 elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
                     avatar_list.remove(avatar)
-        return json.dumps(avatar_list)
+        return json.dumps(avatar_dto)
 
     def toggleFullscreen(self) -> None:
         webview.windows[0].toggle_fullscreen()

@@ -164,7 +164,6 @@ try {
             pywebview.api.update_register_value(register_name, register_value, node_id);
         }
         function create_registers_table() {
-            addLocalMessage("Updating registers table");
             // Clear the table
             var registers_table = document.querySelector('#registers_table')
             registers_table.innerHTML = '';
@@ -212,32 +211,35 @@ try {
                     var register_value_as_int = parseInt(register_value);
                     // Here we check if the register value is a byte string and then we convert it to hex
                     var is_register_value_number = isAlpha(register_value);
+                    var inputFieldReference = null;
                     if (is_register_value_number) {
                         // Create a number input field
                         var number_input_field = document.createElement('input');
+                        inputFieldReference = number_input_field;
                         number_input_field.type = 'number';
                         number_input_field.value = register_value_as_int;
                         table_cell.appendChild(number_input_field);
                     } else {
                         var text_input = document.createElement('input');
+                        inputFieldReference = text_input;
                         text_input.setAttribute('type', 'text');
                         text_input.value = register_value;
                         // When the text input is clicked
-                        text_input.addEventListener('click', function () {
-                            // Make a dialog box to enter the new value
-                            var new_value = prompt("Enter new value for " + register_name + ":");
-                            // If the user entered a value
-                            if (new_value != null) {
-                                // Update the value in the table
-                                text_input.value = new_value;
-                                // Update the value in the avatar
-                                avatar.registers_values[register_name] = new_value;
-                                // Update the value in the server
-                                update_register_value(register_name, register_value, avatar.node_id, );
-                            }
-                        });
                         table_cell.appendChild(text_input);
                     }
+                    inputFieldReference.addEventListener('click', function () {
+                        // Make a dialog box to enter the new value
+                        var new_value = prompt("Enter new value for " + register_name + ":");
+                        // If the user entered a value
+                        if (new_value != null) {
+                            // Update the value in the table
+                            text_input.value = new_value;
+                            // Update the value in the avatar
+                            avatar.registers_values[register_name] = new_value;
+                            // Update the value in the server
+                            update_register_value(register_name, register_value, avatar.node_id, );
+                        }
+                    });
                     // Create a text input element in the table cell
 
                     table_register_row.appendChild(table_cell);
@@ -289,7 +291,7 @@ try {
                 if (!avatar.ports) { continue; }
                 // Add a node for each pub and connect, then connect avatar to every pub node
                 for (pub of avatar.ports.pub) {
-                    my_graph.add([{ data: { id: pub, "publish_subject": true, label: pub + "\npublisher" } }])
+                    my_graph.add([{ data: { id: pub, "publish_subject": true, label: pub + "\nsubject" } }])
                     available_publishers[pub] = true;
                     my_graph.add([{ data: { source: avatar.node_id, target: pub, "publish_edge": true } }]);
                 }
@@ -297,7 +299,7 @@ try {
                 // client node --> [port] --> server node
                 // publisher node --> [port] --> subscriber node
                 for (srv of avatar.ports.srv) {
-                    my_graph.add([{ data: { id: srv, serve_subject: true, label: srv + "\nserver" } }])
+                    my_graph.add([{ data: { id: srv, serve_subject: true, label: srv + "\nservice" } }])
                     my_graph.add([{ data: { source: srv, target: avatar.node_id, label: "A nice label", "serve_edge": true } }])
                 }
 
@@ -327,8 +329,9 @@ try {
         function get_and_display_avatars() {
             pywebview.api.get_avatars().then(
                 function (avatars) {
-                    current_avatars = JSON.parse(avatars);
-                    update_directed_graph(avatars);
+                    var DTO = JSON.parse(avatars);
+                    current_avatars = DTO.avatars;
+                    update_directed_graph();
                 }
             );
         }

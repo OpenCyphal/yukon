@@ -68,7 +68,6 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     def _on_info_response(self, ts: float, obj: Any) -> None:
         import uavcan.node
 
-        logger.info("%r: Received node info", self)
         assert isinstance(obj, uavcan.node.GetInfo_1_0.Response)
         _ = ts
         self._info = obj
@@ -77,7 +76,6 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         import uavcan.register
         import uavcan.node
 
-        logger.info("%r: Received register access request", self)
         assert isinstance(obj, uavcan.register.Access_1.Request)
         _ = ts
         self.access_requests_names_by_transfer_id[transfer_id] = obj.name.name.tobytes().decode()
@@ -86,7 +84,6 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         import uavcan.register
         import uavcan.node
 
-        logger.info("%r: Received register access response", self)
         assert isinstance(obj, uavcan.register.Access_1.Response)
         _ = ts
         register_name = self.access_requests_names_by_transfer_id[transfer_id]

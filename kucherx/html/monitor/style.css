@@ -49,3 +49,26 @@ form#interface-selection-form {
     min-width: 205px;
     width: 30%;
 }
+
+textarea#textOut {
+    width: 100%;
+}
+
+.options-panel {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.option {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.excluded-keywords {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+}

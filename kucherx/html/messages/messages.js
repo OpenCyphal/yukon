@@ -2,6 +2,30 @@ function addLocalMessage(message) {
     pywebview.api.add_local_message(message)
 }
 window.addEventListener('pywebviewready', function () {
+    // Run applyTextFilterToMessages() when there is a change in the filter text after the input has stopped for 0.5 seconds
+    var iTextFilter = document.getElementById("iTextFilter");
+    var taExcludedKeywords = document.getElementById("taExcludedKeywords");
+    var timer = null;
+    iTextFilter.addEventListener("input", function () {
+        if (timer) {
+            clearTimeout(timer);
+        }
+        timer = setTimeout(function () {
+            applyTextFilterToMessages();
+        }, 500);
+    });
+    var timer2 = null;
+    taExcludedKeywords.addEventListener("input", function () {
+        if (timer2) {
+            clearTimeout(timer2);
+        }
+        timer2 = setTimeout(function () {
+            applyExcludingTextFilterToMessage();
+        }, 1000);
+    });
+
+    var textOut = document.querySelector("#textOut");
+    autosize(textOut);
     var messagesList = document.querySelector("#messages-list");
     // On resize event
     addLocalMessage("Found messageList")
@@ -18,13 +42,43 @@ window.addEventListener('pywebviewready', function () {
         }
     }, 500);
 });
-function update_messages() {
-    pywebview.api.get_avatars().then(
-        function (avatars) {
-            var textOut = document.querySelector("#textOut");
-            textOut.innerHTML = avatars;
+function applyExcludingTextFilterToMessage()
+{
+    var messagesList = document.querySelector("#messages-list");
+    var taExcludedKeywords = document.getElementById("taExcludedKeywords");
+    var excludedKeywords = taExcludedKeywords.value.split("\n");
+    for (child of messagesList.children) {
+        // For every excluded keyword in the list, hide the message if it contains the keyword
+        for (keyword of excludedKeywords) {
+             // If keyword is empty then continue
+            if (keyword == "") {
+                continue;
+            }
+            if (child.innerHTML.includes(keyword)) {
+                child.style.display = "none";
+                break;
+            }
         }
-    );
+    }
+}
+function applyTextFilterToMessages() {
+    // Get the filter text from iTextFilter and save it in a variable
+    var iTextFilter = document.getElementById("iTextFilter");
+    var messagesList = document.querySelector("#messages-list");
+    var textFilter = iTextFilter.value;
+    if(textFilter == "") {
+        for (child of messagesList.children) {
+            child.style.display = "block";
+        }
+    }
+    for (child of messagesList.children) {
+        // Hide all messages that do not contain the filter text
+        if (!child.innerHTML.includes(textFilter)) {
+            child.style.display = "none";
+        }
+    }
+}
+function update_messages() {
     pywebview.api.get_messages().then(
         function (messages) {
             // Clear messages-list
@@ -64,5 +118,21 @@ function update_messages() {
         }
     );
 }
+var lastHash = "";
+function updateTextOut() {
+    pywebview.api.get_avatars().then(
+        function (avatars) {
+            var textOut = document.querySelector("#textOut");
+            var DTO = JSON.parse(avatars);
+            if(DTO.hash != lastHash) {
+                addLocalMessage("Hash changed");
+                lastHash = DTO.hash;
+                textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
+            }
+            // Parse avatars as json
+        }
+    );
+}
+setInterval(updateTextOut, 500);
 // Call update_messages every second
 setInterval(update_messages, 1000);

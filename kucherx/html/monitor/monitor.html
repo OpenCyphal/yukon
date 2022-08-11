@@ -8,8 +8,8 @@
     <script src="autosize.js"></script>
     <script src="../messages/messages.js"></script>
     <script src="monitor.js"></script>
-    <script src="klay.js"></script>
-    <script src="klay-layout.js"></script>
+    <script src="klay/klay.js"></script>
+    <script src="klay/klay-layout.js"></script>
     <script src="tabs.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.22.1/cytoscape.min.js"
         integrity="sha512-KTe+SDYh8ExHDmrSZuoKkFoFQDSU3ywInRi9SkE0ENpJu72GS+UAxd/l0CAXF8DaGGGOLKd7wKRoa7mEirvIpg=="
@@ -37,20 +37,31 @@
                     <div id="cy"></div>
                 </div>
                 <div id="split-right">
-                    <div id="options">
-                        <div class="option">
-                            <label for="hide-yakut">Hide Yakut</label>
-                            <input type="checkbox" id="hide-yakut">
+                    <div class="options-panel">
+                        <div id="options">
+                            <div class="option">
+                                <label for="hide-yakut">Hide Yakut</label>
+                                <input type="checkbox" id="hide-yakut">
+                            </div>
+                            <div class="option">
+                                <label for="cbAutoscroll">Autoscroll</label>
+                                <input type="checkbox" id="cbAutoscroll">
+                            </div>
+                            <div class="option">
+                                <label for="iAutoscrollFilter">Autoscroll filter</label>
+                                <input type="text" id="iAutoscrollFilter">
+                            </div>
+                            <div class="option">
+                                <label for="iTextFilter">Text filter</label>
+                                <input type="text" id="iTextFilter">
+                            </div>
                         </div>
-                        <div class="option">
-                            <label for="cbAutoscroll">Autoscroll</label>
-                            <input type="checkbox" id="cbAutoscroll">
-                        </div>
-                        <div class="option">
-                            <label for="iAutoscrollFilter">Autoscroll filter</label>
-                            <input type="text" id="iAutoscrollFilter">
+                        <div class="excluded-keywords">
+                            <label for="taExcludedKeywords">Excluded keywords (one per line)</label>
+                            <textarea name="exclusions" id="taExcludedKeywords" cols="60" rows="10"></textarea>
                         </div>
                     </div>
+
                     <div id="messages">
                         <p id="messages_title">Messages</p>
                         <div id="messages-list">
@@ -73,7 +84,7 @@
             </div>
         </div>
         <div class="c-tab">
-            <p id="textOut"></p>
+            <textarea id="textOut"></textarea>
         </div>
         <div class="c-tab">
             <table id="avatars_table">
