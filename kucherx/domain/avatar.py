@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+import typing
 from typing import Optional, Any, Callable
 
 import pycyphal
@@ -11,6 +12,7 @@ from kucherx.domain.port_set import PortSet
 from kucherx.domain._expand_subjects import expand_subjects, expand_mask
 from kucherx.domain.iface import Iface
 import uavcan
+from kucherx.services.value_utils import _simplify_value, explode_value
 
 logger = logging.getLogger()
 logger.setLevel("ERROR")
@@ -20,7 +22,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         iface: Iface,
-        node_id: Optional[int],
+        node_id: int,
         info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
         previous_port_list_hash: Optional[int] = None,
     ) -> None:
@@ -32,6 +34,11 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self._heartbeat: Optional[uavcan.node.Heartbeat_1_0] = None
         self._iface = iface
         self._info = info
+        self._register_set: typing.Set[str] = set([])
+        self.register_values: typing.Dict[str, str] = {}
+        self.register_exploded_values: typing.Dict[str, typing.Dict[str, Any]] = {}
+        self.access_requests_names_by_transfer_id: typing.Dict[int, str] = {}
+        self._last_register_request_name = ""
         self._num_info_requests = 0
 
         self._ts_activity = -math.inf
@@ -41,8 +48,14 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
         self._ports = PortSet()
 
-        self._dispatch: dict[Any | tuple[Any, ServiceDataSpecifier.Role], Callable[[float, Any], None],] = {
+        self._dispatch: dict[
+            Any | tuple[Any, ServiceDataSpecifier.Role],
+            Callable[[float, Any], None] | Callable[[float, Any, int], None],
+        ] = {
             (uavcan.node.GetInfo_1_0, ServiceDataSpecifier.Role.RESPONSE): self._on_info_response,
+            (uavcan.register.List_1, ServiceDataSpecifier.Role.RESPONSE): self._on_list_response,
+            (uavcan.register.Access_1, ServiceDataSpecifier.Role.REQUEST): self._on_access_request,
+            (uavcan.register.Access_1, ServiceDataSpecifier.Role.RESPONSE): self._on_access_response,
             uavcan.node.port.List_0_1: self._on_port_list,
             uavcan.node.Heartbeat_1_0: self._on_heartbeat,
         }
@@ -50,6 +63,11 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self._iface.add_standard_subscription(uavcan.node.Heartbeat_1_0)
         self._iface.add_standard_subscription(uavcan.node.port.List_0_1)
         self._iface.add_trace_handler(self._on_trace)
+
+    # A getter for the node ID.
+    @property
+    def node_id(self) -> int:
+        return self._node_id
 
     def _restart(self) -> None:
         self._info = None
@@ -59,10 +77,40 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     def _on_info_response(self, ts: float, obj: Any) -> None:
         import uavcan.node
 
-        logger.info("%r: Received node info", self)
         assert isinstance(obj, uavcan.node.GetInfo_1_0.Response)
         _ = ts
         self._info = obj
+
+    def _on_access_request(self, ts: float, obj: Any, transfer_id: int) -> None:
+        import uavcan.register
+        import uavcan.node
+
+        assert isinstance(obj, uavcan.register.Access_1.Request)
+        _ = ts
+        self.access_requests_names_by_transfer_id[transfer_id] = obj.name.name.tobytes().decode()
+
+    def _on_access_response(self, ts: float, obj: Any, transfer_id: int) -> None:
+        import uavcan.register
+        import uavcan.node
+
+        assert isinstance(obj, uavcan.register.Access_1.Response)
+        _ = ts
+        register_name = self.access_requests_names_by_transfer_id[transfer_id]
+        if register_name == "uavcan.node.unique_id":
+            unstructured_value = obj.value.unstructured
+            array = bytearray(unstructured_value.value)
+            # Convert to hex string
+            self.register_values[register_name] = "0x" + "".join("{:02x}".format(c) for c in array)
+        exploded_value = explode_value(obj.value)
+        self.register_exploded_values[register_name] = exploded_value
+        self.register_values[register_name] = str(_simplify_value(obj.value))
+
+    def _on_list_response(self, ts: float, obj: Any) -> None:
+        import uavcan.node
+
+        assert isinstance(obj, uavcan.register.List_1.Response)
+        _ = ts
+        self._register_set.add(obj.name.name.tobytes().decode())
 
     def _on_port_list(self, ts: float, obj: Any) -> None:
         import uavcan.node.port
@@ -109,7 +157,10 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     def _on_trace(self, ts: Timestamp, tr: AlienTransfer) -> None:
         from pycyphal.dsdl import get_fixed_port_id
 
-        own = tr.metadata.session_specifier.source_node_id == self._node_id
+        own = (
+            tr.metadata.session_specifier.source_node_id == self._node_id
+            or tr.metadata.session_specifier.destination_node_id == self._node_id
+        )
         if not own:
             return
         ds = tr.metadata.session_specifier.data_specifier
@@ -125,17 +176,28 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                     and ds.role == role
                     and ds.service_id == get_fixed_port_id(type)
                 ):
+                    if handler == self._on_access_request:
+                        logger.info("%r: Received access request", self)
                     rr = getattr(type, role.name.capitalize())
                     deserialized_object = pycyphal.dsdl.deserialize(rr, tr.fragmented_payload)
                     logger.debug("%r: Service snoop: %r from %r", self, deserialized_object, tr)
                     if deserialized_object is not None:
-                        handler(float(ts.monotonic), deserialized_object)
+                        # These handlers take an additional argument, the transfer ID.
+                        # They use it to connect the request to the response.
+                        # The name of the requested register is stored in the access_requests_names_by_transfer_id
+                        # Then when the response arrives, we can use the transfer ID to find the name of the register
+                        # using the transfer ID.
+                        if handler == self._on_access_response or handler == self._on_access_request:
+                            handler(float(ts.monotonic), deserialized_object, tr.metadata.transfer_id)  # type: ignore
+                        else:
+                            # The other handlers don't take a transfer ID.
+                            handler(float(ts.monotonic), deserialized_object)  # type: ignore
             elif (fpid := get_fixed_port_id(type)) is not None:
                 if isinstance(ds, MessageDataSpecifier) and ds.subject_id == fpid:
                     deserialized_object = pycyphal.dsdl.deserialize(type, tr.fragmented_payload)
                     logger.debug("%r: Message snoop: %r from %r", self, deserialized_object, tr)
                     if deserialized_object is not None:
-                        handler(float(ts.monotonic), deserialized_object)
+                        handler(float(ts.monotonic), deserialized_object)  # type: ignore
             else:
                 assert False
 
@@ -158,7 +220,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         )
 
     def to_builtin(self) -> Any:
-        json_object: dict[str, dict[str, list[int]] | int | None] = {
+        json_object: Any = {
             "node_id": self._node_id,
             "hash": self.__hash__(),
             "name": self._info.name.tobytes().decode() if self._info is not None else None,
@@ -168,6 +230,10 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                 "cln": list(self._ports.cln),
                 "srv": list(self._ports.srv),
             },
+            "registers": list(self._register_set),
+            "registers_values": self.register_values,
+            "registers_hash": hash(frozenset(self.register_values.items())),
+            "registers_exploded_values": self.register_exploded_values,
         }
         return json_object
 

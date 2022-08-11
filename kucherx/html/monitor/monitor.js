@@ -160,13 +160,97 @@ try {
                 last_hashes.push(current_avatars[i].hash);
             }
         }
+        function update_register_value(register_name, register_value, node_id) {
+            pywebview.api.update_register_value(register_name, register_value, node_id);
+        }
+        function create_registers_table() {
+            // Clear the table
+            var registers_table = document.querySelector('#registers_table')
+            registers_table.innerHTML = '';
+            var registers_table_body = document.createElement('tbody');
+            registers_table.appendChild(registers_table_body);
+            var registers_table_header = document.createElement('thead');
+            registers_table.appendChild(registers_table_header);
+            // Add the table headers
+            var table_header_row = document.createElement('tr');
+            var empty_table_header_row_cell = document.createElement('th');
+            table_header_row.appendChild(empty_table_header_row_cell);
+            current_avatars.forEach(function (avatar) {
+                var table_header_cell = document.createElement('th');
+                table_header_cell.innerHTML = avatar.node_id;
+                table_header_row.appendChild(table_header_cell);
+            });
+            registers_table_header.appendChild(table_header_row);
+            // Combine all register names from avatar.registers into an array
+            var register_names = [];
+            current_avatars.forEach(function (avatar) {
+                avatar.registers.forEach(function (register) {
+                    if (register != "" && !register_names.includes(register)) {
+                        register_names.push(register);
+                    }
+                });
+            });
+            // Add the table row headers for each register name
+            register_names.forEach(function (register_name) {
+                var table_register_row = document.createElement('tr');
+                var table_header_cell = document.createElement('th');
+                table_header_cell.innerHTML = register_name;
+                table_register_row.appendChild(table_header_cell);
+                // Add table cells for each avatar, containing the value of the register from register_name
+                current_avatars.forEach(function (avatar) {
+                    var table_cell = document.createElement('td');
+                    // Set an attribute on td to store the register name
+                    table_cell.setAttribute('id', "register_" + register_name);
+                    var register_value = avatar.registers_values[register_name];
+                    var isAlpha = function(str){
+                      return /^\D+$/i.test(str);
+                    }
+                    if(register_value == "65535") {
+                        register_value = "65535 (not set)"
+                    }
+                    var register_value_as_int = parseInt(register_value);
+                    // Here we check if the register value is a byte string and then we convert it to hex
+                    var is_register_value_number = isAlpha(register_value);
+                    var inputFieldReference = null;
+                    if (is_register_value_number) {
+                        // Create a number input field
+                        var number_input_field = document.createElement('input');
+                        inputFieldReference = number_input_field;
+                        number_input_field.type = 'number';
+                        number_input_field.value = register_value_as_int;
+                        table_cell.appendChild(number_input_field);
+                    } else {
+                        var text_input = document.createElement('input');
+                        inputFieldReference = text_input;
+                        text_input.setAttribute('type', 'text');
+                        text_input.value = register_value;
+                        // When the text input is clicked
+                        table_cell.appendChild(text_input);
+                    }
+                    inputFieldReference.addEventListener('click', function () {
+                        // Make a dialog box to enter the new value
+                        var new_value = prompt("Enter new value for " + register_name + ":", register_value);
+                        // If the user entered a value
+                        if (new_value != null) {
+                            // Update the value in the table
+                            text_input.value = new_value;
+                            // Update the value in the avatar
+                            avatar.registers_values[register_name] = new_value;
+                            // Update the value in the server
+                            update_register_value(register_name, new_value, avatar.node_id, );
+                        }
+                    });
+                    // Create a text input element in the table cell
+
+                    table_register_row.appendChild(table_cell);
+                });
+                registers_table_body.appendChild(table_register_row);
+            });
+        }
         function update_avatars_table() {
             var table_body = document.querySelector('#avatars_table tbody');
             table_body.innerHTML = "";
             // Take every avatar from current_avatars and make a row in the table
-            if (current_avatars.length > 0) {
-                console.log(current_avatars);
-            }
             for (var i = 0; i < current_avatars.length; i++) {
                 var row = table_body.insertRow(i);
                 var node_id = row.insertCell(0);
@@ -204,7 +288,7 @@ try {
                 if (!avatar.ports) { continue; }
                 // Add a node for each pub and connect, then connect avatar to every pub node
                 for (pub of avatar.ports.pub) {
-                    my_graph.add([{ data: { id: pub, "publish_subject": true, label: pub + "\npublisher" } }])
+                    my_graph.add([{ data: { id: pub, "publish_subject": true, label: pub + "\nsubject" } }])
                     available_publishers[pub] = true;
                     my_graph.add([{ data: { source: avatar.node_id, target: pub, "publish_edge": true } }]);
                 }
@@ -212,7 +296,7 @@ try {
                 // client node --> [port] --> server node
                 // publisher node --> [port] --> subscriber node
                 for (srv of avatar.ports.srv) {
-                    my_graph.add([{ data: { id: srv, serve_subject: true, label: srv + "\nserver" } }])
+                    my_graph.add([{ data: { id: srv, serve_subject: true, label: srv + "\nservice" } }])
                     my_graph.add([{ data: { source: srv, target: avatar.node_id, label: "A nice label", "serve_edge": true } }])
                 }
 
@@ -240,14 +324,19 @@ try {
 
 
         function get_and_display_avatars() {
-            update_avatars_table();
             pywebview.api.get_avatars().then(
                 function (avatars) {
-                    current_avatars = JSON.parse(avatars);
-                    update_directed_graph(avatars);
+                    var DTO = JSON.parse(avatars);
+                    current_avatars = DTO.avatars;
+                    update_directed_graph();
                 }
             );
         }
+        function update_tables() {
+            update_avatars_table();
+            create_registers_table();
+        }
+        setInterval(update_tables, 1000)
         setInterval(get_and_display_avatars, 1000);
         create_directed_graph();
         update_directed_graph();
