@@ -22,7 +22,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         iface: Iface,
-        node_id: Optional[int],
+        node_id: int,
         info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
         previous_port_list_hash: Optional[int] = None,
     ) -> None:
