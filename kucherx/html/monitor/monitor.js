@@ -203,7 +203,7 @@ try {
                     table_cell.setAttribute('id', "register_" + register_name);
                     var register_value = avatar.registers_values[register_name];
                     var isAlpha = function(str){
-                      return /^[A-Z]+$/i.test(str);
+                      return /^\D+$/i.test(str);
                     }
                     if(register_value == "65535") {
                         register_value = "65535 (not set)"
