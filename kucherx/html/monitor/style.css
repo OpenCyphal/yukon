@@ -1,7 +1,7 @@
 
 #messages-list {
     overflow-y: scroll;
-    height: calc(100vh - 100px);
+    height: calc(74vh);
 }
 #messages-list textarea {
     display: block;
@@ -64,6 +64,8 @@ textarea#textOut {
 .option {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    grid-gap: 0.5em;
+    margin-top: 0.5em;
 }
 
 .excluded-keywords {
@@ -71,4 +73,12 @@ textarea#textOut {
     flex-direction: column;
     justify-content: space-between;
     align-items: flex-start;
+}
+
+#split-right {
+    padding: 0.5em;
+}
+
+#taExcludedKeywords {
+    height: 100%;
 }

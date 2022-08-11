@@ -56,7 +56,7 @@ def cyphal_worker_thread(state: GodState) -> None:
                     request.name.name = register_update.register_name
                     request.value = register_update.value
                     # We don't need the response here because it is snooped by an avatar anyway
-                    client.call(request)
+                    asyncio.create_task(client.call(request))
         except Exception as e:
             logger.exception(e)
             raise e

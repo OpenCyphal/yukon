@@ -94,7 +94,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             self.register_values[register_name] = "0x" + "".join(
                 "{:02x}".format(c) for c in array
             )
-        self.register_exploded_values[register_name] = explode_value(obj.value)
+        exploded_value = explode_value(obj.value)
+        self.register_exploded_values[register_name] = exploded_value
         self.register_values[register_name] = str(_simplify_value(obj.value))
 
     def _on_list_response(self, ts: float, obj: Any) -> None:

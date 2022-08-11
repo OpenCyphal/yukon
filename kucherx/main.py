@@ -1,3 +1,4 @@
+import copy
 import threading
 import typing
 from queue import Empty
@@ -28,6 +29,7 @@ from kucherx.services.terminate_handler import make_terminate_handler
 from kucherx.domain.god_state import GodState
 from kucherx.high_dpi_handler import make_process_dpi_aware
 from kucherx.sentry_setup import setup_sentry
+from kucherx.services.value_utils import unexplode_value
 
 setup_sentry(sentry_sdk)
 paths = sys.path
@@ -75,8 +77,20 @@ class Api:
         file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
         _ = file_path
 
-    def update_register_value(self, register_name, register_value, node_id) -> None:
-        state.queues.update_registers.put(UpdateRegisterRequest(register_name, register_value, node_id))
+    def update_register_value(self, register_name, register_value: str, node_id) -> None:
+        # Find the avatar which has the node_id
+        for avatar in state.avatar.avatars_by_node_id.values():
+            if avatar._node_id == node_id:
+                exploded_value = avatar.register_exploded_values[register_name]
+                break
+        new_exploded_value = copy.copy(exploded_value)
+        # Check if register_value can be converted to an int, is purely numeric
+        if register_value.isnumeric():
+            new_exploded_value[list(new_exploded_value.keys())[0]]["value"] = int(register_value)
+        else:
+            new_exploded_value[list(new_exploded_value.keys())[0]]["value"] = register_value
+        new_value: uavcan.register.Value_1 = unexplode_value(new_exploded_value)
+        state.queues.update_registers.put(UpdateRegisterRequest(register_name, new_value, node_id))
 
     def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
         state.queues.messages.put("Initiated attach transport")

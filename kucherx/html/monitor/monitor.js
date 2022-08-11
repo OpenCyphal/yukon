@@ -237,7 +237,7 @@ try {
                             // Update the value in the avatar
                             avatar.registers_values[register_name] = new_value;
                             // Update the value in the server
-                            update_register_value(register_name, register_value, avatar.node_id, );
+                            update_register_value(register_name, new_value, avatar.node_id, );
                         }
                     });
                     // Create a text input element in the table cell
@@ -251,9 +251,6 @@ try {
             var table_body = document.querySelector('#avatars_table tbody');
             table_body.innerHTML = "";
             // Take every avatar from current_avatars and make a row in the table
-            if (current_avatars.length > 0) {
-                console.log(current_avatars);
-            }
             for (var i = 0; i < current_avatars.length; i++) {
                 var row = table_body.insertRow(i);
                 var node_id = row.insertCell(0);

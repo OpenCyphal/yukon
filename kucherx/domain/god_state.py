@@ -15,7 +15,6 @@ from pycyphal.transport.redundant import RedundantTransport
 
 from kucherx.domain.allocation_request import AllocationRequest
 from kucherx.domain.HWID import HWID
-from kucherx.domain import allocation_request
 from kucherx.domain.attach_transport_request import AttachTransportRequest
 from kucherx.domain.UID import UID
 from kucherx.domain.avatar import Avatar

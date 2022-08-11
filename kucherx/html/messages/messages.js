@@ -2,7 +2,19 @@ function addLocalMessage(message) {
     pywebview.api.add_local_message(message)
 }
 window.addEventListener('pywebviewready', function () {
-    // Run applyTextFilterToMessages() when there is a change in the filter text after the input has stopped for 0.5 seconds
+    btnTextOutput.addEventListener('click', function () {
+        var textOut = document.querySelector("#textOut");
+        autosize.update(textOut);
+    });
+    var tabTextOut = document.querySelector("#tabTextOut");
+    window.addEventListener('mouseup', function () {
+        if (tabTextOut.classList.contains("is-active")) {
+            var textOut = document.querySelector("#textOut");
+            autosize.update(textOut);
+        }
+    });
+    // Run applyTextFilterToMessages() when there is a change in the filter text after the input has
+    // stopped for 0.5 seconds
     var iTextFilter = document.getElementById("iTextFilter");
     var taExcludedKeywords = document.getElementById("taExcludedKeywords");
     var timer = null;
