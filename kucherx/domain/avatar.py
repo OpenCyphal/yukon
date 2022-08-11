@@ -1,6 +1,7 @@
 import json
 import logging
 import math
+import typing
 from typing import Optional, Any, Callable
 
 import pycyphal
@@ -19,11 +20,11 @@ logger.setLevel("ERROR")
 
 class Avatar:  # pylint: disable=too-many-instance-attributes
     def __init__(
-            self,
-            iface: Iface,
-            node_id: Optional[int],
-            info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
-            previous_port_list_hash: Optional[int] = None,
+        self,
+        iface: Iface,
+        node_id: Optional[int],
+        info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
+        previous_port_list_hash: Optional[int] = None,
     ) -> None:
         import uavcan.node
         import uavcan.node.port
@@ -33,10 +34,10 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self._heartbeat: Optional[uavcan.node.Heartbeat_1_0] = None
         self._iface = iface
         self._info = info
-        self._register_set = set([])
-        self.register_values = {}
-        self.register_exploded_values = {}
-        self.access_requests_names_by_transfer_id = {}
+        self._register_set: typing.Set[str] = set([])
+        self.register_values: typing.Dict[str, str] = {}
+        self.register_exploded_values: typing.Dict[str, typing.Dict[str, Any]] = {}
+        self.access_requests_names_by_transfer_id: typing.Dict[int, str] = {}
         self._last_register_request_name = ""
         self._num_info_requests = 0
 
@@ -47,7 +48,10 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
         self._ports = PortSet()
 
-        self._dispatch: dict[Any | tuple[Any, ServiceDataSpecifier.Role], Callable[[float, Any], None],] = {
+        self._dispatch: dict[
+            Any | tuple[Any, ServiceDataSpecifier.Role],
+            Callable[[float, Any], None] | Callable[[float, Any, int], None],
+        ] = {
             (uavcan.node.GetInfo_1_0, ServiceDataSpecifier.Role.RESPONSE): self._on_info_response,
             (uavcan.register.List_1, ServiceDataSpecifier.Role.RESPONSE): self._on_list_response,
             (uavcan.register.Access_1, ServiceDataSpecifier.Role.REQUEST): self._on_access_request,
@@ -59,6 +63,11 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self._iface.add_standard_subscription(uavcan.node.Heartbeat_1_0)
         self._iface.add_standard_subscription(uavcan.node.port.List_0_1)
         self._iface.add_trace_handler(self._on_trace)
+
+    # A getter for the node ID.
+    @property
+    def node_id(self) -> int:
+        return self._node_id
 
     def _restart(self) -> None:
         self._info = None
@@ -72,7 +81,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         _ = ts
         self._info = obj
 
-    def _on_access_request(self, ts: float, obj: Any, transfer_id) -> None:
+    def _on_access_request(self, ts: float, obj: Any, transfer_id: int) -> None:
         import uavcan.register
         import uavcan.node
 
@@ -80,7 +89,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         _ = ts
         self.access_requests_names_by_transfer_id[transfer_id] = obj.name.name.tobytes().decode()
 
-    def _on_access_response(self, ts: float, obj: Any, transfer_id) -> None:
+    def _on_access_response(self, ts: float, obj: Any, transfer_id: int) -> None:
         import uavcan.register
         import uavcan.node
 
@@ -91,9 +100,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             unstructured_value = obj.value.unstructured
             array = bytearray(unstructured_value.value)
             # Convert to hex string
-            self.register_values[register_name] = "0x" + "".join(
-                "{:02x}".format(c) for c in array
-            )
+            self.register_values[register_name] = "0x" + "".join("{:02x}".format(c) for c in array)
         exploded_value = explode_value(obj.value)
         self.register_exploded_values[register_name] = exploded_value
         self.register_values[register_name] = str(_simplify_value(obj.value))
@@ -130,7 +137,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
         # Invalidate the node info if the uptime goes backwards or if we received a heartbeat after a long pause.
         restart = self._heartbeat and (
-                (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
+            (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
         )
         if restart:
             logger.info("%r: Restart detected: %r", self, obj)
@@ -150,8 +157,10 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     def _on_trace(self, ts: Timestamp, tr: AlienTransfer) -> None:
         from pycyphal.dsdl import get_fixed_port_id
 
-        own = tr.metadata.session_specifier.source_node_id == self._node_id \
-              or tr.metadata.session_specifier.destination_node_id == self._node_id
+        own = (
+            tr.metadata.session_specifier.source_node_id == self._node_id
+            or tr.metadata.session_specifier.destination_node_id == self._node_id
+        )
         if not own:
             return
         ds = tr.metadata.session_specifier.data_specifier
@@ -163,9 +172,9 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                 type, role = type
                 assert isinstance(role, ServiceDataSpecifier.Role)
                 if (
-                        isinstance(ds, ServiceDataSpecifier)
-                        and ds.role == role
-                        and ds.service_id == get_fixed_port_id(type)
+                    isinstance(ds, ServiceDataSpecifier)
+                    and ds.role == role
+                    and ds.service_id == get_fixed_port_id(type)
                 ):
                     if handler == self._on_access_request:
                         logger.info("%r: Received access request", self)
@@ -173,18 +182,22 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                     deserialized_object = pycyphal.dsdl.deserialize(rr, tr.fragmented_payload)
                     logger.debug("%r: Service snoop: %r from %r", self, deserialized_object, tr)
                     if deserialized_object is not None:
-                        if handler == self._on_access_response:
-                            handler(float(ts.monotonic), deserialized_object, tr.metadata.transfer_id)
-                        elif handler == self._on_access_request:
-                            handler(float(ts.monotonic), deserialized_object, tr.metadata.transfer_id)
+                        # These handlers take an additional argument, the transfer ID.
+                        # They use it to connect the request to the response.
+                        # The name of the requested register is stored in the access_requests_names_by_transfer_id
+                        # Then when the response arrives, we can use the transfer ID to find the name of the register
+                        # using the transfer ID.
+                        if handler == self._on_access_response or handler == self._on_access_request:
+                            handler(float(ts.monotonic), deserialized_object, tr.metadata.transfer_id)  # type: ignore
                         else:
-                            handler(float(ts.monotonic), deserialized_object)
+                            # The other handlers don't take a transfer ID.
+                            handler(float(ts.monotonic), deserialized_object)  # type: ignore
             elif (fpid := get_fixed_port_id(type)) is not None:
                 if isinstance(ds, MessageDataSpecifier) and ds.subject_id == fpid:
                     deserialized_object = pycyphal.dsdl.deserialize(type, tr.fragmented_payload)
                     logger.debug("%r: Message snoop: %r from %r", self, deserialized_object, tr)
                     if deserialized_object is not None:
-                        handler(float(ts.monotonic), deserialized_object)
+                        handler(float(ts.monotonic), deserialized_object)  # type: ignore
             else:
                 assert False
 
@@ -207,7 +220,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         )
 
     def to_builtin(self) -> Any:
-        json_object: dict[str, dict[str, list[int]] | int | None] = {
+        json_object: Any = {
             "node_id": self._node_id,
             "hash": self.__hash__(),
             "name": self._info.name.tobytes().decode() if self._info is not None else None,
@@ -227,11 +240,11 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     def __hash__(self) -> int:
         # Create a hash from __ports.pub, __ports.sub, __ports.cln and __ports.srv
         return (
-                hash(frozenset(self._ports.pub))
-                ^ hash(frozenset(self._ports.sub))
-                ^ hash(frozenset(self._ports.cln))
-                ^ hash(frozenset(self._ports.srv))
-                ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
+            hash(frozenset(self._ports.pub))
+            ^ hash(frozenset(self._ports.sub))
+            ^ hash(frozenset(self._ports.cln))
+            ^ hash(frozenset(self._ports.srv))
+            ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
         )
 
     def __repr__(self) -> str:

@@ -3,9 +3,10 @@
 # Author: Pavel Kirienko <pavel@opencyphal.org>
 from typing import Any, Optional
 import pycyphal
+from pycyphal.application.register import Value, Empty, Integer8, Natural8, Integer32, String, Unstructured
 
 
-def unexplode_value(xpl: Any, prototype: Optional["Value"] = None) -> Optional["Value"]:
+def unexplode_value(xpl: Any, prototype: Optional[Value] = None) -> Optional["Value"]:
     """
     Reverse the effect of :func:`explode`.
     Returns None if the exploded form is invalid or not applicable to the prototype.

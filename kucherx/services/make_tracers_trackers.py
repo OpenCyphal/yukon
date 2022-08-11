@@ -20,10 +20,10 @@ from uavcan.register import List_1
 
 
 def make_handler_for_node_detected(
-        state: GodState, iface: Iface
+    state: GodState, iface: Iface
 ) -> typing.Callable[[int, typing.Optional[Entry], typing.Optional[Entry]], None]:
     def handle_getinfo_handler_format(
-            node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
+        node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
     ) -> None:
         logger.info("Some hearbeat was probably received")
         if next_entry and next_entry.info is None:
@@ -40,9 +40,9 @@ def make_handler_for_node_detected(
         is_new_or_updated_entry = next_entry is not None
         if is_new_or_updated_entry:
             current_avatar = state.avatar.avatars_by_node_id[node_id]
-            is_triggered_by_getinfo_request = next_entry.info is not None
+            is_triggered_by_getinfo_request = next_entry.info is not None  # type: ignore
             if is_triggered_by_getinfo_request:
-                logger.info(f"Node with id {node_id} has info: {next_entry.info}")
+                logger.info(f"Node with id {node_id} has info: {next_entry.info}")  # type: ignore
             else:
                 getinfo_client = state.cyphal.local_node.make_client(uavcan.node.GetInfo_1_0, node_id)
                 getinfo_request = uavcan.node.GetInfo_1_0.Request()
@@ -53,7 +53,7 @@ def make_handler_for_node_detected(
                 else:
                     logger.info(f"Node with id {node_id} has no info")
 
-                async def get_register_value(register_name: str) -> None:
+                async def get_register_value(register_name: str) -> typing.Any:
                     service_client = state.cyphal.local_node.make_client(uavcan.register.Access_1_0, node_id)
                     service_client.response_timeout = 0.5
                     msg = uavcan.register.Access_1_0.Request()
@@ -61,7 +61,7 @@ def make_handler_for_node_detected(
                     return await service_client.call(msg)
 
                 async def get_register_names() -> None:
-                    register_values = {}
+                    register_values: typing.Any = {}
                     counter = 0
                     list_client = state.cyphal.local_node.make_client(List_1, node_id)
                     while True:
@@ -70,10 +70,12 @@ def make_handler_for_node_detected(
                         # I am not using the result here because it gets snooped by the avatar
                         register_name = result.name.name.tobytes().decode()
                         if register_name != "" and len(register_name) > 1:
-                            obj = (await get_register_value(register_name))[0]
-                            register_values[register_name] = str(_simplify_value(obj.value))
-                            counter += 1
-                            await asyncio.sleep(0.02)
+                            response = await get_register_value(register_name)
+                            if response:
+                                obj = response[0]
+                                register_values[register_name] = str(_simplify_value(obj.value))
+                                counter += 1
+                                await asyncio.sleep(0.02)
                         else:
                             break
                     new_avatar.register_values = register_values

@@ -77,10 +77,10 @@ class Api:
         file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
         _ = file_path
 
-    def update_register_value(self, register_name, register_value: str, node_id) -> None:
+    def update_register_value(self, register_name: str, register_value: str, node_id: int) -> None:
         # Find the avatar which has the node_id
         for avatar in state.avatar.avatars_by_node_id.values():
-            if avatar._node_id == node_id:
+            if avatar.node_id == node_id:
                 exploded_value = avatar.register_exploded_values[register_name]
                 break
         new_exploded_value = copy.copy(exploded_value)
@@ -132,10 +132,7 @@ class Api:
 
     def get_avatars(self) -> str:
         avatar_list = [avatar.to_builtin() for avatar in list(state.avatar.avatars_by_node_id.values())]
-        avatar_dto = {
-            "avatars": avatar_list,
-            "hash": hash(json.dumps(avatar_list, sort_keys=True))
-        }
+        avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
         if state.avatar.hide_yakut_avatar:
             for avatar in avatar_list:
                 amount_of_subscriptions = len(avatar["ports"]["sub"])
