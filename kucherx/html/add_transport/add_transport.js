@@ -1,4 +1,5 @@
 window.addEventListener('pywebviewready', function () {
+    cbShowTransportCombobox = document.getElementById('cbShowTransportCombobox');
     var messagesList = document.querySelector("#messages-list");
     let messagesListWidth = messagesList.getBoundingClientRect().width
     function displayOneMessage(message)
@@ -45,34 +46,47 @@ window.addEventListener('pywebviewready', function () {
         iDataRate.classList.remove("is-danger");
         iNodeId.classList.remove("is-danger");
         var isFormCorrect = true;
-        if(iTransport.value == "" || !iTransport.value.includes(":")) {
+        if(!cbShowTransportCombobox.checked) {
+            if(iTransport.value == "" || !iTransport.value.includes(":")) {
             iTransport.classList.add("is-danger");
+            displayOneMessage("Transport shouldn't be empty and should be in the format <slcan|socketcan>:<port>");
             isFormCorrect = false;
-        }
-        var transportMustContain = ["socketcan", "slcan"];
-        var containsAtLeastOne = false;
-        for (transportType of transportMustContain) {
-            if (iTransport.value.includes(transportType)) {
-                containsAtLeastOne = true;
             }
-        }
-        if(!containsAtLeastOne) {
-            iTransport.classList.add("is-danger");
+            var transportMustContain = ["socketcan", "slcan"];
+            var containsAtLeastOne = false;
+            for (transportType of transportMustContain) {
+                if (iTransport.value.includes(transportType)) {
+                    containsAtLeastOne = true;
+                }
+            }
+            if(!containsAtLeastOne) {
+                displayOneMessage("Transport type should be either slcan or socketcan");
+                iTransport.classList.add("is-danger");
+                isFormCorrect = false;
+            }
+        } else if (sTransport.value == "") {
+            sTransport.classList.add("is-danger");
+            displayOneMessage("Transport shouldn't be empty");
             isFormCorrect = false;
         }
+
         if (iMtu.value == "" || isNaN(iMtu.value)) {
+            displayOneMessage("MTU should be a number");
             iMtu.classList.add("is-danger");
             isFormCorrect = false;
         }
         if (iArbRate.value == "" || isNaN(iArbRate.value)) {
+            displayOneMessage("Arbitration rate should be a number");
             iArbRate.classList.add("is-danger");
             isFormCorrect = false;
         }
         if (iDataRate.value == "" || isNaN(iDataRate.value)) {
+            displayOneMessage("Data rate should be a number");
             iDataRate.classList.add("is-danger");
             isFormCorrect = false;
         }
         if (iNodeId.value == "" || isNaN(iNodeId.value) || iNodeId.value < 0 || iNodeId.value > 128) {
+            displayOneMessage("Node ID should be a number between 0 and 128");
             iNodeId.classList.add("is-danger");
             isFormCorrect = false;
         }
@@ -99,30 +113,11 @@ window.addEventListener('pywebviewready', function () {
             }
         }
     );
-    // Add a function to verify that valid values were entered into the field of the transport-selection-form
-    function validateForm() {
-        addLocalMessage("Validating form...");
-        // save into variables all the values of the fields of the form
-        var sTransportValue = document.getElementById("sTransport").value;
-        var iTransportValue = document.getElementById("iTransport").value;
-        var iMtuValue = document.getElementById("iMtu").value;
-        var iArbRateValue = document.getElementById("iArbRate").value;
-        var iDataRateValue = document.getElementById("iDataRate").value;
-        var iNodeIdValue = document.getElementById("iNodeId").value;
-        if (sTransportValue.length == 0) {
-            if(iTransportValue == "") {
-                addLocalMessage("Please select a transport");
-                return false;
-            } else if (!iTransportValue.includes(":")) {
-                addLocalMessage("Please enter a valid transport");
-                return false;
-            }
-        }
-    }
+
     btnStart.addEventListener('click', function () {
         if (!verifyInputs()) { return; }
         var port = "";
-        if(!iTransport.value) {
+        if(cbShowTransportCombobox.checked) {
             port = "slcan:" + sTransport.value.split(" ")[0];
         } else {
             port = iTransport.value;
@@ -156,4 +151,14 @@ window.addEventListener('pywebviewready', function () {
     });
 
     setTimeout(fetchAndDisplayMessages, 1000);
+
+    cbShowTransportCombobox.addEventListener('change', function () {
+        if (cbShowTransportCombobox.checked) {
+            divTypeTransport.style.display = "none";
+            divSelectTransport.style.display = "block";
+        } else {
+            divTypeTransport.style.display = "block";
+            divSelectTransport.style.display = "none";
+        }
+    });
 });

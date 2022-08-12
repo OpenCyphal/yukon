@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="transport.css">
     <script src="add_transport.js"></script>
     <script src="../autosize.js"></script>
+    <link rel="stylesheet" href="../switch-slider/switch-slider.css">
 </head>
 <body>
     <div class="left-right-panel">
@@ -17,6 +18,13 @@
                 <label for="iTransport">Transport interface</label>
                 <input type="text" id="iTransport" placeholder="Transport" value="socketcan:vcan0">
                 <button id="btnOpenCandumpFile">Open candump file</button>
+            </div>
+            <div class="choice" title="Toggles between typing and choosing the transport interface">
+                <label for="cbShowTransportCombobox">Show selection of ports</label>
+                <label class="switch">
+                  <input type="checkbox" id="cbShowTransportCombobox">
+                  <span class="slider round"></span>
+                </label>
             </div>
             <div id="divSelectTransport">
                 <label for="sTransport">Select transport</label>

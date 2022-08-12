@@ -173,6 +173,8 @@ function updateTextOut() {
         }
     );
 }
-setInterval(updateTextOut, 500);
-// Call update_messages every second
-setInterval(update_messages, 1000);
+window.addEventListener('pywebviewready', function () {
+    setInterval(updateTextOut, 500);
+    // Call update_messages every second
+    setInterval(update_messages, 1000);
+});
