@@ -385,6 +385,10 @@ try {
         btnMonitorTab.addEventListener('click', function () {
             refresh_graph_layout();
         });
+        btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
+        btnAddAnotherTransport.addEventListener('click', function () {
+            pywebview.api.open_add_transport_window();
+        });
     });
 } catch (e) {
     addLocalMessage("Error: " + e);

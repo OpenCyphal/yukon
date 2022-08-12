@@ -161,4 +161,7 @@ window.addEventListener('pywebviewready', function () {
             divSelectTransport.style.display = "none";
         }
     });
+    btnAddTransport.addEventListener('click', function () {
+        pywebview.api.open_add_transport_window();
+    });
 });
