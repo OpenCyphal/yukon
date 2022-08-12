@@ -16,3 +16,5 @@ importlib_resources; python_version < "3.7"
 proxy_tools
 pywebview[qt]
 nox==2022.8.*
+pyinstaller==5.3.*
+parsimonious
