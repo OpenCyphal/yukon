@@ -18,3 +18,4 @@ pywebview[qt]
 nox==2022.8.*
 pyinstaller==5.3.*
 parsimonious
+python-can==4.*

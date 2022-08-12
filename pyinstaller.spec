@@ -65,12 +65,15 @@ def detect_hidden_imports() -> typing.List[str]:
     return list(out)
 
 
+detected_hidden_imports = detect_hidden_imports()
+detected_hidden_imports += "can.interfaces.slcan" # This didn't actually make it work, importing it randomly did.
+detected_hidden_imports += "can.interfaces.virtual"
 # noinspection PyUnresolvedReferences
 a = Analysis(['kucherx/__main__.py'],
              pathex=paths,
              binaries=[],
              datas=datas,
-             hiddenimports=detect_hidden_imports(),
+             hiddenimports=detected_hidden_imports,
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
