@@ -44,6 +44,9 @@ th, td {
   padding: 8px;
   word-wrap: break-word;
 }
+th button {
+    margin-left: 0.5em;
+}
 
 td input {
   width: 100%;

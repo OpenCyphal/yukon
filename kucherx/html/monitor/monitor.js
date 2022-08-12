@@ -179,6 +179,13 @@ try {
                 var table_header_cell = document.createElement('th');
                 table_header_cell.innerHTML = avatar.node_id;
                 table_header_row.appendChild(table_header_cell);
+                // Add a button to table_header_cell for downloading the table column
+                var button = document.createElement('button');
+                button.innerHTML = 'Download';
+                button.onclick = function () {
+                    addLocalMessage("Download clicked")
+                }
+                table_header_cell.appendChild(button);
             });
             registers_table_header.appendChild(table_header_row);
             // Combine all register names from avatar.registers into an array
@@ -190,6 +197,7 @@ try {
                     }
                 });
             });
+            register_names.sort();
             // Add the table row headers for each register name
             register_names.forEach(function (register_name) {
                 var table_register_row = document.createElement('tr');
