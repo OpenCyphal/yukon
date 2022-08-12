@@ -349,6 +349,20 @@ try {
         btnRefreshGraphLayout.addEventListener('click', function () {
             refresh_graph_layout()
         });
+        var messagesList = document.querySelector("#messages-list");
+        cbShowTimestamp.addEventListener('change', function () {
+            if (cbShowTimestamp.checked) {
+                // For every message, add a timestamp to the message, use a for each loop
+                for (message of messagesList.children) {
+                    message.setAttribute("title", message.getAttribute("timeStampReadable"));
+                }
+            } else {
+                // Remove the timestamp from every message
+                for (message of messagesList.children) {
+                    message.removeAttribute("title");
+                }
+            }
+        });
         // if hide-yakut is checked then send a message to the server to hide the yakut
         var hideYakut = document.getElementById('hide-yakut');
         hideYakut.addEventListener('change', function () {

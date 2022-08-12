@@ -48,6 +48,7 @@ def start_threads(_state: GodState) -> None:
 
 
 state: GodState = GodState()
+
 messages_publisher = MessagesPublisher(state)
 messages_publisher.setLevel(logging.NOTSET)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -149,21 +150,24 @@ class Api:
         if add_transport_window is not None:
             add_transport_window.hide()
 
+    def open_monitor_window(self):
+        assert state.api
+        print("opening monitor window")
+        monitor_window = webview.create_window(
+            "KucherX — monitor", "html/monitor/monitor.html", js_api=state.api, min_size=(600, 450), text_select=True,
+        )
 
+state.api = Api()
 def run_gui_app() -> None:
     global monitor_window, add_transport_window  # pylint: disable: global-statement
     make_process_dpi_aware(logger)
 
-    api = Api()
-    monitor_window = webview.create_window(
-        "KucherX — monitor", "html/monitor/monitor.html", js_api=api, min_size=(600, 450), text_select=True
-    )
     add_transport_window = webview.create_window(
         "KucherX — add transport",
         "html/add_transport/add_transport.html",
-        js_api=api,
-        width=350,
-        height=500,
+        js_api=state.api,
+        width=600,
+        height=520,
         text_select=True,
     )
     # Creating 3 new threads

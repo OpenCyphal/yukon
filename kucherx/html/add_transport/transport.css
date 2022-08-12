@@ -38,3 +38,42 @@ form#transport-selection-form div input[type=number],input[type=text] {
     margin-bottom: 0.5em;
     padding-right: 0;
 }
+
+.left-right-panel {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+#messages {
+    flex-grow: 10;
+}
+#messages-list {
+    overflow-y: scroll;
+    height: calc(74vh);
+}
+#messages-list textarea {
+    display: block;
+    list-style: none;
+    height: auto;
+    width: 99%;
+    resize: none;
+    border: none;
+    height: content-box;
+    overflow-y: hidden;
+}
+#messages-list textarea:focus {
+    box-shadow: 0 0 5px #ccc;
+}
+
+#messages_title {
+    margin-top: 2em;
+}
+.is-danger {
+    background-color: #C35404;
+}
+.is-danger::placeholder {
+  color: #ffffff;
+  opacity: 1;
+}
