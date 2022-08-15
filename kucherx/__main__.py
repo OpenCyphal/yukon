@@ -1,5 +1,6 @@
 import asyncio
 import can.interfaces.slcan
+
 if __name__ == "__main__":
     from kucherx.main import main
 
