@@ -1,4 +1,4 @@
-textarea#warning {
+textarea.warning {
 	width:100%;
 	box-sizing:border-box;
 	direction:rtl;

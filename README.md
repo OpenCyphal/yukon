@@ -12,3 +12,9 @@ KucherX does not aim to be a general-purpose Cyphal diagnostics tool.
 If you need that, consider using [Yakut](https://github.com/OpenCyphal/yakut) instead.
 
 KucherX is compatible with GNU/Linux and Windows.
+
+We can relicense this project under the [MIT license](https://opensource.org/licenses/MIT). When we remove dynamic
+linking to QT. At the moment we are using a webview from QT but there are so many more options to choose from. 
+One of the most obvious choices is to just use a web browser and a server setup. It is also possible to use any of
+the other web window providers from pywebview.
+
