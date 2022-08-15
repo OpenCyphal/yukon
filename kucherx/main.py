@@ -1,34 +1,21 @@
-import copy
 import threading
-import typing
 import webbrowser
-from queue import Empty
 from typing import Optional, Any
 import os
 import sys
 import asyncio
 import logging
 from time import sleep
-import json
 
 import sentry_sdk
-from serial.tools import list_ports
 
-import uavcan
-from kucherx.domain.attach_transport_request import AttachTransportRequest
-from kucherx.domain.avatar import Avatar
-from kucherx.domain.interface import Interface
 from kucherx.domain.queue_quit_object import QueueQuitObject
-from kucherx.domain.update_register_request import UpdateRegisterRequest
-from kucherx.services.enhanced_json_encoder import EnhancedJSONEncoder
 from kucherx.services.messages_publisher import MessagesPublisher
 
 from kucherx.services.terminate_handler import make_terminate_handler
 
 from kucherx.domain.god_state import GodState
-from kucherx.high_dpi_handler import make_process_dpi_aware
 from kucherx.sentry_setup import setup_sentry
-from kucherx.services.value_utils import unexplode_value
 from kucherx.server import server, make_landing
 from kucherx.services.api import Api
 
@@ -54,16 +41,15 @@ def run_gui_app(state: GodState, api: Api) -> None:
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     messages_publisher.setFormatter(formatter)
     logger.addHandler(messages_publisher)
-    make_process_dpi_aware(logger)
     make_landing(state, api)
     # Creating 3 new threads
     start_threads(state)
 
-    def open_webbrowser():
+    def open_webbrowser() -> None:
         webbrowser.open("http://localhost:5000/")
 
     threading.Thread(target=open_webbrowser).start()
-    server.run(host='0.0.0.0', port=5000, debug=True)
+    server.run(host="0.0.0.0", port=5000, debug=True)
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
