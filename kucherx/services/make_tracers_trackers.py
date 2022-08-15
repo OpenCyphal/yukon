@@ -73,9 +73,16 @@ def make_handler_for_node_detected(
                             response = await get_register_value(register_name)
                             if response:
                                 obj = response[0]
-                                register_values[register_name] = str(_simplify_value(obj.value))
                                 counter += 1
-                                await asyncio.sleep(0.02)
+                                if register_name == "uavcan.node.unique_id":
+                                    unstructured_value = obj.value.unstructured
+                                    array = bytearray(unstructured_value.value)
+                                    # Convert to hex string
+                                    hex_string = array.hex(":")
+                                    register_values[register_name] = hex_string
+                                    await asyncio.sleep(0.02)
+                                    continue
+                                register_values[register_name] = str(_simplify_value(obj.value))
                         else:
                             break
                     new_avatar.register_values = register_values

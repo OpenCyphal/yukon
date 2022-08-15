@@ -179,6 +179,13 @@ try {
                 var table_header_cell = document.createElement('th');
                 table_header_cell.innerHTML = avatar.node_id;
                 table_header_row.appendChild(table_header_cell);
+                // Add a button to table_header_cell for downloading the table column
+                var button = document.createElement('button');
+                button.innerHTML = 'Download';
+                button.onclick = function () {
+                    addLocalMessage("Download clicked")
+                }
+                table_header_cell.appendChild(button);
             });
             registers_table_header.appendChild(table_header_row);
             // Combine all register names from avatar.registers into an array
@@ -190,6 +197,7 @@ try {
                     }
                 });
             });
+            register_names.sort();
             // Add the table row headers for each register name
             register_names.forEach(function (register_name) {
                 var table_register_row = document.createElement('tr');
@@ -349,6 +357,20 @@ try {
         btnRefreshGraphLayout.addEventListener('click', function () {
             refresh_graph_layout()
         });
+        var messagesList = document.querySelector("#messages-list");
+        cbShowTimestamp.addEventListener('change', function () {
+            if (cbShowTimestamp.checked) {
+                // For every message, add a timestamp to the message, use a for each loop
+                for (message of messagesList.children) {
+                    message.setAttribute("title", message.getAttribute("timeStampReadable"));
+                }
+            } else {
+                // Remove the timestamp from every message
+                for (message of messagesList.children) {
+                    message.removeAttribute("title");
+                }
+            }
+        });
         // if hide-yakut is checked then send a message to the server to hide the yakut
         var hideYakut = document.getElementById('hide-yakut');
         hideYakut.addEventListener('change', function () {
@@ -362,6 +384,10 @@ try {
         btnMonitorTab = document.getElementById('btnMonitorTab');
         btnMonitorTab.addEventListener('click', function () {
             refresh_graph_layout();
+        });
+        btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
+        btnAddAnotherTransport.addEventListener('click', function () {
+            pywebview.api.open_add_transport_window();
         });
     });
 } catch (e) {

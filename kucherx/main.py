@@ -48,6 +48,7 @@ def start_threads(_state: GodState) -> None:
 
 
 state: GodState = GodState()
+
 messages_publisher = MessagesPublisher(state)
 messages_publisher.setLevel(logging.NOTSET)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -112,6 +113,7 @@ class Api:
                 break
         return json.dumps(state.queues.attach_transport_response.get(), cls=EnhancedJSONEncoder)
 
+    # def save_registers_of_node(self, node_id: int, registers: typing.Dict["str"]) -> None:
     def show_yakut(self) -> None:
         state.avatar.hide_yakut_avatar = False
 
@@ -149,25 +151,37 @@ class Api:
         if add_transport_window is not None:
             add_transport_window.hide()
 
+    def open_add_transport_window(self) -> None:
+        webview.create_window(
+            "KucherX — add transport",
+            "html/add_transport/add_transport.html",
+            js_api=state.api,
+            width=600,
+            height=600,
+            text_select=True,
+        )
+
+    def open_monitor_window(self) -> None:
+        assert state.api
+        print("opening monitor window")
+        webview.create_window(
+            "KucherX — monitor",
+            "html/monitor/monitor.html",
+            js_api=state.api,
+            min_size=(600, 450),
+            text_select=True,
+        )
+
+
+state.api = Api()
+
 
 def run_gui_app() -> None:
-    global monitor_window, add_transport_window  # pylint: disable: global-statement
     make_process_dpi_aware(logger)
 
-    api = Api()
-    monitor_window = webview.create_window(
-        "KucherX — monitor", "html/monitor/monitor.html", js_api=api, min_size=(600, 450), text_select=True
-    )
-    add_transport_window = webview.create_window(
-        "KucherX — add transport",
-        "html/add_transport/add_transport.html",
-        js_api=api,
-        width=350,
-        height=500,
-        text_select=True,
-    )
     # Creating 3 new threads
     start_threads(state)
+    state.api.open_add_transport_window()
     webview.start(gui="qt", debug=True)
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:

@@ -97,3 +97,4 @@ class GodState:
         self.cyphal = CyphalState()
         self.avatar = AvatarState()
         self.allocation = AllocationState()
+        self.api = None

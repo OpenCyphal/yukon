@@ -100,7 +100,9 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             unstructured_value = obj.value.unstructured
             array = bytearray(unstructured_value.value)
             # Convert to hex string
-            self.register_values[register_name] = "0x" + "".join("{:02x}".format(c) for c in array)
+            hex_string = array.hex(":")
+            self.register_values[register_name] = hex_string
+            return
         exploded_value = explode_value(obj.value)
         self.register_exploded_values[register_name] = exploded_value
         self.register_values[register_name] = str(_simplify_value(obj.value))

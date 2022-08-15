@@ -90,6 +90,32 @@ function applyTextFilterToMessages() {
         }
     }
 }
+function timeSince(date) {
+  var seconds = Math.floor(((new Date().getTime()/1000) - date))
+
+  var interval = seconds / 31536000;
+
+  if (interval >= 1) {
+    return Math.floor(interval) + " years";
+  }
+  interval = seconds / 2592000;
+  if (interval >= 1) {
+    return Math.floor(interval) + " months";
+  }
+  interval = seconds / 86400;
+  if (interval >= 1) {
+    return Math.floor(interval) + " days";
+  }
+  interval = seconds / 3600;
+  if (interval >= 1) {
+    return Math.floor(interval) + " hours";
+  }
+  interval = seconds / 60;
+  if (interval >= 1) {
+    return Math.floor(interval) + " minutes";
+  }
+  return Math.floor(seconds) + " seconds";
+}
 function update_messages() {
     pywebview.api.get_messages().then(
         function (messages) {
@@ -107,17 +133,19 @@ function update_messages() {
                 }
             }
             // Add messages to messages-list
-            var d = JSON.parse(messages);
+            var messagesObject = JSON.parse(messages);
             // Make sure that type of d is array
-            console.assert(d instanceof Array);
-            for (el of d) {
+            console.assert(messagesObject instanceof Array);
+            for (el of messagesObject) {
                 var li = document.createElement("textarea");
                 li.innerHTML = el;
                 // Set an attribute on the list element with current timestamp
                 autosize(li);
                 li.setAttribute("timestamp", new Date().getTime());
+                var date1 = new Date();
+                li.setAttribute("timeStampReadable", date1.toLocaleTimeString() + " " + date1.getMilliseconds() + "ms");
                 // If el is the last in d
-                if (d.indexOf(el) == d.length - 1) {
+                if (messagesObject.indexOf(el) == messagesObject.length - 1) {
                     // Scroll to bottom of messages-list
                     var cbAutoscroll = document.getElementById("cbAutoscroll");
                     var iAutoscrollFilter = document.getElementById("iAutoscrollFilter");
@@ -145,6 +173,8 @@ function updateTextOut() {
         }
     );
 }
-setInterval(updateTextOut, 500);
-// Call update_messages every second
-setInterval(update_messages, 1000);
+window.addEventListener('pywebviewready', function () {
+    setInterval(updateTextOut, 500);
+    // Call update_messages every second
+    setInterval(update_messages, 1000);
+});
