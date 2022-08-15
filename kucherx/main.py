@@ -1,6 +1,7 @@
 import copy
 import threading
 import typing
+import webbrowser
 from queue import Empty
 from typing import Optional, Any
 import os
@@ -11,9 +12,7 @@ from time import sleep
 import json
 
 import sentry_sdk
-import webview
 from serial.tools import list_ports
-from webview.window import Window
 
 import uavcan
 from kucherx.domain.attach_transport_request import AttachTransportRequest
@@ -30,6 +29,7 @@ from kucherx.domain.god_state import GodState
 from kucherx.high_dpi_handler import make_process_dpi_aware
 from kucherx.sentry_setup import setup_sentry
 from kucherx.services.value_utils import unexplode_value
+from server import server
 
 setup_sentry(sentry_sdk)
 paths = sys.path
@@ -54,9 +54,6 @@ messages_publisher.setLevel(logging.NOTSET)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 messages_publisher.setFormatter(formatter)
 logger.addHandler(messages_publisher)
-
-monitor_window: Optional[Window]
-add_transport_window: Optional[Window]
 
 
 class Api:
@@ -144,34 +141,6 @@ class Api:
                     avatar_list.remove(avatar)
         return json.dumps(avatar_dto)
 
-    def toggleFullscreen(self) -> None:
-        webview.windows[0].toggle_fullscreen()
-
-    def hide_transport_window(self) -> None:
-        if add_transport_window is not None:
-            add_transport_window.hide()
-
-    def open_add_transport_window(self) -> None:
-        webview.create_window(
-            "KucherX — add transport",
-            "html/add_transport/add_transport.html",
-            js_api=state.api,
-            width=600,
-            height=600,
-            text_select=True,
-        )
-
-    def open_monitor_window(self) -> None:
-        assert state.api
-        print("opening monitor window")
-        webview.create_window(
-            "KucherX — monitor",
-            "html/monitor/monitor.html",
-            js_api=state.api,
-            min_size=(600, 450),
-            text_select=True,
-        )
-
 
 state.api = Api()
 
@@ -181,8 +150,13 @@ def run_gui_app() -> None:
 
     # Creating 3 new threads
     start_threads(state)
-    state.api.open_add_transport_window()
-    webview.start(gui="qt", debug=True)
+
+    def open_webbrowser():
+        webbrowser.open("http://localhost:5000")
+
+    threading.Thread(target=open_webbrowser).start()
+
+    server.run(host='0.0.0.0', port=5000)
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
