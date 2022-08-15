@@ -83,7 +83,6 @@ def make_handler_for_node_detected(
                                     await asyncio.sleep(0.02)
                                     continue
                                 register_values[register_name] = str(_simplify_value(obj.value))
-                                await asyncio.sleep(0.02)
                         else:
                             break
                     new_avatar.register_values = register_values
