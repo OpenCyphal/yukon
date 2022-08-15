@@ -28,10 +28,10 @@ def add_header(response: T_after_request) -> T_after_request:
     return response
 
 
-def make_landing(state: GodState, api: Api) -> None:
+def make_landing_and_bridge(state: GodState, api: Api) -> None:
     @server.route("/", defaults={"path": ""}, methods=["GET", "POST"])
     @server.route("/<path:path>", methods=["POST"])
-    def landing(path: str) -> typing.Any:
+    def landing_and_bridge(path: str) -> typing.Any:
         if path == "":
             logger.info("Was requested the root path")
             return render_template("add_transport/add_transport.html", token=our_token)
@@ -48,7 +48,7 @@ def make_landing(state: GodState, api: Api) -> None:
             found_method = getattr(api, path)
         except Exception as e:  # pylint: disable=broad-except
             print(f"There was an error while trying to find the method {path}")
-            raise e
+            return jsonify({"error": "Didn't find the method"})
         # Print the name of found method
         print(f"Found method {found_method.__name__}")
         if len(_object["arguments"]) != len(signature(found_method).parameters):
@@ -58,7 +58,10 @@ def make_landing(state: GodState, api: Api) -> None:
             for i in range(number_of_missing_arguments):  # pylint: disable=unused-variable
                 _object["arguments"].append("")
         try:
-            return found_method(*(_object["arguments"]))
+            response = found_method(*(_object["arguments"]))
+            if response is None:
+                return "[\"Nice\"]"
+            return response
         except Exception as e:  # pylint: disable=broad-except
             print(e)
             return jsonify({"error": str(e)})

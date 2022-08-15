@@ -16,7 +16,7 @@ from kucherx.services.terminate_handler import make_terminate_handler
 
 from kucherx.domain.god_state import GodState
 from kucherx.sentry_setup import setup_sentry
-from kucherx.server import server, make_landing
+from kucherx.server import server, make_landing_and_bridge
 from kucherx.services.api import Api
 
 setup_sentry(sentry_sdk)
@@ -41,7 +41,7 @@ def run_gui_app(state: GodState, api: Api) -> None:
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     messages_publisher.setFormatter(formatter)
     logger.addHandler(messages_publisher)
-    make_landing(state, api)
+    make_landing_and_bridge(state, api)
 
     # Creating 3 new threads
     start_threads(state)
