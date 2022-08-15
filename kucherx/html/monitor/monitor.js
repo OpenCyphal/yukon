@@ -1,6 +1,7 @@
 try {
-    // Make a callback on the page load event
-    window.addEventListener('pywebviewready', function () {
+    window.addEventListener('zubax_api_ready', function () {
+        // Make a callback on the page load event
+        console.log("monitor ready");
         var current_avatars = [];
         var last_hashes = []
         var my_graph = null;
@@ -211,7 +212,7 @@ try {
                     table_cell.setAttribute('id', "register_" + register_name);
                     var register_value = avatar.registers_values[register_name];
                     var isAlpha = function(str){
-                      return /^\D+$/i.test(str);
+                        return /^\D+$/i.test(str);
                     }
                     if(register_value == "65535") {
                         register_value = "65535 (not set)"

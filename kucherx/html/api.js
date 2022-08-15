@@ -1,6 +1,6 @@
-const zubax_api = {}
-
-const proxy1 = new Proxy(zubax_api, {
+const _zubax_api = {"empty": true}
+console.log("Loading zubax_api");
+const zubax_api = new Proxy(_zubax_api, {
     get(target, prop) {
         console.log("get", prop)
         if(prop == "api_ready") {
@@ -24,4 +24,7 @@ const proxy1 = new Proxy(zubax_api, {
             }
         }
     },
+});
+window.addEventListener('load', function () {
+    window.dispatchEvent( new Event('zubax_api_ready') );
 });

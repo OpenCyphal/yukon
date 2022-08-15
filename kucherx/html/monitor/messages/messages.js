@@ -1,7 +1,7 @@
 function addLocalMessage(message) {
     zubax_api.add_local_message(message)
 }
-window.addEventListener('pywebviewready', function () {
+window.addEventListener('zubax_api_ready', function () {
     btnTextOutput.addEventListener('click', function () {
         var textOut = document.querySelector("#textOut");
         autosize.update(textOut);
@@ -173,7 +173,7 @@ function updateTextOut() {
         }
     );
 }
-window.addEventListener('pywebviewready', function () {
+window.addEventListener('zubax_api_ready', function () {
     setInterval(updateTextOut, 500);
     // Call update_messages every second
     setInterval(update_messages, 1000);

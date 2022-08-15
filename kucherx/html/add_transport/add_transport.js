@@ -1,9 +1,10 @@
-window.addEventListener('pywebviewready', function () {
+// document load event
+window.addEventListener('zubax_api_ready', function () {
+    console.log("zubax_api_ready");
     cbShowTransportCombobox = document.getElementById('cbShowTransportCombobox');
     var messagesList = document.querySelector("#messages-list");
     let messagesListWidth = messagesList.getBoundingClientRect().width
-    function displayOneMessage(message)
-    {
+    function displayOneMessage(message) {
         var messageItem = document.createElement("textarea");
         messageItem.classList.add("message-item");
         messageItem.classList.add("is-active");
@@ -12,7 +13,7 @@ window.addEventListener('pywebviewready', function () {
         autosize(messageItem);
     }
     function fetchAndDisplayMessages() {
-        zubax_api.get_messages().then(function(messages) {
+        zubax_api.get_messages().then(function (messages) {
             var messagesObject = JSON.parse(messages);
             for (message of messagesObject) {
                 displayOneMessage(message);
@@ -22,9 +23,9 @@ window.addEventListener('pywebviewready', function () {
     function addLocalMessage(message) {
         zubax_api.add_local_message(message)
     }
-    setInterval(function() {
+    setInterval(function () {
         let currentWidth = messagesList.getBoundingClientRect().width
-        if(currentWidth != messagesListWidth) {
+        if (currentWidth != messagesListWidth) {
             messagesListWidth = currentWidth
             for (child of messagesList.children) {
                 autosize.update(child);
@@ -46,11 +47,11 @@ window.addEventListener('pywebviewready', function () {
         iDataRate.classList.remove("is-danger");
         iNodeId.classList.remove("is-danger");
         var isFormCorrect = true;
-        if(!cbShowTransportCombobox.checked) {
-            if(iTransport.value == "" || !iTransport.value.includes(":")) {
-            iTransport.classList.add("is-danger");
-            displayOneMessage("Transport shouldn't be empty and should be in the format <slcan|socketcan>:<port>");
-            isFormCorrect = false;
+        if (!cbShowTransportCombobox.checked) {
+            if (iTransport.value == "" || !iTransport.value.includes(":")) {
+                iTransport.classList.add("is-danger");
+                displayOneMessage("Transport shouldn't be empty and should be in the format <slcan|socketcan>:<port>");
+                isFormCorrect = false;
             }
             var transportMustContain = ["socketcan", "slcan"];
             var containsAtLeastOne = false;
@@ -59,7 +60,7 @@ window.addEventListener('pywebviewready', function () {
                     containsAtLeastOne = true;
                 }
             }
-            if(!containsAtLeastOne) {
+            if (!containsAtLeastOne) {
                 displayOneMessage("Transport type should be either slcan or socketcan");
                 iTransport.classList.add("is-danger");
                 isFormCorrect = false;
@@ -92,6 +93,7 @@ window.addEventListener('pywebviewready', function () {
         }
         return isFormCorrect;
     }
+    console.log("Api " + JSON.stringify(zubax_api));
     zubax_api.get_ports_list().then(
         function (portsList) {
             var btnStart = document.getElementById('btnStart');
@@ -117,7 +119,7 @@ window.addEventListener('pywebviewready', function () {
     btnStart.addEventListener('click', function () {
         if (!verifyInputs()) { return; }
         var port = "";
-        if(cbShowTransportCombobox.checked) {
+        if (cbShowTransportCombobox.checked) {
             port = "slcan:" + sTransport.value.split(" ")[0];
         } else {
             port = iTransport.value;
@@ -164,4 +166,5 @@ window.addEventListener('pywebviewready', function () {
     btnAddTransport.addEventListener('click', function () {
         zubax_api.open_add_transport_window();
     });
+
 });
