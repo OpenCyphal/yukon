@@ -151,8 +151,8 @@ class Api:
         if add_transport_window is not None:
             add_transport_window.hide()
 
-    def open_add_transport_window(self):
-        add_transport_window = webview.create_window(
+    def open_add_transport_window(self) -> None:
+        webview.create_window(
             "KucherX — add transport",
             "html/add_transport/add_transport.html",
             js_api=state.api,
@@ -161,11 +161,15 @@ class Api:
             text_select=True,
         )
 
-    def open_monitor_window(self):
+    def open_monitor_window(self) -> None:
         assert state.api
         print("opening monitor window")
-        monitor_window = webview.create_window(
-            "KucherX — monitor", "html/monitor/monitor.html", js_api=state.api, min_size=(600, 450), text_select=True,
+        webview.create_window(
+            "KucherX — monitor",
+            "html/monitor/monitor.html",
+            js_api=state.api,
+            min_size=(600, 450),
+            text_select=True,
         )
 
 
@@ -173,7 +177,6 @@ state.api = Api()
 
 
 def run_gui_app() -> None:
-    global monitor_window, add_transport_window  # pylint: disable: global-statement
     make_process_dpi_aware(logger)
 
     # Creating 3 new threads
