@@ -5,6 +5,8 @@ from functools import wraps
 
 from flask import Flask, render_template, jsonify, request
 import app
+from domain.god_state import GodState
+from services.api import Api
 
 gui_dir = os.path.join(os.path.dirname(__file__), "html")  # development path
 
@@ -15,7 +17,6 @@ server = Flask(__name__, static_folder=gui_dir, template_folder=gui_dir, static_
 server.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1  # disable caching
 
 our_token = "ABC"
-
 
 def verify_token(function):
     @wraps(function)
@@ -36,12 +37,19 @@ def add_header(response):
     return response
 
 
-@server.route('/')
-def landing():
-    """
-    Render index.html. Initialization is performed asynchronously in initialize() function
-    """
-    return render_template('add_transport/add_transport.html', token=our_token)
+def make_landing(state: GodState, api: Api):
+    @server.route('/', defaults={'path': ''})
+    @server.route('/<path:path>')
+    def landing(path):
+        """
+        Render index.html. Initialization is performed asynchronously in initialize() function
+        """
+        if path == "":
+            return render_template('add_transport/add_transport.html', token=our_token)
+        else:
+            initial_json = request.get_json()
+            processed_json = json.loads(initial_json)
+            return getattr(api, path)(**processed_json)
 
 
 @server.route('/init', methods=['POST'])

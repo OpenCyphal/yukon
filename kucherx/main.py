@@ -29,7 +29,8 @@ from kucherx.domain.god_state import GodState
 from kucherx.high_dpi_handler import make_process_dpi_aware
 from kucherx.sentry_setup import setup_sentry
 from kucherx.services.value_utils import unexplode_value
-from server import server
+from kucherx.server import server, make_landing
+from kucherx.services.api import Api
 
 setup_sentry(sentry_sdk)
 paths = sys.path
@@ -47,107 +48,14 @@ def start_threads(_state: GodState) -> None:
     print("Cyphal worker was started")
 
 
-state: GodState = GodState()
-
-messages_publisher = MessagesPublisher(state)
-messages_publisher.setLevel(logging.NOTSET)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-messages_publisher.setFormatter(formatter)
-logger.addHandler(messages_publisher)
-
-
-class Api:
-    last_avatars: typing.List[Avatar] = []
-
-    def get_ports_list(self) -> str:
-        return json.dumps(list(map(str, list_ports.comports())))
-
-    def add_local_message(self, message: str) -> None:
-        logger.info(message)
-
-    def open_file_dialog(self) -> None:
-        import tkinter as tk
-        from tkinter import filedialog
-
-        root = tk.Tk()
-        root.withdraw()
-
-        file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
-        _ = file_path
-
-    def update_register_value(self, register_name: str, register_value: str, node_id: int) -> None:
-        # Find the avatar which has the node_id
-        for avatar in state.avatar.avatars_by_node_id.values():
-            if avatar.node_id == node_id:
-                exploded_value = avatar.register_exploded_values[register_name]
-                break
-        new_exploded_value = copy.copy(exploded_value)
-        # Check if register_value can be converted to an int, is purely numeric
-        if register_value.isnumeric():
-            new_exploded_value[list(new_exploded_value.keys())[0]]["value"] = int(register_value)
-        else:
-            new_exploded_value[list(new_exploded_value.keys())[0]]["value"] = register_value
-        new_value: uavcan.register.Value_1 = unexplode_value(new_exploded_value)
-        state.queues.update_registers.put(UpdateRegisterRequest(register_name, new_value, node_id))
-
-    def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
-        state.queues.messages.put("Initiated attach transport")
-        interface = Interface()
-        interface.rate_arb = int(arb_rate)
-        interface.rate_data = int(data_rate)
-        interface.mtu = int(mtu)
-        interface.iface = interface_string
-        logger.info(f"Opening port {interface.iface}")  # pylint: disable=logging-fstring-interpolation
-        logger.info(f"Arb rate {interface.rate_arb}")  # pylint: disable=logging-fstring-interpolation
-        logger.info(f"Data rate {interface.rate_data}")  # pylint: disable=logging-fstring-interpolation
-
-        atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-        state.queues.attach_transport.put(atr)
-        while True:
-            if state.queues.attach_transport_response.empty():
-                sleep(0.1)
-            else:
-                break
-        return json.dumps(state.queues.attach_transport_response.get(), cls=EnhancedJSONEncoder)
-
-    # def save_registers_of_node(self, node_id: int, registers: typing.Dict["str"]) -> None:
-    def show_yakut(self) -> None:
-        state.avatar.hide_yakut_avatar = False
-
-    def hide_yakut(self) -> None:
-        state.avatar.hide_yakut_avatar = True
-
-    def get_messages(self) -> str:
-        messages_serialized = json.dumps(list(state.queues.messages.queue))
-        # Emptying all messages from the queue
-        while not state.queues.messages.empty():
-            try:
-                state.queues.messages.get(False)
-            except Empty:
-                continue
-
-        # state.queues.messages = Queue()
-        return messages_serialized
-
-    def get_avatars(self) -> str:
-        avatar_list = [avatar.to_builtin() for avatar in list(state.avatar.avatars_by_node_id.values())]
-        avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
-        if state.avatar.hide_yakut_avatar:
-            for avatar in avatar_list:
-                amount_of_subscriptions = len(avatar["ports"]["sub"])
-                if avatar["name"] and avatar["name"] == "yakut":
-                    avatar_list.remove(avatar)
-                elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
-                    avatar_list.remove(avatar)
-        return json.dumps(avatar_dto)
-
-
-state.api = Api()
-
-
-def run_gui_app() -> None:
+def run_gui_app(state: GodState, api: Api) -> None:
+    messages_publisher = MessagesPublisher(state)
+    messages_publisher.setLevel(logging.NOTSET)
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    messages_publisher.setFormatter(formatter)
+    logger.addHandler(messages_publisher)
     make_process_dpi_aware(logger)
-
+    make_landing(state, api)
     # Creating 3 new threads
     start_threads(state)
 
@@ -155,7 +63,6 @@ def run_gui_app() -> None:
         webbrowser.open("http://localhost:5000")
 
     threading.Thread(target=open_webbrowser).start()
-
     server.run(host='0.0.0.0', port=5000)
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
@@ -193,7 +100,9 @@ async def main() -> int:
     if get_stop_after_value():
         auto_exit_thread = threading.Thread(target=auto_exit_task)
         auto_exit_thread.start()
-    run_gui_app()
+    state: GodState = GodState()
+    api: Api = Api(state)
+    run_gui_app(state, api)
     if get_stop_after_value():
         auto_exit_thread.join()
     return 0

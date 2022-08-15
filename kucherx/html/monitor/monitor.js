@@ -161,7 +161,7 @@ try {
             }
         }
         function update_register_value(register_name, register_value, node_id) {
-            pywebview.api.update_register_value(register_name, register_value, node_id);
+            zubax_api.update_register_value(register_name, register_value, node_id);
         }
         function create_registers_table() {
             // Clear the table
@@ -332,7 +332,7 @@ try {
 
 
         function get_and_display_avatars() {
-            pywebview.api.get_avatars().then(
+            zubax_api.get_avatars().then(
                 function (avatars) {
                     var DTO = JSON.parse(avatars);
                     current_avatars = DTO.avatars;
@@ -375,9 +375,9 @@ try {
         var hideYakut = document.getElementById('hide-yakut');
         hideYakut.addEventListener('change', function () {
             if (hideYakut.checked) {
-                pywebview.api.hide_yakut();
+                zubax_api.hide_yakut();
             } else {
-                pywebview.api.show_yakut();
+                zubax_api.show_yakut();
             }
         });
         // This is actually one of the tabs in the tabbed interface but it also acts as a refresh layout button
@@ -387,7 +387,7 @@ try {
         });
         btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
         btnAddAnotherTransport.addEventListener('click', function () {
-            pywebview.api.open_add_transport_window();
+            zubax_api.open_add_transport_window();
         });
     });
 } catch (e) {

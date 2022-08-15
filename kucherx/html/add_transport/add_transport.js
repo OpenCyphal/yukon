@@ -12,7 +12,7 @@ window.addEventListener('pywebviewready', function () {
         autosize(messageItem);
     }
     function fetchAndDisplayMessages() {
-        pywebview.api.get_messages().then(function(messages) {
+        zubax_api.get_messages().then(function(messages) {
             var messagesObject = JSON.parse(messages);
             for (message of messagesObject) {
                 displayOneMessage(message);
@@ -20,7 +20,7 @@ window.addEventListener('pywebviewready', function () {
         });
     }
     function addLocalMessage(message) {
-        pywebview.api.add_local_message(message)
+        zubax_api.add_local_message(message)
     }
     setInterval(function() {
         let currentWidth = messagesList.getBoundingClientRect().width
@@ -92,7 +92,7 @@ window.addEventListener('pywebviewready', function () {
         }
         return isFormCorrect;
     }
-    pywebview.api.get_ports_list().then(
+    zubax_api.get_ports_list().then(
         function (portsList) {
             var btnStart = document.getElementById('btnStart');
             addLocalMessage("Waiting to start...");
@@ -126,13 +126,13 @@ window.addEventListener('pywebviewready', function () {
         var arb_rate = document.getElementById('iArbRate').value;
         var node_id = document.getElementById('iNodeId').value;
         var mtu = document.getElementById('iMtu').value;
-        pywebview.api.attach_transport(port, data_rate, arb_rate, node_id, mtu).then(
+        zubax_api.attach_transport(port, data_rate, arb_rate, node_id, mtu).then(
             function (result) {
                 var resultObject = JSON.parse(result);
                 if (resultObject.success) {
                     addLocalMessage("Now attached: " + resultObject.message);
-                    pywebview.api.hide_transport_window();
-                    pywebview.api.open_monitor_window();
+                    zubax_api.hide_transport_window();
+                    zubax_api.open_monitor_window();
                 } else {
                     console.error("Error: " + resultObject.message);
                     addLocalMessage("Error: " + resultObject.message);
@@ -147,7 +147,7 @@ window.addEventListener('pywebviewready', function () {
     var divSelectTransport = document.getElementById('divSelectTransport');
     var btnOpenCandumpFile = document.getElementById('btnOpenCandumpFile');
     btnOpenCandumpFile.addEventListener('click', function () {
-        pywebview.api.open_file_dialog();
+        zubax_api.open_file_dialog();
     });
 
     setTimeout(fetchAndDisplayMessages, 1000);
@@ -162,6 +162,6 @@ window.addEventListener('pywebviewready', function () {
         }
     });
     btnAddTransport.addEventListener('click', function () {
-        pywebview.api.open_add_transport_window();
+        zubax_api.open_add_transport_window();
     });
 });

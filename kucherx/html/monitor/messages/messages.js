@@ -1,5 +1,5 @@
 function addLocalMessage(message) {
-    pywebview.api.add_local_message(message)
+    zubax_api.add_local_message(message)
 }
 window.addEventListener('pywebviewready', function () {
     btnTextOutput.addEventListener('click', function () {
@@ -117,7 +117,7 @@ function timeSince(date) {
   return Math.floor(seconds) + " seconds";
 }
 function update_messages() {
-    pywebview.api.get_messages().then(
+    zubax_api.get_messages().then(
         function (messages) {
             // Clear messages-list
             var messagesList = document.querySelector("#messages-list");
@@ -160,7 +160,7 @@ function update_messages() {
 }
 var lastHash = "";
 function updateTextOut() {
-    pywebview.api.get_avatars().then(
+    zubax_api.get_avatars().then(
         function (avatars) {
             var textOut = document.querySelector("#textOut");
             var DTO = JSON.parse(avatars);
