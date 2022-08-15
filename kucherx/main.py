@@ -42,6 +42,7 @@ def run_gui_app(state: GodState, api: Api) -> None:
     messages_publisher.setFormatter(formatter)
     logger.addHandler(messages_publisher)
     make_landing(state, api)
+
     # Creating 3 new threads
     start_threads(state)
 

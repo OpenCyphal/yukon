@@ -29,7 +29,7 @@ THIRDPARTY_PATH: typing.List[Path] = [
 for tp in THIRDPARTY_PATH:
     sys.path.insert(0, str(tp))
 
-__version__: str = (Path(__file__).parent / "VERSION").read_text().strip()
+__version__: str = "0.0.1"
 __version_info__: typing.Tuple[int, ...] = tuple(map(int, __version__.split(".")[:3]))
 __author__ = "Zubax Robotics OÜ"
 __email__ = "silver.valdvee@zubax.com"
