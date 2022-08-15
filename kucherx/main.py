@@ -27,7 +27,6 @@ from kucherx.services.messages_publisher import MessagesPublisher
 from kucherx.services.terminate_handler import make_terminate_handler
 
 from kucherx.domain.god_state import GodState
-from kucherx.high_dpi_handler import make_process_dpi_aware
 from kucherx.sentry_setup import setup_sentry
 from kucherx.services.value_utils import unexplode_value
 
@@ -152,7 +151,6 @@ class Api:
 
 def run_gui_app() -> None:
     global monitor_window, add_transport_window  # pylint: disable: global-statement
-    make_process_dpi_aware(logger)
 
     api = Api()
     monitor_window = webview.create_window(
