@@ -1,6 +1,7 @@
 import json
 import typing
 import copy
+import webbrowser
 from queue import Empty
 from time import sleep
 
@@ -109,3 +110,6 @@ class Api:
                 elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
                     avatar_list.remove(avatar)
         return json.dumps(avatar_dto)
+
+    def open_monitor_window(self) -> None:
+        webbrowser.open_new_tab("http://localhost:8080/main")

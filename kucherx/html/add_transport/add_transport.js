@@ -93,7 +93,6 @@ window.addEventListener('zubax_api_ready', function () {
         }
         return isFormCorrect;
     }
-    console.log("Api " + JSON.stringify(zubax_api));
     zubax_api.get_ports_list().then(
         function (portsList) {
             var btnStart = document.getElementById('btnStart');
@@ -133,7 +132,7 @@ window.addEventListener('zubax_api_ready', function () {
                 var resultObject = JSON.parse(result);
                 if (resultObject.success) {
                     addLocalMessage("Now attached: " + resultObject.message);
-                    zubax_api.hide_transport_window();
+                    //zubax_api.hide_transport_window();
                     zubax_api.open_monitor_window();
                 } else {
                     console.error("Error: " + resultObject.message);

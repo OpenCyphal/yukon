@@ -40,7 +40,7 @@ def add_header(response):
     response.headers['Cache-Control'] = 'no-store'
     return response
 
-
+from inspect import signature
 def make_landing(state: GodState, api: Api):
     @server.route('/', defaults={'path': ''}, methods=["GET", 'POST'])
     @server.route('/<path:path>', methods=['POST'])
@@ -48,12 +48,13 @@ def make_landing(state: GodState, api: Api):
         if path == "":
             logger.info("Was requested the root path")
             return render_template('add_transport/add_transport.html', token=our_token)
+        elif path == "main":
+            return render_template('monitor/monitor.html', token=our_token)
         print(f"Requested {path}")
         logger.info(f"There was a request on path {path}")
-        processed_json = {}
+        _object = {"arguments": []}
         try:
-            initial_json = request.get_json()
-            processed_json = json.loads(initial_json)
+            _object = request.get_json()
         except:
             print("There was no json data attached")
         try:
@@ -63,52 +64,13 @@ def make_landing(state: GodState, api: Api):
             raise e
         # Print the name of found method
         print(f"Found method {found_method.__name__}")
-        return found_method(**processed_json)
-
-    # @server.route("/get_ports_list", methods=["POST"])
-    # def get_ports_list():
-    #     print("Oh okay")
-    #     return "{\"Nice\": \"Hello\"}"
-
-
-@server.route('/init', methods=['POST'])
-@verify_token
-def initialize():
-    '''
-    Perform heavy-lifting initialization asynchronously.
-    :return:
-    '''
-    can_start = app.initialize()
-
-    if can_start:
-        response = {
-            'status': 'ok',
-        }
-    else:
-        response = {
-            'status': 'error'
-        }
-
-    return jsonify(response)
-
-
-@server.route('/open-url', methods=['POST'])
-@verify_token
-def open_url():
-    url = request.json['url']
-    webbrowser.open_new_tab(url)
-
-    return jsonify({})
-
-
-@server.route('/do/stuff', methods=['POST'])
-@verify_token
-def do_stuff():
-    result = app.do_stuff()
-
-    if result:
-        response = {'status': 'ok', 'result': result}
-    else:
-        response = {'status': 'error'}
-
-    return jsonify(response)
+        if len(_object["arguments"]) != len(signature(found_method).parameters):
+            print(f"There was an error, there weren't enough input parameters for the method {path}")
+            # Add the missing number of input arguments as empty strings
+            for i in range(len(signature(found_method).parameters) - len(_object["arguments"])):
+                _object["arguments"].append("")
+        try:
+            return found_method(*(_object["arguments"]))
+        except Exception as e:
+            print(e)
+            return jsonify({"error": str(e)})
