@@ -60,7 +60,7 @@ def run_gui_app(state: GodState, api: Api) -> None:
     start_threads(state)
 
     def open_webbrowser():
-        webbrowser.open("http://localhost:5000")
+        webbrowser.open("http://localhost:5000/")
 
     threading.Thread(target=open_webbrowser).start()
     server.run(host='0.0.0.0', port=5000)

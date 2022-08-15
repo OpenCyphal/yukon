@@ -1,6 +1,6 @@
 // document load event
 window.addEventListener('zubax_api_ready', function () {
-    console.log("zubax_api_ready");
+    console.log("zubax_api_ready in add_transport.js");
     cbShowTransportCombobox = document.getElementById('cbShowTransportCombobox');
     var messagesList = document.querySelector("#messages-list");
     let messagesListWidth = messagesList.getBoundingClientRect().width

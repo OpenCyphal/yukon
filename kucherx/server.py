@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import webbrowser
 from functools import wraps
@@ -17,6 +18,9 @@ server = Flask(__name__, static_folder=gui_dir, template_folder=gui_dir, static_
 server.config['SEND_FILE_MAX_AGE_DEFAULT'] = 1  # disable caching
 
 our_token = "ABC"
+logger = logging.getLogger(__file__)
+logger.setLevel("NOTSET")
+
 
 def verify_token(function):
     @wraps(function)
@@ -38,18 +42,33 @@ def add_header(response):
 
 
 def make_landing(state: GodState, api: Api):
-    @server.route('/', defaults={'path': ''})
-    @server.route('/<path:path>')
+    @server.route('/', defaults={'path': ''}, methods=["GET", 'POST'])
+    @server.route('/<path:path>', methods=['POST'])
     def landing(path):
-        """
-        Render index.html. Initialization is performed asynchronously in initialize() function
-        """
         if path == "":
+            logger.info("Was requested the root path")
             return render_template('add_transport/add_transport.html', token=our_token)
-        else:
+        print(f"Requested {path}")
+        logger.info(f"There was a request on path {path}")
+        processed_json = {}
+        try:
             initial_json = request.get_json()
             processed_json = json.loads(initial_json)
-            return getattr(api, path)(**processed_json)
+        except:
+            print("There was no json data attached")
+        try:
+            found_method = getattr(api, path)
+        except Exception as e:
+            print(f"There was an error while trying to find the method {path}")
+            raise e
+        # Print the name of found method
+        print(f"Found method {found_method.__name__}")
+        return found_method(**processed_json)
+
+    # @server.route("/get_ports_list", methods=["POST"])
+    # def get_ports_list():
+    #     print("Oh okay")
+    #     return "{\"Nice\": \"Hello\"}"
 
 
 @server.route('/init', methods=['POST'])
