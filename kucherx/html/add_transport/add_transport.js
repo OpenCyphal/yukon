@@ -1,9 +1,10 @@
-window.addEventListener('pywebviewready', function () {
+// document load event
+window.addEventListener('zubax_api_ready', function () {
+    console.log("zubax_api_ready in add_transport.js");
     cbShowTransportCombobox = document.getElementById('cbShowTransportCombobox');
     var messagesList = document.querySelector("#messages-list");
     let messagesListWidth = messagesList.getBoundingClientRect().width
-    function displayOneMessage(message)
-    {
+    function displayOneMessage(message) {
         var messageItem = document.createElement("textarea");
         messageItem.classList.add("message-item");
         messageItem.classList.add("is-active");
@@ -12,7 +13,7 @@ window.addEventListener('pywebviewready', function () {
         autosize(messageItem);
     }
     function fetchAndDisplayMessages() {
-        pywebview.api.get_messages().then(function(messages) {
+        zubax_api.get_messages().then(function (messages) {
             var messagesObject = JSON.parse(messages);
             for (message of messagesObject) {
                 displayOneMessage(message);
@@ -20,11 +21,11 @@ window.addEventListener('pywebviewready', function () {
         });
     }
     function addLocalMessage(message) {
-        pywebview.api.add_local_message(message)
+        zubax_api.add_local_message(message)
     }
-    setInterval(function() {
+    setInterval(function () {
         let currentWidth = messagesList.getBoundingClientRect().width
-        if(currentWidth != messagesListWidth) {
+        if (currentWidth != messagesListWidth) {
             messagesListWidth = currentWidth
             for (child of messagesList.children) {
                 autosize.update(child);
@@ -46,11 +47,11 @@ window.addEventListener('pywebviewready', function () {
         iDataRate.classList.remove("is-danger");
         iNodeId.classList.remove("is-danger");
         var isFormCorrect = true;
-        if(!cbShowTransportCombobox.checked) {
-            if(iTransport.value == "" || !iTransport.value.includes(":")) {
-            iTransport.classList.add("is-danger");
-            displayOneMessage("Transport shouldn't be empty and should be in the format <slcan|socketcan>:<port>");
-            isFormCorrect = false;
+        if (!cbShowTransportCombobox.checked) {
+            if (iTransport.value == "" || !iTransport.value.includes(":")) {
+                iTransport.classList.add("is-danger");
+                displayOneMessage("Transport shouldn't be empty and should be in the format <slcan|socketcan>:<port>");
+                isFormCorrect = false;
             }
             var transportMustContain = ["socketcan", "slcan"];
             var containsAtLeastOne = false;
@@ -59,7 +60,7 @@ window.addEventListener('pywebviewready', function () {
                     containsAtLeastOne = true;
                 }
             }
-            if(!containsAtLeastOne) {
+            if (!containsAtLeastOne) {
                 displayOneMessage("Transport type should be either slcan or socketcan");
                 iTransport.classList.add("is-danger");
                 isFormCorrect = false;
@@ -92,7 +93,7 @@ window.addEventListener('pywebviewready', function () {
         }
         return isFormCorrect;
     }
-    pywebview.api.get_ports_list().then(
+    zubax_api.get_ports_list().then(
         function (portsList) {
             var btnStart = document.getElementById('btnStart');
             addLocalMessage("Waiting to start...");
@@ -117,7 +118,7 @@ window.addEventListener('pywebviewready', function () {
     btnStart.addEventListener('click', function () {
         if (!verifyInputs()) { return; }
         var port = "";
-        if(cbShowTransportCombobox.checked) {
+        if (cbShowTransportCombobox.checked) {
             port = "slcan:" + sTransport.value.split(" ")[0];
         } else {
             port = iTransport.value;
@@ -126,13 +127,13 @@ window.addEventListener('pywebviewready', function () {
         var arb_rate = document.getElementById('iArbRate').value;
         var node_id = document.getElementById('iNodeId').value;
         var mtu = document.getElementById('iMtu').value;
-        pywebview.api.attach_transport(port, data_rate, arb_rate, node_id, mtu).then(
+        zubax_api.attach_transport(port, data_rate, arb_rate, node_id, mtu).then(
             function (result) {
                 var resultObject = JSON.parse(result);
                 if (resultObject.success) {
                     addLocalMessage("Now attached: " + resultObject.message);
-                    pywebview.api.hide_transport_window();
-                    pywebview.api.open_monitor_window();
+                    //zubax_api.hide_transport_window();
+                    zubax_api.open_monitor_window();
                 } else {
                     console.error("Error: " + resultObject.message);
                     addLocalMessage("Error: " + resultObject.message);
@@ -147,7 +148,7 @@ window.addEventListener('pywebviewready', function () {
     var divSelectTransport = document.getElementById('divSelectTransport');
     var btnOpenCandumpFile = document.getElementById('btnOpenCandumpFile');
     btnOpenCandumpFile.addEventListener('click', function () {
-        pywebview.api.open_file_dialog();
+        zubax_api.open_file_dialog();
     });
 
     setTimeout(fetchAndDisplayMessages, 1000);
@@ -162,6 +163,7 @@ window.addEventListener('pywebviewready', function () {
         }
     });
     btnAddTransport.addEventListener('click', function () {
-        pywebview.api.open_add_transport_window();
+        zubax_api.open_add_transport_window();
     });
+
 });

@@ -1,6 +1,7 @@
 try {
-    // Make a callback on the page load event
-    window.addEventListener('pywebviewready', function () {
+    window.addEventListener('zubax_api_ready', function () {
+        // Make a callback on the page load event
+        console.log("monitor ready");
         var current_avatars = [];
         var last_hashes = []
         var my_graph = null;
@@ -161,7 +162,7 @@ try {
             }
         }
         function update_register_value(register_name, register_value, node_id) {
-            pywebview.api.update_register_value(register_name, register_value, node_id);
+            zubax_api.update_register_value(register_name, register_value, node_id);
         }
         function create_registers_table() {
             // Clear the table
@@ -211,7 +212,7 @@ try {
                     table_cell.setAttribute('id', "register_" + register_name);
                     var register_value = avatar.registers_values[register_name];
                     var isAlpha = function(str){
-                      return /^\D+$/i.test(str);
+                        return /^\D+$/i.test(str);
                     }
                     if(register_value == "65535") {
                         register_value = "65535 (not set)"
@@ -332,7 +333,7 @@ try {
 
 
         function get_and_display_avatars() {
-            pywebview.api.get_avatars().then(
+            zubax_api.get_avatars().then(
                 function (avatars) {
                     var DTO = JSON.parse(avatars);
                     current_avatars = DTO.avatars;
@@ -375,9 +376,9 @@ try {
         var hideYakut = document.getElementById('hide-yakut');
         hideYakut.addEventListener('change', function () {
             if (hideYakut.checked) {
-                pywebview.api.hide_yakut();
+                zubax_api.hide_yakut();
             } else {
-                pywebview.api.show_yakut();
+                zubax_api.show_yakut();
             }
         });
         // This is actually one of the tabs in the tabbed interface but it also acts as a refresh layout button
@@ -387,7 +388,7 @@ try {
         });
         btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
         btnAddAnotherTransport.addEventListener('click', function () {
-            pywebview.api.open_add_transport_window();
+            zubax_api.open_add_transport_window();
         });
     });
 } catch (e) {
