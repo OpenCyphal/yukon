@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
 
 
-def cyphal_worker_thread(state: GodState) -> None:
+def cyphal_worker(state: GodState) -> None:
     """It starts the node and keeps adding any transports that are queued for adding"""
 
     async def _internal_method() -> None:

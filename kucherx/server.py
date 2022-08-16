@@ -10,10 +10,17 @@ from flask.blueprints import T_after_request
 from kucherx.domain.god_state import GodState
 from kucherx.services.api import Api
 
-gui_dir = os.path.join(os.path.dirname(__file__), "html")  # development path
+import sys
+
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    root_path = sys._MEIPASS
+else:
+    print('running in a normal Python process')
+    root_path = os.path.dirname(os.path.abspath(__file__))
+gui_dir = os.path.join(root_path, "html")  # development path
 
 if not os.path.exists(gui_dir):  # frozen executable path
-    gui_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "html")
+    gui_dir = os.path.join(root_path, "html")
 
 server = Flask(__name__, static_folder=gui_dir, template_folder=gui_dir, static_url_path="")
 server.config["SEND_FILE_MAX_AGE_DEFAULT"] = 1  # disable caching
@@ -30,6 +37,14 @@ def add_header(response: T_after_request) -> T_after_request:
 
 
 def make_landing_and_bridge(state: GodState, api: Api) -> None:
+    @server.route('/shutdown', methods=['POST'])
+    def shutdown():
+        func = request.environ.get('werkzeug.server.shutdown')
+        if func is None:
+            raise RuntimeError('Not running with the Werkzeug Server')
+        func()
+        return 'Server shutting down...'
+
     @server.route("/main", methods=["GET"])
     def monitor() -> typing.Any:
         return render_template("monitor/monitor.html", token=our_token)
