@@ -88,15 +88,10 @@ class Api:
     def hide_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = True
 
-    def get_messages(self) -> str:
-        messages_serialized = json.dumps(list(self.state.queues.messages.queue))
-        # Emptying all messages from the queue
-        while not self.state.queues.messages.empty():
-            try:
-                self.state.queues.messages.get(False)
-            except Empty:
-                continue
-
+    def get_messages(self, since_index: int = 0) -> str:
+        messages_serialized = json.dumps(
+            [x.asdict() for x in list(self.state.queues.messages.queue) if x.index >= since_index])
+        print("Serialized messages:", messages_serialized)
         return messages_serialized
 
     def get_avatars(self) -> str:

@@ -55,8 +55,8 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
             logger.error(f"There was an error, there weren't enough input parameters for the method {path}")
             # Add the missing number of input arguments as empty strings
             number_of_missing_arguments = len(signature(found_method).parameters) - len(_object["arguments"])
-            for i in range(number_of_missing_arguments):  # pylint: disable=unused-variable
-                _object["arguments"].append("")
+            # for i in range(number_of_missing_arguments):  # pylint: disable=unused-variable
+            #     _object["arguments"].append("")
         try:
             response = found_method(*(_object["arguments"]))
             if response is None:

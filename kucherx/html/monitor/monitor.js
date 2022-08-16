@@ -1,5 +1,5 @@
-try {
-    window.addEventListener('zubax_api_ready', function () {
+(function () {
+    function doStuffWhenReady() {
         // Make a callback on the page load event
         console.log("monitor ready");
         var current_avatars = [];
@@ -211,10 +211,10 @@ try {
                     // Set an attribute on td to store the register name
                     table_cell.setAttribute('id', "register_" + register_name);
                     var register_value = avatar.registers_values[register_name];
-                    var isAlpha = function(str){
+                    var isAlpha = function (str) {
                         return /^\D+$/i.test(str);
                     }
-                    if(register_value == "65535") {
+                    if (register_value == "65535") {
                         register_value = "65535 (not set)"
                     }
                     var register_value_as_int = parseInt(register_value);
@@ -246,7 +246,7 @@ try {
                             // Update the value in the avatar
                             avatar.registers_values[register_name] = new_value;
                             // Update the value in the server
-                            update_register_value(register_name, new_value, avatar.node_id, );
+                            update_register_value(register_name, new_value, avatar.node_id,);
                         }
                     });
                     // Create a text input element in the table cell
@@ -273,7 +273,7 @@ try {
                 var srv_cell = row.insertCell(5);
                 if (!current_avatars[i].ports) { continue; }
                 pub_cell.innerHTML = current_avatars[i].ports.pub.toString();
-                if(current_avatars[i].ports.sub.length == 8192) {
+                if (current_avatars[i].ports.sub.length == 8192) {
                     sub_cell.innerHTML = "All";
                 } else {
                     sub_cell.innerHTML = current_avatars[i].ports.sub.toString();
@@ -390,8 +390,17 @@ try {
         btnAddAnotherTransport.addEventListener('click', function () {
             zubax_api.open_add_transport_window();
         });
-    });
-} catch (e) {
-    addLocalMessage("Error: " + e);
-    console.error(e);
-}
+    }
+    try {
+        if (zubax_api_ready) {
+            doStuffWhenReady();
+        } else {
+            window.addEventListener('zubax_api_ready', function () {
+                doStuffWhenReady();
+            });
+        }
+    } catch (e) {
+        addLocalMessage("Error: " + e);
+        console.error(e);
+    }
+})();
