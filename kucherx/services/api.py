@@ -112,4 +112,7 @@ class Api:
         return json.dumps(avatar_dto)
 
     def open_monitor_window(self) -> None:
-        webbrowser.open_new_tab("http://localhost:8080/main")
+        webbrowser.open_new_tab("http://localhost:5000/main")
+
+    def open_add_transport_window(self) -> None:
+        webbrowser.open_new_tab("http://localhost:5000/")

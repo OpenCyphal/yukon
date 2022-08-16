@@ -127,6 +127,7 @@ window.addEventListener('zubax_api_ready', function () {
         var arb_rate = document.getElementById('iArbRate').value;
         var node_id = document.getElementById('iNodeId').value;
         var mtu = document.getElementById('iMtu').value;
+        addLocalMessage("Going to attach now!")
         zubax_api.attach_transport(port, data_rate, arb_rate, node_id, mtu).then(
             function (result) {
                 var resultObject = JSON.parse(result);
