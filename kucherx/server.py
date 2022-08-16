@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import typing
@@ -63,5 +64,6 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
                 return '["Nice"]'
             return response
         except Exception as e:  # pylint: disable=broad-except
-            logger.error(e)
+            logger.exception("So something went wrong with calling the method " + path)
+            logger.error("About the error" + json.dumps(_object["arguments"]))
             return jsonify({"error": str(e)})

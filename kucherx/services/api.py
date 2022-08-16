@@ -62,15 +62,12 @@ class Api:
         self.state.queues.update_registers.put(UpdateRegisterRequest(register_name, new_value, node_id))
 
     def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
-        self.state.queues.messages.put("Initiated attach transport")
+        logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()
         interface.rate_arb = int(arb_rate)
         interface.rate_data = int(data_rate)
         interface.mtu = int(mtu)
         interface.iface = interface_string
-        logger.info(f"Opening port {interface.iface}")  # pylint: disable=logging-fstring-interpolation
-        logger.info(f"Arb rate {interface.rate_arb}")  # pylint: disable=logging-fstring-interpolation
-        logger.info(f"Data rate {interface.rate_data}")  # pylint: disable=logging-fstring-interpolation
 
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         self.state.queues.attach_transport.put(atr)
@@ -89,9 +86,8 @@ class Api:
         self.state.avatar.hide_yakut_avatar = True
 
     def get_messages(self, since_index: int = 0) -> str:
-        messages_serialized = json.dumps(
-            [x.asdict() for x in list(self.state.queues.messages.queue) if x.index >= since_index])
-        print("Serialized messages:", messages_serialized)
+        my_list = [x.asdict() for x in list(self.state.queues.messages.queue) if x.index_nr >= since_index]
+        messages_serialized = json.dumps(my_list)
         return messages_serialized
 
     def get_avatars(self) -> str:

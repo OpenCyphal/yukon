@@ -158,8 +158,7 @@
         btnOpenCandumpFile.addEventListener('click', function () {
             zubax_api.open_file_dialog();
         });
-
-        setTimeout(fetchAndDisplayMessages, 1000);
+        setInterval(fetchAndDisplayMessages, 1000);
 
         cbShowTransportCombobox.addEventListener('change', function () {
             if (cbShowTransportCombobox.checked) {
