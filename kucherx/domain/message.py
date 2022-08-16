@@ -1,4 +1,5 @@
 import dataclasses
+import typing
 from dataclasses import dataclass
 
 
@@ -8,7 +9,7 @@ class Message:
     timestamp: float = 0.0
     index_nr: int = 0
 
-    def asdict(self):
+    def asdict(self) -> typing.Any:
         return {
             "message": self.message,
             "timestamp": self.timestamp,

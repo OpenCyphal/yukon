@@ -2,12 +2,19 @@
     function addLocalMessage(message) {
         zubax_api.add_local_message(message)
     }
+    
     function doStuffWhenReady() {
         console.log("Messages javascript is ready");
         var lastHash = "";
         var lastIndex = -1;
+        var messagesList = document.querySelector("#messages-list");
+        function showAllMessages() {
+            // For each message in messagesList
+            for (child of messagesList.children) {
+                child.style.display = "block";
+            }
+        }
         function applyExcludingTextFilterToMessage() {
-            var messagesList = document.querySelector("#messages-list");
             var taExcludedKeywords = document.getElementById("taExcludedKeywords");
             var excludedKeywords = taExcludedKeywords.value.split("\n");
             for (child of messagesList.children) {
@@ -29,11 +36,6 @@
             var iTextFilter = document.getElementById("iTextFilter");
             var messagesList = document.querySelector("#messages-list");
             var textFilter = iTextFilter.value;
-            if (textFilter == "") {
-                for (child of messagesList.children) {
-                    child.style.display = "block";
-                }
-            }
             for (child of messagesList.children) {
                 // Hide all messages that do not contain the filter text
                 if (!child.innerHTML.includes(textFilter)) {
@@ -93,9 +95,9 @@
                         li.innerHTML = el.message;
                         // Set an attribute on the list element with current timestamp
                         autosize(li);
-                        li.setAttribute("timestamp", new Date().getTime());
+                        li.setAttribute("timestamp", el.timestamp);
                         li.setAttribute("spellcheck", "false");
-                        var date1 = new Date();
+                        var date1 = new Date(el.timestamp);
                         li.setAttribute("timeStampReadable", date1.toLocaleTimeString() + " " + date1.getMilliseconds() + "ms");
                         // If el is the last in d
                         if (messagesObject.indexOf(el) == messagesObject.length - 1) {
@@ -109,6 +111,9 @@
                         }
                         messagesList.appendChild(li);
                     }
+                    showAllMessages();
+                    applyExcludingTextFilterToMessage();
+                    applyTextFilterToMessages();
                 }
             );
         }

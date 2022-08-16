@@ -31,7 +31,7 @@ def add_header(response: T_after_request) -> T_after_request:
 
 def make_landing_and_bridge(state: GodState, api: Api) -> None:
     @server.route("/main", methods=["GET"])
-    def monitor() -> None:
+    def monitor() -> typing.Any:
         return render_template("monitor/monitor.html", token=our_token)
 
     @server.route("/", defaults={"path": ""}, methods=["GET", "POST"])
@@ -48,22 +48,18 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
         try:
             found_method = getattr(api, path)
         except Exception:  # pylint: disable=broad-except
-            # pylint: disable=logging-format-interpolation
-            logger.error("There was an error while trying to find the method " + path)
+            logger.error("There was an error while trying to find the method %s", path)
             return jsonify({"error": "Didn't find the method"})
         # Print the name of found method
         if len(_object["arguments"]) != len(signature(found_method).parameters):
-            logger.error(f"There was an error, there weren't enough input parameters for the method {path}")
-            # Add the missing number of input arguments as empty strings
-            number_of_missing_arguments = len(signature(found_method).parameters) - len(_object["arguments"])
-            # for i in range(number_of_missing_arguments):  # pylint: disable=unused-variable
-            #     _object["arguments"].append("")
+            logger.error("There was an error, there weren't enough input parameters for the method %s", path)
         try:
             response = found_method(*(_object["arguments"]))
             if response is None:
                 return '["Nice"]'
             return response
         except Exception as e:  # pylint: disable=broad-except
-            logger.exception("So something went wrong with calling the method " + path)
-            logger.error("About the error" + json.dumps(_object["arguments"]))
+            logger.exception("So something went wrong with calling the method %s", path)
+
+            logger.error("About the error %s", json.dumps(_object["arguments"]))
             return jsonify({"error": str(e)})

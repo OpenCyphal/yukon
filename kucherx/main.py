@@ -50,7 +50,7 @@ def run_gui_app(state: GodState, api: Api) -> None:
         webbrowser.open("http://localhost:5000/")
 
     threading.Thread(target=open_webbrowser).start()
-    server.run(host="0.0.0.0", port=5000)
+
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
@@ -65,7 +65,8 @@ def run_gui_app(state: GodState, api: Api) -> None:
     logging.getLogger("pycyphal").setLevel(logging.INFO)
     logging.getLogger("can").setLevel(logging.INFO)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
-
+    logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
+    server.run(host="0.0.0.0", port=5000)
     exit_handler(None, None)
     state.gui.gui_running = False
 
