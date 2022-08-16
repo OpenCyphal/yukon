@@ -10,8 +10,4 @@ class Message:
     index_nr: int = 0
 
     def asdict(self) -> typing.Any:
-        return {
-            "message": self.message,
-            "timestamp": self.timestamp,
-            "index": self.index_nr
-        }
+        return {"message": self.message, "timestamp": self.timestamp, "index": self.index_nr}

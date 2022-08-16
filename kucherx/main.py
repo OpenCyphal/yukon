@@ -51,7 +51,6 @@ def run_gui_app(state: GodState, api: Api) -> None:
 
     threading.Thread(target=open_webbrowser).start()
 
-
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
         print("Registering an exit!")

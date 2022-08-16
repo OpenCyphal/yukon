@@ -25,14 +25,14 @@ src_dirs = [
 @nox.session(reuse_venv=True)
 def black(session):
     session.run("pip", "install", "black == 22.*")
-    # black kucherx --exclude kucherx/libraries
-    session.run("black", "--check", "kucherx", "--exclude", "kucherx/libraries")
+    # black kucherx
+    session.run("black", "--check", "kucherx")
 
 
 @nox.session(reuse_venv=True)
 def mypy(session):
     session.run("pip", "install", "mypy==0.961")
-    session.run("mypy", "kucherx", "--exclude", "kucherx/libraries")
+    session.run("mypy", "kucherx")
 
 
 @nox.session(reuse_venv=True)

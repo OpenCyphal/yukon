@@ -33,6 +33,7 @@ def none_factory() -> None:
 @dataclass
 class QueuesState:
     """A class that holds all queues used by the god state."""
+
     message_queue_counter: int = 0
     messages: Queue[Message] = field(default_factory=Queue)
     attach_transport_response: Queue[str] = field(default_factory=Queue)
