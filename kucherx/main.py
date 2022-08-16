@@ -16,7 +16,7 @@ from kucherx.services.terminate_handler import make_terminate_handler
 
 from kucherx.domain.god_state import GodState
 from kucherx.sentry_setup import setup_sentry
-from kucherx.server import server, make_landing
+from kucherx.server import server, make_landing_and_bridge
 from kucherx.services.api import Api
 
 setup_sentry(sentry_sdk)
@@ -40,8 +40,8 @@ def run_gui_app(state: GodState, api: Api) -> None:
     messages_publisher.setLevel(logging.NOTSET)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     messages_publisher.setFormatter(formatter)
-    logger.addHandler(messages_publisher)
-    make_landing(state, api)
+    logger.root.addHandler(messages_publisher)
+    make_landing_and_bridge(state, api)
 
     # Creating 3 new threads
     start_threads(state)
@@ -50,7 +50,6 @@ def run_gui_app(state: GodState, api: Api) -> None:
         webbrowser.open("http://localhost:5000/")
 
     threading.Thread(target=open_webbrowser).start()
-    server.run(host="0.0.0.0", port=5000, debug=True)
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
@@ -65,7 +64,8 @@ def run_gui_app(state: GodState, api: Api) -> None:
     logging.getLogger("pycyphal").setLevel(logging.INFO)
     logging.getLogger("can").setLevel(logging.INFO)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
-
+    logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
+    server.run(host="0.0.0.0", port=5000)
     exit_handler(None, None)
     state.gui.gui_running = False
 

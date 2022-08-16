@@ -13,6 +13,7 @@ from pycyphal.application import Node
 from pycyphal.transport.can import CANTransport
 from pycyphal.transport.redundant import RedundantTransport
 
+from kucherx.domain.message import Message
 from kucherx.domain.allocation_request import AllocationRequest
 from kucherx.domain.HWID import HWID
 from kucherx.domain.attach_transport_request import AttachTransportRequest
@@ -33,7 +34,8 @@ def none_factory() -> None:
 class QueuesState:
     """A class that holds all queues used by the god state."""
 
-    messages: Queue[str] = field(default_factory=Queue)
+    message_queue_counter: int = 0
+    messages: Queue[Message] = field(default_factory=Queue)
     attach_transport_response: Queue[str] = field(default_factory=Queue)
     attach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
     detach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)

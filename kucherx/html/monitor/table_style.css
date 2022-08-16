@@ -13,11 +13,11 @@ caption {
 }
 
 thead {
-	background-color: #333;
-	color: white;
-	font-size: 0.875rem;
-	text-transform: uppercase;
-	letter-spacing: 2%;
+  background-color: #333;
+  color: white;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 2%;
 }
 
 .cell-highlight {
@@ -39,13 +39,15 @@ tbody tr:nth-child(even) {
   background-color: #eee;
 }
 
-th, td {
+th,
+td {
   border: 1px solid black;
   padding: 8px;
   word-wrap: break-word;
 }
+
 th button {
-    margin-left: 0.5em;
+  margin-left: 0.5em;
 }
 
 td input {

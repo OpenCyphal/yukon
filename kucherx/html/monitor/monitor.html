@@ -8,7 +8,7 @@
     <script src="jquery-3.6.0.min.js"></script>
     <script src="api.js"></script>
     <script src="autosize.js"></script>
-    <script src="messages/messages.js"></script>
+    <script src="monitor/messages/messages.js"></script>
     <script src="monitor/monitor.js"></script>
     <script src="monitor/klay/klay.js"></script>
     <script src="monitor/klay/klay-layout.js"></script>
@@ -50,7 +50,8 @@
                                 <label for="cbAutoscroll">Autoscroll</label>
                                 <input type="checkbox" id="cbAutoscroll">
                             </div>
-                            <div class="option" title="If filled with text then autoscroll will work when a message with the keyword is received.">
+                            <div class="option"
+                                title="If filled with text then autoscroll will work when a message with the keyword is received.">
                                 <label for="iAutoscrollFilter">Autoscroll filter</label>
                                 <input type="text" id="iAutoscrollFilter">
                             </div>
@@ -63,7 +64,8 @@
                                 <input type="checkbox" id="cbShowTimestamp">
                             </div>
                         </div>
-                        <div class="excluded-keywords" title="Messages that don't include these keywords will be shown.">
+                        <div class="excluded-keywords"
+                            title="Messages that don't include these keywords will be shown.">
                             <label for="taExcludedKeywords">Excluded keywords (one per line)</label>
                             <textarea name="exclusions" id="taExcludedKeywords" cols="60" rows="10"></textarea>
                         </div>
@@ -118,8 +120,8 @@
             </table>
         </div>
     </div>
-    
-    
+
+
     <div id="plot_placeholder"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.0/split.min.js"></script>
     <script>

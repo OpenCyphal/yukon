@@ -1,8 +1,8 @@
-
 #messages-list {
     overflow-y: scroll;
     height: calc(74vh);
 }
+
 #messages-list textarea {
     display: block;
     list-style: none;
@@ -13,36 +13,43 @@
     height: content-box;
     overflow-y: hidden;
 }
+
 #messages-list textarea:focus {
     box-shadow: 0 0 5px #ccc;
 }
+
 #divSelectInterface {
-    // Vertical flex
     display: block;
 }
+
 #divSelectInterface label {
     display: block;
     margin-bottom: 0.5em;
 }
+
 #divSelectInterface select {
     display: block;
     width: 100%;
 }
+
 #divSelectInterface button {
     display: block;
     margin-bottom: 0.5em;
 }
+
 form#interface-selection-form {
     display: grid;
     grid-template-columns: 2fr 1fr;
 }
+
 #messages_title {
     margin-top: 3px;
 }
+
 #cy {
-  width: 100%;
-  height:100vh;
-  display: block;
+    width: 100%;
+    height: 100vh;
+    display: block;
 }
 
 #split-right {
