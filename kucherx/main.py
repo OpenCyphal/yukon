@@ -38,7 +38,11 @@ def run_electron():
         print('running in a normal Python process')
         root_path = Path(__file__).absolute().parent
 
-    exe = root_path.parent / "electron" / "electron.exe"
+    # if platform is windows
+    if sys.platform == "win32":
+        exe = root_path.parent / "electron" / "electron.exe"
+    else:
+        exe = root_path.parent / "electron" / "electron"
 
     # Use subprocess to run the exe
     import subprocess

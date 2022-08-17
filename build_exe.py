@@ -96,3 +96,6 @@ if file_name is not None:
     import os
 
     os.remove(file_path)
+
+import subprocess
+subprocess.run(["pyinstaller", "--clean", "--noconfirm", "pyinstaller.spec"])

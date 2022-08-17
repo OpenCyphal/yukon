@@ -13,3 +13,4 @@ pyinstaller==5.3.*
 parsimonious
 python-can==4.*
 beautifulsoup4==4.11.*
+requests
