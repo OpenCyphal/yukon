@@ -45,7 +45,7 @@ paths = kucherx.THIRDPARTY_PATH + [
 # ensures that the layout used for development exactly reflects the environment used in production.
 # The added size penalty is insignificant.
 datas = [
-    ('kucherx', '.')
+    ('kucherx', '.'), ('electron', 'electron')
 ]
 
 

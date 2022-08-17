@@ -1,6 +1,7 @@
 import threading
 import webbrowser
 from multiprocessing import Process
+from pathlib import Path
 from typing import Optional, Any
 import os
 import sys
@@ -28,6 +29,23 @@ logger = logging.getLogger()
 logger.setLevel("INFO")
 
 
+def run_electron():
+    # Make the thread sleep for 1 second waiting for the server to start
+    sleep(1)
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        root_path = Path(sys._MEIPASS).absolute() / "kucherx"
+    else:
+        print('running in a normal Python process')
+        root_path = Path(__file__).absolute().parent
+
+    exe = root_path.parent / "electron" / "electron.exe"
+
+    # Use subprocess to run the exe
+    import subprocess
+    os.spawnl(os.P_NOWAIT, exe, exe, "http://localhost:5000")
+    os.spawnl(os.P_NOWAIT, exe, exe, "http://localhost:5000/main")
+
+
 def run_gui_app(state: GodState, api: Api) -> None:
     messages_publisher = MessagesPublisher(state)
     messages_publisher.setLevel(logging.NOTSET)
@@ -52,6 +70,8 @@ def run_gui_app(state: GodState, api: Api) -> None:
 
     # dpg.enable_docking(dock_space=False)
     make_terminate_handler(exit_handler)
+    start_electron_thread = threading.Thread(target=run_electron)
+    start_electron_thread.start()
     server.run(host="0.0.0.0", port=5000)
     logging.getLogger("pycyphal").setLevel(logging.INFO)
     logging.getLogger("can").setLevel(logging.INFO)
