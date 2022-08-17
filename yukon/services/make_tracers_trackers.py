@@ -8,11 +8,11 @@ import pycyphal
 from pycyphal.application.node_tracker import NodeTracker, Entry
 
 import uavcan
-from kucherx.domain.avatar import Avatar
-from kucherx.domain.god_state import GodState
+from yukon.domain.avatar import Avatar
+from yukon.domain.god_state import GodState
 
-from kucherx.domain.iface import Iface
-from kucherx.services.value_utils import _simplify_value
+from yukon.domain.iface import Iface
+from yukon.services.value_utils import _simplify_value
 
 logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from kucherx.domain import HWID
+from yukon.domain import HWID
 
 
 @dataclass

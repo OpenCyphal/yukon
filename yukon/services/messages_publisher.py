@@ -1,7 +1,7 @@
 import logging
 
-from kucherx.domain.message import Message
-from kucherx.domain.god_state import GodState
+from yukon.domain.message import Message
+from yukon.domain.god_state import GodState
 
 
 class MessagesPublisher(logging.Handler):

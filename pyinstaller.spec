@@ -25,7 +25,7 @@ import typing
 
 sys.path.insert(0, os.getcwd())
 
-import kucherx
+import yukon
 
 try:
     # noinspection PyUnresolvedReferences
@@ -34,10 +34,10 @@ try:
 except AttributeError:
     RUNNING_ON_WINDOWS = False
 
-name = 'KucherX'
+name = 'Yukon'
 
-paths = kucherx.THIRDPARTY_PATH + [
-    'kucherx',
+paths = yukon.THIRDPARTY_PATH + [
+    'yukon',
 ]
 
 # Pack up the entire source tree with the redistributed archive.
@@ -45,7 +45,7 @@ paths = kucherx.THIRDPARTY_PATH + [
 # ensures that the layout used for development exactly reflects the environment used in production.
 # The added size penalty is insignificant.
 datas = [
-    ('kucherx', '.'), ('electron', 'electron')
+    ('yukon', '.'), ('.electron', 'electron')
 ]
 
 
@@ -55,7 +55,7 @@ def detect_hidden_imports() -> typing.List[str]:
     and transforms that into a list of Python module names that is then fed to PyInstaller.
     This way we may also end up with unused stuff, but it's easier to maintain.
     """
-    all_sources = glob.glob('kucherx/**/*', recursive=True)
+    all_sources = glob.glob('yukon/**/*', recursive=True)
 
     out = set()
     for s in all_sources:
@@ -66,14 +66,14 @@ def detect_hidden_imports() -> typing.List[str]:
 
 
 detected_hidden_imports = detect_hidden_imports()
-detected_hidden_imports += "can.interfaces.slcan" # This didn't actually make it work, importing it randomly did.
-detected_hidden_imports += "can.interfaces.virtual"
+detected_hidden_imports += ["can.interfaces.slcan"]
+detected_hidden_imports += ["can.interfaces.virtual"]
 # noinspection PyUnresolvedReferences
-a = Analysis(['kucherx/__main__.py'],
+a = Analysis(['yukon/__main__.py'],
              pathex=paths,
              binaries=[],
              datas=datas,
-             hiddenimports=detected_hidden_imports,
+             hiddenimports=detected_hidden_imports + ['pycyphal'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],

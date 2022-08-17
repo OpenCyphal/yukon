@@ -18,7 +18,7 @@ def get_root_directory() -> pathlib.Path:
 
 
 def get_kucherx_directory() -> pathlib.Path:
-    return get_root_directory() / "kucherx"
+    return get_root_directory() / "yukon"
 
 
 def get_sources_directory() -> pathlib.Path:

@@ -1,33 +1,14 @@
-name: KucherX tests
-on: push
+on:
+  release:
+    types: [published]
+  schedule:
+    - cron: '00 08 * * *'  # early morning (04:00 UTC) every day
+
 jobs:
-  python-quality-check:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: checking out
-        uses: actions/checkout@v2
-      - name: Installing Python3
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-      - name: installing dependencies
-        run: |
-          git submodule update --init
-          pip install yakut
-          yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
-          pip install nox
-          python3.10 -m pip install -r requirements.txt
-          python3.10 setup.py build_py
-      - name: Testing GUI
-        run: |
-          PYTHONPATH=".:.." nox -s mypy
-          PYTHONPATH=".:.." nox -s black
-          PYTHONPATH=".:.." nox -s pylint
-  immediate-release:
+  nightly-release:
     runs-on: ubuntu-22.04
     if:
-      contains(github.event.head_commit.message, '#release')
+      contains(github.event.head_commit.message, '#groom')
     steps:
       - name: checking out
         uses: actions/checkout@v2
@@ -72,9 +53,9 @@ jobs:
       - name: Deploy the release
         if: ${{ success() }}
         run: |
-          YUKON_VERSION=$(python3 -c "from yukon.version import __version__; print('.'.join(map(str, __version__)))")
-          YUKON_TARGET_DIR=/var/www/files/products/com.zubax.yukon/testing_release/$YUKON_VERSION/linux-x86_64
-          ssh target "mkdir -p $YUKON_TARGET_DIR; echo $YUKON_TARGET_DIR"
-          scp $KUCHER_ARTIFACT target:$YUKON_TARGET_DIR
+            YUKON_VERSION=$(python3 -c "from yukon.version import __version__; print('.'.join(map(str, __version__)))")
+            YUKON_TARGET_DIR=/var/www/files/products/com.zubax.yukon/$YUKON_VERSION/linux-x86_64
+            ssh target "mkdir -p $YUKON_TARGET_DIR; echo $YUKON_TARGET_DIR"
+            scp $KUCHER_ARTIFACT target:$YUKON_TARGET_DIR
         env:
           KUCHER_ARTIFACT: dist/Yukon

@@ -1,6 +1,5 @@
 import threading
 import webbrowser
-from multiprocessing import Process
 from pathlib import Path
 from typing import Optional, Any
 import os
@@ -8,19 +7,17 @@ import sys
 import asyncio
 import logging
 from time import sleep
-import requests
 
 import sentry_sdk
 
-from kucherx.domain.queue_quit_object import QueueQuitObject
-from kucherx.services.messages_publisher import MessagesPublisher
-from kucherx.services.cyphal_worker import cyphal_worker
-from kucherx.services.terminate_handler import make_terminate_handler
+from yukon.services.messages_publisher import MessagesPublisher
+from yukon.services.cyphal_worker import cyphal_worker
+from yukon.services.terminate_handler import make_terminate_handler
 
-from kucherx.domain.god_state import GodState
-from kucherx.sentry_setup import setup_sentry
-from kucherx.server import server, make_landing_and_bridge
-from kucherx.services.api import Api
+from yukon.domain.god_state import GodState
+from yukon.sentry_setup import setup_sentry
+from yukon.server import server, make_landing_and_bridge
+from yukon.services.api import Api
 
 setup_sentry(sentry_sdk)
 paths = sys.path
@@ -33,7 +30,7 @@ def run_electron():
     # Make the thread sleep for 1 second waiting for the server to start
     sleep(1)
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        root_path = Path(sys._MEIPASS).absolute() / "kucherx"
+        root_path = Path(sys._MEIPASS).absolute() / "yukon"
     else:
         print('running in a normal Python process')
         root_path = Path(__file__).absolute().parent
@@ -45,7 +42,6 @@ def run_electron():
         exe = root_path.parent / "electron" / "electron"
 
     # Use subprocess to run the exe
-    import subprocess
     os.spawnl(os.P_NOWAIT, exe, exe, "http://localhost:5000")
     os.spawnl(os.P_NOWAIT, exe, exe, "http://localhost:5000/main")
 

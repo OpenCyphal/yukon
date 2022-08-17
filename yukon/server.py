@@ -7,8 +7,8 @@ from inspect import signature
 from flask import Flask, render_template, jsonify, request
 from flask.blueprints import T_after_request
 
-from kucherx.domain.god_state import GodState
-from kucherx.services.api import Api
+from yukon.domain.god_state import GodState
+from yukon.services.api import Api
 
 import sys
 
