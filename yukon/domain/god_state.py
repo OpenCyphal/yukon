@@ -13,15 +13,15 @@ from pycyphal.application import Node
 from pycyphal.transport.can import CANTransport
 from pycyphal.transport.redundant import RedundantTransport
 
-from kucherx.domain.message import Message
-from kucherx.domain.allocation_request import AllocationRequest
-from kucherx.domain.HWID import HWID
-from kucherx.domain.attach_transport_request import AttachTransportRequest
-from kucherx.domain.UID import UID
-from kucherx.domain.avatar import Avatar
-from kucherx.domain.interface import Interface
-from kucherx.domain.note_state import NodeState
-from kucherx.domain.update_register_request import UpdateRegisterRequest
+from yukon.domain.message import Message
+from yukon.domain.allocation_request import AllocationRequest
+from yukon.domain.HWID import HWID
+from yukon.domain.attach_transport_request import AttachTransportRequest
+from yukon.domain.UID import UID
+from yukon.domain.avatar import Avatar
+from yukon.domain.interface import Interface
+from yukon.domain.note_state import NodeState
+from yukon.domain.update_register_request import UpdateRegisterRequest
 
 logger = logging.getLogger(__name__)
 

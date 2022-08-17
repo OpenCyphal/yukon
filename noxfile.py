@@ -17,7 +17,7 @@ nox.options.error_on_external_run = True
 compiled_dir = Path.cwd().resolve() / ".compiled"
 
 src_dirs = [
-    ROOT_DIR / "kucherx",
+    ROOT_DIR / "yukon",
     ROOT_DIR / "tests",
 ]
 
@@ -25,14 +25,14 @@ src_dirs = [
 @nox.session(reuse_venv=True)
 def black(session):
     session.run("pip", "install", "black == 22.*")
-    # black kucherx
-    session.run("black", "--check", "kucherx")
+    # black yukon
+    session.run("black", "--check", "yukon")
 
 
 @nox.session(reuse_venv=True)
 def mypy(session):
     session.run("pip", "install", "mypy==0.961")
-    session.run("mypy", "kucherx")
+    session.run("mypy", "yukon")
 
 
 @nox.session(reuse_venv=True)

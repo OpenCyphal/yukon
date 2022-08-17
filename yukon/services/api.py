@@ -8,16 +8,16 @@ from time import sleep
 from serial.tools import list_ports
 
 import uavcan
-from domain.attach_transport_request import AttachTransportRequest
-from domain.interface import Interface
-from domain.update_register_request import UpdateRegisterRequest
-from kucherx.domain.avatar import Avatar
-from kucherx.services.value_utils import unexplode_value
-from kucherx.domain.god_state import GodState
+from yukon.domain.attach_transport_request import AttachTransportRequest
+from yukon.domain.interface import Interface
+from yukon.domain.update_register_request import UpdateRegisterRequest
+from yukon.domain.avatar import Avatar
+from yukon.services.value_utils import unexplode_value
+from yukon.domain.god_state import GodState
 
 import logging
 
-from services.enhanced_json_encoder import EnhancedJSONEncoder
+from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.NOTSET)

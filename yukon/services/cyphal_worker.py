@@ -1,21 +1,20 @@
 import asyncio
 import logging
 import traceback
-from multiprocessing.managers import ValueProxy
 
 from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
-from kucherx.domain.attach_transport_request import AttachTransportRequest
-from kucherx.domain.attach_transport_response import AttachTransportResponse
-from kucherx.domain.god_state import GodState
-from kucherx.services.make_tracers_trackers import make_tracers_trackers
+from yukon.domain.attach_transport_request import AttachTransportRequest
+from yukon.domain.attach_transport_response import AttachTransportResponse
+from yukon.domain.god_state import GodState
+from yukon.services.make_tracers_trackers import make_tracers_trackers
 
 logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
 
 
-def cyphal_worker_thread(state: GodState) -> None:
+def cyphal_worker(state: GodState) -> None:
     """It starts the node and keeps adding any transports that are queued for adding"""
 
     async def _internal_method() -> None:

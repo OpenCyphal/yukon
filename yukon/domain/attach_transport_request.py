@@ -4,8 +4,8 @@ from typing import MutableMapping, Any
 
 from pycyphal.application import make_registry, register
 
-from kucherx.domain.UID import UID
-from kucherx.domain.interface import Interface
+from yukon.domain.UID import UID
+from yukon.domain.interface import Interface
 
 
 @dataclass

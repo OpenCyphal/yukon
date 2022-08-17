@@ -1,2 +1,0 @@
-class QueueQuitObject:
-    pass
