@@ -26,11 +26,11 @@ logger = logging.getLogger()
 logger.setLevel("INFO")
 
 
-def run_electron():
+def run_electron() -> None:
     # Make the thread sleep for 1 second waiting for the server to start
     sleep(1)
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        root_path = Path(sys._MEIPASS).absolute() / "yukon"
+        root_path = Path(sys._MEIPASS).absolute() / "yukon"  # type: ignore # pylint: disable=protected-access
     else:
         print('running in a normal Python process')
         root_path = Path(__file__).absolute().parent
@@ -66,7 +66,7 @@ def run_gui_app(state: GodState, api: Api) -> None:
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
-        exit(0)
+        sys.exit(0)
 
     # dpg.enable_docking(dock_space=False)
     make_terminate_handler(exit_handler)

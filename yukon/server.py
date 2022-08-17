@@ -4,16 +4,15 @@ import os
 import typing
 
 from inspect import signature
+import sys
 from flask import Flask, render_template, jsonify, request
 from flask.blueprints import T_after_request
 
 from yukon.domain.god_state import GodState
 from yukon.services.api import Api
 
-import sys
-
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-    root_path = sys._MEIPASS
+    root_path = sys._MEIPASS  # type: ignore # pylint: disable=protected-access
 else:
     print('running in a normal Python process')
     root_path = os.path.dirname(os.path.abspath(__file__))
@@ -37,14 +36,6 @@ def add_header(response: T_after_request) -> T_after_request:
 
 
 def make_landing_and_bridge(state: GodState, api: Api) -> None:
-    @server.route('/shutdown', methods=['POST'])
-    def shutdown():
-        func = request.environ.get('werkzeug.server.shutdown')
-        if func is None:
-            raise RuntimeError('Not running with the Werkzeug Server')
-        func()
-        return 'Server shutting down...'
-
     @server.route("/main", methods=["GET"])
     def monitor() -> typing.Any:
         return render_template("monitor/monitor.html", token=our_token)

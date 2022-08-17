@@ -25,7 +25,6 @@ if not Path("./.electron").exists():
     svgs = soup.find_all("svg", class_=re.compile("octicon octicon-package"))
     links = []
 
-
     for svg in svgs:
         links.append("https://github.com" + svg.parent.a["href"])
 
@@ -95,4 +94,5 @@ if not Path("./.electron").exists():
         os.remove(file_path)
 
 import subprocess
+
 subprocess.run(["pyinstaller", "--clean", "--noconfirm", "pyinstaller.spec"])
