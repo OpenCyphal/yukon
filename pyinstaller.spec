@@ -45,7 +45,7 @@ paths = kucherx.THIRDPARTY_PATH + [
 # ensures that the layout used for development exactly reflects the environment used in production.
 # The added size penalty is insignificant.
 datas = [
-    ('kucherx', '.'),
+    ('kucherx', '.')
 ]
 
 
@@ -92,8 +92,8 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           name=name,
-          debug=False,
+          debug=True,
           strip=False,
           upx=False,
           runtime_tmpdir=None,
-          console=False)
+          console=True)
