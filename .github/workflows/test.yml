@@ -1,4 +1,4 @@
-name: KucherX tests
+name: Yukon tests
 on: push
 jobs:
   python-quality-check:

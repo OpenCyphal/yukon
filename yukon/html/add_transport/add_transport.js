@@ -1,7 +1,17 @@
 // document load event
 (function () {
     var lastMessageIndex = -1;
+    const transport_types = Object.freeze({
+        MANUAL: "MANUAL",
+        TCP: 'TCP',
+        SLCAN: "SLCAN",
+        SOCKETCAN: "SOCKETCAN",
+        CANDUMP: "CANDUMP",
+        PICAN: "PICAN",
+    })
+    var currentSelectedTransport = transport_types.TCP;
     function doStuffWhenReady() {
+
         console.log("zubax_api_ready in add_transport.js");
         cbShowTransportCombobox = document.getElementById('cbShowTransportCombobox');
         var messagesList = document.querySelector("#messages-list");
@@ -14,6 +24,50 @@
             messageItem.innerHTML = message;
             messagesList.appendChild(messageItem);
             autosize(messageItem);
+        }
+        function fillSelectionWithSlcan() {
+            addLocalMessage("*** SLCAN ***");
+            zubax_api.get_slcan_ports().then(function (ports) {
+                ports = JSON.parse(ports);
+                console.log(ports);
+                var sTransport = document.getElementById("sTransport");
+                sTransport.innerHTML = "";
+                if (ports.length == 0) {
+                    var option = document.createElement("option");
+                    option.value = "";
+                    option.text = "No available ports";
+                    sTransport.add(option);
+                }
+                // Fill sTransport with ports
+                for (var i = 0; i < ports.length; i++) {
+                    var option = document.createElement("option");
+                    option.value = ports[i].device;
+                    option.text = ports[i].device + " (" + ports[i].description + ")";
+                    sTransport.add(option);
+                }
+            });
+        }
+        function fillSelectionWithSocketcan() {
+            addLocalMessage("*** SocketCAN ***");
+            zubax_api.get_socketcan_ports().then(function (ports) {
+                ports = JSON.parse(ports);
+                console.log(ports);
+                var sTransport = document.getElementById("sTransport");
+                sTransport.innerHTML = "";
+                // Fill sTransport with ports
+                if (ports.length == 0) {
+                    var option = document.createElement("option");
+                    option.value = "";
+                    option.text = "No available ports";
+                    sTransport.add(option);
+                }
+                for (var i = 0; i < ports.length; i++) {
+                    var option = document.createElement("option");
+                    option.value = ports[i];
+                    option.text = ports[i];
+                    sTransport.add(option);
+                }
+            });
         }
         function fetchAndDisplayMessages() {
             zubax_api.get_messages(lastMessageIndex + 1).then(function (messages) {
@@ -30,6 +84,63 @@
         function addLocalMessage(message) {
             zubax_api.add_local_message(message)
         }
+        function doTheTabSwitching() {
+            const h1TransportType = document.querySelector("h1#TransportType");
+            const iTransport = document.getElementById("iTransport");
+            const sTransport = document.getElementById("sTransport");
+            const divMtu = document.getElementById("divMtu");
+            const divArbRate = document.getElementById("divArbRate");
+            const divDataRate = document.getElementById("divDataRate");
+            const divNodeId = document.getElementById("divNodeId");
+            const divCandump = document.getElementById("divCandump");
+            const divTypeTransport = document.getElementById("divTypeTransport");
+            const divSelectTransport = document.getElementById("divSelectTransport");
+            divTypeTransport.style.display = "block";
+            divSelectTransport.style.display = "block";
+            divMtu.style.display = "block";
+            divArbRate.style.display = "block";
+            divDataRate.style.display = "block";
+            divNodeId.style.display = "block";
+            divCandump.style.display = "none";
+            switch (currentSelectedTransport) {
+                case transport_types.MANUAL:
+                    h1TransportType.innerHTML = "Type your own connection string";
+                    divSelectTransport.style.display = "none";
+                    break;
+                case transport_types.TCP:
+                    h1TransportType.innerHTML = "TCP";
+                    divTypeTransport.style.display = "none";
+                    divSelectTransport.style.display = "none";
+                    divMtu.style.display = "none";
+                    divArbRate.style.display = "none";
+                    divDataRate.style.display = "none";
+                    break;
+                case transport_types.SLCAN:
+                    h1TransportType.innerHTML = "SLCAN";
+                    divTypeTransport.style.display = "none";
+                    break;
+                case transport_types.SOCKETCAN:
+                    h1TransportType.innerHTML = "SocketCAN";
+                    divTypeTransport.style.display = "none";
+                    divArbRate.style.display = "none";
+                    divDataRate.style.display = "none";
+                    break;
+                case transport_types.CANDUMP:
+                    h1TransportType.innerHTML = "CANDUMP";
+                    divTypeTransport.style.display = "none";
+                    divSelectTransport.style.display = "none";
+                    divMtu.style.display = "none";
+                    divArbRate.style.display = "none";
+                    divDataRate.style.display = "none";
+                    divNodeId.style.display = "none";
+                    divCandump.style.display = "block";
+                    break;
+                case transport_types.PICAN:
+                    h1TransportType.innerHTML = "PICAN";
+                    divTypeTransport.style.display = "none";
+                    break;
+            }
+        }
         setInterval(function () {
             let currentWidth = messagesList.getBoundingClientRect().width
             if (currentWidth != messagesListWidth) {
@@ -39,6 +150,59 @@
                 }
             }
         }, 500);
+        function InitTabStuff() {
+            var maybe_tabs = document.getElementById('maybe-tabs');
+            // Iterate over each property of transport_types and add it to maybe-tabs
+            for (var property in transport_types) {
+                if (transport_types.hasOwnProperty(property)) {
+                    var new_tab = document.createElement('input');
+                    new_tab.setAttribute('type', 'radio');
+                    new_tab.setAttribute('name', 'transport');
+                    new_tab.setAttribute('id', "transport" + property);
+                    new_tab.setAttribute('value', property);
+                    // A label for new_tab
+                    var new_label = document.createElement('label');
+                    new_label.setAttribute('for', "transport" + property);
+                    new_label.innerHTML = property;
+                    maybe_tabs.appendChild(new_tab);
+                    maybe_tabs.appendChild(new_label);
+                }
+            }
+
+            var slider = document.querySelector('#maybe-tabs > .tab-slider');
+            var maybe_tabs_children_count = maybe_tabs.children.length;
+            var maybe_tabs_bounding_rect = maybe_tabs.getBoundingClientRect();
+            var slider_width = maybe_tabs_bounding_rect.width / maybe_tabs_children_count;
+            var width_of_first_child = maybe_tabs.children[0].getBoundingClientRect().width;
+            slider.style.width = width_of_first_child + 'px';
+            slider.style.height = maybe_tabs_bounding_rect.height + 'px';
+            slider.style.left = 0;
+            // Keep a counter of the current child index
+            var current_child_index = 0;
+            const inputChildren = [].slice.call(maybe_tabs.children).filter((child) => child.tagName == "INPUT");
+            const labelChildren = [].slice.call(maybe_tabs.children).filter((child) => child.tagName == "LABEL");
+            for (const child of inputChildren) {
+                let thisChildIndex = current_child_index;
+                // Connect each radio box to checked event
+                child.addEventListener('change', function () {
+                    if (this.checked) {
+                        child.style.backgroundColor = 'transparent';
+                        slider.style.left = labelChildren[thisChildIndex].getBoundingClientRect().left - maybe_tabs.getBoundingClientRect().left - 12 + 'px';
+                        slider.style.width = labelChildren[thisChildIndex].getBoundingClientRect().width + 24 + 'px';
+                        currentSelectedTransport = child.value;
+                        doTheTabSwitching();
+                        for (const child2 of labelChildren) {
+                            if (child2 != labelChildren[thisChildIndex]) {
+                                child2.style.backgroundColor = '#e0e0e0';
+                            } else {
+                                child2.style.backgroundColor = 'transparent';
+                            }
+                        }
+                    }
+                });
+                current_child_index++;
+            }
+        }
         function verifyInputs() {
             var iTransport = document.getElementById("iTransport");
             var sTransport = document.getElementById("sTransport");
@@ -100,33 +264,19 @@
             }
             return isFormCorrect;
         }
-        zubax_api.get_ports_list().then(
-            function (portsList) {
-                var btnStart = document.getElementById('btnStart');
-                addLocalMessage("Waiting to start...");
-                var iTransport = document.getElementById('iTransport');
-                var sTransport = document.getElementById("sTransport");
-                var d = JSON.parse(portsList);
-                if (d.length == 0) {
-                    addLocalMessage("No interfaces found");
-                } else {
-                    for (el of d) {
-                        if (el.length > 0) {
-                            var option = document.createElement("option");
-                            option.value = el;
-                            option.text = el;
-                            sTransport.appendChild(option);
-                        }
-                    }
-                }
-            }
-        );
 
         btnStart.addEventListener('click', function () {
             if (!verifyInputs()) { return; }
             var port = "";
+            var cbToggleSlcanSocketcan = document.getElementById('cbToggleSlcanSocketcan');
+            var useSocketCan = cbToggleSlcanSocketcan.checked;
             if (cbShowTransportCombobox.checked) {
-                port = "slcan:" + sTransport.value.split(" ")[0];
+                if (useSocketCan) {
+                    port_type = "socketcan";
+                } else {
+                    port_type = "slcan";
+                }
+                port = port_type + ":" + sTransport.value;
             } else {
                 port = iTransport.value;
             }
@@ -134,6 +284,7 @@
             var arb_rate = document.getElementById('iArbRate').value;
             var node_id = document.getElementById('iNodeId').value;
             var mtu = document.getElementById('iMtu').value;
+
             addLocalMessage("Going to attach now!")
             zubax_api.attach_transport(port, data_rate, arb_rate, node_id, mtu).then(
                 function (result) {
@@ -160,15 +311,9 @@
         });
         setInterval(fetchAndDisplayMessages, 1000);
 
-        cbShowTransportCombobox.addEventListener('change', function () {
-            if (cbShowTransportCombobox.checked) {
-                divTypeTransport.style.display = "none";
-                divSelectTransport.style.display = "block";
-            } else {
-                divTypeTransport.style.display = "block";
-                divSelectTransport.style.display = "none";
-            }
-        });
+
+        InitTabStuff();
+
         divTypeTransport.style.display = "block";
         divSelectTransport.style.display = "none";
 

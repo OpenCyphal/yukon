@@ -38,6 +38,7 @@ def add_header(response: T_after_request) -> T_after_request:
 def make_landing_and_bridge(state: GodState, api: Api) -> None:
     @server.route("/main", methods=["GET"])
     def monitor() -> typing.Any:
+        """For some reason it requires paths to be explicitly defined for my pages."""
         return render_template("monitor/monitor.html", token=our_token)
 
     @server.route("/", defaults={"path": ""}, methods=["GET", "POST"])

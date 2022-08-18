@@ -5,9 +5,8 @@ import webbrowser
 from queue import Empty
 from time import sleep
 
-from serial.tools import list_ports
-
 import uavcan
+from services.get_ports import get_socketcan_ports, get_slcan_ports
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.interface import Interface
 from yukon.domain.update_register_request import UpdateRegisterRequest
@@ -30,8 +29,13 @@ class Api:
         self.state = state
         self.last_avatars = []
 
-    def get_ports_list(self) -> str:
-        return json.dumps(list(map(str, list_ports.comports())))
+    def get_socketcan_ports(self) -> str:
+        _list = get_socketcan_ports()
+        return json.dumps(_list)
+
+    def get_slcan_ports(self) -> str:
+        _list = get_slcan_ports()
+        return json.dumps(_list)
 
     def add_local_message(self, message: str) -> None:
         logger.info(message)
