@@ -124,7 +124,6 @@
                     var textOut = document.querySelector("#textOut");
                     var DTO = JSON.parse(avatars);
                     if (DTO.hash != lastHash) {
-                        addLocalMessage("Hash changed");
                         lastHash = DTO.hash;
                         textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
                     }
