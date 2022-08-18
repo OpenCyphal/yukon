@@ -11,7 +11,6 @@
     })
     var currentSelectedTransport = transport_types.TCP;
     function doStuffWhenReady() {
-
         console.log("zubax_api_ready in add_transport.js");
         cbShowTransportCombobox = document.getElementById('cbShowTransportCombobox');
         var messagesList = document.querySelector("#messages-list");
@@ -26,7 +25,6 @@
             autosize(messageItem);
         }
         function fillSelectionWithSlcan() {
-            addLocalMessage("*** SLCAN ***");
             zubax_api.get_slcan_ports().then(function (ports) {
                 ports = JSON.parse(ports);
                 console.log(ports);
@@ -48,7 +46,6 @@
             });
         }
         function fillSelectionWithSocketcan() {
-            addLocalMessage("*** SocketCAN ***");
             zubax_api.get_socketcan_ports().then(function (ports) {
                 ports = JSON.parse(ports);
                 console.log(ports);
@@ -104,7 +101,7 @@
             divCandump.style.display = "none";
             switch (currentSelectedTransport) {
                 case transport_types.MANUAL:
-                    h1TransportType.innerHTML = "Type your own connection string";
+                    h1TransportType.innerHTML = "A connection string";
                     divSelectTransport.style.display = "none";
                     break;
                 case transport_types.TCP:
@@ -153,7 +150,8 @@
             }
         }, 500);
         function InitTabStuff() {
-            var maybe_tabs = document.getElementById('maybe-tabs');
+            const maybe_tabs = document.getElementById('maybe-tabs');
+            const slider = document.querySelector('#maybe-tabs > .tab-slider');
             // Iterate over each property of transport_types and add it to maybe-tabs
             for (var property in transport_types) {
                 if (transport_types.hasOwnProperty(property)) {
@@ -166,16 +164,16 @@
                     var new_label = document.createElement('label');
                     new_label.setAttribute('for', "transport" + property);
                     new_label.innerHTML = property;
-                    maybe_tabs.appendChild(new_tab);
-                    maybe_tabs.appendChild(new_label);
+                    maybe_tabs.insertBefore(new_tab, slider);
+                    maybe_tabs.insertBefore(new_label, slider);
                 }
             }
 
-            var slider = document.querySelector('#maybe-tabs > .tab-slider');
-            var maybe_tabs_children_count = maybe_tabs.children.length;
-            var maybe_tabs_bounding_rect = maybe_tabs.getBoundingClientRect();
-            var slider_width = maybe_tabs_bounding_rect.width / maybe_tabs_children_count;
-            var width_of_first_child = maybe_tabs.children[0].getBoundingClientRect().width;
+
+            const maybe_tabs_children_count = maybe_tabs.children.length;
+            const maybe_tabs_bounding_rect = maybe_tabs.getBoundingClientRect();
+            const slider_width = maybe_tabs_bounding_rect.width / maybe_tabs_children_count;
+            const width_of_first_child = maybe_tabs.children[0].getBoundingClientRect().width;
             slider.style.width = width_of_first_child + 'px';
             slider.style.height = maybe_tabs_bounding_rect.height + 'px';
             slider.style.left = 0;
@@ -191,9 +189,17 @@
                 // Connect each radio box to checked event
                 child.addEventListener('change', function () {
                     if (this.checked) {
+                        console.log("This child index: " + thisChildIndex);
                         child.style.backgroundColor = 'transparent';
-                        slider.style.left = labelChildren[thisChildIndex].getBoundingClientRect().left - maybe_tabs.getBoundingClientRect().left - 12 + 'px';
-                        slider.style.width = labelChildren[thisChildIndex].getBoundingClientRect().width + 24 + 'px';
+                        const targetLeftValue = labelChildren[thisChildIndex].getBoundingClientRect().left - maybe_tabs.getBoundingClientRect().left - 12;
+                        const targetWidth = labelChildren[thisChildIndex].getBoundingClientRect().width + 24
+
+                        var t = new Tween(slider.style, 'left', Tween.regularEaseOut, parseInt(slider.style.left), targetLeftValue, 0.3, 'px');
+                        t.start();
+                        var t2 = new Tween(slider.style, 'width', Tween.regularEaseOut, parseInt(slider.style.width), targetWidth, 0.3, 'px');
+                        t2.start();
+//                        slider.style.width =  + 'px';
+//                        slider.style.left =  + 'px';
                         currentSelectedTransport = child.value;
                         doTheTabSwitching();
                         for (const child2 of labelChildren) {
@@ -231,7 +237,7 @@
                     displayOneMessage("Transport shouldn't be empty and should be in the format <slcan|socketcan>:<port>");
                     isFormCorrect = false;
                 }
-                var transportMustContain = ["socketcan", "slcan"];
+                const transportMustContain = ["socketcan", "slcan"];
                 var containsAtLeastOne = false;
                 for (transportType of transportMustContain) {
                     if (iTransport.value.includes(transportType)) {
@@ -275,8 +281,8 @@
         btnStart.addEventListener('click', function () {
             if (!verifyInputs()) { return; }
             var port = "";
-            var cbToggleSlcanSocketcan = document.getElementById('cbToggleSlcanSocketcan');
-            var useSocketCan = currentSelectedTransport == transport_types.SOCKETCAN;
+            const cbToggleSlcanSocketcan = document.getElementById('cbToggleSlcanSocketcan');
+            const useSocketCan = currentSelectedTransport == transport_types.SOCKETCAN;
             if (currentSelectedTransport != transport_types.MANUAL) {
                 if (useSocketCan) {
                     port_type = "socketcan";
@@ -287,10 +293,10 @@
             } else {
                 port = iTransport.value;
             }
-            var data_rate = document.getElementById('iDataRate').value;
-            var arb_rate = document.getElementById('iArbRate').value;
-            var node_id = document.getElementById('iNodeId').value;
-            var mtu = document.getElementById('iMtu').value;
+            const data_rate = document.getElementById('iDataRate').value;
+            const arb_rate = document.getElementById('iArbRate').value;
+            const node_id = document.getElementById('iNodeId').value;
+            const mtu = document.getElementById('iMtu').value;
 
             addLocalMessage("Going to attach now!")
             zubax_api.attach_transport(port, data_rate, arb_rate, node_id, mtu).then(

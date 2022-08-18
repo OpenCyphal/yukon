@@ -47,6 +47,11 @@ def run_electron() -> None:
 
 
 def run_gui_app(state: GodState, api: Api) -> None:
+    logging.getLogger("pycyphal").setLevel(logging.INFO)
+    logging.getLogger("can").setLevel(logging.INFO)
+    logging.getLogger("asyncio").setLevel(logging.CRITICAL)
+    logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
+
     messages_publisher = MessagesPublisher(state)
     messages_publisher.setLevel(logging.NOTSET)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -73,10 +78,7 @@ def run_gui_app(state: GodState, api: Api) -> None:
     start_electron_thread = threading.Thread(target=run_electron)
     start_electron_thread.start()
     server.run(host="0.0.0.0", port=5000)
-    logging.getLogger("pycyphal").setLevel(logging.INFO)
-    logging.getLogger("can").setLevel(logging.INFO)
-    logging.getLogger("asyncio").setLevel(logging.CRITICAL)
-    logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
+
 
     exit_handler(None, None)
     state.gui.gui_running = False

@@ -114,7 +114,8 @@ input[type=text] {
     display: inline-block !important;
 }
 
-form#transport-selection-form>#maybe-tabs {
+form#transport-selection-form > #maybe-tabs {
+    overflow: hidden;
     position: relative;
     /* Making it an anchor point for tab-slider */
     display: flex;
