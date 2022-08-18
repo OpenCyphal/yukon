@@ -128,6 +128,7 @@ form#transport-selection-form>#maybe-tabs>label {
     display: inline !important;
     height: 100%;
     padding: 0.5em;
+    background-color: #e0e0e0;
 }
 
 form#transport-selection-form>#maybe-tabs>input {

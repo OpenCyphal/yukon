@@ -118,12 +118,14 @@
                 case transport_types.SLCAN:
                     h1TransportType.innerHTML = "SLCAN";
                     divTypeTransport.style.display = "none";
+                    fillSelectionWithSlcan();
                     break;
                 case transport_types.SOCKETCAN:
                     h1TransportType.innerHTML = "SocketCAN";
                     divTypeTransport.style.display = "none";
                     divArbRate.style.display = "none";
                     divDataRate.style.display = "none";
+                    fillSelectionWithSocketcan();
                     break;
                 case transport_types.CANDUMP:
                     h1TransportType.innerHTML = "CANDUMP";
@@ -181,6 +183,9 @@
             var current_child_index = 0;
             const inputChildren = [].slice.call(maybe_tabs.children).filter((child) => child.tagName == "INPUT");
             const labelChildren = [].slice.call(maybe_tabs.children).filter((child) => child.tagName == "LABEL");
+            slider.style.left = labelChildren[0].getBoundingClientRect().left - maybe_tabs.getBoundingClientRect().left - 12 + 'px';
+            slider.style.width = labelChildren[0].getBoundingClientRect().width + 24 + 'px';
+            labelChildren[0].style.backgroundColor = 'transparent';
             for (const child of inputChildren) {
                 let thisChildIndex = current_child_index;
                 // Connect each radio box to checked event
@@ -202,6 +207,8 @@
                 });
                 current_child_index++;
             }
+            currentSelectedTransport = transport_types.MANUAL;
+            doTheTabSwitching();
         }
         function verifyInputs() {
             var iTransport = document.getElementById("iTransport");
@@ -218,7 +225,7 @@
             iDataRate.classList.remove("is-danger");
             iNodeId.classList.remove("is-danger");
             var isFormCorrect = true;
-            if (!cbShowTransportCombobox.checked) {
+            if (currentSelectedTransport == transport_types.MANUAL) {
                 if (iTransport.value == "" || !iTransport.value.includes(":")) {
                     iTransport.classList.add("is-danger");
                     displayOneMessage("Transport shouldn't be empty and should be in the format <slcan|socketcan>:<port>");
@@ -269,8 +276,8 @@
             if (!verifyInputs()) { return; }
             var port = "";
             var cbToggleSlcanSocketcan = document.getElementById('cbToggleSlcanSocketcan');
-            var useSocketCan = cbToggleSlcanSocketcan.checked;
-            if (cbShowTransportCombobox.checked) {
+            var useSocketCan = currentSelectedTransport == transport_types.SOCKETCAN;
+            if (currentSelectedTransport != transport_types.MANUAL) {
                 if (useSocketCan) {
                     port_type = "socketcan";
                 } else {
