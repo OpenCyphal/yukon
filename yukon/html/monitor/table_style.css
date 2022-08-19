@@ -46,6 +46,10 @@ td {
   word-wrap: break-word;
 }
 
+td.no-padding {
+  padding: 1px;
+}
+
 th button {
   margin-left: 0.5em;
 }
@@ -57,5 +61,6 @@ td input {
   background-color: #fff;
   font-size: 0.875rem;
   text-align: left;
-  padding: 4;
+  padding: 7;
+  outline: none;
 }

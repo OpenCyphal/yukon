@@ -118,20 +118,6 @@
             );
         }
 
-        function updateTextOut() {
-            zubax_api.get_avatars().then(
-                function (avatars) {
-                    var textOut = document.querySelector("#textOut");
-                    var DTO = JSON.parse(avatars);
-                    if (DTO.hash != lastHash) {
-                        lastHash = DTO.hash;
-                        textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
-                    }
-                    // Parse avatars as json
-                }
-            );
-        }
-        setInterval(updateTextOut, 500);
         // Call update_messages every second
         setInterval(update_messages, 1000);
         btnTextOutput.addEventListener('click', function () {

@@ -3,8 +3,11 @@
         // Make a callback on the page load event
         console.log("monitor ready");
         var current_avatars = [];
-        var last_hashes = []
+        var last_hashes = {set: new Set()};
+        var last_table_hashes = {set: new Set()}; // The same avatar hashes but for tables
+        var lastHash = "";
         var my_graph = null;
+        var selected_registers = {}; // Key is nodeid concat with register name, value is true if selected
         function create_directed_graph() {
             cytoscape.use(cytoscapeKlay);
             my_graph = cytoscape({
@@ -74,6 +77,16 @@
                 var node = evt.target;
             });
         }
+        function export_registers(node_id) {
+            // Get the avatar from current_avatars which has the node_id
+            var avatar = current_avatars.find((avatar) => avatar.node_id == node_id);
+            if (avatar == null) {
+                addLocalMessage("No avatar found for node_id " + node_id);
+                return;
+            }
+            var registers = JSON.parse(JSON.stringify(avatar.registers_exploded_values)); // A deep copy
+
+        }
         function refresh_graph_layout() {
             var layout = my_graph.layout(
                 {
@@ -127,43 +140,44 @@
             layout.run();
         }
         // Look  through the list of current_avatars
-        // and check if any of them have a hash that is not included in the last_hashes array
+        // and check if any of them have a hash that is not included in the existingHashesList array
         // If so then return true
-        function areThereAnyNewOrMissingHashes() {
-            var hasNewHashes = false;
-            var hasMissingHashes = false;
+        function eqSet(xs, ys) {
+            return xs.size === ys.size && [...xs].every((x) => ys.has(x));
+        }
+
+        function areThereAnyNewOrMissingHashes(existingHashesSet) {
+            current_hashes_set = new Set();
             for (var i = 0; i < current_avatars.length; i++) {
-                if (!last_hashes.includes(current_avatars[i].hash)) {
-                    hasNewHashes = true;
-                }
+                current_hashes_set.add(current_avatars[i].hash);
             }
-            // Check if there are any hashes in the last_hashes array that are not in the current_avatars array
-            for (var i = 0; i < last_hashes.length; i++) {
-                var wasThisHashFound = false;
-                for (var j = 0; j < current_avatars.length; j++) {
-                    if (last_hashes[i] == current_avatars[j].hash) {
-                        wasThisHashFound = true;
-                        break;
-                    }
-                }
-                if (!wasThisHashFound) {
-                    hasMissingHashes = true;
-                    break;
-                }
-            }
-            return hasNewHashes || hasMissingHashes;
+            return !eqSet(current_hashes_set, existingHashesSet.set);
         }
         // Clear all existing hashes in last_hashes array
         // Add all hashes from current_avatars array to last_hashes array
-        function updateLastHashes() {
-            last_hashes = [];
+        function updateLastHashes(existingHashesSet) {
+            existingHashesSet.set = new Set();
             for (var i = 0; i < current_avatars.length; i++) {
-                last_hashes.push(current_avatars[i].hash);
+                existingHashesSet.set.add(current_avatars[i].hash);
             }
         }
         function update_register_value(register_name, register_value, node_id) {
             zubax_api.update_register_value(register_name, register_value, node_id);
         }
+        function updateTextOut(refresh_anyway = false) {
+            zubax_api.get_avatars().then(
+                function (avatars) {
+                    var textOut = document.querySelector("#textOut");
+                    var DTO = JSON.parse(avatars);
+                    if (DTO.hash != lastHash || refresh_anyway) {
+                        lastHash = DTO.hash;
+                        textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
+                    }
+                    // Parse avatars as json
+                }
+            );
+        }
+        setInterval(updateTextOut, 1000);
         function create_registers_table() {
             // Clear the table
             var registers_table = document.querySelector('#registers_table')
@@ -182,11 +196,17 @@
                 table_header_row.appendChild(table_header_cell);
                 // Add a button to table_header_cell for downloading the table column
                 var button = document.createElement('button');
-                button.innerHTML = 'Download';
+                button.innerHTML = 'Export';
                 button.onclick = function () {
                     addLocalMessage("Download clicked")
                 }
                 table_header_cell.appendChild(button);
+                var button2 = document.createElement('button');
+                button2.innerHTML = 'Apply imported config';
+                button2.onclick = function () {
+                    addLocalMessage("Apply imported config clicked")
+                }
+                table_header_cell.appendChild(button2);
             });
             registers_table_header.appendChild(table_header_row);
             // Combine all register names from avatar.registers into an array
@@ -208,6 +228,19 @@
                 // Add table cells for each avatar, containing the value of the register from register_name
                 current_avatars.forEach(function (avatar) {
                     var table_cell = document.createElement('td');
+                    table_cell.className = 'no-padding';
+                    table_cell.onclick = function () {
+                        if (!selected_registers[avatar.node_id + register_name]) {
+                            selected_registers[avatar.node_id + register_name] = true;
+                            table_cell.style.backgroundColor = '#ee0000';
+                        } else {
+                            selected_registers[avatar.node_id + register_name] = false;
+                            table_cell.style.backgroundColor = '#ffffff';
+                        }
+                    };
+                    if (selected_registers[avatar.node_id + register_name]) {
+                        table_cell.style.backgroundColor = '#ee0000';
+                    }
                     // Set an attribute on td to store the register name
                     table_cell.setAttribute('id', "register_" + register_name);
                     var register_value = avatar.registers_values[register_name];
@@ -236,18 +269,24 @@
                         // When the text input is clicked
                         table_cell.appendChild(text_input);
                     }
+                    // Set the height of inputFieldReference to match the height of the table cell
+                    inputFieldReference.style.height = 100 + '%';
+                    var lastClick = null;
                     inputFieldReference.addEventListener('click', function () {
-                        // Make a dialog box to enter the new value
-                        var new_value = prompt("Enter new value for " + register_name + ":", register_value);
-                        // If the user entered a value
-                        if (new_value != null) {
-                            // Update the value in the table
-                            text_input.value = new_value;
-                            // Update the value in the avatar
-                            avatar.registers_values[register_name] = new_value;
-                            // Update the value in the server
-                            update_register_value(register_name, new_value, avatar.node_id,);
+                        if (lastClick && new Date() - lastClick < 500) {
+                            // Make a dialog box to enter the new value
+                            var new_value = prompt("Enter new value for " + register_name + ":", register_value);
+                            // If the user entered a value
+                            if (new_value != null) {
+                                // Update the value in the table
+                                text_input.value = new_value;
+                                // Update the value in the avatar
+                                avatar.registers_values[register_name] = new_value;
+                                // Update the value in the server
+                                update_register_value(register_name, new_value, avatar.node_id,);
+                            }
                         }
+                        lastClick = new Date();
                     });
                     // Create a text input element in the table cell
 
@@ -283,11 +322,11 @@
             }
         }
         function update_directed_graph() {
-            if (!areThereAnyNewOrMissingHashes()) {
+            if (!areThereAnyNewOrMissingHashes(last_hashes)) {
+                updateLastHashes(last_hashes);
                 return;
-            } else {
-                updateLastHashes();
             }
+            updateLastHashes(last_hashes);
             my_graph.elements().remove();
             available_publishers = {};
             available_servers = {};
@@ -342,8 +381,11 @@
             );
         }
         function update_tables() {
-            update_avatars_table();
-            create_registers_table();
+            if (areThereAnyNewOrMissingHashes(last_table_hashes)) {
+                update_avatars_table();
+                create_registers_table();
+            }
+            updateLastHashes(last_table_hashes);
         }
         setInterval(update_tables, 1000)
         setInterval(get_and_display_avatars, 1000);
@@ -376,9 +418,13 @@
         var hideYakut = document.getElementById('hide-yakut');
         hideYakut.addEventListener('change', function () {
             if (hideYakut.checked) {
-                zubax_api.hide_yakut();
+                zubax_api.hide_yakut().then(() => {
+                    updateTextOut(true);
+                });
             } else {
-                zubax_api.show_yakut();
+                zubax_api.show_yakut().then(() => {
+                    updateTextOut(true);
+                });
             }
         });
         // This is actually one of the tabs in the tabbed interface but it also acts as a refresh layout button
@@ -390,6 +436,7 @@
         btnAddAnotherTransport.addEventListener('click', function () {
             zubax_api.open_add_transport_window();
         });
+
     }
     try {
         if (zubax_api_ready) {
