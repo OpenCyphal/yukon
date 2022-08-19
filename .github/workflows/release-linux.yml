@@ -1,6 +1,6 @@
 on:
   release:
-    types: [published]
+    types: [push]
   schedule:
     - cron: '00 08 * * *'  # early morning (04:00 UTC) every day
 
