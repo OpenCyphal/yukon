@@ -25,33 +25,33 @@ def make_handler_for_node_detected(
     def handle_getinfo_handler_format(
         node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
     ) -> None:
-        logger.info("Some hearbeat was probably received")
+        logger.debug("Some hearbeat was probably received")
         if next_entry and next_entry.info is None:
-            logger.info("No info received")
+            logger.debug("No info received")
         elif next_entry and next_entry.info is not None:
-            logger.info("A getinfo response was received")
+            logger.debug("A getinfo response was received")
         if previous_entry is None and next_entry is not None:
-            logger.info(f"Node with id {node_id} became visible.")
+            logger.debug(f"Node with id {node_id} became visible.")
             new_avatar = Avatar(iface, node_id=node_id, info=next_entry.info)
             state.avatar.avatars_by_node_id[node_id] = new_avatar
         elif previous_entry is not None and next_entry is None:
-            logger.info(f"Node with id {node_id} disappeared.")
+            logger.debug(f"Node with id {node_id} disappeared.")
             del state.avatar.avatars_by_node_id[node_id]
         is_new_or_updated_entry = next_entry is not None
         if is_new_or_updated_entry:
             current_avatar = state.avatar.avatars_by_node_id[node_id]
             is_triggered_by_getinfo_request = next_entry.info is not None  # type: ignore
             if is_triggered_by_getinfo_request:
-                logger.info(f"Node with id {node_id} has info: {next_entry.info}")  # type: ignore
+                logger.debug(f"Node with id {node_id} has info: {next_entry.info}")  # type: ignore
             else:
                 getinfo_client = state.cyphal.local_node.make_client(uavcan.node.GetInfo_1_0, node_id)
                 getinfo_request = uavcan.node.GetInfo_1_0.Request()
                 result = asyncio.create_task(asyncio.wait_for(getinfo_client.call(getinfo_request), timeout=1))
                 # I am not using the result here because it gets snooped by the avatar
                 if result:
-                    logger.info(f"Node with id {node_id} has info: {result}")
+                    logger.debug(f"Node with id {node_id} has info: {result}")
                 else:
-                    logger.info(f"Node with id {node_id} has no info")
+                    logger.debug(f"Node with id {node_id} has no info")
 
                 async def get_register_value(register_name: str) -> typing.Any:
                     service_client = state.cyphal.local_node.make_client(uavcan.register.Access_1_0, node_id)

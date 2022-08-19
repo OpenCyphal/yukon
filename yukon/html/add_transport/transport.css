@@ -1,8 +1,23 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0px;
     padding: 0px;
     box-sizing: border-box;
 }
+
+.noselect * {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}
+
 form#transport-selection-form {
     display: block;
     margin: 0.5em;
@@ -10,23 +25,25 @@ form#transport-selection-form {
     padding: 0.5em;
     padding-right: 1em;
 }
-form#transport-selection-form div {
+
+form#transport-selection-form>div {
     display: block;
     margin-top: 0.5em;
     margin-bottom: 0.5em;
 }
 
-form#transport-selection-form div label {
+form#transport-selection-form>div>label {
     display: block;
     margin-bottom: 0.5em;
 }
 
-form#transport-selection-form div label.inline {
+form#transport-selection-form>div>label.inline {
     display: inline-block;
     margin-bottom: 0.5em;
 }
 
-form#transport-selection-form div input[type=number],input[type=text] {
+form#transport-selection-form>div>input[type=number],
+input[type=text] {
     display: block;
     width: 100%;
     padding: 4px;
@@ -36,7 +53,7 @@ form#transport-selection-form div input[type=number],input[type=text] {
     display: block;
     width: 100%;
     margin-bottom: 0.5em;
-    padding-right: 0;
+    padding: 4px;
 }
 
 .left-right-panel {
@@ -46,13 +63,16 @@ form#transport-selection-form div input[type=number],input[type=text] {
     justify-content: flex-start;
     align-items: flex-start;
 }
+
 #messages {
     flex-grow: 10;
 }
+
 #messages-list {
     overflow-y: scroll;
     height: calc(74vh);
 }
+
 #messages-list textarea {
     display: block;
     list-style: none;
@@ -63,6 +83,7 @@ form#transport-selection-form div input[type=number],input[type=text] {
     height: content-box;
     overflow-y: hidden;
 }
+
 #messages-list textarea:focus {
     box-shadow: 0 0 5px #ccc;
 }
@@ -70,10 +91,57 @@ form#transport-selection-form div input[type=number],input[type=text] {
 #messages_title {
     margin-top: 2em;
 }
+
 .is-danger {
     background-color: #C35404;
 }
+
 .is-danger::placeholder {
-  color: #ffffff;
-  opacity: 1;
+    color: #ffffff;
+    opacity: 1;
+}
+
+.choice-inline-label {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.choice-inline-label>label.surrounding-label {
+    margin-right: 0.5em;
+    margin-left: 0.5em;
+    display: inline-block !important;
+}
+
+form#transport-selection-form > #maybe-tabs {
+    overflow: hidden;
+    position: relative;
+    /* Making it an anchor point for tab-slider */
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    height: 33px;
+}
+
+form#transport-selection-form>#maybe-tabs>label {
+    display: inline !important;
+    height: 100%;
+    padding: 0.5em;
+    background-color: #e0e0e0;
+}
+
+form#transport-selection-form>#maybe-tabs>input {
+    margin: 0;
+    padding: 0;
+    width: 0;
+    height: 0;
+    visibility: hidden;
+}
+
+form#transport-selection-form>#maybe-tabs>.tab-slider {
+    position: absolute;
+    background-color: #ee0000;
+    z-index: -1;
 }

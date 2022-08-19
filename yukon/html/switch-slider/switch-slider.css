@@ -23,6 +23,10 @@
   transition: .4s;
 }
 
+.equal-saturation > .slider {
+    background-color: #21f367
+}
+
 .slider:before {
   position: absolute;
   content: "";
@@ -38,6 +42,8 @@
 input:checked + .slider {
   background-color: #2196F3;
 }
+
+
 
 input:focus + .slider {
   box-shadow: 0 0 1px #2196F3;

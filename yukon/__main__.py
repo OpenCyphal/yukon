@@ -6,4 +6,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())  # pylint: disable=no-value-for-parameter
     except KeyboardInterrupt:
-        print("KucherX is closing.")
+        print("Yukon is closing.")

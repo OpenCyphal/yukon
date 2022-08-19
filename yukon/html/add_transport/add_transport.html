@@ -1,55 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KucherX — Transport</title>
+    <title>Yukon — Transport</title>
     <link rel="stylesheet" href="../add_transport/transport.css">
     <script src="../jquery-3.6.0.min.js"></script>
     <script src="../api.js"></script>
     <script src="../add_transport/add_transport.js"></script>
     <script src="../autosize.js"></script>
+    <script src="../tween.js"></script>
     <link rel="stylesheet" href="../switch-slider/switch-slider.css">
 </head>
+
 <body>
     <div class="left-right-panel">
         <form id="transport-selection-form">
-            <p>Either type or select the interface</p>
+            <div id="maybe-tabs" class="noselect">
+                <span class="tab-slider"></span>
+            </div>
+            <h1 id="TransportType"></h1>
             <div id="divTypeTransport">
                 <label for="iTransport">Transport interface</label>
                 <input type="text" id="iTransport" placeholder="Transport" value="socketcan:vcan0">
-                <button id="btnOpenCandumpFile">Open candump file</button>
             </div>
-            <div class="choice" title="Toggles between typing and choosing the transport interface">
-                <label for="cbShowTransportCombobox">Show selection of ports</label>
-                <label class="switch">
-                  <input type="checkbox" id="cbShowTransportCombobox">
-                  <span class="slider round"></span>
-                </label>
+            <div id="divCandump">
+                <button id="btnOpenCandumpFile">Open candump file</button>
             </div>
             <div id="divSelectTransport">
                 <label for="sTransport">Select transport</label>
                 <select id="sTransport"></select>
             </div>
-            <div class="">
+            <div class="" id="divMtu">
                 <label for="iMtu">MTU</label>
                 <input type="number" id="iMtu" value="64" min="8" max="1500" class="form-control">
             </div>
-            <div class="">
+            <div class="" id="divArbRate">
                 <label for="iArbRate">Arbitration rate</label>
                 <input type="number" id="iArbRate" value="1000000" min="1000000" max="2000000">
             </div>
-            <div class="">
+            <div class="" id="divDataRate">
                 <label for="iDataRate">Data rate</label>
                 <input type="number" id="iDataRate" value="1000000" min="1000000" max="2000000">
             </div>
-            <div class="">
+            <div class="" id="divNodeId">
                 <label for="iNodeId">Node ID</label>
                 <input type="number" id="iNodeId" value="1" min="1" max="255" class="form-control">
             </div>
             <button type="button" id="btnStart" class="btn btn-lg btn-primary btn-block">Start this transport</button>
-            <button type="button" id="btnAddTransport" class="btn btn-lg btn-primary btn-block">Configure another transport</button>
+            <button type="button" id="btnAddTransport" class="btn btn-lg btn-primary btn-block">Configure another
+                transport</button>
         </form>
         <div id="messages">
             <p id="messages_title">Messages</p>
@@ -64,4 +66,5 @@
     </div>
 
 </body>
+
 </html>

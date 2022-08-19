@@ -179,7 +179,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                     and ds.service_id == get_fixed_port_id(type)
                 ):
                     if handler == self._on_access_request:
-                        logger.info("%r: Received access request", self)
+                        logger.debug("%r: Received access request", self)
                     rr = getattr(type, role.name.capitalize())
                     deserialized_object = pycyphal.dsdl.deserialize(rr, tr.fragmented_payload)
                     logger.debug("%r: Service snoop: %r from %r", self, deserialized_object, tr)
