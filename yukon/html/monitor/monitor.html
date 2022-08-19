@@ -29,7 +29,7 @@
         <div class="c-tabs-nav">
             <a href="#" class="c-tabs-nav__link is-active" id="btnMonitorTab">Monitor</a>
             <a href="#" class="c-tabs-nav__link">Datatypes table</a>
-            <a href="#" class="c-tabs-nav__link" id="btnTextOutput">Text output</a>
+            <a href="#" class="c-tabs-nav__link" id="btnTextOutput">Debug view of JSON for avatars</a>
             <a href="#" class="c-tabs-nav__link">Port lists table</a>
             <a href="#" class="c-tabs-nav__link">Registers view</a>
             <a href="#" class="c-tabs-nav__link" id="btnAddAnotherTransport">Add another transport</a>
@@ -67,7 +67,7 @@
                         <div class="excluded-keywords"
                             title="Messages that don't include these keywords will be shown.">
                             <label for="taExcludedKeywords">Excluded keywords (one per line)</label>
-                            <textarea name="exclusions" id="taExcludedKeywords" cols="60" rows="10"></textarea>
+                            <textarea name="exclusions" id="taExcludedKeywords" cols="60" rows="10" spellcheck="false"></textarea>
                         </div>
                     </div>
 
@@ -92,7 +92,7 @@
             </div>
         </div>
         <div class="c-tab" id="tabTextOut">
-            <textarea id="textOut"></textarea>
+            <textarea id="textOut" spellcheck="false"></textarea>
         </div>
         <div class="c-tab">
             <table id="avatars_table">
@@ -112,6 +112,8 @@
         </div>
         <div class="c-tab">
             <h1>Registers view</h1>
+            <button id="btnImportRegistersConfig">Import registers config</button>
+            <button id="">Set value of selected registers</button>
             <table id="registers_table">
                 <thead>
                 </thead>

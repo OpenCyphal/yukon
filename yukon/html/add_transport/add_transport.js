@@ -3,11 +3,11 @@
     var lastMessageIndex = -1;
     const transport_types = Object.freeze({
         MANUAL: "MANUAL",
-        TCP: 'TCP',
+//        TCP: 'TCP',
         SLCAN: "SLCAN",
         SOCKETCAN: "SOCKETCAN",
-        CANDUMP: "CANDUMP",
-        PICAN: "PICAN",
+//        CANDUMP: "CANDUMP",
+//        PICAN: "PICAN",
     })
     var currentSelectedTransport = transport_types.TCP;
     function doStuffWhenReady() {
@@ -198,15 +198,16 @@
                         t.start();
                         var t2 = new Tween(slider.style, 'width', Tween.regularEaseOut, parseInt(slider.style.width), targetWidth, 0.3, 'px');
                         t2.start();
-//                        slider.style.width =  + 'px';
-//                        slider.style.left =  + 'px';
+
                         currentSelectedTransport = child.value;
                         doTheTabSwitching();
                         for (const child2 of labelChildren) {
                             if (child2 != labelChildren[thisChildIndex]) {
                                 child2.style.backgroundColor = '#e0e0e0';
+                                child2.style.color = '#000';
                             } else {
                                 child2.style.backgroundColor = 'transparent';
+                                child2.style.color = '#fff';
                             }
                         }
                     }
