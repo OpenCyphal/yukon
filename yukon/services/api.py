@@ -2,6 +2,7 @@ import json
 import typing
 import copy
 import webbrowser
+from pathlib import Path
 from time import sleep
 import logging
 
@@ -70,8 +71,18 @@ class Api:
         root.focus_force()
         file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
         root.withdraw()
-        with open(file_path, "r") as f:
-            configuration = f.read()
+        root.destroy()
+        try:
+            with open(file_path, "r") as f:
+                contents = f.read()
+                contents_deserialized = json.loads(contents)
+                contents_deserialized["__file_name"] = Path(file_path).name
+                configuration = json.dumps(contents_deserialized)
+        except Exception:
+            logger.exception("Nothing was selected from the file dialog")
+            return ""
+        else:
+            logger.debug(f"Configuration: {configuration}")
         return configuration
 
     def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:

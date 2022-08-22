@@ -100,6 +100,17 @@
             divDataRate.style.display = "block";
             divNodeId.style.display = "block";
             divCandump.style.display = "none";
+            const iArbRate = document.getElementById("iArbRate");
+            const iDataRate = document.getElementById("iDataRate");
+            const iNodeId = document.getElementById("iNodeId");
+
+            iTransport.classList.remove("is-danger");
+            sTransport.classList.remove("is-danger");
+            iMtu.classList.remove("is-danger");
+            iArbRate.classList.remove("is-danger");
+            iDataRate.classList.remove("is-danger");
+            iNodeId.classList.remove("is-danger");
+
             switch (currentSelectedTransport) {
                 case transport_types.MANUAL:
                     h1TransportType.innerHTML = "A connection string";

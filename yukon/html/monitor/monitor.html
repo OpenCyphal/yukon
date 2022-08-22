@@ -27,12 +27,12 @@
 <body>
     <div id="tabs" class="c-tabs no-js">
         <div class="c-tabs-nav">
-            <a href="#" class="c-tabs-nav__link is-active" id="btnMonitorTab">Monitor</a>
-            <a href="#" class="c-tabs-nav__link">Datatypes table</a>
-            <a href="#" class="c-tabs-nav__link" id="btnTextOutput">Debug view of JSON for avatars</a>
-            <a href="#" class="c-tabs-nav__link">Port lists table</a>
-            <a href="#" class="c-tabs-nav__link">Registers view</a>
-            <a href="#" class="c-tabs-nav__link" id="btnAddAnotherTransport">Add another transport</a>
+            <a href="#" class="c-tabs-nav__link is-active" ondragstart="return false;" ondrop="return false;" id="btnMonitorTab">Monitor</a>
+            <a href="#" class="c-tabs-nav__link" ondragstart="return false;" ondrop="return false;" >Datatypes table</a>
+            <a href="#" class="c-tabs-nav__link" ondragstart="return false;" ondrop="return false;" id="btnTextOutput">Debug view of JSON for avatars</a>
+            <a href="#" class="c-tabs-nav__link" ondragstart="return false;" ondrop="return false;">Port lists table</a>
+            <a href="#" class="c-tabs-nav__link" ondragstart="return false;" ondrop="return false;">Registers view</a>
+            <a href="#" class="c-tabs-nav__link" ondragstart="return false;" ondrop="return false;" id="btnAddAnotherTransport">Add another transport</a>
         </div>
         <div class="c-tab is-active">
             <div class="c-tab__content split-horizontal">
@@ -113,7 +113,13 @@
         <div class="c-tab">
             <h1>Registers view</h1>
             <button id="btnImportRegistersConfig">Import registers config</button>
-            <button id="">Set value of selected registers</button>
+            <button id="btnSelectedSetFromPrompt">Set value of selected registers</button>
+            <button id="btnSelectedSetFromConfig">Set value of selected registers from selected config</button>
+            <div id="configChoice">
+                <label for="available_configurations_radios" id="lbl_available_configurations_radios">Choose one of the available configurations:</label>
+                <div id="available_configurations_radios">
+                </div>
+            </div>
             <table id="registers_table">
                 <thead>
                 </thead>

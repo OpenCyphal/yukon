@@ -92,3 +92,11 @@ textarea#textOut {
 #taExcludedKeywords {
     height: 100%;
 }
+
+#available_configurations_radios {
+    margin: 0.5em;
+    width: 30em;
+    display: grid;
+    grid-template-columns: 0.1fr auto;
+    grid-gap: 0.5em;
+}

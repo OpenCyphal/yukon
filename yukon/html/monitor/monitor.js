@@ -10,7 +10,9 @@
         var last_table_hashes = {set: new Set()}; // The same avatar hashes but for tables
         var lastHash = "";
         var my_graph = null;
+        var available_configurations = {};
         var selected_registers = {}; // Key is nodeid concat with register name, value is true if selected
+        var selected_config = null
         function create_directed_graph() {
             cytoscape.use(cytoscapeKlay);
             my_graph = cytoscape({
@@ -184,6 +186,31 @@
             );
         }
         setInterval(updateTextOut, 1000);
+        function select_configuration(i) {
+            select_configuration = i;
+            addLocalMessage("Configuration " + i + " selected");
+        }
+        function update_available_configurations_list() {
+            var available_configurations_radios = document.querySelector("#available_configurations_radios");
+            available_configurations_radios.innerHTML = "";
+            for (const [key, value] of Object.entries(available_configurations)) {
+                // Fill in the available_configurations_radios with radio buttons
+                var radio = document.createElement("input");
+                radio.type = "radio";
+                radio.name = "configuration";
+                radio.value = key;
+                radio.id = key;
+                radio.onclick = function () {
+                    select_configuration(this.id);
+                }
+                available_configurations_radios.appendChild(radio);
+                // Label for radio
+                var label = document.createElement("label");
+                label.htmlFor = key;
+                label.innerHTML = key;
+                available_configurations_radios.appendChild(label);
+            }
+        }
         function create_registers_table() {
             // Clear the table
             var registers_table = document.querySelector('#registers_table')
@@ -212,7 +239,7 @@
                 var button2 = document.createElement('button');
                 button2.innerHTML = 'Apply imported config';
                 button2.addEventListener('click', function () {
-                    
+                    zubax_api.apply_configuration_to_node()
                 });
                 table_header_cell.appendChild(button2);
             });
@@ -233,6 +260,7 @@
                 var table_header_cell = document.createElement('th');
                 table_header_cell.innerHTML = register_name;
                 table_register_row.appendChild(table_header_cell);
+
                 // Add table cells for each avatar, containing the value of the register from register_name
                 current_avatars.forEach(function (avatar) {
                     var table_cell = document.createElement('td');
@@ -448,7 +476,14 @@
         btnImportRegistersConfig.addEventListener('click', function () {
             zubax_api.import_node_configuration().then(
                 function (result) {
-                    addLocalMessage("Imported config: " + result);
+                    if(result == "") {
+                        addLocalMessage("No configuration imported");
+                    } else {
+                        addLocalMessage("Configuration imported");
+                        result_deserialized = JSON.parse(result);
+                        available_configurations[result_deserialized["__file_name"]] = result;
+                        update_available_configurations_list();
+                    }
                 }
             )
         });
