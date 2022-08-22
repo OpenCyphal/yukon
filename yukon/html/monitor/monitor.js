@@ -85,6 +85,7 @@
                 return;
             }
             var registers = JSON.parse(JSON.stringify(avatar.registers_exploded_values)); // A deep copy
+            zubax_api.save_node_configuration(node_id, registers, configuration_name);
 
         }
         function refresh_graph_layout() {

@@ -40,6 +40,15 @@ class Api:
     def add_local_message(self, message: str) -> None:
         logger.info(message)
 
+    def save_node_configuration(self, node_id, serialized_configuration):
+        import tkinter as tk
+        from tkinter import filedialog
+
+        root = tk.Tk()
+        root.withdraw()
+
+        file_path = filedialog.asksaveasfilename(filetypes=[("Candump files", ".candump .txt .json")])
+        _ = file_path
     def open_file_dialog(self) -> None:
         import tkinter as tk
         from tkinter import filedialog
