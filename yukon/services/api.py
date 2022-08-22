@@ -88,6 +88,9 @@ class Api:
     def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
         self.state.queues.apply_configuration.put(ApplyConfigurationRequest(node_id, configuration))
 
+    def apply_all_of_configuration(self, configuration: str) -> None:
+        self.state.queues.apply_configuration.put(ApplyConfigurationRequest(None, configuration))
+
     def open_file_dialog(self) -> None:
         import tkinter as tk
         from tkinter import filedialog

@@ -225,6 +225,11 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         json_object: Any = {
             "node_id": self._node_id,
             "hash": self.__hash__(),
+            "monitor_view_hash": hash(frozenset(self._ports.pub))
+            ^ hash(frozenset(self._ports.sub))
+            ^ hash(frozenset(self._ports.cln))
+            ^ hash(frozenset(self._ports.srv))
+            ^ hash(self._info.name.tobytes().decode() if self._info is not None else None),
             "name": self._info.name.tobytes().decode() if self._info is not None else None,
             "ports": {
                 "pub": list(self._ports.pub),
@@ -234,8 +239,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             },
             "registers": list(self._register_set),
             "registers_values": self.register_values,
-            "registers_hash": hash(frozenset(self.register_values.items())),
             "registers_exploded_values": self.register_exploded_values,
+            "registers_hash": hash(frozenset(self.register_exploded_values)),
         }
         return json_object
 
@@ -247,6 +252,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(frozenset(self._ports.cln))
             ^ hash(frozenset(self._ports.srv))
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
+            ^ hash(frozenset(self.register_exploded_values))
         )
 
     def __repr__(self) -> str:

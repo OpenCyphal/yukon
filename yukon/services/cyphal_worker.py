@@ -61,15 +61,24 @@ def cyphal_worker(state: GodState) -> None:
                     asyncio.create_task(client.call(request))
                 if not state.queues.apply_config.empty():
                     config = state.queues.apply_config.get_nowait()
-                    # Make a new client for access request and config.node_id
-                    client = state.cyphal.local_node.make_client(uavcan.register.Access_1, config.node_id)
-                    # Make a uavcan.register.Access_1 request to the node
-                    request = uavcan.register.Access_1.Request()
-                    data = json.loads(config.configuration)
-                    for k, v in data.items():
-                        if k.endsWith(".type"):
-                            continue
-                        state.queues.update_registers.put(UpdateRegisterRequest(k, unexplode_value(v), config.node_id))
+                    if config.node_id:
+                        # Make a new client for access request and config.node_id
+                        client = state.cyphal.local_node.make_client(uavcan.register.Access_1, config.node_id)
+                        # Make a uavcan.register.Access_1 request to the node
+                        request = uavcan.register.Access_1.Request()
+                        data = json.loads(config.configuration)
+                        for k, v in data.items():
+                            if k.endsWith(".type"):
+                                continue
+                            state.queues.update_registers.put(UpdateRegisterRequest(k, unexplode_value(v), config.node_id))
+                    else:
+                        data = json.loads(config.configuration)
+                        for node_id, register_values_exploded in data.items():
+                            for k, v in register_values_exploded.items():
+                                if k.endsWith(".type"):
+                                    continue
+                                state.queues.update_registers.put(
+                                    UpdateRegisterRequest(k, unexplode_value(v), node_id))
         except Exception as e:
             logger.exception(e)
             raise e

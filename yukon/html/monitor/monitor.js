@@ -11,8 +11,9 @@
         var lastHash = "";
         var my_graph = null;
         var available_configurations = {};
-        var selected_registers = {}; // Key is nodeid concat with _ and register name, value is true if selected
+        var selected_registers = {}; // Key is array of nodeid and register name, value is true if selected
         var selected_config = null
+        var selected_columns = {}; // Key is the node_id and value is true if selected
         function create_directed_graph() {
             cytoscape.use(cytoscapeKlay);
             my_graph = cytoscape({
@@ -101,7 +102,7 @@
                     name: 'klay',
                     klay: {
                         // Following descriptions taken from http://layout.rtsys.informatik.uni-kiel.de:9444/Providedlayout.html?algorithm=de.cau.cs.kieler.klay.layered
-                        addUnnecessaryBendpoints: false, // Adds bend points even if an edge does not change direction.
+                        addUnnecessaryBendpoints: true, // Adds bend points even if an edge does not change direction.
                         aspectRatio: 1.6, // The aimed aspect ratio of the drawing, that is the quotient of width by height
                         borderSpacing: 20, // Minimal amount of space to be left to the border
                         compactComponents: false, // Tries to further compact components (disconnected sub-graphs).
@@ -154,19 +155,19 @@
             return xs.size === ys.size && [...xs].every((x) => ys.has(x));
         }
 
-        function areThereAnyNewOrMissingHashes(existingHashesSet) {
+        function areThereAnyNewOrMissingHashes(existingHashesSet, hash_property) {
             current_hashes_set = new Set();
             for (var i = 0; i < current_avatars.length; i++) {
-                current_hashes_set.add(current_avatars[i].hash);
+                current_hashes_set.add(current_avatars[i][hash_property]);
             }
             return !eqSet(current_hashes_set, existingHashesSet.set);
         }
         // Clear all existing hashes in last_hashes array
         // Add all hashes from current_avatars array to last_hashes array
-        function updateLastHashes(existingHashesSet) {
+        function updateLastHashes(existingHashesSet, hash_property) {
             existingHashesSet.set = new Set();
             for (var i = 0; i < current_avatars.length; i++) {
-                existingHashesSet.set.add(current_avatars[i].hash);
+                existingHashesSet.set.add(current_avatars[i][hash_property]);
             }
         }
         function update_register_value(register_name, register_value, node_id) {
@@ -211,6 +212,7 @@
                 available_configurations_radios.appendChild(label);
             }
         }
+
         function create_registers_table() {
             // Clear the table
             var registers_table = document.querySelector('#registers_table')
@@ -222,6 +224,21 @@
             // Add the table headers
             var table_header_row = document.createElement('tr');
             var empty_table_header_row_cell = document.createElement('th');
+            // Add a button into the empty table header row cell
+            var button = document.createElement('button');
+            button.innerHTML = 'Apply all of configuration';
+            button.onclick = function () {
+                if(selected_configuration != null && available_configurations[selected_configuration] != null) {
+                    zubax_api.apply_all_of_configuration(available_configurations[selected_configuration]);
+                }
+            }
+            empty_table_header_row_cell.appendChild(button);
+            var button = document.createElement('button');
+            button.innerHTML = 'Save all of configuration';
+            button.onclick = function () {
+                
+            }
+            empty_table_header_row_cell.appendChild(button);
             table_header_row.appendChild(empty_table_header_row_cell);
             current_avatars.forEach(function (avatar) {
                 var table_header_cell = document.createElement('th');
@@ -266,15 +283,15 @@
                     var table_cell = document.createElement('td');
                     table_cell.className = 'no-padding';
                     table_cell.onclick = function () {
-                        if (!selected_registers[avatar.node_id + "_" + register_name]) {
-                            selected_registers[avatar.node_id + "_" + register_name] = true;
+                        if (!selected_registers[[avatar.node_id, register_name]]) {
+                            selected_registers[[avatar.node_id, register_name]] = true;
                             table_cell.style.backgroundColor = '#ee0000';
                         } else {
-                            selected_registers[avatar.node_id + "_" + register_name] = false;
+                            selected_registers[[avatar.node_id, register_name]] = false;
                             table_cell.style.backgroundColor = '#ffffff';
                         }
                     };
-                    if (selected_registers[avatar.node_id + "_" + register_name]) {
+                    if (selected_registers[[avatar.node_id, register_name]]) {
                         table_cell.style.backgroundColor = '#ee0000';
                     }
                     // Set an attribute on td to store the register name
@@ -358,11 +375,11 @@
             }
         }
         function update_directed_graph() {
-            if (!areThereAnyNewOrMissingHashes(last_hashes)) {
-                updateLastHashes(last_hashes);
+            if (!areThereAnyNewOrMissingHashes(last_hashes, "monitor_view_hash")) {
+                updateLastHashes(last_hashes, "monitor_view_hash");
                 return;
             }
-            updateLastHashes(last_hashes);
+            updateLastHashes(last_hashes, "monitor_view_hash");
             my_graph.elements().remove();
             available_publishers = {};
             available_servers = {};
@@ -417,11 +434,11 @@
             );
         }
         function update_tables() {
-            if (areThereAnyNewOrMissingHashes(last_table_hashes)) {
+            if (areThereAnyNewOrMissingHashes(last_table_hashes, "hash")) {
                 update_avatars_table();
                 create_registers_table();
             }
-            updateLastHashes(last_table_hashes);
+            updateLastHashes(last_table_hashes, "hash");
         }
         setInterval(update_tables, 1000)
         setInterval(get_and_display_avatars, 1000);
@@ -494,7 +511,7 @@
             addLocalMessage("Setting selected registers to " + new_value);
             // For key and value of selected_registers, set the value to value
             for (const [key, value] of Object.entries(selected_registers)) {
-                const [node_id, register_name] = key.split("_");
+                const [node_id, register_name] = key;
                 if(node_id && register_name) {
                     update_register_value(register_name, new_value, avatar.node_id);
                 }
@@ -508,7 +525,7 @@
             addLocalMessage("Unsetting selected registers");
             // For key and value of selected_registers, set the value to value
             for (const [key, value] of Object.entries(selected_registers)) {
-                const [node_id, register_name] = key.split("_");
+                const [node_id, register_name] = key;
                 if(node_id && register_name) {
                     update_register_value(register_name, "65535", avatar.node_id);
                 }
