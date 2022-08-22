@@ -11,7 +11,7 @@
         var lastHash = "";
         var my_graph = null;
         var available_configurations = {};
-        var selected_registers = {}; // Key is nodeid concat with register name, value is true if selected
+        var selected_registers = {}; // Key is nodeid concat with _ and register name, value is true if selected
         var selected_config = null
         function create_directed_graph() {
             cytoscape.use(cytoscapeKlay);
@@ -266,15 +266,15 @@
                     var table_cell = document.createElement('td');
                     table_cell.className = 'no-padding';
                     table_cell.onclick = function () {
-                        if (!selected_registers[avatar.node_id + register_name]) {
-                            selected_registers[avatar.node_id + register_name] = true;
+                        if (!selected_registers[avatar.node_id + "_" + register_name]) {
+                            selected_registers[avatar.node_id + "_" + register_name] = true;
                             table_cell.style.backgroundColor = '#ee0000';
                         } else {
-                            selected_registers[avatar.node_id + register_name] = false;
+                            selected_registers[avatar.node_id + "_" + register_name] = false;
                             table_cell.style.backgroundColor = '#ffffff';
                         }
                     };
-                    if (selected_registers[avatar.node_id + register_name]) {
+                    if (selected_registers[avatar.node_id + "_" + register_name]) {
                         table_cell.style.backgroundColor = '#ee0000';
                     }
                     // Set an attribute on td to store the register name
@@ -486,6 +486,36 @@
                     }
                 }
             )
+        });
+        btnSelectedSetFromPrompt = document.getElementById('btnSelectedSetFromPrompt');
+        btnSelectedSetFromPrompt.addEventListener('click', function () {
+            new_value = prompt("Enter the new value of selected registers", "")
+            if(new_value == null) { addLocalMessage("No value was provided in the prompt."); return; }
+            addLocalMessage("Setting selected registers to " + new_value);
+            // For key and value of selected_registers, set the value to value
+            for (const [key, value] of Object.entries(selected_registers)) {
+                const [node_id, register_name] = key.split("_");
+                if(node_id && register_name) {
+                    update_register_value(register_name, new_value, avatar.node_id);
+                }
+            }
+            setTimeout(() => {
+                update_tables();
+            }, 100);
+        });
+        const btnSelectedUnsetValues = document.getElementById('btnSelectedUnsetValues');
+        btnSelectedUnsetValues.addEventListener('click', function () {
+            addLocalMessage("Unsetting selected registers");
+            // For key and value of selected_registers, set the value to value
+            for (const [key, value] of Object.entries(selected_registers)) {
+                const [node_id, register_name] = key.split("_");
+                if(node_id && register_name) {
+                    update_register_value(register_name, "65535", avatar.node_id);
+                }
+            }
+            setTimeout(() => {
+                update_tables();
+            }, 100);
         });
     }
     try {

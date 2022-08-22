@@ -104,6 +104,7 @@
             const iDataRate = document.getElementById("iDataRate");
             const iNodeId = document.getElementById("iNodeId");
 
+            // Making sure that no inputs are no longer colored red if there was an error with these inputs
             iTransport.classList.remove("is-danger");
             sTransport.classList.remove("is-danger");
             iMtu.classList.remove("is-danger");

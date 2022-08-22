@@ -102,8 +102,11 @@ class Api:
         # Find the avatar which has the node_id
         for avatar in self.state.avatar.avatars_by_node_id.values():
             if avatar.node_id == node_id:
-                exploded_value = avatar.register_exploded_values[register_name]
+                exploded_value = avatar.register_exploded_values.get(register_name, None)
                 break
+        if exploded_value is None:
+            logger.warning(f"No register {register_name} found for node_id {node_id}")
+            return
         new_exploded_value = copy.copy(exploded_value)
         # Check if register_value can be converted to an int, is purely numeric
         if register_value.isnumeric():
