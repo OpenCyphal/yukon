@@ -1,4 +1,7 @@
 (function () {
+    function addLocalMessage(message) {
+        zubax_api.add_local_message(message)
+    }
     function doStuffWhenReady() {
         // Make a callback on the page load event
         console.log("monitor ready");
@@ -81,12 +84,14 @@
             // Get the avatar from current_avatars which has the node_id
             var avatar = current_avatars.find((avatar) => avatar.node_id == node_id);
             if (avatar == null) {
-                addLocalMessage("No avatar found for node_id " + node_id);
+                addLocalMessage("No avatar found for node_id: " + node_id);
+                addLocalMessage("Returning early");
+
                 return;
             }
             var registers = JSON.parse(JSON.stringify(avatar.registers_exploded_values)); // A deep copy
-            zubax_api.save_node_configuration(node_id, registers, configuration_name);
-
+            addLocalMessage("Found avatar for node_id: " + node_id);
+            zubax_api.save_node_configuration(node_id, JSON.stringify(registers));
         }
         function refresh_graph_layout() {
             var layout = my_graph.layout(
@@ -198,15 +203,17 @@
                 // Add a button to table_header_cell for downloading the table column
                 var button = document.createElement('button');
                 button.innerHTML = 'Export';
-                button.onclick = function () {
-                    addLocalMessage("Download clicked")
-                }
+                // Attach an event listener on the button click event
+                button.addEventListener('click', function () {
+                    addLocalMessage("Exporting registers of " + avatar.node_id);
+                    export_registers(avatar.node_id);
+                });
                 table_header_cell.appendChild(button);
                 var button2 = document.createElement('button');
                 button2.innerHTML = 'Apply imported config';
-                button2.onclick = function () {
-                    addLocalMessage("Apply imported config clicked")
-                }
+                button2.addEventListener('click', function () {
+                    
+                });
                 table_header_cell.appendChild(button2);
             });
             registers_table_header.appendChild(table_header_row);
@@ -437,7 +444,14 @@
         btnAddAnotherTransport.addEventListener('click', function () {
             zubax_api.open_add_transport_window();
         });
-
+        btnImportRegistersConfig = document.getElementById('btnImportRegistersConfig');
+        btnImportRegistersConfig.addEventListener('click', function () {
+            zubax_api.import_node_configuration().then(
+                function (result) {
+                    addLocalMessage("Imported config: " + result);
+                }
+            )
+        });
     }
     try {
         if (zubax_api_ready) {

@@ -62,6 +62,9 @@ def run_gui_app(state: GodState, api: Api) -> None:
     cyphal_worker_thread = threading.Thread(target=cyphal_worker, args=[state])
     cyphal_worker_thread.start()
 
+    def run_server() -> None:
+        server.run(host="0.0.0.0", port=5000)
+
     def open_webbrowser() -> None:
         webbrowser.open("http://localhost:5000/")
 
@@ -75,11 +78,14 @@ def run_gui_app(state: GodState, api: Api) -> None:
 
     # dpg.enable_docking(dock_space=False)
     make_terminate_handler(exit_handler)
-    start_electron_thread = threading.Thread(target=run_electron)
-    start_electron_thread.start()
-    server.run(host="0.0.0.0", port=5000)
-
-
+    # start_electron_thread = threading.Thread(target=run_electron)
+    # start_electron_thread.start()
+    start_server_thread = threading.Thread(target=run_server)
+    start_server_thread.start()
+    while True:
+        sleep(1)
+        if not state.gui.gui_running:
+            break
     exit_handler(None, None)
     state.gui.gui_running = False
 

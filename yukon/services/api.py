@@ -2,19 +2,18 @@ import json
 import typing
 import copy
 import webbrowser
-from queue import Empty
 from time import sleep
+import logging
 
 import uavcan
-from services.get_ports import get_socketcan_ports, get_slcan_ports
+from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
+from yukon.services.get_ports import get_socketcan_ports, get_slcan_ports
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.interface import Interface
 from yukon.domain.update_register_request import UpdateRegisterRequest
 from yukon.domain.avatar import Avatar
 from yukon.services.value_utils import unexplode_value
 from yukon.domain.god_state import GodState
-
-import logging
 
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
@@ -45,10 +44,39 @@ class Api:
         from tkinter import filedialog
 
         root = tk.Tk()
-        root.withdraw()
+        root.geometry('1x1+1+1')
 
+        # Show window again and lift it to top so it can get focus,
+        # otherwise dialogs will end up behind the terminal.
+        root.deiconify()
+        root.lift()
+        root.focus_force()
         file_path = filedialog.asksaveasfilename(filetypes=[("Candump files", ".candump .txt .json")])
-        _ = file_path
+        root.withdraw()
+        root.destroy()
+        if file_path:
+            with open(file_path, "w") as f:
+                f.write(serialized_configuration)
+        else:
+            logger.warning("No file selected")
+
+    def import_node_configuration(self):
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.geometry('1x1+1+1')
+        root.deiconify()
+        root.lift()
+        root.focus_force()
+        file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
+        root.withdraw()
+        with open(file_path, "r") as f:
+            configuration = f.read()
+        return configuration
+
+    def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
+        self.state.queues.apply_configuration.put(ApplyConfigurationRequest(node_id, configuration))
+
     def open_file_dialog(self) -> None:
         import tkinter as tk
         from tkinter import filedialog

@@ -85,6 +85,7 @@
             const h1TransportType = document.querySelector("h1#TransportType");
             const iTransport = document.getElementById("iTransport");
             const sTransport = document.getElementById("sTransport");
+            const iMtu = document.getElementById("iMtu");
             const divMtu = document.getElementById("divMtu");
             const divArbRate = document.getElementById("divArbRate");
             const divDataRate = document.getElementById("divDataRate");
@@ -115,6 +116,7 @@
                 case transport_types.SLCAN:
                     h1TransportType.innerHTML = "SLCAN";
                     divTypeTransport.style.display = "none";
+                    iMtu.value = 8;
                     fillSelectionWithSlcan();
                     break;
                 case transport_types.SOCKETCAN:
@@ -122,6 +124,7 @@
                     divTypeTransport.style.display = "none";
                     divArbRate.style.display = "none";
                     divDataRate.style.display = "none";
+                    iMtu.value = 64;
                     fillSelectionWithSocketcan();
                     break;
                 case transport_types.CANDUMP:

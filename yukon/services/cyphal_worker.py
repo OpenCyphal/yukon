@@ -1,10 +1,13 @@
 import asyncio
+import json
 import logging
 import traceback
 
 from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
+from domain.update_register_request import UpdateRegisterRequest
+from services.value_utils import unexplode_value
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.attach_transport_response import AttachTransportResponse
 from yukon.domain.god_state import GodState
@@ -56,6 +59,17 @@ def cyphal_worker(state: GodState) -> None:
                     request.value = register_update.value
                     # We don't need the response here because it is snooped by an avatar anyway
                     asyncio.create_task(client.call(request))
+                if not state.queues.apply_config.empty():
+                    config = state.queues.apply_config.get_nowait()
+                    # Make a new client for access request and config.node_id
+                    client = state.cyphal.local_node.make_client(uavcan.register.Access_1, config.node_id)
+                    # Make a uavcan.register.Access_1 request to the node
+                    request = uavcan.register.Access_1.Request()
+                    data = json.loads(config.configuration)
+                    for k, v in data.items():
+                        if k.endsWith(".type"):
+                            continue
+                        state.queues.update_registers.put(UpdateRegisterRequest(k, unexplode_value(v), config.node_id))
         except Exception as e:
             logger.exception(e)
             raise e

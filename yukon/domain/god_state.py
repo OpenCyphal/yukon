@@ -10,9 +10,9 @@ from pycyphal.application.node_tracker import NodeTracker
 
 import pycyphal
 from pycyphal.application import Node
-from pycyphal.transport.can import CANTransport
 from pycyphal.transport.redundant import RedundantTransport
 
+from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
 from yukon.domain.message import Message
 from yukon.domain.allocation_request import AllocationRequest
 from yukon.domain.HWID import HWID
@@ -40,6 +40,7 @@ class QueuesState:
     attach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
     detach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
     update_registers: Queue[UpdateRegisterRequest] = field(default_factory=Queue)
+    apply_config: Queue[ApplyConfigurationRequest] = field(default_factory=Queue)
 
 
 @dataclass
