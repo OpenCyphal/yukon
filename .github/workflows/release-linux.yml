@@ -1,6 +1,8 @@
 on:
   release:
     types: [push]
+    branches:
+      - main
   schedule:
     - cron: '00 08 * * *'  # early morning (04:00 UTC) every day
 
@@ -53,9 +55,10 @@ jobs:
       - name: Deploy the release
         if: ${{ success() }}
         run: |
-            YUKON_VERSION=$(python3 -c "from yukon.version import __version__; print('.'.join(map(str, __version__)))")
-            YUKON_TARGET_DIR=/var/www/files/products/com.zubax.yukon/$YUKON_VERSION/linux-x86_64
-            ssh target "mkdir -p $YUKON_TARGET_DIR; echo $YUKON_TARGET_DIR"
-            scp $KUCHER_ARTIFACT target:$YUKON_TARGET_DIR
+          YUKON_VERSION_1=$(python3 -c "from yukon.version import __version__; print(__version__)")
+          YUKON_VERSION=$(python3 -c "from yukon.version import __version__; print(__version__)")
+          YUKON_TARGET_DIR=/var/www/files/products/com.zubax.yukon/nightly/$YUKON_VERSION/linux-x86_64
+          ssh target "mkdir -p $YUKON_TARGET_DIR; echo $YUKON_TARGET_DIR"
+          scp $YUKON_ARTIFACT target:$YUKON_TARGET_DIR
         env:
-          KUCHER_ARTIFACT: dist/Yukon
+          YUKON_ARTIFACT: dist/Yukon
