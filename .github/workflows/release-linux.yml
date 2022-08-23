@@ -1,6 +1,8 @@
 on:
   release:
     types: [push]
+    branches:
+      - main
   schedule:
     - cron: '00 08 * * *'  # early morning (04:00 UTC) every day
 
