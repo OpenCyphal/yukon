@@ -6,8 +6,8 @@ import traceback
 from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
-from domain.update_register_request import UpdateRegisterRequest
-from services.value_utils import unexplode_value
+from yukon.domain.update_register_request import UpdateRegisterRequest
+from yukon.services.value_utils import unexplode_value
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.attach_transport_response import AttachTransportResponse
 from yukon.domain.god_state import GodState
@@ -53,14 +53,17 @@ def cyphal_worker(state: GodState) -> None:
                 if not state.queues.update_registers.empty():
                     register_update = state.queues.update_registers.get_nowait()
                     # make a uavcan.register.Access_1 request to the node
-                    client = state.cyphal.local_node.make_client(uavcan.register.Access_1, register_update.node_id)
-                    request = uavcan.register.Access_1.Request()
-                    request.name.name = register_update.register_name
-                    request.value = register_update.value
-                    # We don't need the response here because it is snooped by an avatar anyway
-                    asyncio.create_task(client.call(request))
-                if not state.queues.apply_config.empty():
-                    config = state.queues.apply_config.get_nowait()
+                    try:
+                        client = state.cyphal.local_node.make_client(uavcan.register.Access_1, register_update.node_id)
+                        request = uavcan.register.Access_1.Request()
+                        request.name.name = register_update.register_name
+                        request.value = register_update.value
+                        # We don't need the response here because it is snooped by an avatar anyway
+                        asyncio.create_task(client.call(request))
+                    except:
+                        logger.exception("Failed to update register %s for %s", register_update.register_name, node_id)
+                if not state.queues.apply_configuration.empty():
+                    config = state.queues.apply_configuration.get_nowait()
                     if config.node_id:
                         # Make a new client for access request and config.node_id
                         client = state.cyphal.local_node.make_client(uavcan.register.Access_1, config.node_id)
@@ -68,17 +71,24 @@ def cyphal_worker(state: GodState) -> None:
                         request = uavcan.register.Access_1.Request()
                         data = json.loads(config.configuration)
                         for k, v in data.items():
-                            if k.endsWith(".type"):
+                            if k[-5:] == ".type":
                                 continue
                             state.queues.update_registers.put(UpdateRegisterRequest(k, unexplode_value(v), config.node_id))
                     else:
+                        logger.debug("Setting configuration for all configured nodes")
                         data = json.loads(config.configuration)
                         for node_id, register_values_exploded in data.items():
+                            if "__" in node_id:
+                                continue
+                            # If register_values_exploded is not a dict, it is an error
+                            if not isinstance(register_values_exploded, dict):
+                                logger.error(f"Configuration for node {node_id} is not a dict")
+                                continue
                             for k, v in register_values_exploded.items():
-                                if k.endsWith(".type"):
+                                if k[-5:] == ".type":
                                     continue
                                 state.queues.update_registers.put(
-                                    UpdateRegisterRequest(k, unexplode_value(v), node_id))
+                                    UpdateRegisterRequest(k, unexplode_value(v), int(node_id)))
         except Exception as e:
             logger.exception(e)
             raise e

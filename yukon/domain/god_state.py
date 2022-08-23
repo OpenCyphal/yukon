@@ -40,7 +40,7 @@ class QueuesState:
     attach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
     detach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
     update_registers: Queue[UpdateRegisterRequest] = field(default_factory=Queue)
-    apply_config: Queue[ApplyConfigurationRequest] = field(default_factory=Queue)
+    apply_configuration: Queue[ApplyConfigurationRequest] = field(default_factory=Queue)
 
 
 @dataclass

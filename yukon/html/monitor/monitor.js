@@ -188,7 +188,7 @@
         }
         setInterval(updateTextOut, 1000);
         function select_configuration(i) {
-            select_configuration = i;
+            selected_config = i;
             addLocalMessage("Configuration " + i + " selected");
         }
         function update_available_configurations_list() {
@@ -228,8 +228,8 @@
             var button = document.createElement('button');
             button.innerHTML = 'Apply selected configuration to all configured nodes';
             button.onclick = function () {
-                if(selected_configuration != null && available_configurations[selected_configuration] != null) {
-                    zubax_api.apply_all_of_configuration(available_configurations[selected_configuration]);
+                if(selected_config != null && available_configurations[selected_config] != null) {
+                    zubax_api.apply_all_of_configuration(available_configurations[selected_config]);
                 }
             }
             empty_table_header_row_cell.appendChild(button);
