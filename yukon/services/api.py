@@ -22,6 +22,53 @@ logger = logging.getLogger(__file__)
 logger.setLevel(logging.NOTSET)
 
 
+def save_candump_file_contents(file_contents):
+    import tkinter as tk
+    from tkinter import filedialog
+
+    root = tk.Tk()
+    root.geometry('1x1+1+1')
+
+    # Show window again and lift it to top so it can get focus,
+    # otherwise dialogs will end up behind the terminal.
+    root.deiconify()
+    root.lift()
+    root.focus_force()
+    file_path = filedialog.asksaveasfilename(filetypes=[("Candump files", ".candump .txt .json")])
+    root.withdraw()
+    root.destroy()
+    if file_path:
+        with open(file_path, "w") as f:
+            f.write(file_contents)
+    else:
+        logger.warning("No file selected")
+
+
+def import_candump_file_contents():
+    import tkinter as tk
+    from tkinter import filedialog
+    root = tk.Tk()
+    root.geometry('1x1+1+1')
+    root.deiconify()
+    root.lift()
+    root.focus_force()
+    file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
+    root.withdraw()
+    root.destroy()
+    try:
+        with open(file_path, "r") as f:
+            contents = f.read()
+            contents_deserialized = json.loads(contents)
+            contents_deserialized["__file_name"] = Path(file_path).name
+            configuration = json.dumps(contents_deserialized)
+    except Exception:
+        logger.exception("Nothing was selected from the file dialog")
+        return ""
+    else:
+        logger.debug(f"Configuration: {configuration}")
+    return configuration
+
+
 class Api:
     last_avatars: typing.List[Avatar] = []
 
@@ -41,49 +88,16 @@ class Api:
         logger.info(message)
 
     def save_node_configuration(self, node_id, serialized_configuration):
-        import tkinter as tk
-        from tkinter import filedialog
+        save_candump_file_contents(serialized_configuration)
 
-        root = tk.Tk()
-        root.geometry('1x1+1+1')
+    def save_all_of_register_configuration(self, serialized_configuration):
+        save_candump_file_contents(serialized_configuration)
 
-        # Show window again and lift it to top so it can get focus,
-        # otherwise dialogs will end up behind the terminal.
-        root.deiconify()
-        root.lift()
-        root.focus_force()
-        file_path = filedialog.asksaveasfilename(filetypes=[("Candump files", ".candump .txt .json")])
-        root.withdraw()
-        root.destroy()
-        if file_path:
-            with open(file_path, "w") as f:
-                f.write(serialized_configuration)
-        else:
-            logger.warning("No file selected")
+    def import_all_of_register_configuration(self):
+        return import_candump_file_contents()
 
     def import_node_configuration(self):
-        import tkinter as tk
-        from tkinter import filedialog
-        root = tk.Tk()
-        root.geometry('1x1+1+1')
-        root.deiconify()
-        root.lift()
-        root.focus_force()
-        file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
-        root.withdraw()
-        root.destroy()
-        try:
-            with open(file_path, "r") as f:
-                contents = f.read()
-                contents_deserialized = json.loads(contents)
-                contents_deserialized["__file_name"] = Path(file_path).name
-                configuration = json.dumps(contents_deserialized)
-        except Exception:
-            logger.exception("Nothing was selected from the file dialog")
-            return ""
-        else:
-            logger.debug(f"Configuration: {configuration}")
-        return configuration
+        return import_candump_file_contents()
 
     def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
         self.state.queues.apply_configuration.put(ApplyConfigurationRequest(node_id, configuration))

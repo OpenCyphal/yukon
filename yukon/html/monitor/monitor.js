@@ -226,7 +226,7 @@
             var empty_table_header_row_cell = document.createElement('th');
             // Add a button into the empty table header row cell
             var button = document.createElement('button');
-            button.innerHTML = 'Apply all of configuration';
+            button.innerHTML = 'Apply selected configuration to all configured nodes';
             button.onclick = function () {
                 if(selected_configuration != null && available_configurations[selected_configuration] != null) {
                     zubax_api.apply_all_of_configuration(available_configurations[selected_configuration]);
@@ -236,7 +236,7 @@
             var button = document.createElement('button');
             button.innerHTML = 'Save all of configuration';
             button.onclick = function () {
-                
+                zubax_api.save_all_of_register_configuration(serialize_configuration_of_all_avatars());
             }
             empty_table_header_row_cell.appendChild(button);
             table_header_row.appendChild(empty_table_header_row_cell);
@@ -373,6 +373,13 @@
                 cln_cell.innerHTML = current_avatars[i].ports.cln.toString();
                 srv_cell.innerHTML = current_avatars[i].ports.srv.toString();
             }
+        }
+        function serialize_configuration_of_all_avatars() {
+            var configuration = {};
+            current_avatars.forEach(function (avatar) {
+                configuration[avatar.node_id] = avatar.registers_exploded_values;
+            });
+            return JSON.stringify(configuration);
         }
         function update_directed_graph() {
             if (!areThereAnyNewOrMissingHashes(last_hashes, "monitor_view_hash")) {
