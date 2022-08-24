@@ -14,9 +14,12 @@
         var selected_registers = {}; // Key is array of nodeid and register name, value is true if selected
         var selected_config = null
         var selected_columns = {}; // Key is the node_id and value is true if selected
+        let selected_rows = {}; // Key is register_name and value is true if selected
         let colors = {
             "selected_register": 'green',
             "selected_column": 'blue',
+            "selected_row": "yellow",
+            "selected_row_and_column": "orange",
             "not_selected": "white"
         }
         function create_directed_graph() {
@@ -196,6 +199,39 @@
             selected_config = i;
             addLocalMessage("Configuration " + i + " selected");
         }
+        function updateRegistersTableColors() {
+            var registers_table = document.querySelector('#registers_table')
+            // For all table cells in registers_table, if the cell has the attribute node_id set to node_id then color it red if the node is selected or white if not
+            for (var i = 1; i < registers_table.rows.length; i++) {
+                for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
+                    let table_cell = registers_table.rows[i].cells[j]
+                    let register_name = table_cell.getAttribute("id")
+                    // Remove the string "register_" from the register_name
+                    register_name = register_name.substring(9);
+                    let node_id = table_cell.getAttribute("node_id");
+                    let is_register_selected = selected_registers[[node_id, register_name]]
+                    let is_column_selected = selected_columns[node_id];
+                    let is_row_selected = selected_rows[register_name];
+                    if(!register_name) {
+                        console.warn("No register name found in table cell " + i + "," + j)
+                        continue;
+                    }
+                    
+                    if (is_register_selected) {
+                        table_cell.style.backgroundColor = colors["selected_register"];
+                    } else if (is_row_selected) {
+                        table_cell.style.backgroundColor = colors["selected_row"];
+                        if(is_column_selected) {
+                            table_cell.style.backgroundColor = colors["selected_row_and_column"];
+                        }
+                    } else if (is_column_selected) {
+                        table_cell.style.backgroundColor = colors["selected_column"];
+                    } else {
+                        table_cell.style.backgroundColor = colors["not_selected"];
+                    }
+                }
+            }
+        }
         function toggle_select_column(node_id) {
             if(selected_columns[node_id]) {
                 selected_columns[node_id] = false;
@@ -204,27 +240,7 @@
                 selected_columns[node_id] = true;
                 addLocalMessage("Column " + node_id + " selected");
             }
-            var registers_table = document.querySelector('#registers_table')
-            // For all table cells in registers_table, if the cell has the attribute node_id set to node_id then color it red if the node is selected or white if not
-            for (var i = 0; i < registers_table.rows.length; i++) {
-                for (var j = 0; j < registers_table.rows[i].cells.length; j++) {
-                    if (registers_table.rows[i].cells[j].getAttribute('node_id') == node_id) {
-                        if (selected_columns[node_id]) {
-                            registers_table.rows[i].cells[j].style.backgroundColor = colors["selected_register"];
-                        } else {
-                            let register_name = registers_table.rows[i].cells[j].getAttribute("id")
-                            // Remove the string "register_" from the register_name
-                            register_name = register_name.substring(9);
-                            // If the register_name is in the selected_registers array then color it green
-                            if (selected_registers[register_name]) {
-                                registers_table.rows[i].cells[j].style.backgroundColor = colors["selected_column"];
-                            } else {
-                                registers_table.rows[i].cells[j].style.backgroundColor = colors["not_selected"];
-                            }
-                        }
-                    }
-                }
-            }
+            updateRegistersTableColors();
         }
         function update_available_configurations_list() {
             var available_configurations_radios = document.querySelector("#available_configurations_radios");
@@ -276,11 +292,11 @@
             empty_table_header_row_cell.appendChild(button);
             table_header_row.appendChild(empty_table_header_row_cell);
             current_avatars.forEach(function (avatar) {
-                var table_header_cell = document.createElement('th');
+                let table_header_cell = document.createElement('th');
                 table_header_cell.innerHTML = avatar.node_id;
                 table_header_row.appendChild(table_header_cell);
                 // Add a button to table_header_cell for downloading the table column
-                var button = document.createElement('button');
+                let button = document.createElement('button');
                 button.innerHTML = 'Export';
                 // Attach an event listener on the button click event
                 button.addEventListener('click', function () {
@@ -288,13 +304,13 @@
                     export_registers(avatar.node_id);
                 });
                 table_header_cell.appendChild(button);
-                var button2 = document.createElement('button');
+                let button2 = document.createElement('button');
                 button2.innerHTML = 'Apply imported config';
                 button2.addEventListener('click', function () {
                     zubax_api.apply_configuration_to_node()
                 });
                 table_header_cell.appendChild(button2);
-                var button3 = document.createElement('button');
+                let button3 = document.createElement('button');
                 button3.innerHTML = 'Select row';
                 button3.addEventListener('click', function () {
                     toggle_select_column(avatar.node_id);
@@ -314,49 +330,49 @@
             register_names.sort();
             // Add the table row headers for each register name
             register_names.forEach(function (register_name) {
-                var table_register_row = document.createElement('tr');
-                var table_header_cell = document.createElement('th');
+                let table_register_row = document.createElement('tr');
+                let table_header_cell = document.createElement('th');
                 table_header_cell.innerHTML = register_name;
+                table_header_cell.onclick = function() {
+                    if(!selected_rows[register_name]) {
+                        selected_rows[register_name] = true;
+                        addLocalMessage("Row " + register_name + " selected");
+                    } else {
+                        selected_rows[register_name] = false;
+                        addLocalMessage("Row " + register_name + " deselected");
+                    }
+                    updateRegistersTableColors();
+                }
                 table_register_row.appendChild(table_header_cell);
 
                 // Add table cells for each avatar, containing the value of the register from register_name
                 current_avatars.forEach(function (avatar) {
-                    var table_cell = document.createElement('td');
+                    let table_cell = document.createElement('td');
                     table_cell.className = 'no-padding';
-                    let previous_color = null;
                     table_cell.onclick = function () {
                         if (!selected_registers[[avatar.node_id, register_name]]) {
                             selected_registers[[avatar.node_id, register_name]] = true;
-                            table_cell.style.backgroundColor = colors["selected_register"];
-                            previous_color = table_cell.style.backgroundColor;
                         } else {
                             selected_registers[[avatar.node_id, register_name]] = false;
-                            table_cell.style.backgroundColor = previous_color;
                         }
+                        updateRegistersTableColors();
                     };
-                    if (selected_columns[avatar.node_id] && !selected_registers[[avatar.node_id, register_name]]) {
-                        table_cell.style.backgroundColor = colors["selected_column"];
-                        previous_color = table_cell.style.backgroundColor;
-                    } else if (selected_registers[[avatar.node_id, register_name]]) {
-                        table_cell.style.backgroundColor = colors["selected_register"];
-                        previous_color = table_cell.style.backgroundColor;
-                    }
                     // Set an attribute on td to store the register name
                     table_cell.setAttribute('id', "register_" + register_name);
                     table_cell.setAttribute("node_id", avatar.node_id);
-                    var register_value = avatar.registers_exploded_values[register_name];
+                    let register_value = avatar.registers_exploded_values[register_name];
                     // Here we check if the register value is a byte string and then we convert it to hex
-                    var inputFieldReference = null;
+                    let inputFieldReference = null;
                     if(register_value == null) {
                         return;
                     }
-                    var type_string = Object.keys(register_value)[0];
-                    var value = Object.values(register_value)[0].value;
+                    let type_string = Object.keys(register_value)[0];
+                    let value = Object.values(register_value)[0].value;
                     let isOnlyValueInArray = false;
                     // If value is an array
                     if (Array.isArray(value)) {
                         // If the length of the array value is 1 then display the value without brackets
-                        var text_input = document.createElement('input');
+                        let text_input = document.createElement('input');
                         inputFieldReference = text_input;
                         text_input.setAttribute('type', 'text');
                         if (value.length == 1) {
@@ -369,7 +385,7 @@
                         table_cell.appendChild(text_input);
                     } else if(type_string.includes("natural")) {
                         // Create a number input field
-                        var number_input_field = document.createElement('input');
+                        let number_input_field = document.createElement('input');
                         inputFieldReference = number_input_field;
                         number_input_field.type = 'number';
                         if (register_value == 65535) {
@@ -378,7 +394,7 @@
                         number_input_field.value = value;
                         table_cell.appendChild(number_input_field);
                     } else if (type_string === "string") {
-                        var text_input = document.createElement('input');
+                        let text_input = document.createElement('input');
                         inputFieldReference = text_input;
                         text_input.setAttribute('type', 'text');
                         text_input.value = value;
@@ -417,6 +433,7 @@
                 });
                 registers_table_body.appendChild(table_register_row);
             });
+            updateRegistersTableColors();
         }
         function update_avatars_table() {
             var table_body = document.querySelector('#avatars_table tbody');
