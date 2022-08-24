@@ -14,6 +14,11 @@
         var selected_registers = {}; // Key is array of nodeid and register name, value is true if selected
         var selected_config = null
         var selected_columns = {}; // Key is the node_id and value is true if selected
+        let colors = {
+            "selected_register": 'green',
+            "selected_column": 'blue',
+            "not_selected": "white"
+        }
         function create_directed_graph() {
             cytoscape.use(cytoscapeKlay);
             my_graph = cytoscape({
@@ -191,6 +196,36 @@
             selected_config = i;
             addLocalMessage("Configuration " + i + " selected");
         }
+        function toggle_select_column(node_id) {
+            if(selected_columns[node_id]) {
+                selected_columns[node_id] = false;
+                addLocalMessage("Column " + node_id + " deselected");
+            } else {
+                selected_columns[node_id] = true;
+                addLocalMessage("Column " + node_id + " selected");
+            }
+            var registers_table = document.querySelector('#registers_table')
+            // For all table cells in registers_table, if the cell has the attribute node_id set to node_id then color it red if the node is selected or white if not
+            for (var i = 0; i < registers_table.rows.length; i++) {
+                for (var j = 0; j < registers_table.rows[i].cells.length; j++) {
+                    if (registers_table.rows[i].cells[j].getAttribute('node_id') == node_id) {
+                        if (selected_columns[node_id]) {
+                            registers_table.rows[i].cells[j].style.backgroundColor = colors["selected_register"];
+                        } else {
+                            let register_name = registers_table.rows[i].cells[j].getAttribute("id")
+                            // Remove the string "register_" from the register_name
+                            register_name = register_name.substring(9);
+                            // If the register_name is in the selected_registers array then color it green
+                            if (selected_registers[register_name]) {
+                                registers_table.rows[i].cells[j].style.backgroundColor = colors["selected_column"];
+                            } else {
+                                registers_table.rows[i].cells[j].style.backgroundColor = colors["not_selected"];
+                            }
+                        }
+                    }
+                }
+            }
+        }
         function update_available_configurations_list() {
             var available_configurations_radios = document.querySelector("#available_configurations_radios");
             available_configurations_radios.innerHTML = "";
@@ -259,6 +294,12 @@
                     zubax_api.apply_configuration_to_node()
                 });
                 table_header_cell.appendChild(button2);
+                var button3 = document.createElement('button');
+                button3.innerHTML = 'Select row';
+                button3.addEventListener('click', function () {
+                    toggle_select_column(avatar.node_id);
+                });
+                table_header_cell.appendChild(button3);
             });
             registers_table_header.appendChild(table_header_row);
             // Combine all register names from avatar.registers into an array
@@ -282,20 +323,27 @@
                 current_avatars.forEach(function (avatar) {
                     var table_cell = document.createElement('td');
                     table_cell.className = 'no-padding';
+                    let previous_color = null;
                     table_cell.onclick = function () {
                         if (!selected_registers[[avatar.node_id, register_name]]) {
                             selected_registers[[avatar.node_id, register_name]] = true;
-                            table_cell.style.backgroundColor = '#ee0000';
+                            table_cell.style.backgroundColor = colors["selected_register"];
+                            previous_color = table_cell.style.backgroundColor;
                         } else {
                             selected_registers[[avatar.node_id, register_name]] = false;
-                            table_cell.style.backgroundColor = '#ffffff';
+                            table_cell.style.backgroundColor = previous_color;
                         }
                     };
-                    if (selected_registers[[avatar.node_id, register_name]]) {
-                        table_cell.style.backgroundColor = '#ee0000';
+                    if (selected_columns[avatar.node_id] && !selected_registers[[avatar.node_id, register_name]]) {
+                        table_cell.style.backgroundColor = colors["selected_column"];
+                        previous_color = table_cell.style.backgroundColor;
+                    } else if (selected_registers[[avatar.node_id, register_name]]) {
+                        table_cell.style.backgroundColor = colors["selected_register"];
+                        previous_color = table_cell.style.backgroundColor;
                     }
                     // Set an attribute on td to store the register name
                     table_cell.setAttribute('id', "register_" + register_name);
+                    table_cell.setAttribute("node_id", avatar.node_id);
                     var register_value = avatar.registers_exploded_values[register_name];
                     // Here we check if the register value is a byte string and then we convert it to hex
                     var inputFieldReference = null;
@@ -308,7 +356,6 @@
                     // If value is an array
                     if (Array.isArray(value)) {
                         // If the length of the array value is 1 then display the value without brackets
-                        
                         var text_input = document.createElement('input');
                         inputFieldReference = text_input;
                         text_input.setAttribute('type', 'text');
@@ -345,7 +392,7 @@
                     inputFieldReference.addEventListener('click', function () {
                         if (lastClick && new Date() - lastClick < 500) {
                             // Make a dialog box to enter the new value
-                            var new_value = prompt("Enter new value for " + register_name + ":", register_value);
+                            var new_value = prompt("Enter new value for " + register_name + ":", value);
                             // If the user entered a value
                             if (new_value != null) {
                                 // Update the value in the table
@@ -358,6 +405,8 @@
                                 } else {
                                     update_register_value(register_name, new_value, avatar.node_id);
                                 }
+                            } else {
+                                addLocalMessage("No value entered");
                             }
                         }
                         lastClick = new Date();
