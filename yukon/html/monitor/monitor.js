@@ -296,32 +296,49 @@
                     }
                     // Set an attribute on td to store the register name
                     table_cell.setAttribute('id', "register_" + register_name);
-                    var register_value = avatar.registers_values[register_name];
-                    var isAlpha = function (str) {
-                        return /^\D+$/i.test(str);
-                    }
-                    if (register_value == "65535") {
-                        register_value = "65535 (not set)"
-                    }
-                    var register_value_as_int = parseInt(register_value);
+                    var register_value = avatar.registers_exploded_values[register_name];
                     // Here we check if the register value is a byte string and then we convert it to hex
-                    var is_register_value_number = isAlpha(register_value);
                     var inputFieldReference = null;
-                    if (is_register_value_number) {
+                    if(register_value == null) {
+                        return;
+                    }
+                    var type_string = Object.keys(register_value)[0];
+                    var value = Object.values(register_value)[0].value;
+                    let isOnlyValueInArray = false;
+                    // If value is an array
+                    if (Array.isArray(value)) {
+                        // If the length of the array value is 1 then display the value without brackets
+                        
+                        var text_input = document.createElement('input');
+                        inputFieldReference = text_input;
+                        text_input.setAttribute('type', 'text');
+                        if (value.length == 1) {
+                            isOnlyValueInArray = true;
+                            text_input.value = value[0];
+                        } else {
+                            text_input.value = JSON.stringify(value);
+                        }
+                        // When the text input is clicked
+                        table_cell.appendChild(text_input);
+                    } else if(type_string.includes("natural")) {
                         // Create a number input field
                         var number_input_field = document.createElement('input');
                         inputFieldReference = number_input_field;
                         number_input_field.type = 'number';
-                        number_input_field.value = register_value_as_int;
+                        if (register_value == 65535) {
+                            number_input_field.style.backgroundColor = '#ee0e0e';
+                        }
+                        number_input_field.value = value;
                         table_cell.appendChild(number_input_field);
-                    } else {
+                    } else if (type_string === "string") {
                         var text_input = document.createElement('input');
                         inputFieldReference = text_input;
                         text_input.setAttribute('type', 'text');
-                        text_input.value = register_value;
+                        text_input.value = value;
                         // When the text input is clicked
                         table_cell.appendChild(text_input);
                     }
+
                     // Set the height of inputFieldReference to match the height of the table cell
                     inputFieldReference.style.height = 100 + '%';
                     var lastClick = null;
@@ -336,7 +353,11 @@
                                 // Update the value in the avatar
                                 avatar.registers_values[register_name] = new_value;
                                 // Update the value in the server
-                                update_register_value(register_name, new_value, avatar.node_id,);
+                                if(isOnlyValueInArray) {
+                                    update_register_value(register_name, "[" + new_value + "]", avatar.node_id);
+                                } else {
+                                    update_register_value(register_name, new_value, avatar.node_id);
+                                }
                             }
                         }
                         lastClick = new Date();

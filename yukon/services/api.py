@@ -116,21 +116,8 @@ class Api:
         _ = file_path
 
     def update_register_value(self, register_name: str, register_value: str, node_id: int) -> None:
-        # Find the avatar which has the node_id
-        for avatar in self.state.avatar.avatars_by_node_id.values():
-            if avatar.node_id == node_id:
-                exploded_value = avatar.register_exploded_values.get(register_name, None)
-                break
-        if exploded_value is None:
-            logger.warning(f"No register {register_name} found for node_id {node_id}")
-            return
-        new_exploded_value = copy.copy(exploded_value)
         # Check if register_value can be converted to an int, is purely numeric
-        if register_value.isnumeric():
-            new_exploded_value[list(new_exploded_value.keys())[0]]["value"] = int(register_value)
-        else:
-            new_exploded_value[list(new_exploded_value.keys())[0]]["value"] = register_value
-        new_value: uavcan.register.Value_1 = unexplode_value(new_exploded_value)
+        new_value: uavcan.register.Value_1 = unexplode_value()
         self.state.queues.update_registers.put(UpdateRegisterRequest(register_name, new_value, node_id))
 
     def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
