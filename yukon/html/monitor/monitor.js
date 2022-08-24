@@ -16,12 +16,14 @@
         var selected_columns = {}; // Key is the node_id and value is true if selected
         let selected_rows = {}; // Key is register_name and value is true if selected
         let colors = {
-            "selected_register": 'green',
-            "selected_column": 'blue',
-            "selected_row": "yellow",
-            "selected_row_and_column": "orange",
-            "not_selected": "white",
-            "no_value": "gray"
+            // White but with 50% transparency
+            "transparent_blue": "",
+            "selected_register": 'rgba(0, 255, 0, 0.5)',
+            "selected_column": 'rgba(0, 0, 255, 0.5)',
+            "selected_row": "rgba(255, 255, 0, 0.5)",
+            "selected_row_and_column": "rgba(255, 165, 0, 0.5)",
+            "not_selected": "rgba(255, 255, 255, 0.5)",
+            "no_value": "rgba(0, 0, 0, 0.5)"
         }
         function create_directed_graph() {
             cytoscape.use(cytoscapeKlay);
@@ -237,6 +239,10 @@
             }
         }
         function toggle_select_column(node_id) {
+            // I want to make sure that the user is not selecting text, that's not when we activate this.
+            if(window.getSelection().toString() !== "") {
+                return;
+            }
             if(selected_columns[node_id]) {
                 selected_columns[node_id] = false;
                 addLocalMessage("Column " + node_id + " deselected");
@@ -347,6 +353,10 @@
                 // REGISTER NAME HERE
                 table_header_cell.innerHTML = register_name;
                 let selectRow = function(event) {
+                    // I want to make sure that the user is not selecting text, that's not when we activate this.
+                    if(window.getSelection().toString() !== "") {
+                        return;
+                    }
                     if(!selected_rows[register_name]) {
                         selected_rows[register_name] = true;
                     } else {
@@ -370,6 +380,10 @@
                     table_register_row.appendChild(table_cell);
                     table_cell.className = 'no-padding';
                     table_cell.onclick = function () {
+                        // I want to make sure that the user is not selecting text, that's not when we activate this.
+                        if(window.getSelection().toString() !== "") {
+                            return;
+                        }
                         if (!selected_registers[[avatar.node_id, register_name]]) { 
                             selected_registers[[avatar.node_id, register_name]] = true;
                         } else {
