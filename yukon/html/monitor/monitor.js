@@ -20,7 +20,8 @@
             "selected_column": 'blue',
             "selected_row": "yellow",
             "selected_row_and_column": "orange",
-            "not_selected": "white"
+            "not_selected": "white",
+            "no_value": "gray"
         }
         function create_directed_graph() {
             cytoscape.use(cytoscapeKlay);
@@ -216,7 +217,10 @@
                         console.warn("No register name found in table cell " + i + "," + j)
                         continue;
                     }
-                    
+                    if(table_cell.getAttribute("no_value") == "true") {
+                        table_cell.style.backgroundColor = colors["no_value"];
+                        continue;
+                    }
                     if (is_register_selected) {
                         table_cell.style.backgroundColor = colors["selected_register"];
                     } else if (is_row_selected) {
@@ -277,7 +281,7 @@
             var empty_table_header_row_cell = document.createElement('th');
             // Add a button into the empty table header row cell
             var button = document.createElement('button');
-            button.innerHTML = 'Apply selected configuration to all configured nodes';
+            button.innerHTML = 'Apply sel. conf to all nodes';
             button.onclick = function () {
                 if(selected_config != null && available_configurations[selected_config] != null) {
                     zubax_api.apply_all_of_configuration(available_configurations[selected_config]);
@@ -296,26 +300,33 @@
                 table_header_cell.innerHTML = avatar.node_id;
                 table_header_row.appendChild(table_header_cell);
                 // Add a button to table_header_cell for downloading the table column
-                let button = document.createElement('button');
-                button.innerHTML = 'Export';
+                let btnExportConfig = document.createElement('button');
+                btnExportConfig.innerHTML = 'Export';
                 // Attach an event listener on the button click event
-                button.addEventListener('click', function () {
+                btnExportConfig.addEventListener('click', function (event) {
                     addLocalMessage("Exporting registers of " + avatar.node_id);
                     export_registers(avatar.node_id);
+                    event.stopPropagation();
                 });
-                table_header_cell.appendChild(button);
-                let button2 = document.createElement('button');
-                button2.innerHTML = 'Apply imported config';
-                button2.addEventListener('click', function () {
-                    zubax_api.apply_configuration_to_node()
+                table_header_cell.appendChild(btnExportConfig);
+                let btnApplyImportedConfig = document.createElement('button');
+                btnApplyImportedConfig.innerHTML = 'Apply imported config';
+                btnApplyImportedConfig.addEventListener('click', function (event) {
+                    zubax_api.apply_configuration_to_node();
+                    event.stopPropagation();
                 });
-                table_header_cell.appendChild(button2);
-                let button3 = document.createElement('button');
-                button3.innerHTML = 'Select row';
-                button3.addEventListener('click', function () {
+                table_header_cell.appendChild(btnApplyImportedConfig);
+                let btnSelectColumn = document.createElement('button');
+                btnSelectColumn.innerHTML = 'Select column';
+                btnSelectColumn.addEventListener('click', function (event) {
                     toggle_select_column(avatar.node_id);
+                    event.stopPropagation();
                 });
-                table_header_cell.appendChild(button3);
+                table_header_cell.onclick = function (event) {
+                    toggle_select_column(avatar.node_id);
+                    event.stopPropagation();
+                }
+                table_header_cell.appendChild(btnSelectColumn);
             });
             registers_table_header.appendChild(table_header_row);
             // Combine all register names from avatar.registers into an array
@@ -331,26 +342,35 @@
             // Add the table row headers for each register name
             register_names.forEach(function (register_name) {
                 let table_register_row = document.createElement('tr');
+                registers_table_body.appendChild(table_register_row);
                 let table_header_cell = document.createElement('th');
+                // REGISTER NAME HERE
                 table_header_cell.innerHTML = register_name;
-                table_header_cell.onclick = function() {
+                let selectRow = function(event) {
                     if(!selected_rows[register_name]) {
                         selected_rows[register_name] = true;
-                        addLocalMessage("Row " + register_name + " selected");
                     } else {
                         selected_rows[register_name] = false;
-                        addLocalMessage("Row " + register_name + " deselected");
                     }
                     updateRegistersTableColors();
+                    event.stopPropagation();
                 }
+                table_header_cell.onclick = selectRow;
+                let btnSelectRow = document.createElement('button');
+                btnSelectRow.innerHTML = 'Select row';
+                // Attach an event listener on the button click event
+                btnSelectRow.onclick = selectRow;
+                table_header_cell.appendChild(btnSelectRow);
                 table_register_row.appendChild(table_header_cell);
 
                 // Add table cells for each avatar, containing the value of the register from register_name
                 current_avatars.forEach(function (avatar) {
+                    // ALL THE REGISTER VALUES HERE
                     let table_cell = document.createElement('td');
+                    table_register_row.appendChild(table_cell);
                     table_cell.className = 'no-padding';
                     table_cell.onclick = function () {
-                        if (!selected_registers[[avatar.node_id, register_name]]) {
+                        if (!selected_registers[[avatar.node_id, register_name]]) { 
                             selected_registers[[avatar.node_id, register_name]] = true;
                         } else {
                             selected_registers[[avatar.node_id, register_name]] = false;
@@ -364,6 +384,7 @@
                     // Here we check if the register value is a byte string and then we convert it to hex
                     let inputFieldReference = null;
                     if(register_value == null) {
+                        table_cell.setAttribute("no_value", "true");
                         return;
                     }
                     let type_string = Object.keys(register_value)[0];
@@ -428,10 +449,8 @@
                         lastClick = new Date();
                     });
                     // Create a text input element in the table cell
-
-                    table_register_row.appendChild(table_cell);
                 });
-                registers_table_body.appendChild(table_register_row);
+                
             });
             updateRegistersTableColors();
         }
