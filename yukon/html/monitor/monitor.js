@@ -6,8 +6,8 @@
         // Make a callback on the page load event
         console.log("monitor ready");
         var current_avatars = [];
-        var last_hashes = {set: new Set()};
-        var last_table_hashes = {set: new Set()}; // The same avatar hashes but for tables
+        var last_hashes = { set: new Set() };
+        var last_table_hashes = { set: new Set() }; // The same avatar hashes but for tables
         var lastHash = "";
         var my_graph = null;
         var available_configurations = {};
@@ -103,7 +103,7 @@
                 // For each register in avatar.registers_exploded_values
                 for (var j = 0; j < avatar.registers_exploded_values.length; j++) {
                     var register = avatar.registers_exploded_values[j];
-                    if(saving_all || selected_rows[register.name]) {
+                    if (saving_all || selected_rows[register.name]) {
                     }
                 }
             }
@@ -243,11 +243,11 @@
                     let is_register_selected = selected_registers[[node_id, register_name]]
                     let is_column_selected = selected_columns[node_id];
                     let is_row_selected = selected_rows[register_name];
-                    if(!register_name) {
+                    if (!register_name) {
                         console.warn("No register name found in table cell " + i + "," + j)
                         continue;
                     }
-                    if(table_cell.getAttribute("no_value") == "true") {
+                    if (table_cell.getAttribute("no_value") == "true") {
                         table_cell.style.backgroundColor = colors["no_value"];
                         continue;
                     }
@@ -255,7 +255,7 @@
                         table_cell.style.backgroundColor = colors["selected_register"];
                     } else if (is_row_selected) {
                         table_cell.style.backgroundColor = colors["selected_row"];
-                        if(is_column_selected) {
+                        if (is_column_selected) {
                             table_cell.style.backgroundColor = colors["selected_row_and_column"];
                         }
                     } else if (is_column_selected) {
@@ -266,27 +266,7 @@
                 }
             }
         }
-        function make_select_column(node_id, is_mouse_over=false) {
-            return function(event) {
-                if (is_mouse_over) {
-                    if (!event.buttons == 1) {
-                        return;
-                    }
-                }
-                // I want to make sure that the user is not selecting text, that's not when we activate this.
-                if(window.getSelection().toString() !== "") {
-                    return;
-                }
-                if(selected_columns[node_id]) {
-                    selected_columns[node_id] = false;
-                    addLocalMessage("Column " + node_id + " deselected");
-                } else {
-                    selected_columns[node_id] = true;
-                    addLocalMessage("Column " + node_id + " selected");
-                }
-                updateRegistersTableColors();
-            }   
-        }
+
         function update_available_configurations_list() {
             var available_configurations_radios = document.querySelector("#available_configurations_radios");
             available_configurations_radios.innerHTML = "";
@@ -308,28 +288,63 @@
                 available_configurations_radios.appendChild(label);
             }
         }
-        function make_select_row(register_name, is_mouse_over = false)
-        {
-            return function(event) {
+        function make_select_column(node_id, is_mouse_over = false) {
+            return function (event) {
+                if (is_mouse_over) {
+                    if (!event.buttons == 1) {
+                        return;
+                    }
+                }
+                // I want to make sure that the user is not selecting text, that's not when we activate this.
+                if (window.getSelection().toString() !== "") {
+                    return;
+                }
+                if (selected_columns[node_id]) {
+                    selected_columns[node_id] = false;
+                    addLocalMessage("Column " + node_id + " deselected");
+                } else {
+                    selected_columns[node_id] = true;
+                    addLocalMessage("Column " + node_id + " selected");
+                }
+                updateRegistersTableColors();
+            }
+        }
+        function make_select_row(register_name, is_mouse_over = false) {
+            return function (event) {
                 // If left mouse button is pressed
                 if (is_mouse_over) {
                     if (!event.buttons == 1) {
                         return;
                     }
                 }
-                
+
                 // I want to make sure that the user is not selecting text, that's not when we activate this.
-                if(window.getSelection().toString() !== "") {
+                if (window.getSelection().toString() !== "") {
                     return;
                 }
-                if(!selected_rows[register_name]) {
+                if (!selected_rows[register_name]) {
                     selected_rows[register_name] = true;
                 } else {
                     selected_rows[register_name] = false;
                 }
                 updateRegistersTableColors();
                 event.stopPropagation();
-            }       
+            }
+        }
+        function make_select_cell(avatar, register_name, is_mouse_over = false) {
+            return function (event) {
+                if (is_mouse_over) {
+                    if (!event.buttons == 1) {
+                        return;
+                    }
+                }
+                if (!selected_registers[[avatar.node_id, register_name]]) {
+                    selected_registers[[avatar.node_id, register_name]] = true;
+                } else {
+                    selected_registers[[avatar.node_id, register_name]] = false;
+                }
+                updateRegistersTableColors();
+            }
         }
         function create_registers_table() {
             // Clear the table
@@ -346,7 +361,7 @@
             var button = document.createElement('button');
             button.innerHTML = 'Apply sel. conf to all nodes';
             button.onclick = function () {
-                if(selected_config != null && available_configurations[selected_config] != null) {
+                if (selected_config != null && available_configurations[selected_config] != null) {
                     zubax_api.apply_all_of_configuration(available_configurations[selected_config]);
                 }
             }
@@ -404,12 +419,12 @@
                 let table_header_cell = document.createElement('th');
                 // REGISTER NAME HERE
                 table_header_cell.innerHTML = register_name;
-                table_header_cell.onmousedown = make_select_row();
-                table_header_cell.onmouseover = make_select_row(is_mouse_over=true);
+                table_header_cell.onmousedown = make_select_row(register_name);
+                table_header_cell.onmouseover = make_select_row(register_name, is_mouse_over = true);
                 let btnSelectRow = document.createElement('button');
                 btnSelectRow.innerHTML = 'Select row';
                 // Attach an event listener on the button click event
-                btnSelectRow.onclick = make_select_row();
+                btnSelectRow.onclick = make_select_row(register_name);
                 table_header_cell.appendChild(btnSelectRow);
                 table_register_row.appendChild(table_header_cell);
 
@@ -419,21 +434,15 @@
                     let table_cell = document.createElement('td');
                     table_register_row.appendChild(table_cell);
                     table_cell.className = 'no-padding';
-                    table_cell.onmousedown = function () {
-                        if (!selected_registers[[avatar.node_id, register_name]]) { 
-                            selected_registers[[avatar.node_id, register_name]] = true;
-                        } else {
-                            selected_registers[[avatar.node_id, register_name]] = false;
-                        }
-                        updateRegistersTableColors();
-                    };
+                    table_cell.onmousedown = make_select_cell(avatar, register_name);
+                    table_cell.onmouseover = make_select_cell(avatar, register_name, is_mouse_over = true);
                     // Set an attribute on td to store the register name
                     table_cell.setAttribute('id', "register_" + register_name);
                     table_cell.setAttribute("node_id", avatar.node_id);
                     let register_value = avatar.registers_exploded_values[register_name];
                     // Here we check if the register value is a byte string and then we convert it to hex
                     let inputFieldReference = null;
-                    if(register_value == null) {
+                    if (register_value == null) {
                         table_cell.setAttribute("no_value", "true");
                         return;
                     }
@@ -454,7 +463,7 @@
                         }
                         // When the text input is clicked
                         table_cell.appendChild(text_input);
-                    } else if(type_string.includes("natural")) {
+                    } else if (type_string.includes("natural")) {
                         // Create a number input field
                         let number_input_field = document.createElement('input');
                         inputFieldReference = number_input_field;
@@ -487,7 +496,7 @@
                                 // Update the value in the avatar
                                 avatar.registers_values[register_name] = new_value;
                                 // Update the value in the server
-                                if(isOnlyValueInArray) {
+                                if (isOnlyValueInArray) {
                                     update_register_value(register_name, "[" + new_value + "]", avatar.node_id);
                                 } else {
                                     update_register_value(register_name, new_value, avatar.node_id);
@@ -500,7 +509,7 @@
                     });
                     // Create a text input element in the table cell
                 });
-                
+
             });
             updateRegistersTableColors();
         }
@@ -656,7 +665,7 @@
         btnImportRegistersConfig.addEventListener('click', function () {
             zubax_api.import_node_configuration().then(
                 function (result) {
-                    if(result == "") {
+                    if (result == "") {
                         addLocalMessage("No configuration imported");
                     } else {
                         addLocalMessage("Configuration imported");
@@ -670,12 +679,12 @@
         btnSelectedSetFromPrompt = document.getElementById('btnSelectedSetFromPrompt');
         btnSelectedSetFromPrompt.addEventListener('click', function () {
             new_value = prompt("Enter the new value of selected registers", "")
-            if(new_value == null) { addLocalMessage("No value was provided in the prompt."); return; }
+            if (new_value == null) { addLocalMessage("No value was provided in the prompt."); return; }
             addLocalMessage("Setting selected registers to " + new_value);
             // For key and value of selected_registers, set the value to value
             for (const [key, value] of Object.entries(selected_registers)) {
                 const [node_id, register_name] = key;
-                if(node_id && register_name) {
+                if (node_id && register_name) {
                     update_register_value(register_name, new_value, avatar.node_id);
                 }
             }
@@ -689,7 +698,7 @@
             // For key and value of selected_registers, set the value to value
             for (const [key, value] of Object.entries(selected_registers)) {
                 const [node_id, register_name] = key;
-                if(node_id && register_name) {
+                if (node_id && register_name) {
                     update_register_value(register_name, "65535", avatar.node_id);
                 }
             }
