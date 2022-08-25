@@ -266,7 +266,7 @@
                 }
             }
         }
-        function toggle_select_column(node_id, is_mouse_over=false) {
+        function make_select_column(node_id, is_mouse_over=false) {
             return function(event) {
                 if (is_mouse_over) {
                     if (!event.buttons == 1) {
@@ -308,7 +308,29 @@
                 available_configurations_radios.appendChild(label);
             }
         }
-
+        function make_select_row(register_name, is_mouse_over = false)
+        {
+            return function(event) {
+                // If left mouse button is pressed
+                if (is_mouse_over) {
+                    if (!event.buttons == 1) {
+                        return;
+                    }
+                }
+                
+                // I want to make sure that the user is not selecting text, that's not when we activate this.
+                if(window.getSelection().toString() !== "") {
+                    return;
+                }
+                if(!selected_rows[register_name]) {
+                    selected_rows[register_name] = true;
+                } else {
+                    selected_rows[register_name] = false;
+                }
+                updateRegistersTableColors();
+                event.stopPropagation();
+            }       
+        }
         function create_registers_table() {
             // Clear the table
             var registers_table = document.querySelector('#registers_table')
@@ -359,9 +381,9 @@
                 table_header_cell.appendChild(btnApplyImportedConfig);
                 let btnSelectColumn = document.createElement('button');
                 btnSelectColumn.innerHTML = 'Select column';
-                btnSelectColumn.addEventListener('click', toggle_select_column(avatar.node_id));
-                table_header_cell.onmousedown = toggle_select_column(avatar.node_id);
-                table_header_cell.onmouseover = toggle_select_column(avatar.node_id, true);
+                btnSelectColumn.addEventListener('click', make_select_column(avatar.node_id));
+                table_header_cell.onmousedown = make_select_column(avatar.node_id);
+                table_header_cell.onmouseover = make_select_column(avatar.node_id, true);
                 table_header_cell.appendChild(btnSelectColumn);
             });
             registers_table_header.appendChild(table_header_row);
@@ -382,35 +404,12 @@
                 let table_header_cell = document.createElement('th');
                 // REGISTER NAME HERE
                 table_header_cell.innerHTML = register_name;
-                let makeSelectRow = function(is_mouse_over = false) {
-                    return function(event) {
-                        // If left mouse button is pressed
-                        if (is_mouse_over) {
-                            if (!event.buttons == 1) {
-                                return;
-                            }
-                        }
-                        
-                        // I want to make sure that the user is not selecting text, that's not when we activate this.
-                        if(window.getSelection().toString() !== "") {
-                            return;
-                        }
-                        if(!selected_rows[register_name]) {
-                            selected_rows[register_name] = true;
-                        } else {
-                            selected_rows[register_name] = false;
-                        }
-                        updateRegistersTableColors();
-                        event.stopPropagation();
-                    }
-                    
-                }
-                table_header_cell.onmousedown = makeSelectRow();
-                table_header_cell.onmouseover = makeSelectRow(is_mouse_over=true);
+                table_header_cell.onmousedown = make_select_row();
+                table_header_cell.onmouseover = make_select_row(is_mouse_over=true);
                 let btnSelectRow = document.createElement('button');
                 btnSelectRow.innerHTML = 'Select row';
                 // Attach an event listener on the button click event
-                btnSelectRow.onclick = makeSelectRow();
+                btnSelectRow.onclick = make_select_row();
                 table_header_cell.appendChild(btnSelectRow);
                 table_register_row.appendChild(table_header_cell);
 
