@@ -95,7 +95,7 @@
             });
         }
         function export_all_selected_registers() {
-            var exporting_registers = [];
+            var exporting_registers = new Set();
             // For each avatar in current_avatars
             for (var i = 0; i < current_avatars.length; i++) {
                 var avatar = current_avatars[i];
@@ -110,15 +110,12 @@
 
             for (const register_name in selected_rows) {
                 if (selected_rows.hasOwnProperty(register_name)) {
-                    const register_name = selected_rows[register_name];
-                    exporting_registers.push(register_name);
+                    exporting_registers.add(register_name);
                 }
             }
             for (const register_name in selected_registers) {
                 if (selected_registers.hasOwnProperty(register_name)) {
-                    for (var register_name in selected_registers[node_id]) {
-                        selected_registers.push(register_name);
-                    }
+                    selected_registers.add(register_name);
                 }
             }
             // For each avatar which has its node_id contained in the selected_columns array, add every register_name to the selected
@@ -132,7 +129,6 @@
             if (avatar == null) {
                 addLocalMessage("No avatar found for node_id: " + node_id);
                 addLocalMessage("Returning early");
-
                 return;
             }
             var registers = JSON.parse(JSON.stringify(avatar.registers_exploded_values)); // A deep copy
@@ -270,7 +266,12 @@
                 }
             }
         }
-        function toggle_select_column(node_id) {
+        function toggle_select_column(node_id, is_mouse_over=false, event) {
+            if (is_mouse_over) {
+                if (!event.buttons == 1) {
+                    return;
+                }
+            }
             // I want to make sure that the user is not selecting text, that's not when we activate this.
             if(window.getSelection().toString() !== "") {
                 return;
@@ -294,7 +295,7 @@
                 radio.name = "configuration";
                 radio.value = key;
                 radio.id = key;
-                radio.onclick = function () {
+                radio.onmousedown = function () {
                     select_configuration(this.id);
                 }
                 available_configurations_radios.appendChild(radio);
@@ -360,8 +361,12 @@
                     toggle_select_column(avatar.node_id);
                     event.stopPropagation();
                 });
-                table_header_cell.onclick = function (event) {
+                table_header_cell.onmousedown = function (event) {
                     toggle_select_column(avatar.node_id);
+                    event.stopPropagation();
+                }
+                table_header_cell.onmouseover = function (event) {
+                    toggle_select_column(avatar.node_id, true, event);
                     event.stopPropagation();
                 }
                 table_header_cell.appendChild(btnSelectColumn);
@@ -384,24 +389,35 @@
                 let table_header_cell = document.createElement('th');
                 // REGISTER NAME HERE
                 table_header_cell.innerHTML = register_name;
-                let selectRow = function(event) {
-                    // I want to make sure that the user is not selecting text, that's not when we activate this.
-                    if(window.getSelection().toString() !== "") {
-                        return;
+                let makeSelectRow = function(is_mouse_over = false) {
+                    return function(event) {
+                        // If left mouse button is pressed
+                        if (is_mouse_over) {
+                            if (!event.buttons == 1) {
+                                return;
+                            }
+                        }
+                        
+                        // I want to make sure that the user is not selecting text, that's not when we activate this.
+                        if(window.getSelection().toString() !== "") {
+                            return;
+                        }
+                        if(!selected_rows[register_name]) {
+                            selected_rows[register_name] = true;
+                        } else {
+                            selected_rows[register_name] = false;
+                        }
+                        updateRegistersTableColors();
+                        event.stopPropagation();
                     }
-                    if(!selected_rows[register_name]) {
-                        selected_rows[register_name] = true;
-                    } else {
-                        selected_rows[register_name] = false;
-                    }
-                    updateRegistersTableColors();
-                    event.stopPropagation();
+                    
                 }
-                table_header_cell.onclick = selectRow;
+                table_header_cell.onmousedown = makeSelectRow();
+                table_header_cell.onmouseover = makeSelectRow(is_mouse_over=true);
                 let btnSelectRow = document.createElement('button');
                 btnSelectRow.innerHTML = 'Select row';
                 // Attach an event listener on the button click event
-                btnSelectRow.onclick = selectRow;
+                btnSelectRow.onclick = makeSelectRow();
                 table_header_cell.appendChild(btnSelectRow);
                 table_register_row.appendChild(table_header_cell);
 
@@ -411,11 +427,7 @@
                     let table_cell = document.createElement('td');
                     table_register_row.appendChild(table_cell);
                     table_cell.className = 'no-padding';
-                    table_cell.onclick = function () {
-                        // I want to make sure that the user is not selecting text, that's not when we activate this.
-                        if(window.getSelection().toString() !== "") {
-                            return;
-                        }
+                    table_cell.onmousedown = function () {
                         if (!selected_registers[[avatar.node_id, register_name]]) { 
                             selected_registers[[avatar.node_id, register_name]] = true;
                         } else {
