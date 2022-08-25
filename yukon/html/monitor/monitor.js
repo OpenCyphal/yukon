@@ -266,24 +266,26 @@
                 }
             }
         }
-        function toggle_select_column(node_id, is_mouse_over=false, event) {
-            if (is_mouse_over) {
-                if (!event.buttons == 1) {
+        function toggle_select_column(node_id, is_mouse_over=false) {
+            return function(event) {
+                if (is_mouse_over) {
+                    if (!event.buttons == 1) {
+                        return;
+                    }
+                }
+                // I want to make sure that the user is not selecting text, that's not when we activate this.
+                if(window.getSelection().toString() !== "") {
                     return;
                 }
-            }
-            // I want to make sure that the user is not selecting text, that's not when we activate this.
-            if(window.getSelection().toString() !== "") {
-                return;
-            }
-            if(selected_columns[node_id]) {
-                selected_columns[node_id] = false;
-                addLocalMessage("Column " + node_id + " deselected");
-            } else {
-                selected_columns[node_id] = true;
-                addLocalMessage("Column " + node_id + " selected");
-            }
-            updateRegistersTableColors();
+                if(selected_columns[node_id]) {
+                    selected_columns[node_id] = false;
+                    addLocalMessage("Column " + node_id + " deselected");
+                } else {
+                    selected_columns[node_id] = true;
+                    addLocalMessage("Column " + node_id + " selected");
+                }
+                updateRegistersTableColors();
+            }   
         }
         function update_available_configurations_list() {
             var available_configurations_radios = document.querySelector("#available_configurations_radios");
@@ -357,18 +359,9 @@
                 table_header_cell.appendChild(btnApplyImportedConfig);
                 let btnSelectColumn = document.createElement('button');
                 btnSelectColumn.innerHTML = 'Select column';
-                btnSelectColumn.addEventListener('click', function (event) {
-                    toggle_select_column(avatar.node_id);
-                    event.stopPropagation();
-                });
-                table_header_cell.onmousedown = function (event) {
-                    toggle_select_column(avatar.node_id);
-                    event.stopPropagation();
-                }
-                table_header_cell.onmouseover = function (event) {
-                    toggle_select_column(avatar.node_id, true, event);
-                    event.stopPropagation();
-                }
+                btnSelectColumn.addEventListener('click', toggle_select_column(avatar.node_id));
+                table_header_cell.onmousedown = toggle_select_column(avatar.node_id);
+                table_header_cell.onmouseover = toggle_select_column(avatar.node_id, true);
                 table_header_cell.appendChild(btnSelectColumn);
             });
             registers_table_header.appendChild(table_header_row);
