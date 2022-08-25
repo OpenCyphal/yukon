@@ -243,25 +243,29 @@
                     let is_register_selected = selected_registers[[node_id, register_name]]
                     let is_column_selected = selected_columns[node_id];
                     let is_row_selected = selected_rows[register_name];
+                    let contained_input_element = table_cell.querySelector('input');
+                    if(!contained_input_element) {
+                        continue;
+                    }
                     if (!register_name) {
                         console.warn("No register name found in table cell " + i + "," + j)
                         continue;
                     }
                     if (table_cell.getAttribute("no_value") == "true") {
-                        table_cell.style.backgroundColor = colors["no_value"];
+                        contained_input_element.style.backgroundColor = colors["no_value"];
                         continue;
                     }
                     if (is_register_selected) {
-                        table_cell.style.backgroundColor = colors["selected_register"];
+                        contained_input_element.style.backgroundColor = colors["selected_register"];
                     } else if (is_row_selected) {
-                        table_cell.style.backgroundColor = colors["selected_row"];
+                        contained_input_element.style.backgroundColor = colors["selected_row"];
                         if (is_column_selected) {
-                            table_cell.style.backgroundColor = colors["selected_row_and_column"];
+                            contained_input_element.style.backgroundColor = colors["selected_row_and_column"];
                         }
                     } else if (is_column_selected) {
-                        table_cell.style.backgroundColor = colors["selected_column"];
+                        contained_input_element.style.backgroundColor = colors["selected_column"];
                     } else {
-                        table_cell.style.backgroundColor = colors["not_selected"];
+                        contained_input_element.style.backgroundColor = colors["not_selected"];
                     }
                 }
             }
@@ -332,18 +336,27 @@
             }
         }
         function make_select_cell(avatar, register_name, is_mouse_over = false) {
-            return function (event) {
-                if (is_mouse_over) {
-                    if (!event.buttons == 1) {
-                        return;
-                    }
-                }
+            let selectCell = function () {
                 if (!selected_registers[[avatar.node_id, register_name]]) {
                     selected_registers[[avatar.node_id, register_name]] = true;
                 } else {
                     selected_registers[[avatar.node_id, register_name]] = false;
                 }
                 updateRegistersTableColors();
+            }
+            return function (event) {
+                if (is_mouse_over) {
+                    if (!event.buttons == 1) {
+                        return;
+                    }
+                    if(event.target.matches(':hover')) {
+                        selectCell();
+                        event.stopPropagation();
+                    }
+                } else {
+                    selectCell();
+                }
+                
             }
         }
         function create_registers_table() {
@@ -383,7 +396,8 @@
                 // Attach an event listener on the button click event
                 btnExportConfig.addEventListener('click', function (event) {
                     addLocalMessage("Exporting registers of " + avatar.node_id);
-                    export_registers_of_avatar(avatar.node_id);
+                    const result = window.chooseFileSystemEntries({ type: "save-file" });
+                    //export_registers_of_avatar(avatar.node_id);
                     event.stopPropagation();
                 });
                 table_header_cell.appendChild(btnExportConfig);
@@ -420,7 +434,7 @@
                 // REGISTER NAME HERE
                 table_header_cell.innerHTML = register_name;
                 table_header_cell.onmousedown = make_select_row(register_name);
-                table_header_cell.onmouseover = make_select_row(register_name, is_mouse_over = true);
+                table_header_cell.onmouseover = make_select_row(register_name, true);
                 let btnSelectRow = document.createElement('button');
                 btnSelectRow.innerHTML = 'Select row';
                 // Attach an event listener on the button click event
@@ -434,8 +448,6 @@
                     let table_cell = document.createElement('td');
                     table_register_row.appendChild(table_cell);
                     table_cell.className = 'no-padding';
-                    table_cell.onmousedown = make_select_cell(avatar, register_name);
-                    table_cell.onmouseover = make_select_cell(avatar, register_name, is_mouse_over = true);
                     // Set an attribute on td to store the register name
                     table_cell.setAttribute('id', "register_" + register_name);
                     table_cell.setAttribute("node_id", avatar.node_id);
@@ -444,6 +456,7 @@
                     let inputFieldReference = null;
                     if (register_value == null) {
                         table_cell.setAttribute("no_value", "true");
+                        table_cell.style.backgroundColor = colors["no_value"];
                         return;
                     }
                     let type_string = Object.keys(register_value)[0];
@@ -484,8 +497,12 @@
 
                     // Set the height of inputFieldReference to match the height of the table cell
                     inputFieldReference.style.height = 100 + '%';
+                    inputFieldReference.style.padding = '15px 10px';
+                    inputFieldReference.style.lineHeight = '140%';
+                    inputFieldReference.onmouseover = make_select_cell(avatar, register_name, is_mouse_over = true);
+                    inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
                     var lastClick = null;
-                    inputFieldReference.addEventListener('click', function () {
+                    inputFieldReference.addEventListener('onmousedown', function () {
                         if (lastClick && new Date() - lastClick < 500) {
                             // Make a dialog box to enter the new value
                             var new_value = prompt("Enter new value for " + register_name + ":", value);
@@ -504,6 +521,8 @@
                             } else {
                                 addLocalMessage("No value entered");
                             }
+                        } else {
+                            make_select_cell(avatar, register_name)
                         }
                         lastClick = new Date();
                     });
