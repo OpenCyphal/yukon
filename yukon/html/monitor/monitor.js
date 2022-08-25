@@ -94,7 +94,39 @@
                 var node = evt.target;
             });
         }
-        function export_registers(node_id) {
+        function export_all_selected_registers() {
+            var exporting_registers = [];
+            // For each avatar in current_avatars
+            for (var i = 0; i < current_avatars.length; i++) {
+                var avatar = current_avatars[i];
+                let saving_all = selected_columns[avatar.node_id];
+                // For each register in avatar.registers_exploded_values
+                for (var j = 0; j < avatar.registers_exploded_values.length; j++) {
+                    var register = avatar.registers_exploded_values[j];
+                    if(saving_all || selected_rows[register.name]) {
+                    }
+                }
+            }
+
+            for (const register_name in selected_rows) {
+                if (selected_rows.hasOwnProperty(register_name)) {
+                    const register_name = selected_rows[register_name];
+                    exporting_registers.push(register_name);
+                }
+            }
+            for (const register_name in selected_registers) {
+                if (selected_registers.hasOwnProperty(register_name)) {
+                    for (var register_name in selected_registers[node_id]) {
+                        selected_registers.push(register_name);
+                    }
+                }
+            }
+            // For each avatar which has its node_id contained in the selected_columns array, add every register_name to the selected
+            // For each avatar
+
+            return selected_registers;
+        }
+        function export_registers_of_avatar(node_id) {
             // Get the avatar from current_avatars which has the node_id
             var avatar = current_avatars.find((avatar) => avatar.node_id == node_id);
             if (avatar == null) {
@@ -311,7 +343,7 @@
                 // Attach an event listener on the button click event
                 btnExportConfig.addEventListener('click', function (event) {
                     addLocalMessage("Exporting registers of " + avatar.node_id);
-                    export_registers(avatar.node_id);
+                    export_registers_of_avatar(avatar.node_id);
                     event.stopPropagation();
                 });
                 table_header_cell.appendChild(btnExportConfig);
