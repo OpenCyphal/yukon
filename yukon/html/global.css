@@ -1,4 +1,7 @@
-body {
-    color: rgb(173, 186, 199);
-    background-color: rgb(47, 57, 71); 
+@media (prefers-color-scheme: dark) {
+    * {
+        color: rgb(173, 186, 199) !important;
+        border-color: rgb(173, 186, 199) !important;
+        background-color: rgb(47, 57, 71) !important; 
+    }
 }
