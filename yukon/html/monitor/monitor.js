@@ -92,14 +92,15 @@
                 var node = evt.target;
             });
         }
-        function export_all_selected_registers(only_of_avatar_of_node_id=null) {
-            // A pair is the register_name and the node_id
+        // A pair is a pair of nodeid and register name
+        function get_all_selected_pairs()
+        {
             let final_dict = {};
             // For each avatar in current_avatars
             for (var i = 0; i < current_avatars.length; i++) {
                 var avatar = current_avatars[i];
                 let saving_all = selected_columns[avatar.node_id];
-                if(only_of_avatar_of_node_id && current_avatars[i].node_id != only_of_avatar_of_node_id) {
+                if (only_of_avatar_of_node_id && current_avatars[i].node_id != only_of_avatar_of_node_id) {
                     continue;
                 } else {
                     saving_all = true;
@@ -111,12 +112,17 @@
                 for (var key in avatar.registers_exploded_values) {
                     let register_name = key;
                     let register_value = avatar.registers_exploded_values[key];
-                    if (saving_all || selected_rows[register_name] || selected_registers[[avatar.node_id, register_name]]) {
+                    if (saving_all || selected_rows[register_name] ||
+                        selected_registers[[avatar.node_id, register_name]]) {
                         avatar_dto[register_name] = register_value;
                     }
                 }
-                final_array[avatar.node_id] = avatar_dto;
+                final_dict[avatar.node_id] = avatar_dto;
             }
+        }
+        function export_all_selected_registers(only_of_avatar_of_node_id = null) {
+            // A pair is the register_name and the node_id
+            
             var yaml_string = jsyaml.dump(final_array);
 
             return zubax_api.save_text(yaml_string);
@@ -200,7 +206,7 @@
             let the_avatar = current_avatars.find((avatar) => avatar.node_id === parseInt(node_id));
             let unprocessed_value = the_avatar["registers_exploded_values"][register_name]
             // if unprocessed_value[Object.keys(the_value)[0]]["value"]
-            if(typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] == "string") {
+            if (typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] == "string") {
                 unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_value
             } else if (typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"][0] == "number") {
                 unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = [parseInt(register_value)]
@@ -239,7 +245,7 @@
                     let is_column_selected = selected_columns[node_id];
                     let is_row_selected = selected_rows[register_name];
                     let contained_input_element = table_cell.querySelector('input');
-                    if(!contained_input_element) {
+                    if (!contained_input_element) {
                         continue;
                     }
                     if (!register_name) {
@@ -345,14 +351,14 @@
                     if (!event.buttons == 1) {
                         return;
                     }
-                    if(event.target.matches(':hover')) {
+                    if (event.target.matches(':hover')) {
                         selectCell();
                         event.stopPropagation();
                     }
                 } else {
                     selectCell();
                 }
-                
+
             }
         }
         function update_tables(override = false) {
@@ -401,6 +407,7 @@
                 btnExportConfig.addEventListener('click', function (event) {
                     addLocalMessage("Exporting registers of " + avatar.node_id);
                     const result = window.chooseFileSystemEntries({ type: "save-file" });
+                    // Export all but only for this avatar, dried up code
                     export_all_selected_registers(avatar.node_id);
                     event.stopPropagation();
                 });
@@ -567,6 +574,7 @@
                     inputFieldReference.style.padding = '15px 10px';
                     inputFieldReference.style.lineHeight = '140%';
                     inputFieldReference.style.zIndex = '0';
+                    inputFieldReference.setAttribute("spellcheck", "false");
                     inputFieldReference.onmouseover = make_select_cell(avatar, register_name, is_mouse_over = true);
                     // inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
                     var lastClick = null;
@@ -582,7 +590,7 @@
                                 avatar.registers_values[register_name] = new_value;
                                 // Update the value in the server
                                 update_register_value(register_name, new_value, avatar.node_id);
-                                setTimeout(function() {update_tables(override=true)}, 500);
+                                setTimeout(function () { update_tables(override = true) }, 500);
                             } else {
                                 addLocalMessage("No value entered");
                             }
@@ -689,7 +697,7 @@
                 }
             );
         }
-        
+
         setInterval(get_and_display_avatars, 1000);
         create_directed_graph();
         update_directed_graph();
@@ -759,6 +767,9 @@
             if (new_value == null) { addLocalMessage("No value was provided in the prompt."); return; }
             addLocalMessage("Setting selected registers to " + new_value);
             for (const key of Object.keys(selected_registers)) {
+                if (selected_registers[key] == false) {
+                    continue;
+                }
                 const [node_id, register_name] = key.split(",");
                 if (node_id && register_name) {
                     update_register_value(register_name, new_value, node_id);
@@ -766,12 +777,15 @@
             }
             // Run update_tables every second, do that only for the next 4 seconds
             let interval1 = setInterval(() => update_tables(true), 1000);
-            setTimeOut(() => clearInterval(interval1) , 4000);
+            setTimeOut(() => clearInterval(interval1), 4000);
         });
         const btnSelectedUnsetValues = document.getElementById('btnSelectedUnsetValues');
         btnSelectedUnsetValues.addEventListener('click', function () {
             addLocalMessage("Unsetting selected registers");
             for (const key of Object.keys(selected_registers)) {
+                if (selected_registers[key] == false) {
+                    continue;
+                }
                 const [node_id, register_name] = key.split(",");
                 if (node_id && register_name) {
                     update_register_value(register_name, "65535", node_id);
@@ -779,7 +793,7 @@
             }
             // Run update_tables every second, do that only for the next 4 seconds
             let interval1 = setInterval(() => update_tables(true), 1000);
-            setTimeOut(() => clearInterval(interval1) , 4000);
+            setTimeOut(() => clearInterval(interval1), 4000);
         });
         const btnUnselectAll = document.getElementById('btnUnselectAll');
         btnUnselectAll.addEventListener('click', function () {
@@ -790,8 +804,9 @@
             updateRegistersTableColors();
         });
         const btnExportAllSelectedRegisters = document.getElementById('btnExportAllSelectedRegisters');
-        btnExportAllSelectedRegisters.addEventListener('click', function () {
+        btnExportAllSelectedRegisters.addEventListener('click', function (event) {
             export_all_selected_registers();
+            event.stopPropagation();
         });
         const iRegistersFilter = document.getElementById('iRegistersFilter');
         var timer = null;
