@@ -11,13 +11,11 @@
         var lastHash = "";
         var my_graph = null;
         var available_configurations = {};
-        var selected_registers = {}; // Key is array of nodeid and register name, value is true if selected
         var selected_config = null
+        var selected_registers = {}; // Key is array of nodeid and register name, value is true if selected
         var selected_columns = {}; // Key is the node_id and value is true if selected
         let selected_rows = {}; // Key is register_name and value is true if selected
         let colors = {
-            // White but with 50% transparency
-            "transparent_blue": "",
             "selected_register": 'rgba(0, 255, 0, 0.5)',
             "selected_column": 'rgba(0, 0, 255, 0.5)',
             "selected_row": "rgba(255, 255, 0, 0.5)",
@@ -95,33 +93,28 @@
             });
         }
         function export_all_selected_registers() {
-            var exporting_registers = new Set();
+            // A pair is the register_name and the node_id
+            let final_array = [];
             // For each avatar in current_avatars
             for (var i = 0; i < current_avatars.length; i++) {
+                let avatar_dto = {
+                    "uavcan.node.id": current_avatars[i].node_id,
+                };
                 var avatar = current_avatars[i];
                 let saving_all = selected_columns[avatar.node_id];
-                // For each register in avatar.registers_exploded_values
-                for (var j = 0; j < avatar.registers_exploded_values.length; j++) {
-                    var register = avatar.registers_exploded_values[j];
-                    if (saving_all || selected_rows[register.name]) {
+                // For each key in avatar.registers_exploded_values
+                for (var key in avatar.registers_exploded_values) {
+                    let register_name = key;
+                    let register_value = avatar.registers_exploded_values[key];
+                    if (saving_all || selected_rows[register_name] || selected_registers[[avatar.node_id, register_name]]) {
+                        avatar_dto[register_name] = register_value;
                     }
                 }
+                final_array.push(avatar_dto);
             }
+            var yaml_string = jsyaml.dump(final_array);
 
-            for (const register_name in selected_rows) {
-                if (selected_rows.hasOwnProperty(register_name)) {
-                    exporting_registers.add(register_name);
-                }
-            }
-            for (const register_name in selected_registers) {
-                if (selected_registers.hasOwnProperty(register_name)) {
-                    selected_registers.add(register_name);
-                }
-            }
-            // For each avatar which has its node_id contained in the selected_columns array, add every register_name to the selected
-            // For each avatar
-
-            return selected_registers;
+            return zubax_api.save_text(yaml_string);
         }
         function export_registers_of_avatar(node_id) {
             // Get the avatar from current_avatars which has the node_id
@@ -410,7 +403,7 @@
                 table_header_cell.appendChild(btnApplyImportedConfig);
                 let btnSelectColumn = document.createElement('button');
                 btnSelectColumn.innerHTML = 'Select column';
-                btnSelectColumn.addEventListener('click', make_select_column(avatar.node_id));
+                btnSelectColumn.addEventListener('mousedown', make_select_column(avatar.node_id));
                 table_header_cell.onmousedown = make_select_column(avatar.node_id);
                 table_header_cell.onmouseover = make_select_column(avatar.node_id, true);
                 table_header_cell.appendChild(btnSelectColumn);
@@ -438,7 +431,7 @@
                 let btnSelectRow = document.createElement('button');
                 btnSelectRow.innerHTML = 'Select row';
                 // Attach an event listener on the button click event
-                btnSelectRow.onclick = make_select_row(register_name);
+                btnSelectRow.onmousedown = make_select_row(register_name);
                 table_header_cell.appendChild(btnSelectRow);
                 table_register_row.appendChild(table_header_cell);
 
@@ -724,6 +717,18 @@
             setTimeout(() => {
                 update_tables();
             }, 100);
+        });
+        const btnUnselectAll = document.getElementById('btnUnselectAll');
+        btnUnselectAll.addEventListener('click', function () {
+            addLocalMessage("Unselecting all registers");
+            selected_registers = {};
+            selected_columns = {};
+            selected_rows = {};
+            update_selected_registers_list();
+        });
+        const btnExportAllSelectedRegisters = document.getElementById('btnExportAllSelectedRegisters');
+        btnExportAllSelectedRegisters.addEventListener('click', function () {
+            export_all_selected_registers();
         });
     }
     try {

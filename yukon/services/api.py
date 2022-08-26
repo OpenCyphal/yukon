@@ -22,7 +22,7 @@ logger = logging.getLogger(__file__)
 logger.setLevel(logging.NOTSET)
 
 
-def save_candump_file_contents(file_contents):
+def save_text_into_file(file_contents):
     import tkinter as tk
     from tkinter import filedialog
 
@@ -87,11 +87,14 @@ class Api:
     def add_local_message(self, message: str) -> None:
         logger.info(message)
 
+    def save_text(self, text):
+        save_text_into_file(text)
+
     def save_node_configuration(self, node_id, serialized_configuration):
-        save_candump_file_contents(serialized_configuration)
+        save_text_into_file(serialized_configuration)
 
     def save_all_of_register_configuration(self, serialized_configuration):
-        save_candump_file_contents(serialized_configuration)
+        save_text_into_file(serialized_configuration)
 
     def import_all_of_register_configuration(self):
         return import_candump_file_contents()

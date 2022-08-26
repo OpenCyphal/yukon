@@ -9,6 +9,7 @@
     <script src="api.js"></script>
     <script src="autosize.js"></script>
     <script src="monitor/messages/messages.js"></script>
+    <script src="js-yaml.js"></script>
     <script src="monitor/monitor.js"></script>
     <script src="monitor/klay/klay.js"></script>
     <script src="monitor/klay/klay-layout.js"></script>
@@ -21,6 +22,7 @@
     <link rel="stylesheet" href="monitor/split.css">
     <link rel="stylesheet" href="monitor/table_style.css">
     <link rel="stylesheet" href="monitor/tabs.css">
+    <link rel="stylesheet" href="../global.css">
     <title>Yukon — Monitor</title>
 </head>
 
@@ -110,12 +112,20 @@
                 </tbody>
             </table>
         </div>
-        <div class="c-tab">
+        <div class="c-tab registers-tab">
             <h1>Registers view</h1>
-            <button id="btnImportRegistersConfig">Import registers config</button>
-            <button id="btnSelectedSetFromPrompt">Set value of selected registers</button>
-            <button id="btnSelectedSetFromConfig">Set value of selected registers from selected config</button>
-            <button id="btnSelectedUnsetValues">Unset values of selected registers (to 65535).</button>
+            <div class="registers-actions">
+                <button id="btnImportRegistersConfig">Import registers config</button>
+                <button id="btnSelectedSetFromPrompt">Set value of selected registers</button>
+                <button id="btnSelectedSetFromConfig">Set value of selected registers from selected config</button>
+                <button id="btnSelectedUnsetValues">Unset values of selected registers (to 65535)</button>
+                <button id="btnUnselectAll">Unselect all</button>
+                <button id="btnExportAllSelectedRegisters">Export all selected cells</button>
+            </div>
+            <div class="registers-filters">
+                <label for="iRegistersFilter">Filter</label>
+                <input type="text" id="iRegistersFilter">
+            </div>
             <div id="configChoice">
                 <label for="available_configurations_radios" id="lbl_available_configurations_radios">Choose one of the available configurations:</label>
                 <div id="available_configurations_radios">
