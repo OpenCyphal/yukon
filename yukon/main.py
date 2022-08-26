@@ -35,11 +35,15 @@ def run_electron() -> None:
         print('running in a normal Python process')
         root_path = Path(__file__).absolute().parent
 
+
     # if platform is windows
+    dir_name = "electron"
+    if not (getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')):
+        dir_name = ".electron"
+    extension = ""
     if sys.platform == "win32":
-        exe = root_path.parent / "electron" / "electron.exe"
-    else:
-        exe = root_path.parent / "electron" / "electron"
+        extension = ".exe"
+    exe = root_path.parent / dir_name / ("electron" + extension)
 
     # Use subprocess to run the exe
     os.spawnl(os.P_NOWAIT, exe, exe, "http://localhost:5000")

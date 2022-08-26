@@ -362,7 +362,7 @@
                 
             }
         }
-        function create_registers_table() {
+        function create_registers_table(filter_keyword_inclusive = "") {
             // Clear the table
             var registers_table = document.querySelector('#registers_table')
             registers_table.innerHTML = '';
@@ -431,6 +431,9 @@
             register_names.sort();
             // Add the table row headers for each register name
             register_names.forEach(function (register_name) {
+                if (filter_keyword_inclusive != "" && !register_name.includes(filter_keyword_inclusive)) {
+                    return;
+                }
                 let table_register_row = document.createElement('tr');
                 registers_table_body.appendChild(table_register_row);
                 let table_header_cell = document.createElement('th');
@@ -737,6 +740,16 @@
         const btnExportAllSelectedRegisters = document.getElementById('btnExportAllSelectedRegisters');
         btnExportAllSelectedRegisters.addEventListener('click', function () {
             export_all_selected_registers();
+        });
+        const iRegistersFilter = document.getElementById('iRegistersFilter');
+        var timer = null;
+        iRegistersFilter.addEventListener("input", function () {
+            if (timer) {
+                clearTimeout(timer);
+            }
+            timer = setTimeout(function () {
+                create_registers_table(iRegistersFilter.value)
+            }, 500);
         });
     }
     try {
