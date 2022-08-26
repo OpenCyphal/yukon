@@ -92,16 +92,21 @@
                 var node = evt.target;
             });
         }
-        function export_all_selected_registers() {
+        function export_all_selected_registers(only_of_avatar_of_node_id=null) {
             // A pair is the register_name and the node_id
-            let final_array = [];
+            let final_dict = {};
             // For each avatar in current_avatars
             for (var i = 0; i < current_avatars.length; i++) {
-                let avatar_dto = {
-                    "uavcan.node.id": current_avatars[i].node_id,
-                };
                 var avatar = current_avatars[i];
                 let saving_all = selected_columns[avatar.node_id];
+                if(only_of_avatar_of_node_id && current_avatars[i].node_id != only_of_avatar_of_node_id) {
+                    continue;
+                } else {
+                    saving_all = true;
+                }
+                let avatar_dto = {
+                    // "uavcan.node.id": current_avatars[i].node_id,
+                };
                 // For each key in avatar.registers_exploded_values
                 for (var key in avatar.registers_exploded_values) {
                     let register_name = key;
@@ -110,23 +115,11 @@
                         avatar_dto[register_name] = register_value;
                     }
                 }
-                final_array.push(avatar_dto);
+                final_array[avatar.node_id] = avatar_dto;
             }
             var yaml_string = jsyaml.dump(final_array);
 
             return zubax_api.save_text(yaml_string);
-        }
-        function export_registers_of_avatar(node_id) {
-            // Get the avatar from current_avatars which has the node_id
-            var avatar = current_avatars.find((avatar) => avatar.node_id == node_id);
-            if (avatar == null) {
-                addLocalMessage("No avatar found for node_id: " + node_id);
-                addLocalMessage("Returning early");
-                return;
-            }
-            var registers = JSON.parse(JSON.stringify(avatar.registers_exploded_values)); // A deep copy
-            addLocalMessage("Found avatar for node_id: " + node_id);
-            zubax_api.save_node_configuration(node_id, JSON.stringify(registers));
         }
         function refresh_graph_layout() {
             var layout = my_graph.layout(
@@ -207,7 +200,7 @@
             let the_avatar = current_avatars.find((avatar) => avatar.node_id === parseInt(node_id));
             let unprocessed_value = the_avatar["registers_exploded_values"][register_name]
             // if unprocessed_value[Object.keys(the_value)[0]]["value"]
-            if(unprocessed_value[Object.keys(unprocessed_value)[0]][0] == "string") {
+            if(typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] == "string") {
                 unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_value
             } else if (typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"][0] == "number") {
                 unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = [parseInt(register_value)]
@@ -362,6 +355,14 @@
                 
             }
         }
+        function update_tables(override = false) {
+            if (override || areThereAnyNewOrMissingHashes(last_table_hashes, "hash")) {
+                update_avatars_table();
+                create_registers_table();
+            }
+            updateLastHashes(last_table_hashes, "hash");
+        }
+        setInterval(update_tables, 1000)
         function create_registers_table(filter_keyword_inclusive = "") {
             // Clear the table
             var registers_table = document.querySelector('#registers_table')
@@ -400,7 +401,7 @@
                 btnExportConfig.addEventListener('click', function (event) {
                     addLocalMessage("Exporting registers of " + avatar.node_id);
                     const result = window.chooseFileSystemEntries({ type: "save-file" });
-                    //export_registers_of_avatar(avatar.node_id);
+                    export_all_selected_registers(avatar.node_id);
                     event.stopPropagation();
                 });
                 table_header_cell.appendChild(btnExportConfig);
@@ -451,7 +452,7 @@
                 // Add table cells for each avatar, containing the value of the register from register_name
                 current_avatars.forEach(function (avatar) {
                     // ALL THE REGISTER VALUES HERE
-                    let table_cell = document.createElement('td');
+                    const table_cell = document.createElement('td');
                     table_register_row.appendChild(table_cell);
                     table_cell.className = 'no-padding';
                     // Set an attribute on td to store the register name
@@ -481,7 +482,6 @@
                             text_input.value = JSON.stringify(value);
                         }
                         // When the text input is clicked
-                        table_cell.appendChild(text_input);
                     } else if (type_string.includes("natural")) {
                         // Create a number input field
                         let number_input_field = document.createElement('input');
@@ -491,44 +491,103 @@
                             number_input_field.style.backgroundColor = '#ee0e0e';
                         }
                         number_input_field.value = value;
-                        table_cell.appendChild(number_input_field);
                     } else if (type_string === "string") {
                         let text_input = document.createElement('input');
                         inputFieldReference = text_input;
                         text_input.setAttribute('type', 'text');
                         text_input.value = value;
                         // When the text input is clicked
-                        table_cell.appendChild(text_input);
                     }
-
+                    table_cell.appendChild(inputFieldReference);
+                    function styleLabel(label) {
+                        label.style.height = '0.1em';
+                        label.style.position = 'absolute';
+                        label.style.fontSize = '10px';
+                        label.style.color = '#000000';
+                        label.style.backgroundColor = 'transparent';
+                        label.style.padding = '0px';
+                        label.style.margin = '1px';
+                        label.style.border = '0px';
+                        label.style.borderRadius = '0px';
+                        label.style.display = 'inline';
+                        label.style.width = '100%';
+                        label.style.fontFamily = 'monospace';
+                        label.style.whiteSpace = 'nowrap';
+                        label.style["pointer-events"] = 'none';
+                        // label.style.zIndex = '-1';
+                        // label.onmouseover = function(event) {
+                        //     event.stopPropagation();
+                        // }
+                    }
+                    // Create a new 10% height label in inputFieldReference and place it in the bottom right corner of the input field
+                    {
+                        // For displaying the value
+                        const label = document.createElement('label');
+                        styleLabel(label);
+                        label.style.width = '100%';
+                        label.style.textAlign = 'right';
+                        label.style.fontFamily = 'monospace';
+                        label.style.zIndex = '1';
+                        table_cell.style.position = 'relative';
+                        label.style.bottom = '10px';
+                        label.style.right = '0';
+                        label.style.left = '0';
+                        let dimensionality = "";
+                        if (Array.isArray(value)) {
+                            dimensionality = "[" + value.length + "]";
+                        }
+                        label.innerHTML = type_string + dimensionality;
+                        table_cell.insertBefore(label, inputFieldReference);
+                    }
+                    {
+                        // For displaying the mutability and persistence
+                        const explodedRegister = avatar.registers_exploded_values[register_name];
+                        const isMutable = explodedRegister["_meta_"].mutable;
+                        const isPersistent = explodedRegister["_meta_"].persistent;
+                        const label = document.createElement('label');
+                        styleLabel(label);
+                        label.style.textAlign = 'left';
+                        label.style.verticalAlign = 'bottom';
+                        label.style.bottom = '10px';
+                        label.style.right = '0';
+                        label.style.left = '0';
+                        label.style.zIndex = '1';
+                        table_cell.style.position = 'relative';
+                        label.innerHTML = "";
+                        if (isMutable) {
+                            label.innerHTML += "M";
+                        }
+                        if (isPersistent) {
+                            label.innerHTML += "P";
+                        }
+                        table_cell.insertBefore(label, inputFieldReference);
+                    }
                     // Set the height of inputFieldReference to match the height of the table cell
                     inputFieldReference.style.height = 100 + '%';
                     inputFieldReference.style.padding = '15px 10px';
                     inputFieldReference.style.lineHeight = '140%';
+                    inputFieldReference.style.zIndex = '0';
                     inputFieldReference.onmouseover = make_select_cell(avatar, register_name, is_mouse_over = true);
-                    inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
+                    // inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
                     var lastClick = null;
-                    inputFieldReference.addEventListener('onmousedown', function () {
+                    inputFieldReference.addEventListener('mousedown', function (event) {
                         if (lastClick && new Date() - lastClick < 500) {
                             // Make a dialog box to enter the new value
                             var new_value = prompt("Enter new value for " + register_name + ":", value);
                             // If the user entered a value
                             if (new_value != null) {
                                 // Update the value in the table
-                                text_input.value = new_value;
+                                // text_input.value = new_value;
                                 // Update the value in the avatar
                                 avatar.registers_values[register_name] = new_value;
                                 // Update the value in the server
-                                if (isOnlyValueInArray) {
-                                    update_register_value(register_name, "[" + new_value + "]", avatar.node_id);
-                                } else {
-                                    update_register_value(register_name, new_value, avatar.node_id);
-                                }
+                                update_register_value(register_name, new_value, avatar.node_id);
+                                setTimeout(function() {update_tables(override=true)}, 500);
                             } else {
                                 addLocalMessage("No value entered");
                             }
                         } else {
-                            make_select_cell(avatar, register_name)
+                            make_select_cell(avatar, register_name)(event)
                         }
                         lastClick = new Date();
                     });
@@ -630,14 +689,7 @@
                 }
             );
         }
-        function update_tables() {
-            if (areThereAnyNewOrMissingHashes(last_table_hashes, "hash")) {
-                update_avatars_table();
-                create_registers_table();
-            }
-            updateLastHashes(last_table_hashes, "hash");
-        }
-        setInterval(update_tables, 1000)
+        
         setInterval(get_and_display_avatars, 1000);
         create_directed_graph();
         update_directed_graph();
@@ -712,9 +764,9 @@
                     update_register_value(register_name, new_value, node_id);
                 }
             }
-            setTimeout(() => {
-                update_tables();
-            }, 100);
+            // Run update_tables every second, do that only for the next 4 seconds
+            let interval1 = setInterval(() => update_tables(true), 1000);
+            setTimeOut(() => clearInterval(interval1) , 4000);
         });
         const btnSelectedUnsetValues = document.getElementById('btnSelectedUnsetValues');
         btnSelectedUnsetValues.addEventListener('click', function () {
@@ -725,9 +777,9 @@
                     update_register_value(register_name, "65535", node_id);
                 }
             }
-            setTimeout(() => {
-                update_tables();
-            }, 100);
+            // Run update_tables every second, do that only for the next 4 seconds
+            let interval1 = setInterval(() => update_tables(true), 1000);
+            setTimeOut(() => clearInterval(interval1) , 4000);
         });
         const btnUnselectAll = document.getElementById('btnUnselectAll');
         btnUnselectAll.addEventListener('click', function () {
@@ -750,6 +802,14 @@
             timer = setTimeout(function () {
                 create_registers_table(iRegistersFilter.value)
             }, 500);
+        });
+        const btnRereadAllRegisters = document.getElementById('btnRereadAllRegisters');
+        btnRereadAllRegisters.addEventListener('click', function () {
+            zubax_api.reread_registers()
+        });
+        const btnRereadSelectedRegisters = document.getElementById('btnRereadSelectedRegisters');
+        btnRereadSelectedRegisters.addEventListener('click', function () {
+
         });
     }
     try {

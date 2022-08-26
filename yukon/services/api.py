@@ -7,6 +7,7 @@ from time import sleep
 import logging
 
 import uavcan
+from domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
 from yukon.services.get_ports import get_socketcan_ports, get_slcan_ports
 from yukon.domain.attach_transport_request import AttachTransportRequest
@@ -34,7 +35,7 @@ def save_text_into_file(file_contents):
     root.deiconify()
     root.lift()
     root.focus_force()
-    file_path = filedialog.asksaveasfilename(filetypes=[("Candump files", ".candump .txt .json")])
+    file_path = filedialog.asksaveasfilename()
     root.withdraw()
     root.destroy()
     if file_path:
@@ -143,6 +144,9 @@ class Api:
     # def save_registers_of_node(self, node_id: int, registers: typing.Dict["str"]) -> None:
     def show_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = False
+    def reread_registers(self, request_contents: str) -> None:
+        pairs = json.loads(request_contents)
+        request = RereadRegistersRequest(pairs)
 
     def hide_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = True
