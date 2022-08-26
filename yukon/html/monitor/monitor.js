@@ -304,6 +304,7 @@
                     addLocalMessage("Column " + node_id + " selected");
                 }
                 updateRegistersTableColors();
+                event.stopPropagation();
             }
         }
         function make_select_row(register_name, is_mouse_over = false) {
@@ -724,7 +725,7 @@
             selected_registers = {};
             selected_columns = {};
             selected_rows = {};
-            update_selected_registers_list();
+            updateRegistersTableColors();
         });
         const btnExportAllSelectedRegisters = document.getElementById('btnExportAllSelectedRegisters');
         btnExportAllSelectedRegisters.addEventListener('click', function () {

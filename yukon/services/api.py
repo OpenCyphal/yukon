@@ -120,7 +120,7 @@ class Api:
 
     def update_register_value(self, register_name: str, register_value: str, node_id: int) -> None:
         # Check if register_value can be converted to an int, is purely numeric
-        new_value: uavcan.register.Value_1 = unexplode_value()
+        new_value: uavcan.register.Value_1 = unexplode_value(register_value)
         self.state.queues.update_registers.put(UpdateRegisterRequest(register_name, new_value, node_id))
 
     def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
