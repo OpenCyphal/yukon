@@ -118,10 +118,10 @@ class Api:
         file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
         _ = file_path
 
-    def update_register_value(self, register_name: str, register_value: str, node_id: int) -> None:
+    def update_register_value(self, register_name: str, register_value: str, node_id: str) -> None:
         # Check if register_value can be converted to an int, is purely numeric
         new_value: uavcan.register.Value_1 = unexplode_value(register_value)
-        self.state.queues.update_registers.put(UpdateRegisterRequest(register_name, new_value, node_id))
+        self.state.queues.update_registers.put(UpdateRegisterRequest(register_name, new_value, int(node_id)))
 
     def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")

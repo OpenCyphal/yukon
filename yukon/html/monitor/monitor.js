@@ -203,7 +203,16 @@
             }
         }
         function update_register_value(register_name, register_value, node_id) {
-            zubax_api.update_register_value(register_name, register_value, node_id);
+            // Find the avatar which has the node_id
+            let the_avatar = current_avatars.find((avatar) => avatar.node_id === parseInt(node_id));
+            let unprocessed_value = the_avatar["registers_exploded_values"][register_name]
+            // if unprocessed_value[Object.keys(the_value)[0]]["value"]
+            if(unprocessed_value[Object.keys(unprocessed_value)[0]][0] == "string") {
+                unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_value
+            } else if (typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"][0] == "number") {
+                unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = [parseInt(register_value)]
+            }
+            zubax_api.update_register_value(register_name, unprocessed_value, node_id);
         }
         function updateTextOut(refresh_anyway = false) {
             zubax_api.get_avatars().then(
@@ -694,11 +703,10 @@
             new_value = prompt("Enter the new value of selected registers", "")
             if (new_value == null) { addLocalMessage("No value was provided in the prompt."); return; }
             addLocalMessage("Setting selected registers to " + new_value);
-            // For key and value of selected_registers, set the value to value
-            for (const [key, value] of Object.entries(selected_registers)) {
-                const [node_id, register_name] = key;
+            for (const key of Object.keys(selected_registers)) {
+                const [node_id, register_name] = key.split(",");
                 if (node_id && register_name) {
-                    update_register_value(register_name, new_value, avatar.node_id);
+                    update_register_value(register_name, new_value, node_id);
                 }
             }
             setTimeout(() => {
@@ -708,11 +716,10 @@
         const btnSelectedUnsetValues = document.getElementById('btnSelectedUnsetValues');
         btnSelectedUnsetValues.addEventListener('click', function () {
             addLocalMessage("Unsetting selected registers");
-            // For key and value of selected_registers, set the value to value
-            for (const [key, value] of Object.entries(selected_registers)) {
-                const [node_id, register_name] = key;
+            for (const key of Object.keys(selected_registers)) {
+                const [node_id, register_name] = key.split(",");
                 if (node_id && register_name) {
-                    update_register_value(register_name, "65535", avatar.node_id);
+                    update_register_value(register_name, "65535", node_id);
                 }
             }
             setTimeout(() => {

@@ -61,7 +61,7 @@ def cyphal_worker(state: GodState) -> None:
                         # We don't need the response here because it is snooped by an avatar anyway
                         asyncio.create_task(client.call(request))
                     except:
-                        logger.exception("Failed to update register %s for %s", register_update.register_name, node_id)
+                        logger.exception("Failed to update register %s for %s", register_update.register_name, register_update.node_id)
                 if not state.queues.apply_configuration.empty():
                     config = state.queues.apply_configuration.get_nowait()
                     if config.node_id:
