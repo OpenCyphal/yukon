@@ -1,4 +1,5 @@
 import json
+import os
 import typing
 import copy
 import webbrowser
@@ -16,6 +17,7 @@ from yukon.domain.update_register_request import UpdateRegisterRequest
 from yukon.domain.avatar import Avatar
 from yukon.services.value_utils import unexplode_value
 from yukon.domain.god_state import GodState
+from yukon.services.get_electron_path import get_electron_path
 
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
@@ -169,7 +171,16 @@ class Api:
         return json.dumps(avatar_dto)
 
     def open_monitor_window(self) -> None:
-        webbrowser.open_new_tab("http://localhost:5000/main")
+        # If env contains IS_BROWSER_BASED
+        exe_path = get_electron_path()
+        if "IS_BROWSER_BASED" in os.environ:
+            webbrowser.open_new_tab("http://localhost:5000/main")
+        else:
+            os.spawnl(os.P_NOWAIT, exe_path, exe_path, "http://localhost:5000/main")
 
     def open_add_transport_window(self) -> None:
-        webbrowser.open_new_tab("http://localhost:5000/")
+        exe_path = get_electron_path()
+        if "IS_BROWSER_BASED" in os.environ:
+            webbrowser.open_new_tab("http://localhost:5000/")
+        else:
+            os.spawnl(os.P_NOWAIT, exe_path, exe_path, "http://localhost:5000/")

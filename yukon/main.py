@@ -18,6 +18,7 @@ from yukon.domain.god_state import GodState
 from yukon.sentry_setup import setup_sentry
 from yukon.server import server, make_landing_and_bridge
 from yukon.services.api import Api
+from yukon.services.get_electron_path import get_electron_path
 
 setup_sentry(sentry_sdk)
 paths = sys.path
@@ -29,25 +30,9 @@ logger.setLevel("INFO")
 def run_electron() -> None:
     # Make the thread sleep for 1 second waiting for the server to start
     sleep(1)
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        root_path = Path(sys._MEIPASS).absolute() / "yukon"  # type: ignore # pylint: disable=protected-access
-    else:
-        print('running in a normal Python process')
-        root_path = Path(__file__).absolute().parent
-
-
-    # if platform is windows
-    dir_name = "electron"
-    if not (getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')):
-        dir_name = ".electron"
-    extension = ""
-    if sys.platform == "win32":
-        extension = ".exe"
-    exe = root_path.parent / dir_name / ("electron" + extension)
-
+    exe_path = get_electron_path()
     # Use subprocess to run the exe
-    os.spawnl(os.P_NOWAIT, exe, exe, "http://localhost:5000")
-    os.spawnl(os.P_NOWAIT, exe, exe, "http://localhost:5000/main")
+    os.spawnl(os.P_NOWAIT, str(exe_path), str(exe_path), "http://localhost:5000")
 
 
 def run_gui_app(state: GodState, api: Api) -> None:
@@ -71,8 +56,6 @@ def run_gui_app(state: GodState, api: Api) -> None:
 
     def open_webbrowser() -> None:
         webbrowser.open("http://localhost:5000/")
-
-
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
