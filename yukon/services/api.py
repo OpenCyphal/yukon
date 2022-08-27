@@ -30,7 +30,7 @@ def save_text_into_file(file_contents: str) -> None:
     from tkinter import filedialog
 
     root = tk.Tk()
-    root.geometry('1x1+1+1')
+    root.geometry("1x1+1+1")
 
     # Show window again and lift it to top so it can get focus,
     # otherwise dialogs will end up behind the terminal.
@@ -50,8 +50,9 @@ def save_text_into_file(file_contents: str) -> None:
 def import_candump_file_contents() -> str:
     import tkinter as tk
     from tkinter import filedialog
+
     root = tk.Tk()
-    root.geometry('1x1+1+1')
+    root.geometry("1x1+1+1")
     root.deiconify()
     root.lift()
     root.focus_force()

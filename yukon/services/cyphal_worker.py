@@ -61,7 +61,11 @@ def cyphal_worker(state: GodState) -> None:
                         # We don't need the response here because it is snooped by an avatar anyway
                         asyncio.create_task(client.call(request))
                     except:
-                        logger.exception("Failed to update register %s for %s", register_update.register_name, register_update.node_id)
+                        logger.exception(
+                            "Failed to update register %s for %s",
+                            register_update.register_name,
+                            register_update.node_id,
+                        )
                 if not state.queues.apply_configuration.empty():
                     config = state.queues.apply_configuration.get_nowait()
                     if config.node_id:
@@ -73,7 +77,9 @@ def cyphal_worker(state: GodState) -> None:
                         for k, v in data.items():
                             if k[-5:] == ".type":
                                 continue
-                            state.queues.update_registers.put(UpdateRegisterRequest(k, unexplode_value(v), config.node_id))
+                            state.queues.update_registers.put(
+                                UpdateRegisterRequest(k, unexplode_value(v), config.node_id)
+                            )
                     else:
                         logger.debug("Setting configuration for all configured nodes")
                         data = json.loads(config.configuration)
@@ -88,7 +94,8 @@ def cyphal_worker(state: GodState) -> None:
                                 if k[-5:] == ".type":
                                     continue
                                 state.queues.update_registers.put(
-                                    UpdateRegisterRequest(k, unexplode_value(v), int(node_id)))
+                                    UpdateRegisterRequest(k, unexplode_value(v), int(node_id))
+                                )
         except Exception as e:
             logger.exception(e)
             raise e

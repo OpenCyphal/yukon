@@ -11,10 +11,10 @@ from flask.blueprints import T_after_request
 from yukon.domain.god_state import GodState
 from yukon.services.api import Api
 
-if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     root_path = sys._MEIPASS  # type: ignore # pylint: disable=protected-access
 else:
-    print('running in a normal Python process')
+    print("running in a normal Python process")
     root_path = os.path.dirname(os.path.abspath(__file__))
 gui_dir = os.path.join(root_path, "html")  # development path
 

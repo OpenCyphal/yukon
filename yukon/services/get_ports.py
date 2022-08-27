@@ -6,9 +6,9 @@ from can.interfaces.socketcan import utils as socketcan_utils
 
 def ListPortInfo_to_dict(list_port_info: ListPortInfo) -> typing.Any:
     return {
-        'device': list_port_info.device,
-        'description': list_port_info.description,
-        'hwid': list_port_info.hwid,
+        "device": list_port_info.device,
+        "description": list_port_info.description,
+        "hwid": list_port_info.hwid,
     }
 
 

@@ -3,15 +3,15 @@ from pathlib import Path
 
 
 def get_electron_path() -> Path:
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         root_path = Path(sys._MEIPASS).absolute() / "yukon"  # type: ignore # pylint: disable=protected-access
     else:
-        print('running in a normal Python process')
+        print("running in a normal Python process")
         root_path = Path(__file__).absolute().parent.parent
 
     # if platform is windows
     dir_name = "electron"
-    if not (getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')):
+    if not (getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")):
         dir_name = ".electron"
     extension = ""
     if sys.platform == "win32":
