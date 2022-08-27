@@ -1,0 +1,7 @@
+@media (prefers-color-scheme: dark) {
+    :not(.tab_label):not(.tab-slider):not(.c-tabs-nav *):not(#cy *):not(.selected_element) {
+        color: rgb(173, 186, 199) !important;
+        border-color: rgb(173, 186, 199) !important;
+        background-color: rgb(47, 57, 71) !important; 
+    }
+}

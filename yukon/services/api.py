@@ -1,25 +1,76 @@
 import json
+import os
 import typing
 import copy
 import webbrowser
-from queue import Empty
+from pathlib import Path
 from time import sleep
+import logging
 
 import uavcan
-from services.get_ports import get_socketcan_ports, get_slcan_ports
+from domain.reread_registers_request import RereadRegistersRequest
+from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
+from yukon.services.get_ports import get_socketcan_ports, get_slcan_ports
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.interface import Interface
 from yukon.domain.update_register_request import UpdateRegisterRequest
 from yukon.domain.avatar import Avatar
 from yukon.services.value_utils import unexplode_value
 from yukon.domain.god_state import GodState
-
-import logging
+from yukon.services.get_electron_path import get_electron_path
 
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.NOTSET)
+
+
+def save_text_into_file(file_contents: str) -> None:
+    import tkinter as tk
+    from tkinter import filedialog
+
+    root = tk.Tk()
+    root.geometry("1x1+1+1")
+
+    # Show window again and lift it to top so it can get focus,
+    # otherwise dialogs will end up behind the terminal.
+    root.deiconify()
+    root.lift()
+    root.focus_force()
+    file_path = filedialog.asksaveasfilename()
+    root.withdraw()
+    root.destroy()
+    if file_path:
+        with open(file_path, "w") as f:
+            f.write(file_contents)
+    else:
+        logger.warning("No file selected")
+
+
+def import_candump_file_contents() -> str:
+    import tkinter as tk
+    from tkinter import filedialog
+
+    root = tk.Tk()
+    root.geometry("1x1+1+1")
+    root.deiconify()
+    root.lift()
+    root.focus_force()
+    file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
+    root.withdraw()
+    root.destroy()
+    try:
+        with open(file_path, "r") as f:
+            contents = f.read()
+            contents_deserialized = json.loads(contents)
+            contents_deserialized["__file_name"] = Path(file_path).name
+            configuration = json.dumps(contents_deserialized)
+    except Exception:
+        logger.exception("Nothing was selected from the file dialog")
+        return ""
+    else:
+        logger.debug(f"Configuration: {configuration}")
+    return configuration
 
 
 class Api:
@@ -40,6 +91,24 @@ class Api:
     def add_local_message(self, message: str) -> None:
         logger.info(message)
 
+    def save_text(self, text: str) -> None:
+        save_text_into_file(text)
+
+    def save_all_of_register_configuration(self, serialized_configuration: str) -> None:
+        save_text_into_file(serialized_configuration)
+
+    def import_all_of_register_configuration(self) -> str:
+        return import_candump_file_contents()
+
+    def import_node_configuration(self) -> str:
+        return import_candump_file_contents()
+
+    def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
+        self.state.queues.apply_configuration.put(ApplyConfigurationRequest(node_id, configuration))
+
+    def apply_all_of_configuration(self, configuration: str) -> None:
+        self.state.queues.apply_configuration.put(ApplyConfigurationRequest(None, configuration))
+
     def open_file_dialog(self) -> None:
         import tkinter as tk
         from tkinter import filedialog
@@ -50,20 +119,10 @@ class Api:
         file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
         _ = file_path
 
-    def update_register_value(self, register_name: str, register_value: str, node_id: int) -> None:
-        # Find the avatar which has the node_id
-        for avatar in self.state.avatar.avatars_by_node_id.values():
-            if avatar.node_id == node_id:
-                exploded_value = avatar.register_exploded_values[register_name]
-                break
-        new_exploded_value = copy.copy(exploded_value)
+    def update_register_value(self, register_name: str, register_value: str, node_id: str) -> None:
         # Check if register_value can be converted to an int, is purely numeric
-        if register_value.isnumeric():
-            new_exploded_value[list(new_exploded_value.keys())[0]]["value"] = int(register_value)
-        else:
-            new_exploded_value[list(new_exploded_value.keys())[0]]["value"] = register_value
-        new_value: uavcan.register.Value_1 = unexplode_value(new_exploded_value)
-        self.state.queues.update_registers.put(UpdateRegisterRequest(register_name, new_value, node_id))
+        new_value: uavcan.register.Value_1 = unexplode_value(register_value)
+        self.state.queues.update_registers.put(UpdateRegisterRequest(register_name, new_value, int(node_id)))
 
     def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
@@ -86,6 +145,10 @@ class Api:
     def show_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = False
 
+    def reread_registers(self, request_contents: str) -> None:
+        pairs = json.loads(request_contents)
+        request = RereadRegistersRequest(pairs)
+
     def hide_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = True
 
@@ -107,7 +170,16 @@ class Api:
         return json.dumps(avatar_dto)
 
     def open_monitor_window(self) -> None:
-        webbrowser.open_new_tab("http://localhost:5000/main")
+        # If env contains IS_BROWSER_BASED
+        exe_path = get_electron_path()
+        if "IS_BROWSER_BASED" in os.environ:
+            webbrowser.open_new_tab("http://localhost:5000/main")
+        else:
+            os.spawnl(os.P_NOWAIT, exe_path, exe_path, "http://localhost:5000/main")
 
     def open_add_transport_window(self) -> None:
-        webbrowser.open_new_tab("http://localhost:5000/")
+        exe_path = get_electron_path()
+        if "IS_BROWSER_BASED" in os.environ:
+            webbrowser.open_new_tab("http://localhost:5000/")
+        else:
+            os.spawnl(os.P_NOWAIT, exe_path, exe_path, "http://localhost:5000/")

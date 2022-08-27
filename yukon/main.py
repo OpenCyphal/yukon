@@ -1,6 +1,5 @@
 import threading
 import webbrowser
-from pathlib import Path
 from typing import Optional, Any
 import os
 import sys
@@ -18,6 +17,7 @@ from yukon.domain.god_state import GodState
 from yukon.sentry_setup import setup_sentry
 from yukon.server import server, make_landing_and_bridge
 from yukon.services.api import Api
+from yukon.services.get_electron_path import get_electron_path
 
 setup_sentry(sentry_sdk)
 paths = sys.path
@@ -29,21 +29,9 @@ logger.setLevel("INFO")
 def run_electron() -> None:
     # Make the thread sleep for 1 second waiting for the server to start
     sleep(1)
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        root_path = Path(sys._MEIPASS).absolute() / "yukon"  # type: ignore # pylint: disable=protected-access
-    else:
-        print('running in a normal Python process')
-        root_path = Path(__file__).absolute().parent
-
-    # if platform is windows
-    if sys.platform == "win32":
-        exe = root_path.parent / "electron" / "electron.exe"
-    else:
-        exe = root_path.parent / "electron" / "electron"
-
+    exe_path = get_electron_path()
     # Use subprocess to run the exe
-    os.spawnl(os.P_NOWAIT, exe, exe, "http://localhost:5000")
-    os.spawnl(os.P_NOWAIT, exe, exe, "http://localhost:5000/main")
+    os.spawnl(os.P_NOWAIT, str(exe_path), str(exe_path), "http://localhost:5000")
 
 
 def run_gui_app(state: GodState, api: Api) -> None:
@@ -62,12 +50,11 @@ def run_gui_app(state: GodState, api: Api) -> None:
     cyphal_worker_thread = threading.Thread(target=cyphal_worker, args=[state])
     cyphal_worker_thread.start()
 
+    def run_server() -> None:
+        server.run(host="0.0.0.0", port=5000)
+
     def open_webbrowser() -> None:
         webbrowser.open("http://localhost:5000/")
-
-    # Make a thread and call open_webbrowser() in it
-    thread = threading.Thread(target=open_webbrowser)
-    thread.start()
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
@@ -75,11 +62,21 @@ def run_gui_app(state: GodState, api: Api) -> None:
 
     # dpg.enable_docking(dock_space=False)
     make_terminate_handler(exit_handler)
-    start_electron_thread = threading.Thread(target=run_electron)
-    start_electron_thread.start()
-    server.run(host="0.0.0.0", port=5000)
 
-
+    start_server_thread = threading.Thread(target=run_server)
+    start_server_thread.start()
+    # if environment variable IS_BROWSER_BASED is set, open the webbrowser
+    if os.environ.get("IS_BROWSER_BASED"):
+        # Make a thread and call open_webbrowser() in it
+        thread = threading.Thread(target=open_webbrowser)
+        thread.start()
+    else:
+        start_electron_thread = threading.Thread(target=run_electron)
+        start_electron_thread.start()
+    while True:
+        sleep(1)
+        if not state.gui.gui_running:
+            break
     exit_handler(None, None)
     state.gui.gui_running = False
 

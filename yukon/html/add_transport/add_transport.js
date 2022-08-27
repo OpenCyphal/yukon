@@ -85,6 +85,7 @@
             const h1TransportType = document.querySelector("h1#TransportType");
             const iTransport = document.getElementById("iTransport");
             const sTransport = document.getElementById("sTransport");
+            const iMtu = document.getElementById("iMtu");
             const divMtu = document.getElementById("divMtu");
             const divArbRate = document.getElementById("divArbRate");
             const divDataRate = document.getElementById("divDataRate");
@@ -99,6 +100,18 @@
             divDataRate.style.display = "block";
             divNodeId.style.display = "block";
             divCandump.style.display = "none";
+            const iArbRate = document.getElementById("iArbRate");
+            const iDataRate = document.getElementById("iDataRate");
+            const iNodeId = document.getElementById("iNodeId");
+
+            // Making sure that no inputs are no longer colored red if there was an error with these inputs
+            iTransport.classList.remove("is-danger");
+            sTransport.classList.remove("is-danger");
+            iMtu.classList.remove("is-danger");
+            iArbRate.classList.remove("is-danger");
+            iDataRate.classList.remove("is-danger");
+            iNodeId.classList.remove("is-danger");
+
             switch (currentSelectedTransport) {
                 case transport_types.MANUAL:
                     h1TransportType.innerHTML = "A connection string";
@@ -115,6 +128,7 @@
                 case transport_types.SLCAN:
                     h1TransportType.innerHTML = "SLCAN";
                     divTypeTransport.style.display = "none";
+                    iMtu.value = 8;
                     fillSelectionWithSlcan();
                     break;
                 case transport_types.SOCKETCAN:
@@ -122,6 +136,7 @@
                     divTypeTransport.style.display = "none";
                     divArbRate.style.display = "none";
                     divDataRate.style.display = "none";
+                    iMtu.value = 64;
                     fillSelectionWithSocketcan();
                     break;
                 case transport_types.CANDUMP:
@@ -164,6 +179,7 @@
                     var new_label = document.createElement('label');
                     new_label.setAttribute('for', "transport" + property);
                     new_label.innerHTML = property;
+                    new_label.classList.add('tab_label');
                     maybe_tabs.insertBefore(new_tab, slider);
                     maybe_tabs.insertBefore(new_label, slider);
                 }
@@ -218,12 +234,12 @@
             doTheTabSwitching();
         }
         function verifyInputs() {
-            var iTransport = document.getElementById("iTransport");
-            var sTransport = document.getElementById("sTransport");
-            var iMtu = document.getElementById("iMtu");
-            var iArbRate = document.getElementById("iArbRate");
-            var iDataRate = document.getElementById("iDataRate");
-            var iNodeId = document.getElementById("iNodeId");
+            const iTransport = document.getElementById("iTransport");
+            const sTransport = document.getElementById("sTransport");
+            const iMtu = document.getElementById("iMtu");
+            const iArbRate = document.getElementById("iArbRate");
+            const iDataRate = document.getElementById("iDataRate");
+            const iNodeId = document.getElementById("iNodeId");
             // Remove is-danger from every input
             iTransport.classList.remove("is-danger");
             sTransport.classList.remove("is-danger");
@@ -231,7 +247,7 @@
             iArbRate.classList.remove("is-danger");
             iDataRate.classList.remove("is-danger");
             iNodeId.classList.remove("is-danger");
-            var isFormCorrect = true;
+            let isFormCorrect = true;
             if (currentSelectedTransport == transport_types.MANUAL) {
                 if (iTransport.value == "" || !iTransport.value.includes(":")) {
                     iTransport.classList.add("is-danger");
@@ -239,7 +255,7 @@
                     isFormCorrect = false;
                 }
                 const transportMustContain = ["socketcan", "slcan"];
-                var containsAtLeastOne = false;
+                let containsAtLeastOne = false;
                 for (transportType of transportMustContain) {
                     if (iTransport.value.includes(transportType)) {
                         containsAtLeastOne = true;
@@ -281,7 +297,7 @@
 
         btnStart.addEventListener('click', function () {
             if (!verifyInputs()) { return; }
-            var port = "";
+            let port = "";
             const cbToggleSlcanSocketcan = document.getElementById('cbToggleSlcanSocketcan');
             const useSocketCan = currentSelectedTransport == transport_types.SOCKETCAN;
             if (currentSelectedTransport != transport_types.MANUAL) {
@@ -315,11 +331,11 @@
             );
         });
         // Toggle between showing divTypeTransport and divSelectTransport by clicking on the respective buttons
-        var btnTypeTransport = document.getElementById('btnTypeTransport');
-        var btnSelectTransport = document.getElementById('btnSelectTransport');
-        var divTypeTransport = document.getElementById('divTypeTransport');
-        var divSelectTransport = document.getElementById('divSelectTransport');
-        var btnOpenCandumpFile = document.getElementById('btnOpenCandumpFile');
+        const btnTypeTransport = document.getElementById('btnTypeTransport');
+        const btnSelectTransport = document.getElementById('btnSelectTransport');
+        const divTypeTransport = document.getElementById('divTypeTransport');
+        const divSelectTransport = document.getElementById('divSelectTransport');
+        const btnOpenCandumpFile = document.getElementById('btnOpenCandumpFile');
         btnOpenCandumpFile.addEventListener('click', function () {
             zubax_api.open_file_dialog();
         });
