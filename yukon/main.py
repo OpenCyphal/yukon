@@ -1,6 +1,5 @@
 import threading
 import webbrowser
-from pathlib import Path
 from typing import Optional, Any
 import os
 import sys

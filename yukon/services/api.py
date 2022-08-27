@@ -25,7 +25,7 @@ logger = logging.getLogger(__file__)
 logger.setLevel(logging.NOTSET)
 
 
-def save_text_into_file(file_contents):
+def save_text_into_file(file_contents: str) -> None:
     import tkinter as tk
     from tkinter import filedialog
 
@@ -47,7 +47,7 @@ def save_text_into_file(file_contents):
         logger.warning("No file selected")
 
 
-def import_candump_file_contents():
+def import_candump_file_contents() -> str:
     import tkinter as tk
     from tkinter import filedialog
     root = tk.Tk()
@@ -90,19 +90,16 @@ class Api:
     def add_local_message(self, message: str) -> None:
         logger.info(message)
 
-    def save_text(self, text):
+    def save_text(self, text: str) -> None:
         save_text_into_file(text)
 
-    def save_node_configuration(self, node_id, serialized_configuration):
+    def save_all_of_register_configuration(self, serialized_configuration: str) -> None:
         save_text_into_file(serialized_configuration)
 
-    def save_all_of_register_configuration(self, serialized_configuration):
-        save_text_into_file(serialized_configuration)
-
-    def import_all_of_register_configuration(self):
+    def import_all_of_register_configuration(self) -> str:
         return import_candump_file_contents()
 
-    def import_node_configuration(self):
+    def import_node_configuration(self) -> str:
         return import_candump_file_contents()
 
     def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
@@ -146,6 +143,7 @@ class Api:
     # def save_registers_of_node(self, node_id: int, registers: typing.Dict["str"]) -> None:
     def show_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = False
+
     def reread_registers(self, request_contents: str) -> None:
         pairs = json.loads(request_contents)
         request = RereadRegistersRequest(pairs)

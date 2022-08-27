@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 
-def get_electron_path():
+def get_electron_path() -> Path:
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         root_path = Path(sys._MEIPASS).absolute() / "yukon"  # type: ignore # pylint: disable=protected-access
     else:
