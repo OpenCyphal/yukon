@@ -331,9 +331,9 @@
                 }
 
                 // I want to make sure that the user is not selecting text, that's not when we activate this.
-                if (window.getSelection().toString() !== "") {
-                    return;
-                }
+                // if (window.getSelection().toString() !== "") {
+                //     return;
+                // }
                 if (!selected_rows[register_name]) {
                     selected_rows[register_name] = true;
                 } else {
@@ -610,6 +610,14 @@
 
             });
             updateRegistersTableColors();
+        }
+        function setTableCellSelectability(selectable) {
+            for (var i = 1; i < registers_table.rows.length; i++) {
+                for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
+                    let table_cell = registers_table.rows[i].cells[j]
+                    table_cell.style["user-select"] = "none";
+                }
+            }
         }
         function update_avatars_table() {
             var table_body = document.querySelector('#avatars_table tbody');
