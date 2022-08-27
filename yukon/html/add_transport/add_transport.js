@@ -179,6 +179,7 @@
                     var new_label = document.createElement('label');
                     new_label.setAttribute('for', "transport" + property);
                     new_label.innerHTML = property;
+                    new_label.classList.add('tab_label');
                     maybe_tabs.insertBefore(new_tab, slider);
                     maybe_tabs.insertBefore(new_label, slider);
                 }

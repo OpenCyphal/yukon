@@ -262,8 +262,15 @@
                         contained_input_element.style.backgroundColor = colors["no_value"];
                         continue;
                     }
+                    if (is_register_selected || is_column_selected || is_row_selected) {
+                        contained_input_element.classList.add("selected_element");
+                    } else {
+                        // Remove the class "selected_element" from the input element if it has it
+                        contained_input_element.classList.remove("selected_element");
+                    }
                     if (is_register_selected) {
                         contained_input_element.style.backgroundColor = colors["selected_register"];
+                        
                     } else if (is_row_selected) {
                         contained_input_element.style.backgroundColor = colors["selected_row"];
                         if (is_column_selected) {
