@@ -93,25 +93,31 @@
             });
         }
         // A pair is a pair of nodeid and register name
-        function get_all_selected_pairs()
-        {
+        function get_all_selected_pairs(only_of_avatar_of_node_id = null, only_of_register_name = null, get_everything = false) {
             let final_dict = {};
             // For each avatar in current_avatars
             for (var i = 0; i < current_avatars.length; i++) {
+                let avatar_dto = {
+                    // "uavcan.node.id": current_avatars[i].node_id,
+                };
                 var avatar = current_avatars[i];
+                if(get_everything) {
+                    avatar_dto[register_name] = register_value;
+                }
                 let saving_all = selected_columns[avatar.node_id];
                 if (only_of_avatar_of_node_id && current_avatars[i].node_id != only_of_avatar_of_node_id) {
                     continue;
                 } else {
                     saving_all = true;
                 }
-                let avatar_dto = {
-                    // "uavcan.node.id": current_avatars[i].node_id,
-                };
+                
                 // For each key in avatar.registers_exploded_values
                 for (var key in avatar.registers_exploded_values) {
                     let register_name = key;
                     let register_value = avatar.registers_exploded_values[key];
+                    if(only_of_register_name && register_name != only_of_register_name) {
+                        continue;
+                    }
                     if (saving_all || selected_rows[register_name] ||
                         selected_registers[[avatar.node_id, register_name]]) {
                         avatar_dto[register_name] = register_value;
@@ -119,11 +125,11 @@
                 }
                 final_dict[avatar.node_id] = avatar_dto;
             }
+            return final_dict;
         }
         function export_all_selected_registers(only_of_avatar_of_node_id = null) {
             // A pair is the register_name and the node_id
-            
-            var yaml_string = jsyaml.dump(final_array);
+            var yaml_string = jsyaml.dump(get_all_selected_pairs(only_of_avatar_of_node_id));
 
             return zubax_api.save_text(yaml_string);
         }
@@ -820,7 +826,7 @@
         });
         const btnRereadAllRegisters = document.getElementById('btnRereadAllRegisters');
         btnRereadAllRegisters.addEventListener('click', function () {
-            zubax_api.reread_registers()
+            zubax_api.reread_registers(get_all_selected_pairs())
         });
         const btnRereadSelectedRegisters = document.getElementById('btnRereadSelectedRegisters');
         btnRereadSelectedRegisters.addEventListener('click', function () {
