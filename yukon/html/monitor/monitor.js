@@ -17,7 +17,7 @@
         let selected_rows = {}; // Key is register_name and value is true if selected
         let colors = {
             "selected_register": 'rgba(0, 255, 0, 0.5)',
-            "selected_column": 'rgba(0, 0, 255, 0.5)',
+            "selected_column": 'rgba(0, 155, 255, 0.5)',
             "selected_row": "rgba(255, 255, 0, 0.5)",
             "selected_row_and_column": "rgba(255, 165, 0, 0.5)",
             "not_selected": "rgba(255, 255, 255, 0.5)",
@@ -417,12 +417,12 @@
                 let btnExportConfig = document.createElement('button');
                 btnExportConfig.innerHTML = 'Export';
                 // Attach an event listener on the button click event
-                btnExportConfig.addEventListener('click', function (event) {
+                btnExportConfig.addEventListener('mousedown', function (event) {
+                    event.stopPropagation();
                     addLocalMessage("Exporting registers of " + avatar.node_id);
-                    const result = window.chooseFileSystemEntries({ type: "save-file" });
+                    //const result = window.chooseFileSystemEntries({ type: "save-file" });
                     // Export all but only for this avatar, dried up code
                     export_all_selected_registers(avatar.node_id);
-                    event.stopPropagation();
                 });
                 table_header_cell.appendChild(btnExportConfig);
                 let btnApplyImportedConfig = document.createElement('button');
