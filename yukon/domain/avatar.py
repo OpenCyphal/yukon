@@ -222,12 +222,12 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         )
 
     def to_builtin(self) -> Any:
-        health_meanings = {
-            0: "Nominal",
-            1: "Advisory",
-            2: "Caution",
-            3: "Warning"
-        }
+        health_meanings = {0: "Nominal", 1: "Advisory", 2: "Caution", 3: "Warning", 4: "No value"}
+        software_major_version = getattr(getattr(getattr(self, "_info"), "software_version"), "major", 0)
+        software_minor_version = getattr(getattr(getattr(self, "_info"), "software_version"), "minor", 0)
+        software_vcs_revision_id = getattr(getattr(self, "_info"), "software_vcs_revision_id")
+        hardware_major_version = getattr(getattr(getattr(self, "_info"), "hardware_version"), "major", 0)
+        hardware_minor_version = getattr(getattr(getattr(self, "_info"), "hardware_version"), "minor", 0)
         json_object: Any = {
             "node_id": self._node_id,
             "hash": self.__hash__(),
@@ -238,14 +238,14 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None),
             "name": self._info.name.tobytes().decode() if self._info is not None else None,
             "last_heartbeat": {
-                "health": self._heartbeat.health.value,
-                "health_text": health_meanings[self._heartbeat.health.value],
-                "uptime": self._heartbeat.uptime,
-                "timestamp": self._ts_heartbeat,
+                "health": getattr(getattr(self._heartbeat, "health"), "value", 4) if self._heartbeat else 4,
+                "health_text": health_meanings.get(getattr(getattr(getattr(self, "_heartbeat"), "health"), "value", 4)),
+                "uptime": getattr(getattr(self, "_heartbeat"), "uptime"),
+                "timestamp": self._ts_heartbeat if self._ts_heartbeat is not None else "No Value",
             },
             "versions": {
-                "software_version": f"{self._info.software_version.major}.{self._info.software_version.minor}.{self._info.software_vcs_revision_id}",
-                "hardware_version": f"{self._info.hardware_version.major}.{self._info.hardware_version.minor}",
+                "software_version": f"{software_major_version}.{software_minor_version}.{software_vcs_revision_id}",
+                "hardware_version": f"{hardware_major_version}.{hardware_minor_version}",
             },
             "ports": {
                 "pub": list(self._ports.pub),
