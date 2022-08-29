@@ -71,17 +71,18 @@ def cyphal_worker(state: GodState) -> None:
                 if not state.queues.apply_configuration.empty():
                     config = state.queues.apply_configuration.get_nowait()
                     if config.node_id:
-                        # Make a new client for access request and config.node_id
-                        client = state.cyphal.local_node.make_client(uavcan.register.Access_1, config.node_id)
-                        # Make a uavcan.register.Access_1 request to the node
-                        request = uavcan.register.Access_1.Request()
                         data = json.loads(config.configuration)
                         for k, v in data.items():
-                            if k[-5:] == ".type":
-                                continue
-                            state.queues.update_registers.put(
-                                UpdateRegisterRequest(k, unexplode_value(v), config.node_id)
-                            )
+                            for register_name, value in v.items():
+                                if isinstance(value, str):
+                                    logger.debug("Do something")
+                                    value = json.loads(value)
+                                if k[-5:] == ".type":
+                                    continue
+                                unexploded_value = unexplode_value(value)
+                                state.queues.update_registers.put(
+                                    UpdateRegisterRequest(register_name, unexploded_value, config.node_id)
+                                )
                     else:
                         logger.debug("Setting configuration for all configured nodes")
                         data = json.loads(config.configuration)

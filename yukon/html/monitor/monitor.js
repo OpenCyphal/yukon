@@ -298,13 +298,16 @@
                 radio.value = key;
                 radio.id = key;
                 radio.onmousedown = function () {
-                    select_configuration(this.id);
+                    select_configuration(key);
                 }
                 available_configurations_radios.appendChild(radio);
                 // Label for radio
                 var label = document.createElement("label");
                 label.htmlFor = key;
                 label.innerHTML = key;
+                label.onmousedown = function () {
+                    select_configuration(key);
+                }
                 available_configurations_radios.appendChild(label);
             }
         }
@@ -430,9 +433,15 @@
                 table_header_cell.appendChild(btnExportConfig);
                 let btnApplyImportedConfig = document.createElement('button');
                 btnApplyImportedConfig.innerHTML = 'Apply imported config';
-                btnApplyImportedConfig.addEventListener('click', function (event) {
-                    zubax_api.apply_configuration_to_node();
+                btnApplyImportedConfig.addEventListener('mousedown', function (event) {
                     event.stopPropagation();
+                    const current_config = available_configurations[selected_config];
+                    if(current_config) {
+                        zubax_api.apply_configuration_to_node(avatar.node_id, current_config);
+                    } else {
+                        console.log("No configuration selected");
+                    }
+                    
                 });
                 table_header_cell.appendChild(btnApplyImportedConfig);
                 let btnSelectColumn = document.createElement('button');

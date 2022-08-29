@@ -1,12 +1,15 @@
 import json
 import os
 import typing
-import copy
 import webbrowser
 from pathlib import Path
 from time import sleep
 import logging
-
+import yaml
+try:
+    from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+    from yaml import Loader, Dumper
 from websockets.legacy.client import connect
 
 import uavcan
@@ -58,13 +61,13 @@ def import_candump_file_contents() -> str:
     root.deiconify()
     root.lift()
     root.focus_force()
-    file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
+    file_path = filedialog.askopenfilename(filetypes=[("Yaml files", ".yml")])
     root.withdraw()
     root.destroy()
     try:
         with open(file_path, "r") as f:
             contents = f.read()
-            contents_deserialized = json.loads(contents)
+            contents_deserialized = yaml.load(contents, Loader)
             contents_deserialized["__file_name"] = Path(file_path).name
             configuration = json.dumps(contents_deserialized)
     except Exception:
