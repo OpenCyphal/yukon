@@ -10,8 +10,7 @@ try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
     from yaml import Loader, Dumper
-from websockets.legacy.client import connect
-
+import websockets
 import uavcan
 from domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
@@ -80,7 +79,7 @@ def import_candump_file_contents() -> str:
 
 class SendingApi:
     async def send_message(self, message: typing.Any) -> None:
-        async with connect("ws://localhost:8765/hello") as websocket:
+        async with await websockets.connect("ws://localhost:8765/hello") as websocket:
             await websocket.send("Hello world!")
             await websocket.recv()
 

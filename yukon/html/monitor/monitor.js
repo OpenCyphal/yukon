@@ -24,6 +24,42 @@
             "not_selected": "rgba(255, 255, 255, 0.5)",
             "no_value": "rgba(0, 0, 0, 0.5)"
         }
+        function createMonitorPopup(text) {
+            var cy = document.getElementById('cy');
+            // Remove all label elements in the div cy
+            var labels = cy.getElementsByTagName('div');
+            for (var i = 0; i < labels.length; i++) {
+                // Check if className of the element is 'label'
+                if (labels[i].className == 'label') {
+                    // Remove the element
+                    labels[i].parentNode.removeChild(labels[i]);
+                }
+            }
+            // Create a sticky div in cy to display a label with text
+            var label = document.createElement('div');
+            label.className = 'label';
+            label.innerHTML = text;
+            cy.appendChild(label);
+            // Make the label stick to the top of the cy
+            label.style.position = 'absolute';
+            label.style.top = '0px';
+            label.style.left = '0px';
+            label.style.width = '100%';
+            label.style.minHeight = '100px';
+            label.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            label.style.color = 'white';
+            label.style.textAlign = 'center';
+            label.style.fontSize = '20px';
+            label.style.fontWeight = 'bold';
+            label.style.paddingTop = '20px';
+            label.style.paddingBottom = '20px';
+            label.style.zIndex = '1';
+            label.style.pointerEvents = 'none';
+            // Remove the label after 3 seconds
+            setTimeout(function () {
+                label.parentNode.removeChild(label);
+            }, 3000);
+        }
         function create_directed_graph() {
             cytoscape.use(cytoscapeKlay);
             my_graph = cytoscape({
@@ -91,6 +127,15 @@
 
             my_graph.on('mouseover', 'node', function (evt) {
                 var node = evt.target;
+                console.log("Mouseover on node " + node.id());
+                // Find the avatar for the node
+                var avatar = current_avatars.find(function (avatar) {
+                    return avatar.node_id == node.id();
+                });
+                if (avatar) {
+                    // Create a label with the avatar's name
+                    createMonitorPopup(avatar.name + " (" + avatar.node_id + ")" + "<br>" + secondsToString(avatar.last_heartbeat.uptime) + "<br>" + avatar.last_heartbeat.health_text + " (" + avatar.last_heartbeat.health + ")");
+                }
             });
         }
         // A pair is a pair of nodeid and register name
@@ -129,7 +174,7 @@
         }
         function export_all_selected_registers(only_of_avatar_of_node_id = null) {
             // A pair is the register_name and the node_id
-            var yaml_string = jsyaml.dump(get_all_selected_pairs({"only_of_avatar_of_node_id": only_of_avatar_of_node_id, "get_everything": false, "only_of_register_name": null}));
+            var yaml_string = jsyaml.dump(get_all_selected_pairs({ "only_of_avatar_of_node_id": only_of_avatar_of_node_id, "get_everything": false, "only_of_register_name": null }));
 
             return zubax_api.save_text(yaml_string);
         }
@@ -218,7 +263,7 @@
                 // Split register_value by comma and convert to array of numbers
                 let register_values = register_value.split(",").map(Number);
                 unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_values
-            }   
+            }
             zubax_api.update_register_value(register_name, unprocessed_value, node_id);
         }
         function updateTextOut(refresh_anyway = false) {
@@ -272,7 +317,7 @@
                     }
                     if (is_register_selected) {
                         contained_input_element.style.backgroundColor = colors["selected_register"];
-                        
+
                     } else if (is_row_selected) {
                         contained_input_element.style.backgroundColor = colors["selected_row"];
                         if (is_column_selected) {
@@ -436,12 +481,12 @@
                 btnApplyImportedConfig.addEventListener('mousedown', function (event) {
                     event.stopPropagation();
                     const current_config = available_configurations[selected_config];
-                    if(current_config) {
+                    if (current_config) {
                         zubax_api.apply_configuration_to_node(avatar.node_id, current_config);
                     } else {
                         console.log("No configuration selected");
                     }
-                    
+
                 });
                 table_header_cell.appendChild(btnApplyImportedConfig);
                 let btnSelectColumn = document.createElement('button');
@@ -588,9 +633,11 @@
                         label.innerHTML = "";
                         if (isMutable) {
                             label.innerHTML += "M";
+                            table_cell.setAttribute("mutable", "true");
                         }
                         if (isPersistent) {
                             label.innerHTML += "P";
+                            table_cell.setAttribute("persistent", "true");
                         }
                         table_cell.insertBefore(label, inputFieldReference);
                     }
@@ -604,7 +651,7 @@
                     // inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
                     var lastClick = null;
                     inputFieldReference.addEventListener('mousedown', function (event) {
-                        if (lastClick && new Date() - lastClick < 500) {
+                        if (lastClick && new Date() - lastClick < 500 && table_cell.getAttribute("mutable") == "true") {
                             // Make a dialog box to enter the new value
                             var new_value = prompt("Enter new value for " + register_name + ":", value);
                             // If the user entered a value
@@ -857,7 +904,7 @@
             export_all_selected_registers();
             event.stopPropagation();
         });
-        
+
         var timer = null;
         iRegistersFilter.addEventListener("input", function () {
             if (timer) {
@@ -869,7 +916,7 @@
         });
         const btnRereadAllRegisters = document.getElementById('btnRereadAllRegisters');
         btnRereadAllRegisters.addEventListener('click', function () {
-            const data = get_all_selected_pairs({"only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": null});
+            const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": null });
             let pairs = [];
             // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
             for (const node_id of Object.keys(data)) {
@@ -882,7 +929,7 @@
         });
         const btnRereadSelectedRegisters = document.getElementById('btnRereadSelectedRegisters');
         btnRereadSelectedRegisters.addEventListener('click', function () {
-            const data = get_all_selected_pairs({"only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null});
+            const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null });
             let pairs = [];
             // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
             for (const node_id of Object.keys(data)) {
