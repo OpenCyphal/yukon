@@ -214,7 +214,9 @@
             if (typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] == "string") {
                 unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_value
             } else if (typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"][0] == "number") {
-                unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = [parseInt(register_value)]
+                // Split register_value by comma and convert to array of numbers
+                let register_values = register_value.split(",").map(Number);
+                unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_values
             }
             zubax_api.update_register_value(register_name, unprocessed_value, node_id);
         }
