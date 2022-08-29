@@ -222,6 +222,12 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         )
 
     def to_builtin(self) -> Any:
+        health_meanings = {
+            0: "Nominal",
+            1: "Advisory",
+            2: "Caution",
+            3: "Warning"
+        }
         json_object: Any = {
             "node_id": self._node_id,
             "hash": self.__hash__(),
@@ -231,6 +237,16 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(frozenset(self._ports.srv))
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None),
             "name": self._info.name.tobytes().decode() if self._info is not None else None,
+            "last_heartbeat": {
+                "health": self._heartbeat.health.value,
+                "health_text": health_meanings[self._heartbeat.health.value],
+                "uptime": self._heartbeat.uptime,
+                "timestamp": self._ts_heartbeat,
+            },
+            "versions": {
+                "software_version": f"{self._info.software_version.major}.{self._info.software_version.minor}.{self._info.software_vcs_revision_id}",
+                "hardware_version": f"{self._info.hardware_version.major}.{self._info.hardware_version.minor}",
+            },
             "ports": {
                 "pub": list(self._ports.pub),
                 "sub": list(self._ports.sub),

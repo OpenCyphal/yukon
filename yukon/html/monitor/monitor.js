@@ -101,7 +101,7 @@
                     // "uavcan.node.id": current_avatars[i].node_id,
                 };
                 var avatar = current_avatars[i];
-                if(get_everything) {
+                if (get_everything) {
                     avatar_dto[register_name] = register_value;
                 }
                 let saving_all = selected_columns[avatar.node_id];
@@ -110,12 +110,12 @@
                 } else {
                     saving_all = true;
                 }
-                
+
                 // For each key in avatar.registers_exploded_values
                 for (var key in avatar.registers_exploded_values) {
                     let register_name = key;
                     let register_value = avatar.registers_exploded_values[key];
-                    if(only_of_register_name && register_name != only_of_register_name) {
+                    if (only_of_register_name && register_name != only_of_register_name) {
                         continue;
                     }
                     if (saving_all || selected_rows[register_name] ||
@@ -376,12 +376,12 @@
         }
         function update_tables(override = false) {
             if (override || areThereAnyNewOrMissingHashes(last_table_hashes, "hash")) {
-                update_avatars_table();
                 create_registers_table();
             }
             updateLastHashes(last_table_hashes, "hash");
         }
         setInterval(update_tables, 1000)
+        setInterval(update_avatars_table, 1000);
         function create_registers_table(filter_keyword_inclusive = "") {
             // Clear the table
             var registers_table = document.querySelector('#registers_table')
@@ -626,21 +626,33 @@
                 }
             }
         }
+        function secondsToString(seconds) {
+            var numyears = Math.floor(seconds / 31536000);
+            var numdays = Math.floor((seconds % 31536000) / 86400);
+            var numhours = Math.floor(((seconds % 31536000) % 86400) / 3600);
+            var numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
+            var numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
+            return numyears + " years " + numdays + " days " + numhours + " hours " + numminutes + " minutes " + numseconds + " seconds";
+        }
         function update_avatars_table() {
             var table_body = document.querySelector('#avatars_table tbody');
             table_body.innerHTML = "";
             // Take every avatar from current_avatars and make a row in the table
             for (var i = 0; i < current_avatars.length; i++) {
-                var row = table_body.insertRow(i);
-                var node_id = row.insertCell(0);
+                const row = table_body.insertRow(i);
+                const node_id = row.insertCell(0);
                 node_id.innerHTML = current_avatars[i].node_id;
-                var name = row.insertCell(1);
+                const name = row.insertCell(1);
                 name.innerHTML = current_avatars[i].name || "No name";
                 // Insert cells for pub, sub, cln and srv
-                var sub_cell = row.insertCell(2);
-                var pub_cell = row.insertCell(3);
-                var cln_cell = row.insertCell(4);
-                var srv_cell = row.insertCell(5);
+                const sub_cell = row.insertCell(2);
+                const pub_cell = row.insertCell(3);
+                const cln_cell = row.insertCell(4);
+                const srv_cell = row.insertCell(5);
+                const health_cell = row.insertCell(6);
+                const software_version_cell = row.insertCell(7);
+                const hardware_version_cell = row.insertCell(8);
+                const uptime_cell = row.insertCell(9);
                 if (!current_avatars[i].ports) { continue; }
                 pub_cell.innerHTML = current_avatars[i].ports.pub.toString();
                 if (current_avatars[i].ports.sub.length == 8192) {
@@ -650,6 +662,10 @@
                 }
                 cln_cell.innerHTML = current_avatars[i].ports.cln.toString();
                 srv_cell.innerHTML = current_avatars[i].ports.srv.toString();
+                health_cell.innerHTML = current_avatars[i].last_heartbeat.health_text;
+                software_version_cell.innerHTML = current_avatars[i].versions.software_version;
+                hardware_version_cell.innerHTML = current_avatars[i].versions.hardware_version;
+                uptime_cell.innerHTML = secondsToString(current_avatars[i].last_heartbeat.uptime);
             }
         }
         function serialize_configuration_of_all_avatars() {
