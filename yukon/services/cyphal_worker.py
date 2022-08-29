@@ -96,10 +96,11 @@ def cyphal_worker(state: GodState) -> None:
                                 if k[-5:] == ".type":
                                     continue
                                 state.queues.update_registers.put(
-                                    UpdateRegisterRequest(k, unexplode_value(v), int(node_id)))
+                                    UpdateRegisterRequest(k, unexplode_value(v), int(node_id))
+                                )
                 if not state.queues.reread_registers.empty():
-                    request: RereadRegistersRequest = state.queues.reread_registers.get_nowait()
-                    for pair in request.pairs:
+                    request2: RereadRegistersRequest = state.queues.reread_registers.get_nowait()
+                    for pair in request2.pairs:
                         logger.debug("Rereading register %s for node %s", pair[0], pair[1])
                         node_id2 = int(pair[0])
                         register_name2 = pair[1]

@@ -63,10 +63,11 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     # dpg.enable_docking(dock_space=False)
     make_terminate_handler(exit_handler)
 
-    async def sendAMessage():
+    async def sendAMessage() -> None:
         # while await asyncio.sleep(1):
         #     await api2.send_message("Hello World")
         pass
+
     asyncio.get_event_loop().create_task(sendAMessage())
     start_server_thread = threading.Thread(target=run_server)
     start_server_thread.start()

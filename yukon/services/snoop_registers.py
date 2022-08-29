@@ -57,10 +57,10 @@ async def get_register_names(state: GodState, node_id: int, new_avatar: Avatar) 
 
 
 def make_handler_for_node_detected(
-        state: GodState, iface: Iface
+    state: GodState, iface: Iface
 ) -> typing.Callable[[int, typing.Optional[Entry], typing.Optional[Entry]], None]:
     def handle_getinfo_handler_format(
-            node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
+        node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
     ) -> None:
         logger.debug("Some hearbeat was probably received")
         if next_entry and next_entry.info is None:
