@@ -600,11 +600,11 @@
                             if (new_value != null) {
                                 // Update the value in the table
                                 // text_input.value = new_value;
-                                // Update the value in the avatar
-                                avatar.registers_values[register_name] = new_value;
                                 // Update the value in the server
                                 update_register_value(register_name, new_value, avatar.node_id);
-                                setTimeout(function () { update_tables(override = true) }, 500);
+                                // Run update_tables every second, do that only for the next 4 seconds
+                                let interval1 = setInterval(() => update_tables(true), 1000);
+                                setTimeOut(() => clearInterval(interval1), 4000);
                             } else {
                                 addLocalMessage("No value entered");
                             }
