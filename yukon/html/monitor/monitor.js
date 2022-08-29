@@ -353,6 +353,35 @@
                 label.onmousedown = function () {
                     select_configuration(key);
                 }
+                conf_deserialized = JSON.parse(value);
+                // For each key in the conf_deserialized, add a checkbox under the label with the key as the text and id
+                let noKeysWereNumbers = true;
+                for (const [key, value] of Object.entries(conf_deserialized)) {
+                    // If key is not a number continue
+                    if (isNaN(key)) {
+                        continue;
+                    }
+                    noKeysWereNumbers = false;
+                    var checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.id = key;
+                    checkbox.onmousedown = function () {
+                        console.log("Checkbox " + key + " clicked");
+                    }
+                    label.appendChild(checkbox);
+                    var text = document.createElement("span");
+                    text.innerHTML = key;
+                    label.appendChild(text);
+                }
+                if(noKeysWereNumbers) {
+                    var number_input = document.createElement("input");
+                    number_input.type = "number";
+                    number_input.id = "number_input";
+                    number_input.onmousedown = function () {
+                        console.log("Number input clicked");
+                    }
+                    label.appendChild(number_input);
+                }
                 available_configurations_radios.appendChild(label);
             }
         }
