@@ -121,3 +121,13 @@ textarea#textOut {
 .registers-tab div {
     margin: 0.5em;
 }
+
+.block-display {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.block-display * {
+    margin-top: 0.5em;
+}

@@ -5,6 +5,7 @@
     function doStuffWhenReady() {
         // Make a callback on the page load event
         console.log("monitor ready");
+        const iRegistersFilter = document.getElementById('iRegistersFilter');
         var current_avatars = [];
         var last_hashes = { set: new Set() };
         var last_table_hashes = { set: new Set() }; // The same avatar hashes but for tables
@@ -383,8 +384,9 @@
         }
         setInterval(update_tables, 1000)
         setInterval(update_avatars_table, 1000);
-        function create_registers_table(filter_keyword_inclusive = "") {
+        function create_registers_table(_filter_keyword_inclusive = null) {
             // Clear the table
+            const filter_keyword_inclusive = _filter_keyword_inclusive || iRegistersFilter.value;
             var registers_table = document.querySelector('#registers_table')
             registers_table.innerHTML = '';
             var registers_table_body = document.createElement('tbody');
@@ -846,14 +848,14 @@
             export_all_selected_registers();
             event.stopPropagation();
         });
-        const iRegistersFilter = document.getElementById('iRegistersFilter');
+        
         var timer = null;
         iRegistersFilter.addEventListener("input", function () {
             if (timer) {
                 clearTimeout(timer);
             }
             timer = setTimeout(function () {
-                create_registers_table(iRegistersFilter.value)
+                create_registers_table()
             }, 500);
         });
         const btnRereadAllRegisters = document.getElementById('btnRereadAllRegisters');
