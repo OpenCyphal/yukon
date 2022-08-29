@@ -228,6 +228,9 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         software_vcs_revision_id = getattr(getattr(self, "_info"), "software_vcs_revision_id")
         hardware_major_version = getattr(getattr(getattr(self, "_info"), "hardware_version"), "major", 0)
         hardware_minor_version = getattr(getattr(getattr(self, "_info"), "hardware_version"), "minor", 0)
+        uptime = getattr(getattr(self, "_heartbeat"), "uptime")
+        health_value = getattr(getattr(self._heartbeat, "health"), "value", 4) if self._heartbeat else 4
+        health_text = health_meanings.get(health_value, "Unknown")
         json_object: Any = {
             "node_id": self._node_id,
             "hash": self.__hash__(),
@@ -238,9 +241,9 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None),
             "name": self._info.name.tobytes().decode() if self._info is not None else None,
             "last_heartbeat": {
-                "health": getattr(getattr(self._heartbeat, "health"), "value", 4) if self._heartbeat else 4,
-                "health_text": health_meanings.get(getattr(getattr(getattr(self, "_heartbeat"), "health"), "value", 4)),
-                "uptime": getattr(getattr(self, "_heartbeat"), "uptime"),
+                "health": health_value,
+                "health_text": health_text,
+                "uptime": uptime,
                 "timestamp": self._ts_heartbeat if self._ts_heartbeat is not None else "No Value",
             },
             "versions": {
