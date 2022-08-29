@@ -7,6 +7,8 @@ from pathlib import Path
 from time import sleep
 import logging
 
+from websockets.legacy.client import connect
+
 import uavcan
 from domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
@@ -71,6 +73,13 @@ def import_candump_file_contents() -> str:
     else:
         logger.debug(f"Configuration: {configuration}")
     return configuration
+
+
+class SendingApi:
+    async def send_message(self, message: typing.Any) -> None:
+        async with connect("ws://localhost:8765/hello") as websocket:
+            await websocket.send("Hello world!")
+            await websocket.recv()
 
 
 class Api:
@@ -146,8 +155,8 @@ class Api:
         self.state.avatar.hide_yakut_avatar = False
 
     def reread_registers(self, request_contents: str) -> None:
-        pairs = json.loads(request_contents)
-        request = RereadRegistersRequest(pairs)
+        request = RereadRegistersRequest(request_contents)
+        self.state.queues.reread_registers.put(request)
 
     def hide_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = True

@@ -6,12 +6,14 @@ import traceback
 from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
+from domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_request import UpdateRegisterRequest
 from yukon.services.value_utils import unexplode_value
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.attach_transport_response import AttachTransportResponse
 from yukon.domain.god_state import GodState
-from yukon.services.make_tracers_trackers import make_tracers_trackers
+from yukon.services.snoop_registers import make_tracers_trackers
+from yukon.services.snoop_registers import get_register_value
 
 logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
@@ -94,8 +96,14 @@ def cyphal_worker(state: GodState) -> None:
                                 if k[-5:] == ".type":
                                     continue
                                 state.queues.update_registers.put(
-                                    UpdateRegisterRequest(k, unexplode_value(v), int(node_id))
-                                )
+                                    UpdateRegisterRequest(k, unexplode_value(v), int(node_id)))
+                if not state.queues.reread_registers.empty():
+                    request: RereadRegistersRequest = state.queues.reread_registers.get_nowait()
+                    for pair in request.pairs:
+                        logger.debug("Rereading register %s for node %s", pair[0], pair[1])
+                        node_id2 = int(pair[0])
+                        register_name2 = pair[1]
+                        asyncio.create_task(get_register_value(state, node_id2, register_name2))
         except Exception as e:
             logger.exception(e)
             raise e

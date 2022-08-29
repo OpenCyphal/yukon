@@ -14,3 +14,4 @@ parsimonious
 python-can==4.*
 beautifulsoup4==4.11.*
 requests
+websockets==10.*

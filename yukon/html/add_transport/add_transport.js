@@ -10,6 +10,10 @@
 //        PICAN: "PICAN",
     })
     var currentSelectedTransport = transport_types.TCP;
+    // zubax_reception_api.hello.connect(function(message)
+    // {
+        // console.log("Message from hello: " + message);
+    // })
     function doStuffWhenReady() {
         console.log("zubax_api_ready in add_transport.js");
         cbShowTransportCombobox = document.getElementById('cbShowTransportCombobox');

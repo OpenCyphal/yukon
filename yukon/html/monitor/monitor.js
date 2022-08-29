@@ -93,7 +93,7 @@
             });
         }
         // A pair is a pair of nodeid and register name
-        function get_all_selected_pairs(only_of_avatar_of_node_id = null, only_of_register_name = null, get_everything = false) {
+        function get_all_selected_pairs(options) {
             let final_dict = {};
             // For each avatar in current_avatars
             for (var i = 0; i < current_avatars.length; i++) {
@@ -101,21 +101,20 @@
                     // "uavcan.node.id": current_avatars[i].node_id,
                 };
                 var avatar = current_avatars[i];
-                if (get_everything) {
-                    avatar_dto[register_name] = register_value;
-                }
                 let saving_all = selected_columns[avatar.node_id];
-                if (only_of_avatar_of_node_id && current_avatars[i].node_id != only_of_avatar_of_node_id) {
+                if (options.only_of_avatar_of_node_id && current_avatars[i].node_id != options.only_of_avatar_of_node_id) {
                     continue;
-                } else {
-                    saving_all = true;
                 }
 
                 // For each key in avatar.registers_exploded_values
                 for (var key in avatar.registers_exploded_values) {
                     let register_name = key;
                     let register_value = avatar.registers_exploded_values[key];
-                    if (only_of_register_name && register_name != only_of_register_name) {
+                    if (options.get_everything) {
+                        avatar_dto[register_name] = register_value;
+                        continue;
+                    }
+                    if (options.only_of_register_name && register_name != options.only_of_register_name) {
                         continue;
                     }
                     if (saving_all || selected_rows[register_name] ||
@@ -129,7 +128,7 @@
         }
         function export_all_selected_registers(only_of_avatar_of_node_id = null) {
             // A pair is the register_name and the node_id
-            var yaml_string = jsyaml.dump(get_all_selected_pairs(only_of_avatar_of_node_id));
+            var yaml_string = jsyaml.dump(get_all_selected_pairs({"only_of_avatar_of_node_id": only_of_avatar_of_node_id, "get_everything": false, "only_of_register_name": null}));
 
             return zubax_api.save_text(yaml_string);
         }
@@ -857,11 +856,29 @@
         });
         const btnRereadAllRegisters = document.getElementById('btnRereadAllRegisters');
         btnRereadAllRegisters.addEventListener('click', function () {
-            zubax_api.reread_registers(get_all_selected_pairs())
+            const data = get_all_selected_pairs({"only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": null});
+            let pairs = [];
+            // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
+            for (const node_id of Object.keys(data)) {
+                const value = data[node_id];
+                for (const register_name of Object.keys(value)) {
+                    pairs.push([node_id, register_name]);
+                }
+            }
+            zubax_api.reread_registers(pairs)
         });
         const btnRereadSelectedRegisters = document.getElementById('btnRereadSelectedRegisters');
         btnRereadSelectedRegisters.addEventListener('click', function () {
-
+            const data = get_all_selected_pairs({"only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null});
+            let pairs = [];
+            // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
+            for (const node_id of Object.keys(data)) {
+                const value = data[node_id];
+                for (const register_name of Object.keys(value)) {
+                    pairs.push([node_id, register_name]);
+                }
+            }
+            zubax_api.reread_registers(pairs)
         });
     }
     try {
