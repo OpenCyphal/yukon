@@ -210,7 +210,7 @@
         function update_register_value(register_name, register_value, node_id) {
             // Find the avatar which has the node_id
             let the_avatar = current_avatars.find((avatar) => avatar.node_id === parseInt(node_id));
-            let unprocessed_value = the_avatar["registers_exploded_values"][register_name]
+            let unprocessed_value = JSON.parse(JSON.stringify(the_avatar["registers_exploded_values"][register_name]))
             // if unprocessed_value[Object.keys(the_value)[0]]["value"]
             if (typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] == "string") {
                 unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_value
@@ -218,7 +218,7 @@
                 // Split register_value by comma and convert to array of numbers
                 let register_values = register_value.split(",").map(Number);
                 unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_values
-            }
+            }   
             zubax_api.update_register_value(register_name, unprocessed_value, node_id);
         }
         function updateTextOut(refresh_anyway = false) {
