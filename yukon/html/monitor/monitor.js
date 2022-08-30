@@ -194,9 +194,9 @@
                         cycleBreaking: 'GREEDY', // Strategy for cycle breaking. Cycle breaking looks for cycles in the graph and determines which edges to reverse to break the cycles. Reversed edges will end up pointing to the opposite direction of regular edges (that is, reversed edges will point left if edges usually point right).
                         /* GREEDY This algorithm reverses edges greedily. The algorithm tries to avoid edges that have the Priority property set.
                         INTERACTIVE The interactive algorithm tries to reverse edges that already pointed leftwards in the input graph. This requires node and port coordinates to have been set to sensible values.*/
-                        direction: 'UNDEFINED', // Overall direction of edges: horizontal (right / left) or vertical (down / up)
+                        direction: 'RIGHT', // Overall direction of edges: horizontal (right / left) or vertical (down / up)
                         /* UNDEFINED, RIGHT, LEFT, DOWN, UP */
-                        edgeRouting: 'ORTHOGONAL', // Defines how edges are routed (POLYLINE, ORTHOGONAL, SPLINES)
+                        edgeRouting: 'SPLINES', // Defines how edges are routed (POLYLINE, ORTHOGONAL, SPLINES)
                         edgeSpacingFactor: 0.5, // Factor by which the object spacing is multiplied to arrive at the minimal spacing between edges.
                         feedbackEdges: false, // Whether feedback edges should be highlighted by routing around the nodes.
                         fixedAlignment: 'NONE', // Tells the BK node placer to use a certain alignment instead of taking the optimal result.  This option should usually be left alone.
@@ -211,7 +211,7 @@
                         linearSegmentsDeflectionDampening: 0.3, // Dampens the movement of nodes to keep the diagram from getting too large.
                         mergeEdges: false, // Edges that have no ports are merged so they touch the connected nodes at the same points.
                         mergeHierarchyCrossingEdges: true, // If hierarchical layout is active, hierarchy-crossing edges use as few hierarchical ports as possible.
-                        nodeLayering: 'NETWORK_SIMPLEX', // Strategy for node layering.
+                        nodeLayering: 'LONGEST_PATH', // Strategy for node layering.
                         /* NETWORK_SIMPLEX This algorithm tries to minimize the length of edges. This is the most computationally intensive algorithm. The number of iterations after which it aborts if it hasn't found a result yet can be set with the Maximal Iterations option.
                         LONGEST_PATH A very simple algorithm that distributes nodes along their longest path to a sink node.
                         INTERACTIVE Distributes the nodes into layers by comparing their positions before the layout algorithm was started. The idea is that the relative horizontal order of nodes as it was before layout was applied is not changed. This of course requires valid positions for all nodes to have been set on the input graph before calling the layout algorithm. The interactive node layering algorithm uses the Interactive Reference Point option to determine which reference point of nodes are used to compare positions. */
@@ -281,7 +281,7 @@
         }
         setInterval(updateTextOut, 1000);
         function select_configuration(i) {
-            selected_config = i;
+            selected_config = i;    
             addLocalMessage("Configuration " + i + " selected");
         }
         function updateRegistersTableColors() {
@@ -492,6 +492,7 @@
             current_avatars.forEach(function (avatar) {
                 let table_header_cell = document.createElement('th');
                 table_header_cell.innerHTML = avatar.node_id;
+                table_header_cell.title = avatar.name;
                 table_header_row.appendChild(table_header_cell);
                 // Add a button to table_header_cell for downloading the table column
                 let btnExportConfig = document.createElement('button');
@@ -569,6 +570,7 @@
                     let inputFieldReference = null;
                     if (register_value == null) {
                         table_cell.setAttribute("no_value", "true");
+                        table_cell.classList.add("no-value");
                         table_cell.style.backgroundColor = colors["no_value"];
                         return;
                     }
@@ -606,11 +608,11 @@
                     }
                     table_cell.appendChild(inputFieldReference);
                     function styleLabel(label) {
-                        label.style.height = '0.1em';
+                        label.style.height = '0px';
                         label.style.position = 'absolute';
                         label.style.fontSize = '10px';
                         label.style.color = '#000000';
-                        label.style.backgroundColor = 'transparent';
+                        label.style.backgroundColor = 'transparent !important';
                         label.style.padding = '0px';
                         label.style.margin = '1px';
                         label.style.border = '0px';
@@ -658,7 +660,7 @@
                         label.style.right = '0';
                         label.style.left = '0';
                         label.style.zIndex = '1';
-                        table_cell.style.position = 'relative';
+                        table_cell.style.position = 'relative';``
                         label.innerHTML = "";
                         if (isMutable) {
                             label.innerHTML += "M";

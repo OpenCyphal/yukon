@@ -8,6 +8,7 @@
         var lastHash = "";
         var lastIndex = -1;
         var messagesList = document.querySelector("#messages-list");
+        var cbAutoscroll = document.getElementById("cbAutoscroll");
         function showAllMessages() {
             // For each message in messagesList
             for (child of messagesList.children) {
@@ -102,7 +103,7 @@
                         // If el is the last in d
                         if (messagesObject.indexOf(el) == messagesObject.length - 1) {
                             // Scroll to bottom of messages-list
-                            var cbAutoscroll = document.getElementById("cbAutoscroll");
+                            
                             var iAutoscrollFilter = document.getElementById("iAutoscrollFilter");
                             if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
                                 messagesList.scrollTop = messagesList.scrollHeight;
@@ -136,6 +137,11 @@
         var iTextFilter = document.getElementById("iTextFilter");
         var taExcludedKeywords = document.getElementById("taExcludedKeywords");
         var timer = null;
+        cbAutoscroll.addEventListener('change', function () {
+            if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
+                messagesList.scrollTop = messagesList.scrollHeight;
+            }
+        });
         iTextFilter.addEventListener("input", function () {
             if (timer) {
                 clearTimeout(timer);

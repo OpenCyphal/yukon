@@ -169,71 +169,79 @@
             }
         }, 500);
         function InitTabStuff() {
-            const maybe_tabs = document.getElementById('maybe-tabs');
+            const maybe_tabs = document.querySelector('#maybe-tabs');
             const slider = document.querySelector('#maybe-tabs > .tab-slider');
+            
             // Iterate over each property of transport_types and add it to maybe-tabs
-            for (var property in transport_types) {
-                if (transport_types.hasOwnProperty(property)) {
-                    var new_tab = document.createElement('input');
-                    new_tab.setAttribute('type', 'radio');
-                    new_tab.setAttribute('name', 'transport');
-                    new_tab.setAttribute('id', "transport" + property);
-                    new_tab.setAttribute('value', property);
-                    // A label for new_tab
-                    var new_label = document.createElement('label');
-                    new_label.setAttribute('for', "transport" + property);
-                    new_label.innerHTML = property;
-                    new_label.classList.add('tab_label');
-                    maybe_tabs.insertBefore(new_tab, slider);
-                    maybe_tabs.insertBefore(new_label, slider);
+            const getInputChildren = () => [].slice.call(maybe_tabs.children).filter((child) => child.tagName == "INPUT");
+            const getLabelChildren = () => [].slice.call(maybe_tabs.children).filter((child) => child.tagName == "LABEL");
+            const getChildrenLength = () => maybe_tabs.children.length;
+            function moveTab(index)
+            {
+                const labelChildren = getLabelChildren();
+                const child = labelChildren[index];
+                const targetLeftValue = child.getBoundingClientRect().left - maybe_tabs.getBoundingClientRect().left - 12;
+                const targetWidth = child.getBoundingClientRect().width + 24
+
+                var t = new Tween(slider.style, 'left', Tween.regularEaseOut, parseInt(slider.style.left), targetLeftValue, 0.3, 'px');
+                t.start();
+                var t2 = new Tween(slider.style, 'width', Tween.regularEaseOut, parseInt(slider.style.width), targetWidth, 0.3, 'px');
+                t2.start();
+
+                currentSelectedTransport = child.getAttribute("value");
+                doTheTabSwitching();
+                for (const child2 of labelChildren) {
+                    if (child2 != child) {
+                        child2.style.backgroundColor = '#e0e0e0';
+                        child2.style.color = '#000';
+                        child2.style["z-index"] = "0";
+                    } else {
+                        child2.style.backgroundColor = 'transparent';
+                        child2.style.color = '#fff';
+                        child2.style["z-index"] = "1";
+                    }
                 }
             }
+            {
+                let current_child_index = 0;
+                for (var property in transport_types) {
+                    if (transport_types.hasOwnProperty(property)) {
+                        let thisChildIndex = current_child_index + 0;
+                        var new_radio = document.createElement('input');
+                        new_radio.setAttribute('type', 'radio');
+                        new_radio.setAttribute('name', 'transport');
+                        new_radio.setAttribute('id', "transport" + property);
+                        new_radio.setAttribute('value', property);
+                        // A label for new_radio
+                        var new_label = document.createElement('label');
+                        new_label.setAttribute('for', "transport" + property);
+                        new_label.innerHTML = property;
+                        new_label.classList.add('tab_label');
+                        new_label.setAttribute("value", property);
+                        maybe_tabs.insertBefore(new_radio, slider);
+                        maybe_tabs.insertBefore(new_label, slider);
+                        new_radio.addEventListener('change', function () {
+                            if (this.checked) {
+                                moveTab(thisChildIndex);
+                            }
+                        });
+                        current_child_index++;
+                    }
+                }
+            }
+            
 
-
-            const maybe_tabs_children_count = maybe_tabs.children.length;
             const maybe_tabs_bounding_rect = maybe_tabs.getBoundingClientRect();
-            const slider_width = maybe_tabs_bounding_rect.width / maybe_tabs_children_count;
-            const width_of_first_child = maybe_tabs.children[0].getBoundingClientRect().width;
+            const width_of_first_child = getLabelChildren()[0].getBoundingClientRect().width;
+            
+            getLabelChildren()[0].style.backgroundColor = 'transparent';
             slider.style.width = width_of_first_child + 'px';
             slider.style.height = maybe_tabs_bounding_rect.height + 'px';
             slider.style.left = 0;
-            // Keep a counter of the current child index
-            var current_child_index = 0;
-            const inputChildren = [].slice.call(maybe_tabs.children).filter((child) => child.tagName == "INPUT");
-            const labelChildren = [].slice.call(maybe_tabs.children).filter((child) => child.tagName == "LABEL");
-            slider.style.left = labelChildren[0].getBoundingClientRect().left - maybe_tabs.getBoundingClientRect().left - 12 + 'px';
-            slider.style.width = labelChildren[0].getBoundingClientRect().width + 24 + 'px';
-            labelChildren[0].style.backgroundColor = 'transparent';
-            for (const child of inputChildren) {
-                let thisChildIndex = current_child_index;
-                // Connect each radio box to checked event
-                child.addEventListener('change', function () {
-                    if (this.checked) {
-                        console.log("This child index: " + thisChildIndex);
-                        child.style.backgroundColor = 'transparent';
-                        const targetLeftValue = labelChildren[thisChildIndex].getBoundingClientRect().left - maybe_tabs.getBoundingClientRect().left - 12;
-                        const targetWidth = labelChildren[thisChildIndex].getBoundingClientRect().width + 24
-
-                        var t = new Tween(slider.style, 'left', Tween.regularEaseOut, parseInt(slider.style.left), targetLeftValue, 0.3, 'px');
-                        t.start();
-                        var t2 = new Tween(slider.style, 'width', Tween.regularEaseOut, parseInt(slider.style.width), targetWidth, 0.3, 'px');
-                        t2.start();
-
-                        currentSelectedTransport = child.value;
-                        doTheTabSwitching();
-                        for (const child2 of labelChildren) {
-                            if (child2 != labelChildren[thisChildIndex]) {
-                                child2.style.backgroundColor = '#e0e0e0';
-                                child2.style.color = '#000';
-                            } else {
-                                child2.style.backgroundColor = 'transparent';
-                                child2.style.color = '#fff';
-                            }
-                        }
-                    }
-                });
-                current_child_index++;
-            }
+            slider.style["z-index"] = "0";
+            slider.style.left = getLabelChildren()[0].getBoundingClientRect().left - maybe_tabs.getBoundingClientRect().left - 12 + 'px';
+            slider.style.width = getLabelChildren()[0].getBoundingClientRect().width + 24 + 'px';
+            moveTab(0);
             currentSelectedTransport = transport_types.MANUAL;
             doTheTabSwitching();
         }
