@@ -291,6 +291,9 @@
                 for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
                     let table_cell = registers_table.rows[i].cells[j]
                     let register_name = table_cell.getAttribute("id")
+                    if(register_name == null) { 
+                        continue; // Must be the header cell at the end
+                    }
                     // Remove the string "register_" from the register_name
                     register_name = register_name.substring(9);
                     let node_id = table_cell.getAttribute("node_id");
@@ -396,6 +399,7 @@
                 if (window.getSelection().toString() !== "") {
                     return;
                 }
+                event.stopPropagation();
                 if (selected_columns[node_id]) {
                     selected_columns[node_id] = false;
                     addLocalMessage("Column " + node_id + " deselected");
@@ -404,7 +408,7 @@
                     addLocalMessage("Column " + node_id + " selected");
                 }
                 updateRegistersTableColors();
-                event.stopPropagation();
+                
             }
         }
         function make_select_row(register_name, is_mouse_over = false) {
@@ -472,23 +476,27 @@
             registers_table.appendChild(registers_table_header);
             // Add the table headers
             var table_header_row = document.createElement('tr');
-            var empty_table_header_row_cell = document.createElement('th');
-            // Add a button into the empty table header row cell
-            var button = document.createElement('button');
-            button.innerHTML = 'Apply sel. conf to all nodes';
-            button.onclick = function () {
-                if (selected_config != null && available_configurations[selected_config] != null) {
-                    zubax_api.apply_all_of_configuration(available_configurations[selected_config]);
+            function make_empty_table_header_row_cell()
+            {
+                var empty_table_header_row_cell = document.createElement('th');
+                // Add a button into the empty table header row cell
+                var button = document.createElement('button');
+                button.innerHTML = 'Apply sel. conf to all nodes';
+                button.onclick = function () {
+                    if (selected_config != null && available_configurations[selected_config] != null) {
+                        zubax_api.apply_all_of_configuration(available_configurations[selected_config]);
+                    }
                 }
+                empty_table_header_row_cell.appendChild(button);
+                var button = document.createElement('button');
+                button.innerHTML = 'Save all of configuration';
+                button.onclick = function () {
+                    zubax_api.save_all_of_register_configuration(serialize_configuration_of_all_avatars());
+                }
+                empty_table_header_row_cell.appendChild(button);
+                table_header_row.appendChild(empty_table_header_row_cell);
             }
-            empty_table_header_row_cell.appendChild(button);
-            var button = document.createElement('button');
-            button.innerHTML = 'Save all of configuration';
-            button.onclick = function () {
-                zubax_api.save_all_of_register_configuration(serialize_configuration_of_all_avatars());
-            }
-            empty_table_header_row_cell.appendChild(button);
-            table_header_row.appendChild(empty_table_header_row_cell);
+            make_empty_table_header_row_cell();
             current_avatars.forEach(function (avatar) {
                 let table_header_cell = document.createElement('th');
                 table_header_cell.innerHTML = avatar.node_id;
@@ -526,6 +534,7 @@
                 table_header_cell.onmouseover = make_select_column(avatar.node_id, true);
                 table_header_cell.appendChild(btnSelectColumn);
             });
+            make_empty_table_header_row_cell()
             registers_table_header.appendChild(table_header_row);
             // Combine all register names from avatar.registers into an array
             var register_names = [];
@@ -544,17 +553,20 @@
                 }
                 let table_register_row = document.createElement('tr');
                 registers_table_body.appendChild(table_register_row);
-                let table_header_cell = document.createElement('th');
-                // REGISTER NAME HERE
-                table_header_cell.innerHTML = register_name;
-                table_header_cell.onmousedown = make_select_row(register_name);
-                table_header_cell.onmouseover = make_select_row(register_name, true);
-                let btnSelectRow = document.createElement('button');
-                btnSelectRow.innerHTML = 'Select row';
-                // Attach an event listener on the button click event
-                btnSelectRow.onmousedown = make_select_row(register_name);
-                table_header_cell.appendChild(btnSelectRow);
-                table_register_row.appendChild(table_header_cell);
+                function make_header_cell() {
+                    let table_header_cell = document.createElement('th');
+                    // REGISTER NAME HERE
+                    table_header_cell.innerHTML = register_name;
+                    table_header_cell.onmousedown = make_select_row(register_name);
+                    table_header_cell.onmouseover = make_select_row(register_name, true);
+                    let btnSelectRow = document.createElement('button');
+                    btnSelectRow.innerHTML = 'Select row';
+                    // Attach an event listener on the button click event
+                    btnSelectRow.onmousedown = make_select_row(register_name);
+                    table_header_cell.appendChild(btnSelectRow);
+                    table_register_row.appendChild(table_header_cell);
+                }
+                make_header_cell();
 
                 // Add table cells for each avatar, containing the value of the register from register_name
                 current_avatars.forEach(function (avatar) {
@@ -610,6 +622,7 @@
                     function styleLabel(label) {
                         label.style.height = '0px';
                         label.style.position = 'absolute';
+                        label.style.bottom = '13px';
                         label.style.fontSize = '10px';
                         label.style.color = '#000000';
                         label.style.backgroundColor = 'transparent !important';
@@ -618,7 +631,7 @@
                         label.style.border = '0px';
                         label.style.borderRadius = '0px';
                         label.style.display = 'inline';
-                        label.style.width = '100%';
+                        label.style.width = 'calc(100% - 4px)';
                         label.style.fontFamily = 'monospace';
                         label.style.whiteSpace = 'nowrap';
                         label.style["pointer-events"] = 'none';
@@ -632,14 +645,12 @@
                         // For displaying the value
                         const label = document.createElement('label');
                         styleLabel(label);
-                        label.style.width = '100%';
                         label.style.textAlign = 'right';
                         label.style.fontFamily = 'monospace';
                         label.style.zIndex = '1';
                         table_cell.style.position = 'relative';
-                        label.style.bottom = '10px';
-                        label.style.right = '0';
-                        label.style.left = '0';
+                        label.style.right = '2px';
+                        label.style.left = '2px';
                         let dimensionality = "";
                         if (Array.isArray(value)) {
                             dimensionality = "[" + value.length + "]";
@@ -656,9 +667,8 @@
                         styleLabel(label);
                         label.style.textAlign = 'left';
                         label.style.verticalAlign = 'bottom';
-                        label.style.bottom = '10px';
-                        label.style.right = '0';
-                        label.style.left = '0';
+                        label.style.right = '2px';
+                        label.style.left = '2px';
                         label.style.zIndex = '1';
                         table_cell.style.position = 'relative';``
                         label.innerHTML = "";
@@ -704,7 +714,7 @@
                     });
                     // Create a text input element in the table cell
                 });
-
+                make_header_cell();
             });
             updateRegistersTableColors();
         }
