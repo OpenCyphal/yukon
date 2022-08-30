@@ -51,6 +51,45 @@ def save_text_into_file(file_contents: str) -> None:
     else:
         logger.warning("No file selected")
 
+def is_network_configuration(deserialized_conf):
+    first_key = list(deserialized_conf.keys())[0]
+    first_value = deserialized_conf[first_key]
+    return isinstance(first_key, int) and isinstance(first_value, dict)
+
+def is_configuration_exploded(deserialized_conf):
+    """
+    This should determine whether datatypes are shipped with the values.
+
+    Exploded means that the datatype was removed.
+    """
+    first_key = list(deserialized_conf.keys())[0]
+    first_value = deserialized_conf[first_key]
+    if is_network_configuration(deserialized_conf):
+        # This is the so-called network configuration file with multiple node_ids.
+        first_actual_value = first_value[list(first_value.keys())[0]]
+        if isinstance(first_actual_value, dict):
+            return False
+        else:
+            return True
+    else:
+        # This configuration file only contains keys and values for one node_id
+        if isinstance(first_value, dict):
+            return False
+        else:
+            return True
+
+def unexplode_configuration(avatars_by_node_id, deserialized_conf):
+    if is_configuration_exploded(deserialized_conf):
+        if is_network_configuration(deserialized_conf):
+            # This is the so-called network configuration file with multiple node_ids.
+            for node_id, avatar in avatars_by_node_id.items():
+                for register_name, exploded_value in deserialized_conf[node_id].items():
+                    exploded_value = json.loads(json.dumps(exploded_value))
+                    prototype = unexplode_value(avatar.register_exploded_values[register_name])
+                    deserialized_conf[node_id][register_name] = unexplode_value(exploded_value, prototype)
+        else:
+
+
 
 def import_candump_file_contents() -> str:
     import tkinter as tk
@@ -62,6 +101,8 @@ def import_candump_file_contents() -> str:
     root.lift()
     root.focus_force()
     file_path = filedialog.askopenfilename(filetypes=[("Yaml files", ".yml")])
+    root.lift()
+    root.focus_force()
     root.withdraw()
     root.destroy()
     try:

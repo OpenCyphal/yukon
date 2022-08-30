@@ -310,7 +310,6 @@
         btnStart.addEventListener('click', function () {
             if (!verifyInputs()) { return; }
             let port = "";
-            const cbToggleSlcanSocketcan = document.getElementById('cbToggleSlcanSocketcan');
             const useSocketCan = currentSelectedTransport == transport_types.SOCKETCAN;
             if (currentSelectedTransport != transport_types.MANUAL) {
                 if (useSocketCan) {
@@ -343,8 +342,6 @@
             );
         });
         // Toggle between showing divTypeTransport and divSelectTransport by clicking on the respective buttons
-        const btnTypeTransport = document.getElementById('btnTypeTransport');
-        const btnSelectTransport = document.getElementById('btnSelectTransport');
         const divTypeTransport = document.getElementById('divTypeTransport');
         const divSelectTransport = document.getElementById('divSelectTransport');
         const btnOpenCandumpFile = document.getElementById('btnOpenCandumpFile');

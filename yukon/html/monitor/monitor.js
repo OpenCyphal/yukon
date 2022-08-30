@@ -393,7 +393,7 @@
                 if (is_mouse_over) {
                     if (!event.buttons == 1) {
                         return;
-                    }
+                    } 
                 }
                 // I want to make sure that the user is not selecting text, that's not when we activate this.
                 if (window.getSelection().toString() !== "") {
@@ -577,6 +577,7 @@
                     // Set an attribute on td to store the register name
                     table_cell.setAttribute('id', "register_" + register_name);
                     table_cell.setAttribute("node_id", avatar.node_id);
+                    table_cell.title = "Register name: " + register_name;
                     let register_value = avatar.registers_exploded_values[register_name];
                     // Here we check if the register value is a byte string and then we convert it to hex
                     let inputFieldReference = null;
@@ -584,6 +585,7 @@
                         table_cell.setAttribute("no_value", "true");
                         table_cell.classList.add("no-value");
                         table_cell.style.backgroundColor = colors["no_value"];
+                        table_cell.title = "This register doesn't exist for this node";
                         return;
                     }
                     let type_string = Object.keys(register_value)[0];
