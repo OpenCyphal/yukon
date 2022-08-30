@@ -254,7 +254,7 @@
         }
         function update_register_value(register_name, register_value, node_id) {
             // Find the avatar which has the node_id
-            let the_avatar = current_avatars.find((avatar) => avatar.node_id === parseInt(node_id));
+            const the_avatar = current_avatars.find((avatar) => avatar.node_id === parseInt(node_id));
             let unprocessed_value = JSON.parse(JSON.stringify(the_avatar["registers_exploded_values"][register_name]))
             // if unprocessed_value[Object.keys(the_value)[0]]["value"]
             if (typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] == "string") {
@@ -269,8 +269,8 @@
         function updateTextOut(refresh_anyway = false) {
             zubax_api.get_avatars().then(
                 function (avatars) {
-                    var textOut = document.querySelector("#textOut");
-                    var DTO = JSON.parse(avatars);
+                    const textOut = document.querySelector("#textOut");
+                    const DTO = JSON.parse(avatars);
                     if (DTO.hash != lastHash || refresh_anyway) {
                         lastHash = DTO.hash;
                         textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
@@ -289,18 +289,18 @@
             // For all table cells in registers_table, if the cell has the attribute node_id set to node_id then color it red if the node is selected or white if not
             for (var i = 1; i < registers_table.rows.length; i++) {
                 for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
-                    let table_cell = registers_table.rows[i].cells[j]
-                    let register_name = table_cell.getAttribute("id")
+                    const table_cell = registers_table.rows[i].cells[j]
+                    const register_name = table_cell.getAttribute("id")
                     if(register_name == null) { 
                         continue; // Must be the header cell at the end
                     }
                     // Remove the string "register_" from the register_name
                     register_name = register_name.substring(9);
-                    let node_id = table_cell.getAttribute("node_id");
-                    let is_register_selected = selected_registers[[node_id, register_name]]
-                    let is_column_selected = selected_columns[node_id];
-                    let is_row_selected = selected_rows[register_name];
-                    let contained_input_element = table_cell.querySelector('input');
+                    const node_id = table_cell.getAttribute("node_id");
+                    const is_register_selected = selected_registers[[node_id, register_name]]
+                    const is_column_selected = selected_columns[node_id];
+                    const is_row_selected = selected_rows[register_name];
+                    const contained_input_element = table_cell.querySelector('input');
                     if (!contained_input_element) {
                         continue;
                     }
