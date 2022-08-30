@@ -7,10 +7,7 @@ numpy
 pydsdl
 importlib_resources; python_version < "3.7"
 proxy_tools
-nox==2022.8.*
 Flask==2.2.*
-pyinstaller==5.3.*
-parsimonious
 python-can==4.*
 beautifulsoup4==4.11.*
 requests

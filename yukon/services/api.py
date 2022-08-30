@@ -6,10 +6,11 @@ from pathlib import Path
 from time import sleep
 import logging
 import yaml
+
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
-    from yaml import Loader, Dumper
+    from yaml import Loader, Dumper  # type: ignore
 import websockets
 import uavcan
 from domain.reread_registers_request import RereadRegistersRequest
