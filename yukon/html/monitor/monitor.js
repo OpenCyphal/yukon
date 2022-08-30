@@ -290,7 +290,7 @@
             for (var i = 1; i < registers_table.rows.length; i++) {
                 for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
                     const table_cell = registers_table.rows[i].cells[j]
-                    const register_name = table_cell.getAttribute("id")
+                    let register_name = table_cell.getAttribute("id")
                     if(register_name == null) { 
                         continue; // Must be the header cell at the end
                     }
