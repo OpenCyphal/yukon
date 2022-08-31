@@ -7,8 +7,7 @@ import traceback
 from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
-from services.api import is_configuration_simplified
-from yukon.domain.message import Message
+from yukon.services.api import is_configuration_simplified
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_request import UpdateRegisterRequest
 from yukon.services.value_utils import unexplode_value
@@ -65,7 +64,15 @@ def cyphal_worker(state: GodState) -> None:
                         request.name.name = register_update.register_name
                         request.value = register_update.value
                         # We don't need the response here because it is snooped by an avatar anyway
-                        access_response, transfer_object = await client.call(request)
+                        response = await client.call(request)
+                        if response is None:
+                            add_local_message(
+                                state,
+                                "Failed to update register {}".format(register_update.register_name),
+                                register_update.register_name,
+                            )
+                            continue
+                        access_response, transfer_object = response
                         if not access_response.mutable:
                             add_local_message(
                                 state,
@@ -96,15 +103,19 @@ def cyphal_worker(state: GodState) -> None:
                                     add_local_message(
                                         state,
                                         "Register %s is a type register on node %d" % (register_name, config.node_id),
-                                        register_name, config.node_id
+                                        register_name,
+                                        config.node_id,
                                     )
                                     continue
-                                prototype_string = state.avatar.avatars_by_node_id[int(config.node_id)].register_exploded_values.get(register_name, None)
+                                prototype_string = state.avatar.avatars_by_node_id[
+                                    int(config.node_id)
+                                ].register_exploded_values.get(register_name, None)
                                 if prototype_string is None:
                                     add_local_message(
                                         state,
                                         "Register %s does not exist on node %d" % (register_name, config.node_id),
-                                        register_name, config.node_id
+                                        register_name,
+                                        config.node_id,
                                     )
                                     continue
                                 at_least_one_register_was_modified = True
@@ -115,9 +126,7 @@ def cyphal_worker(state: GodState) -> None:
                                 )
                             if not at_least_one_register_was_modified:
                                 add_local_message(
-                                    state,
-                                    "No registers were modified on node %d" % config.node_id,
-                                    config.node_id
+                                    state, "No registers were modified on node %d" % config.node_id, config.node_id
                                 )
                         else:
                             for potential_node_id, v in data.items():
@@ -130,9 +139,10 @@ def cyphal_worker(state: GodState) -> None:
                                     if register_name[-5:] == ".type":
                                         add_local_message(
                                             state,
-                                            "Register %s is a type register on node %d" % (
-                                            register_update.register_name, register_update.node_id),
-                                            register_update.register_name, register_update.node_id
+                                            "Register %s is a type register on node %d"
+                                            % (register_update.register_name, register_update.node_id),
+                                            register_update.register_name,
+                                            register_update.node_id,
                                         )
                                         continue
                                     unexploded_value = unexplode_value(value)
@@ -140,21 +150,21 @@ def cyphal_worker(state: GodState) -> None:
                                         UpdateRegisterRequest(register_name, unexploded_value, config.node_id)
                                     )
                     elif config.is_network_config:
-                            logger.debug("Setting configuration for all configured nodes")
-                            data = json.loads(config.configuration)
-                            for node_id, register_values_exploded in data.items():
-                                if "__" in node_id:
+                        logger.debug("Setting configuration for all configured nodes")
+                        data = json.loads(config.configuration)
+                        for node_id, register_values_exploded in data.items():
+                            if "__" in node_id:
+                                continue
+                            # If register_values_exploded is not a dict, it is an error
+                            if not isinstance(register_values_exploded, dict):
+                                logger.error(f"Configuration for node {node_id} is not a dict")
+                                continue
+                            for k, v in register_values_exploded.items():
+                                if k[-5:] == ".type":
                                     continue
-                                # If register_values_exploded is not a dict, it is an error
-                                if not isinstance(register_values_exploded, dict):
-                                    logger.error(f"Configuration for node {node_id} is not a dict")
-                                    continue
-                                for k, v in register_values_exploded.items():
-                                    if k[-5:] == ".type":
-                                        continue
-                                    state.queues.update_registers.put(
-                                        UpdateRegisterRequest(k, unexplode_value(v), int(node_id))
-                                    )
+                                state.queues.update_registers.put(
+                                    UpdateRegisterRequest(k, unexplode_value(v), int(node_id))
+                                )
                     else:
                         raise Exception("Didn't do anything with this configuration")
                 if not state.queues.reread_registers.empty():

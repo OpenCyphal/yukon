@@ -102,10 +102,16 @@ def unsimplify_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deser
         if is_network_configuration(deserialized_conf):
             # This is the so-called network configuration file with multiple node_ids.
             for node_id, avatar in avatars_by_node_id.items():
-                for register_name, exploded_value in deserialized_conf[node_id].items():
-                    exploded_value = json.loads(json.dumps(exploded_value))
+                deserialized_node_specific_conf = deserialized_conf.get(str(node_id)) or deserialized_conf.get(
+                    int(node_id)
+                )
+                if not deserialized_node_specific_conf:
+                    continue
+                for register_name, simplified_value in deserialized_node_specific_conf.items():
+                    simplified_value2 = json.loads(json.dumps(simplified_value))
                     prototype = unexplode_value(avatar.register_exploded_values[register_name])
-                    deserialized_conf[node_id][register_name] = unexplode_value(exploded_value, prototype)
+                    typed_value = explode_value(unexplode_value(simplified_value2, prototype))
+                    deserialized_node_specific_conf[register_name] = typed_value
             return json.dumps(deserialized_conf)
         else:
             # In the future the API should end a request to the client to ask the user to select a node_id.
@@ -114,8 +120,8 @@ def unsimplify_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deser
         return json.dumps(deserialized_conf)
 
 
-def simplify_configuration(deserialized_conf):
-    if is_configuration_simplified(deserialized_conf):
+def simplify_configuration(deserialized_conf) -> str:
+    if not is_configuration_simplified(deserialized_conf):
         if is_network_configuration(deserialized_conf):
             # This is the so-called network configuration file with multiple node_ids.
             for node_id, values in deserialized_conf.items():
@@ -212,10 +218,10 @@ class Api:
         self.state.queues.apply_configuration.put(request)
 
     def simplify_configuration(self, configuration: str) -> str:
-        return json.dumps(simplify_configuration(json.loads(configuration)))
+        return simplify_configuration(json.loads(configuration))
 
     def unsimplify_configuration(self, configuration: str) -> str:
-        return unsimplify_configuration(self.state.avatar.avatars_by_node_id, configuration)
+        return unsimplify_configuration(self.state.avatar.avatars_by_node_id, json.loads(configuration))
 
     def open_file_dialog(self) -> None:
         import tkinter as tk

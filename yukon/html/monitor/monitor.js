@@ -189,41 +189,51 @@
                     select_configuration(file_name);
                 }
                 conf_deserialized = JSON.parse(configuration_string);
-                zubax_api.is_configuration_simplified(conf_deserialized).then(function(result) {
-                    const is_simplified = JSON.parse(result);
-                    if(is_simplified) {
-                        label.innerHTML += " (simplified)";
-                        simplified_configurations_flags[file_name] = true;
-                    }
-                    // For each key in the conf_deserialized, add a checkbox under the label with the key as the text and id
-                    let noKeysWereNumbers = true; // This is essentially the same as is_configuration_simplified, but it is determined here locally
-                    for (const [key, value] of Object.entries(conf_deserialized)) {
-                        // If key is not a number continue
-                        if (isNaN(key)) {
-                            console.log("Key is not a number: " + key);
-                            continue;
+                zubax_api.is_network_configuration(conf_deserialized).then(function(result)
+                {
+                    const is_network_configuration = JSON.parse(result);
+                    zubax_api.is_configuration_simplified(conf_deserialized).then(function(result) {
+                        const is_simplified = JSON.parse(result);
+                        if(is_simplified) {
+                            label.innerHTML += " (simplified)";
+                            simplified_configurations_flags[file_name] = true;
                         }
-                        noKeysWereNumbers = false;
-                        var checkbox = document.createElement("input");
-                        checkbox.type = "checkbox";
-                        checkbox.id = key;
-                        checkbox.onmousedown = function () {
-                            console.log("Checkbox " + key + " clicked");
+                        // For each key in the conf_deserialized, add a checkbox under the label with the key as the text and id
+                        let noKeysWereNumbers = true; // This is essentially the same as is_configuration_simplified, but it is determined here locally
+                        for (const [key, value] of Object.entries(conf_deserialized)) {
+                            // If key is not a number continue
+                            if (isNaN(key)) {
+                                console.log("Key is not a number: " + key);
+                                continue;
+                            }
+                            noKeysWereNumbers = false;
+                            var checkbox = document.createElement("input");
+                            checkbox.type = "checkbox";
+                            checkbox.id = key;
+                            checkbox.checked = true;
+                            checkbox.onmousedown = function () {
+                                // If the checkbox is checked, add the key to the configuration
+                                if (checkbox.checked) {
+
+                                } else {
+                                    
+                                }
+                            }
+                            label.appendChild(checkbox);
+                            var text = document.createElement("span");
+                            text.innerHTML = key;
+                            label.appendChild(text);
                         }
-                        label.appendChild(checkbox);
-                        var text = document.createElement("span");
-                        text.innerHTML = key;
-                        label.appendChild(text);
-                    }
-                    if(is_simplified) {
-                        var number_input = document.createElement("input");
-                        number_input.type = "number";
-                        number_input.placeholder = "Node id needed";
-                        number_input.title = "For determining datatypes, a node id is needed";
-                        number_input_for_configuration[JSON.parse(JSON.stringify(file_name))] = number_input;
-                        label.appendChild(number_input);
-                    }
-                    available_configurations_radios.appendChild(label);
+                        if(!is_network_configuration && is_simplified) {
+                            var number_input = document.createElement("input");
+                            number_input.type = "number";
+                            number_input.placeholder = "Node id needed";
+                            number_input.title = "For determining datatypes, a node id is needed";
+                            number_input_for_configuration[JSON.parse(JSON.stringify(file_name))] = number_input;
+                            label.appendChild(number_input);
+                        }
+                        available_configurations_radios.appendChild(label);
+                    });
                 });
                 
             }
@@ -315,7 +325,7 @@
                     // "uavcan.node.id": current_avatars[i].node_id,
                 };
                 var avatar = current_avatars[i];
-                let saving_all = selected_columns[avatar.node_id];
+                let saving_all = selected_columns[avatar.node_id] || options.only_of_avatar_of_node_id == avatar.node_id;
                 if (options.only_of_avatar_of_node_id && current_avatars[i].node_id != options.only_of_avatar_of_node_id) {
                     continue;
                 }
@@ -348,8 +358,9 @@
             let json_string = JSON.stringify(pairs_object);
             var yaml_string = jsyaml.dump(pairs_object);
             if(cbSimplifyRegisters.checked) {
-                zubax_api.simplify_registers(json_string).then(function(simplified_json_string) {
-                    const simplified_yaml_string = jsyaml.dump(JSON.parse(simplified_json_string));
+                zubax_api.simplify_configuration(json_string).then(function(simplified_json_string) {
+                    intermediary_structure = JSON.parse(simplified_json_string);
+                    const simplified_yaml_string = jsyaml.dump(intermediary_structure);
                     return zubax_api.save_text(simplified_yaml_string);
                 });
             } else {
