@@ -131,36 +131,30 @@
             } else {
                 potential_node_id = set_node_id;
             }
-            zubax_api.is_network_configuration(configuration).then(function(result)
+            zubax_api.is_network_configuration(configuration_deserialized).then(function(result)
             {
                 const is_network_configuration = JSON.parse(result);
-                zubax_api.is_configuration_simplified(configuration).then(function(result)
+                zubax_api.is_configuration_simplified(configuration_deserialized).then(function(result)
                 {
                     const is_configuration_simplified = JSON.parse(result);
                     if(is_network_configuration && is_configuration_simplified) {
                         // Start fetching datatypes
                         zubax_api.unsimplify_configuration(configuration).then(function(result)
                         {
-                            zubax_api.apply_all_of_configuration(JSON.stringify(configuration_deserialized));
+                            console.log("Unsimplified configuration: " + selected_config);
+                            zubax_api.apply_all_of_configuration(result);
                         });
                     } else if (!is_network_configuration && is_configuration_simplified) {
-                        const isValidNodeid = potential_node_id > 0 || potential_node_id < 128
+                        const isValidNodeid = potential_node_id > 0 || potential_node_id < 128;
                         if(isValidNodeid) {
+                            console.log("Applying configuration: " + selected_config + " to node " + potential_node_id);
                             zubax_api.apply_configuration_to_node(potential_node_id, JSON.stringify(configuration_deserialized))
-                        } else if (number_input){
+                        } else if (number_input) {
+                            console.log("There was no valid node id supplied.");
                             // Add a small label to the bottom of number_input to indicate that the node id is invalid, color the input red
                             number_input.style.borderColor = "red";
-                            var label = document.createElement('label');
-                            label.innerHTML = "Invalid node id";
-                            label.style.color = "red";
-                            label.style.fontSize = "10px";
-                            label.style.position = "absolute";
-                            label.style.top = "20px";
-                            label.style.left = "0px";
-                            number_input.parentNode.appendChild(label);
                             // Remove 3 seconds later
                             setTimeout(function () {
-                                label.parentNode.removeChild(label);
                                 // Remove the red border
                                 number_input.style.borderColor = "";
                             }, 3000);
@@ -173,6 +167,8 @@
         function update_available_configurations_list() {
             var available_configurations_radios = document.querySelector("#available_configurations_radios");
             available_configurations_radios.innerHTML = "";
+            number_input_for_configuration = {};
+            simplified_configurations_flags = {};
             for (const [file_name, configuration_string] of Object.entries(available_configurations)) {
                 // Fill in the available_configurations_radios with radio buttons
                 var radio = document.createElement("input");
@@ -193,43 +189,42 @@
                 }
                 conf_deserialized = JSON.parse(configuration_string);
                 zubax_api.is_configuration_simplified(conf_deserialized).then(function(result) {
-                    if(JSON.parse(result)) {
+                    const is_simplified = JSON.parse(result);
+                    if(is_simplified) {
                         label.innerHTML += " (simplified)";
                         simplified_configurations_flags[file_name] = true;
                     }
+                    // For each key in the conf_deserialized, add a checkbox under the label with the key as the text and id
+                    let noKeysWereNumbers = true; // This is essentially the same as is_configuration_simplified, but it is determined here locally
+                    for (const [key, value] of Object.entries(conf_deserialized)) {
+                        // If key is not a number continue
+                        if (isNaN(key)) {
+                            console.log("Key is not a number: " + key);
+                            continue;
+                        }
+                        noKeysWereNumbers = false;
+                        var checkbox = document.createElement("input");
+                        checkbox.type = "checkbox";
+                        checkbox.id = key;
+                        checkbox.onmousedown = function () {
+                            console.log("Checkbox " + key + " clicked");
+                        }
+                        label.appendChild(checkbox);
+                        var text = document.createElement("span");
+                        text.innerHTML = key;
+                        label.appendChild(text);
+                    }
+                    if(is_simplified) {
+                        var number_input = document.createElement("input");
+                        number_input.type = "number";
+                        number_input.placeholder = "Node id needed";
+                        number_input.title = "For determining datatypes, a node id is needed";
+                        number_input_for_configuration[JSON.parse(JSON.stringify(file_name))] = number_input;
+                        label.appendChild(number_input);
+                    }
+                    available_configurations_radios.appendChild(label);
                 });
-                // For each key in the conf_deserialized, add a checkbox under the label with the key as the text and id
-                let noKeysWereNumbers = true; // This is essentially the same as is_configuration_simplified, but it is determined here locally
-                for (const [key, value] of Object.entries(conf_deserialized)) {
-                    // If key is not a number continue
-                    if (isNaN(key)) {
-                        continue;
-                    }
-                    noKeysWereNumbers = false;
-                    var checkbox = document.createElement("input");
-                    checkbox.type = "checkbox";
-                    checkbox.id = key;
-                    checkbox.onmousedown = function () {
-                        console.log("Checkbox " + key + " clicked");
-                    }
-                    label.appendChild(checkbox);
-                    var text = document.createElement("span");
-                    text.innerHTML = key;
-                    label.appendChild(text);
-                }
-                if(noKeysWereNumbers) {
-                    var number_input = document.createElement("input");
-                    number_input.type = "number";
-                    number_input.id = "number_input";
-                    number_input.placeholder = "Node id needed";
-                    number_input.title = "For determining datatypes, a node id is needed";
-                    number_input.onmousedown = function () {
-                        console.log("Number input clicked");
-                    }
-                    number_input_for_configuration[file_name] = number_input;
-                    label.appendChild(number_input);
-                }
-                available_configurations_radios.appendChild(label);
+                
             }
         }
         function create_directed_graph() {

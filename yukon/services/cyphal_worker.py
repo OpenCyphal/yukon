@@ -7,6 +7,7 @@ import traceback
 from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
+from services.api import is_configuration_simplified
 from yukon.domain.message import Message
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_request import UpdateRegisterRequest
@@ -88,19 +89,48 @@ def cyphal_worker(state: GodState) -> None:
                     config = state.queues.apply_configuration.get_nowait()
                     if config.node_id and not config.is_network_config:
                         data = json.loads(config.configuration)
-                        for k, v in data.items():
-                            if k == "__file_name":
-                                continue
-                            for register_name, value in v.items():
-                                if isinstance(value, str):
-                                    logger.debug("Do something")
-                                    value = json.loads(value)
-                                if k[-5:] == ".type":
+                        if is_configuration_simplified(data):
+                            for register_name, register_value in data.items():
+                                if register_name[-5:] == ".type":
+                                    add_local_message(
+                                        state,
+                                        "Register %s is a type register on node %d" % (register_update.register_name, register_update.node_id),
+                                        register_update.register_name, register_update.node_id
+                                    )
                                     continue
-                                unexploded_value = unexplode_value(value)
+                                prototype_string = state.avatar.avatars_by_node_id[int(config.node_id)].register_exploded_values.get(register_name, None)
+                                if prototype_string is None:
+                                    add_local_message(
+                                        state,
+                                        "Register %s does not exist on node %d" % (register_name, config.node_id),
+                                        register_name, config.node_id
+                                    )
+                                    continue
+                                prototype = unexplode_value(prototype_string)
+                                unexploded_value = unexplode_value(register_value, prototype)
                                 state.queues.update_registers.put(
                                     UpdateRegisterRequest(register_name, unexploded_value, config.node_id)
                                 )
+                        else:
+                            for potential_node_id, v in data.items():
+                                if potential_node_id == "__file_name":
+                                    continue
+                                for register_name, value in v.items():
+                                    if isinstance(value, str):
+                                        logger.debug("Do something")
+                                        value = json.loads(value)
+                                    if register_name[-5:] == ".type":
+                                        add_local_message(
+                                            state,
+                                            "Register %s is a type register on node %d" % (
+                                            register_update.register_name, register_update.node_id),
+                                            register_update.register_name, register_update.node_id
+                                        )
+                                        continue
+                                    unexploded_value = unexplode_value(value)
+                                    state.queues.update_registers.put(
+                                        UpdateRegisterRequest(register_name, unexploded_value, config.node_id)
+                                    )
                     elif config.is_network_config:
                             logger.debug("Setting configuration for all configured nodes")
                             data = json.loads(config.configuration)

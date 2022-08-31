@@ -81,9 +81,9 @@ def is_configuration_simplified(deserialized_conf: typing.Any) -> bool:
     else:
         # This configuration file only contains keys and values for one node_id
         if isinstance(first_value, dict):
-            return True
-        else:
             return False
+        else:
+            return True
 
 
 def unexplode_a_register(state: GodState, node_id: int, register_name: str, register_value: str) -> str:
@@ -186,14 +186,12 @@ class Api:
         return json.dumps(is_network_configuration(deserialized_configuration))
 
     def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
-        self.state.queues.apply_configuration.put(
-            ApplyConfigurationRequest(node_id, configuration, is_network_configuration(configuration))
-        )
+        request = ApplyConfigurationRequest(node_id, configuration, is_network_configuration(json.loads(configuration)))
+        self.state.queues.apply_configuration.put(request)
 
     def apply_all_of_configuration(self, configuration: str) -> None:
-        self.state.queues.apply_configuration.put(
-            ApplyConfigurationRequest(None, configuration, is_network_configuration(configuration))
-        )
+        request = ApplyConfigurationRequest(None, configuration, is_network_configuration(json.loads(configuration)))
+        self.state.queues.apply_configuration.put(request)
 
     def unsimplify_configuration(self, configuration: str) -> None:
         return unexplode_configuration(self.state.avatar.avatars_by_node_id, configuration)
