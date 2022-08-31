@@ -144,12 +144,16 @@
                         {
                             console.log("Unsimplified configuration: " + selected_config);
                             zubax_api.apply_all_of_configuration(result);
+                            let interval1 = setInterval(() => update_tables(true), 1000);
+                            setTimeout(() => clearInterval(interval1), 6000);
                         });
                     } else if (!is_network_configuration && is_configuration_simplified) {
                         const isValidNodeid = potential_node_id > 0 || potential_node_id < 128;
                         if(isValidNodeid) {
                             console.log("Applying configuration: " + selected_config + " to node " + potential_node_id);
                             zubax_api.apply_configuration_to_node(potential_node_id, JSON.stringify(configuration_deserialized))
+                            let interval1 = setInterval(() => update_tables(true), 1000);
+                            setTimeout(() => clearInterval(interval1), 6000);
                         } else if (number_input) {
                             console.log("There was no valid node id supplied.");
                             // Add a small label to the bottom of number_input to indicate that the node id is invalid, color the input red
@@ -163,7 +167,6 @@
                     }
                 });
             });
-            
         }
         function update_available_configurations_list() {
             var available_configurations_radios = document.querySelector("#available_configurations_radios");
@@ -216,7 +219,7 @@
                                 if (checkbox.checked) {
 
                                 } else {
-                                    
+
                                 }
                             }
                             label.appendChild(checkbox);
