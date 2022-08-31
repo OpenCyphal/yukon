@@ -1,12 +1,14 @@
 import asyncio
 import json
 import logging
+import time
 import traceback
 
 from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
-from domain.reread_registers_request import RereadRegistersRequest
+from yukon.domain.message import Message
+from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_request import UpdateRegisterRequest
 from yukon.services.value_utils import unexplode_value
 from yukon.domain.attach_transport_request import AttachTransportRequest
@@ -14,6 +16,7 @@ from yukon.domain.attach_transport_response import AttachTransportResponse
 from yukon.domain.god_state import GodState
 from yukon.services.snoop_registers import make_tracers_trackers
 from yukon.services.snoop_registers import get_register_value
+from yukon.services.messages_publisher import add_local_message
 
 logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
@@ -61,7 +64,20 @@ def cyphal_worker(state: GodState) -> None:
                         request.name.name = register_update.register_name
                         request.value = register_update.value
                         # We don't need the response here because it is snooped by an avatar anyway
-                        asyncio.create_task(client.call(request))
+                        access_response, transfer_object = await client.call(request)
+                        if not access_response.mutable:
+                            add_local_message(
+                                state,
+                                "Register %s is not mutable." % register_update.register_name,
+                                register_update.register_name,
+                            )
+                        if isinstance(access_response.value.empty, uavcan.primitive.Empty_1):
+                            add_local_message(
+                                state,
+                                f"Register {register_update.register_name} does not exist on node {register_update.node_id}.",
+                                register_update.register_name,
+                                register_update.node_id,
+                            )
                     except:
                         logger.exception(
                             "Failed to update register %s for %s",
@@ -70,9 +86,11 @@ def cyphal_worker(state: GodState) -> None:
                         )
                 if not state.queues.apply_configuration.empty():
                     config = state.queues.apply_configuration.get_nowait()
-                    if config.node_id:
+                    if config.node_id and not config.is_network_config:
                         data = json.loads(config.configuration)
                         for k, v in data.items():
+                            if k == "__file_name":
+                                continue
                             for register_name, value in v.items():
                                 if isinstance(value, str):
                                     logger.debug("Do something")
@@ -83,22 +101,24 @@ def cyphal_worker(state: GodState) -> None:
                                 state.queues.update_registers.put(
                                     UpdateRegisterRequest(register_name, unexploded_value, config.node_id)
                                 )
-                    else:
-                        logger.debug("Setting configuration for all configured nodes")
-                        data = json.loads(config.configuration)
-                        for node_id, register_values_exploded in data.items():
-                            if "__" in node_id:
-                                continue
-                            # If register_values_exploded is not a dict, it is an error
-                            if not isinstance(register_values_exploded, dict):
-                                logger.error(f"Configuration for node {node_id} is not a dict")
-                                continue
-                            for k, v in register_values_exploded.items():
-                                if k[-5:] == ".type":
+                    elif config.is_network_config:
+                            logger.debug("Setting configuration for all configured nodes")
+                            data = json.loads(config.configuration)
+                            for node_id, register_values_exploded in data.items():
+                                if "__" in node_id:
                                     continue
-                                state.queues.update_registers.put(
-                                    UpdateRegisterRequest(k, unexplode_value(v), int(node_id))
-                                )
+                                # If register_values_exploded is not a dict, it is an error
+                                if not isinstance(register_values_exploded, dict):
+                                    logger.error(f"Configuration for node {node_id} is not a dict")
+                                    continue
+                                for k, v in register_values_exploded.items():
+                                    if k[-5:] == ".type":
+                                        continue
+                                    state.queues.update_registers.put(
+                                        UpdateRegisterRequest(k, unexplode_value(v), int(node_id))
+                                    )
+                    else:
+                        raise Exception("Didn't do anything with this configuration")
                 if not state.queues.reread_registers.empty():
                     request2: RereadRegistersRequest = state.queues.reread_registers.get_nowait()
                     for pair in request2.pairs:

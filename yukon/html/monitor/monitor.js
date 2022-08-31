@@ -6,17 +6,20 @@
         // Make a callback on the page load event
         console.log("monitor ready");
         const iRegistersFilter = document.getElementById('iRegistersFilter');
-        var current_avatars = [];
-        var last_hashes = { set: new Set() };
-        var last_table_hashes = { set: new Set() }; // The same avatar hashes but for tables
-        var lastHash = "";
-        var my_graph = null;
-        var available_configurations = {};
-        var selected_config = null
-        var selected_registers = {}; // Key is array of nodeid and register name, value is true if selected
-        var selected_columns = {}; // Key is the node_id and value is true if selected
+        let current_avatars = [];
+        let last_hashes = { set: new Set() };
+        let last_table_hashes = { set: new Set() }; // The same avatar hashes but for tables
+        let lastHash = "";
+        let my_graph = null;
+        let available_configurations = {};
+        let simplified_configurations_flags = {}; // The key is the file_name and true is is simplified
+        let number_input_for_configuration = {}; // The key is the file_name and the value is the input element
+        let selected_config = null;
+        let selected_registers = {}; // Key is array of nodeid and register name, value is true if selected
+        let selected_columns = {}; // Key is the node_id and value is true if selected
         let selected_rows = {}; // Key is register_name and value is true if selected
-        let colors = {
+        let lastInternalMessageIndex = -1;
+        const colors = {
             "selected_register": 'rgba(0, 255, 0, 0.5)',
             "selected_column": 'rgba(0, 155, 255, 0.5)',
             "selected_row": "rgba(255, 255, 0, 0.5)",
@@ -44,8 +47,8 @@
             label.style.position = 'absolute';
             label.style.top = '0px';
             label.style.left = '0px';
-            label.style.width = '100%';
-            label.style.minHeight = '100px';
+            label.style.width = '380px';
+            label.style.minHeight = '90px';
             label.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
             label.style.color = 'white';
             label.style.textAlign = 'center';
@@ -59,6 +62,175 @@
             setTimeout(function () {
                 label.parentNode.removeChild(label);
             }, 3000);
+        }
+        function markCellWithMessage(table_cell, message, delay) {
+            // Make an absolute positioned div positioned over the table cell
+            var div = document.createElement('div');
+            div.style.position = 'absolute';
+            div.style.top = table_cell.offsetTop + 'px';
+            div.style.left = table_cell.offsetLeft + 'px';
+            div.style.width = table_cell.offsetWidth + 'px';
+            div.style.height = table_cell.offsetHeight + 'px';
+            // Add an underlined paragraph to the div containing the message
+            var p = document.createElement('p');
+            p.innerHTML = message;
+            p.style.textDecoration = 'underline';
+            div.appendChild(p);
+            // Add the div to the table cell
+            table_cell.appendChild(div);
+            setTimeout(function(){
+                div.parentNode.removeChild(div);
+            }, delay);
+        }
+        function findTableCell(node_id2, register_name2) {
+            for (var i = 1; i < registers_table.rows.length; i++) {
+                for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
+                    const table_cell = registers_table.rows[i].cells[j]
+                    let node_id = table_cell.getAttribute("node_id")
+                    let register_name = table_cell.getAttribute("register_name")
+                    if(register_name == null) { 
+                        continue; // Must be the header cell at the end
+                    }
+                    if(parseInt(node_id) == parseInt(node_id2) && register_name == register_name2) {
+                        return table_cell
+                    }
+                }
+            }
+        }
+        function fetchAndHandleInternalMessages()
+        {
+            zubax_api.get_messages(lastInternalMessageIndex + 1).then(
+                function (received_messages) {
+                    let deserialized_messages = JSON.parse(received_messages);
+                    for(message in deserialized_messages) {
+                        if(message.internal) {
+                            if(message.message.includes("is not mutable")) {
+                                addLocalMessage(message.message);
+                            } else if(message.message.includes("does not exist on node")) {
+                                addLocalMessage(message.message);
+                                markCellWithMessage(findTableCell(message.arguments[0], message.arguments[1]), "This node has no such register but you tried to set it.", 3000);
+                            } else if(message.message.includes("was supplied the wrong value.")) {
+                                markCellWithMessage();
+                            } else {
+                                addLocalMessage("Internal message: " + message.message);
+                            }
+                        }
+                    }
+                    lastInternalMessageIndex = deserialized_messages[deserialized_messages.length - 1].index_nr;
+                }
+            );
+        }
+        setInterval(fetchAndHandleInternalMessages, 1000);
+        function applyConfiguration(configuration, set_node_id) {
+            let configuration_deserialized = JSON.parse(configuration);
+            let potential_node_id;
+            let number_input;
+            if(!set_node_id) {
+                number_input = number_input_for_configuration[selected_config];
+                potential_node_id = parseInt(number_input.value);
+            } else {
+                potential_node_id = set_node_id;
+            }
+            zubax_api.is_network_configuration(configuration).then(function(result)
+            {
+                const is_network_configuration = JSON.parse(result);
+                zubax_api.is_configuration_simplified(configuration).then(function(result)
+                {
+                    const is_configuration_simplified = JSON.parse(result);
+                    if(is_network_configuration && is_configuration_simplified) {
+                        // Start fetching datatypes
+                        zubax_api.unsimplify_configuration(configuration).then(function(result)
+                        {
+                            zubax_api.apply_all_of_configuration(JSON.stringify(configuration_deserialized));
+                        });
+                    } else if (!is_network_configuration && is_configuration_simplified) {
+                        const isValidNodeid = potential_node_id > 0 || potential_node_id < 128
+                        if(isValidNodeid) {
+                            zubax_api.apply_configuration_to_node(potential_node_id, JSON.stringify(configuration_deserialized))
+                        } else if (number_input){
+                            // Add a small label to the bottom of number_input to indicate that the node id is invalid, color the input red
+                            number_input.style.borderColor = "red";
+                            var label = document.createElement('label');
+                            label.innerHTML = "Invalid node id";
+                            label.style.color = "red";
+                            label.style.fontSize = "10px";
+                            label.style.position = "absolute";
+                            label.style.top = "20px";
+                            label.style.left = "0px";
+                            number_input.parentNode.appendChild(label);
+                            // Remove 3 seconds later
+                            setTimeout(function () {
+                                label.parentNode.removeChild(label);
+                                // Remove the red border
+                                number_input.style.borderColor = "";
+                            }, 3000);
+                        }
+                    }
+                });
+            });
+            
+        }
+        function update_available_configurations_list() {
+            var available_configurations_radios = document.querySelector("#available_configurations_radios");
+            available_configurations_radios.innerHTML = "";
+            for (const [file_name, configuration_string] of Object.entries(available_configurations)) {
+                // Fill in the available_configurations_radios with radio buttons
+                var radio = document.createElement("input");
+                radio.type = "radio";
+                radio.name = "configuration";
+                radio.value = file_name;
+                radio.id = file_name;
+                radio.onmousedown = function () {
+                    select_configuration(file_name);
+                }
+                available_configurations_radios.appendChild(radio);
+                // Label for radio
+                var label = document.createElement("label");
+                label.htmlFor = file_name;
+                label.innerHTML = file_name;
+                label.onmousedown = function () {
+                    select_configuration(file_name);
+                }
+                conf_deserialized = JSON.parse(configuration_string);
+                zubax_api.is_configuration_simplified(conf_deserialized).then(function(result) {
+                    if(JSON.parse(result)) {
+                        label.innerHTML += " (simplified)";
+                        simplified_configurations_flags[file_name] = true;
+                    }
+                });
+                // For each key in the conf_deserialized, add a checkbox under the label with the key as the text and id
+                let noKeysWereNumbers = true; // This is essentially the same as is_configuration_simplified, but it is determined here locally
+                for (const [key, value] of Object.entries(conf_deserialized)) {
+                    // If key is not a number continue
+                    if (isNaN(key)) {
+                        continue;
+                    }
+                    noKeysWereNumbers = false;
+                    var checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.id = key;
+                    checkbox.onmousedown = function () {
+                        console.log("Checkbox " + key + " clicked");
+                    }
+                    label.appendChild(checkbox);
+                    var text = document.createElement("span");
+                    text.innerHTML = key;
+                    label.appendChild(text);
+                }
+                if(noKeysWereNumbers) {
+                    var number_input = document.createElement("input");
+                    number_input.type = "number";
+                    number_input.id = "number_input";
+                    number_input.placeholder = "Node id needed";
+                    number_input.title = "For determining datatypes, a node id is needed";
+                    number_input.onmousedown = function () {
+                        console.log("Number input clicked");
+                    }
+                    number_input_for_configuration[file_name] = number_input;
+                    label.appendChild(number_input);
+                }
+                available_configurations_radios.appendChild(label);
+            }
         }
         function create_directed_graph() {
             cytoscape.use(cytoscapeKlay);
@@ -168,7 +340,9 @@
                         avatar_dto[register_name] = register_value;
                     }
                 }
-                final_dict[avatar.node_id] = avatar_dto;
+                if(Object.keys(avatar_dto).length > 0) {
+                    final_dict[parseInt(avatar.node_id)] = avatar_dto;
+                }
             }
             return final_dict;
         }
@@ -264,6 +438,7 @@
                 let register_values = register_value.split(",").map(Number);
                 unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_values
             }
+            console.log("Register value updated for " + register_name + " to " + register_value + " for node " + node_id)
             zubax_api.update_register_value(register_name, unprocessed_value, node_id);
         }
         function updateTextOut(refresh_anyway = false) {
@@ -334,60 +509,7 @@
                 }
             }
         }
-
-        function update_available_configurations_list() {
-            var available_configurations_radios = document.querySelector("#available_configurations_radios");
-            available_configurations_radios.innerHTML = "";
-            for (const [key, value] of Object.entries(available_configurations)) {
-                // Fill in the available_configurations_radios with radio buttons
-                var radio = document.createElement("input");
-                radio.type = "radio";
-                radio.name = "configuration";
-                radio.value = key;
-                radio.id = key;
-                radio.onmousedown = function () {
-                    select_configuration(key);
-                }
-                available_configurations_radios.appendChild(radio);
-                // Label for radio
-                var label = document.createElement("label");
-                label.htmlFor = key;
-                label.innerHTML = key;
-                label.onmousedown = function () {
-                    select_configuration(key);
-                }
-                conf_deserialized = JSON.parse(value);
-                // For each key in the conf_deserialized, add a checkbox under the label with the key as the text and id
-                let noKeysWereNumbers = true;
-                for (const [key, value] of Object.entries(conf_deserialized)) {
-                    // If key is not a number continue
-                    if (isNaN(key)) {
-                        continue;
-                    }
-                    noKeysWereNumbers = false;
-                    var checkbox = document.createElement("input");
-                    checkbox.type = "checkbox";
-                    checkbox.id = key;
-                    checkbox.onmousedown = function () {
-                        console.log("Checkbox " + key + " clicked");
-                    }
-                    label.appendChild(checkbox);
-                    var text = document.createElement("span");
-                    text.innerHTML = key;
-                    label.appendChild(text);
-                }
-                if(noKeysWereNumbers) {
-                    var number_input = document.createElement("input");
-                    number_input.type = "number";
-                    number_input.id = "number_input";
-                    number_input.onmousedown = function () {
-                        console.log("Number input clicked");
-                    }
-                    label.appendChild(number_input);
-                }
-                available_configurations_radios.appendChild(label);
-            }
-        }
+        
         function make_select_column(node_id, is_mouse_over = false) {
             return function (event) {
                 if (is_mouse_over) {
@@ -484,7 +606,7 @@
                 button.innerHTML = 'Apply sel. conf to all nodes';
                 button.onclick = function () {
                     if (selected_config != null && available_configurations[selected_config] != null) {
-                        zubax_api.apply_all_of_configuration(available_configurations[selected_config]);
+                        applyConfiguration(available_configurations[selected_config]);
                     }
                 }
                 empty_table_header_row_cell.appendChild(button);
@@ -520,11 +642,10 @@
                     event.stopPropagation();
                     const current_config = available_configurations[selected_config];
                     if (current_config) {
-                        zubax_api.apply_configuration_to_node(avatar.node_id, current_config);
+                        applyConfiguration(current_config, parseInt(avatar.node_id));
                     } else {
                         console.log("No configuration selected");
                     }
-
                 });
                 table_header_cell.appendChild(btnApplyImportedConfig);
                 let btnSelectColumn = document.createElement('button');
@@ -576,6 +697,7 @@
                     table_cell.className = 'no-padding';
                     // Set an attribute on td to store the register name
                     table_cell.setAttribute('id', "register_" + register_name);
+                    table_cell.setAttribute("register_name", register_name);
                     table_cell.setAttribute("node_id", avatar.node_id);
                     table_cell.title = "Register name: " + register_name;
                     let register_value = avatar.registers_exploded_values[register_name];
@@ -619,6 +741,13 @@
                         text_input.setAttribute('type', 'text');
                         text_input.value = value;
                         // When the text input is clicked
+                    } else {
+                        let text_input = document.createElement('input');
+                        inputFieldReference = text_input;
+                        text_input.setAttribute('type', 'text');
+                        text_input.disabled = 'true';
+                        text_input.style.backgroundColor = '#ee0e0e !important';
+                        text_input.value = "Unhandled: " + type_string;
                     }
                     table_cell.appendChild(inputFieldReference);
                     function styleLabel(label) {
@@ -705,7 +834,7 @@
                                 update_register_value(register_name, new_value, avatar.node_id);
                                 // Run update_tables every second, do that only for the next 4 seconds
                                 let interval1 = setInterval(() => update_tables(true), 1000);
-                                setTimeOut(() => clearInterval(interval1), 4000);
+                                setTimeout(() => clearInterval(interval1), 4000);
                             } else {
                                 addLocalMessage("No value entered");
                             }
@@ -916,7 +1045,7 @@
             }
             // Run update_tables every second, do that only for the next 4 seconds
             let interval1 = setInterval(() => update_tables(true), 1000);
-            setTimeOut(() => clearInterval(interval1), 4000);
+            setTimeout(() => clearInterval(interval1), 4000);
         });
         const btnSelectedUnsetValues = document.getElementById('btnSelectedUnsetValues');
         btnSelectedUnsetValues.addEventListener('click', function () {
@@ -932,7 +1061,7 @@
             }
             // Run update_tables every second, do that only for the next 4 seconds
             let interval1 = setInterval(() => update_tables(true), 1000);
-            setTimeOut(() => clearInterval(interval1), 4000);
+            setTimeout(() => clearInterval(interval1), 4000);
         });
         const btnUnselectAll = document.getElementById('btnUnselectAll');
         btnUnselectAll.addEventListener('click', function () {

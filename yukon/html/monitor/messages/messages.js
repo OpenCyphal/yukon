@@ -96,6 +96,9 @@
                         li.innerHTML = el.message;
                         // Set an attribute on the list element with current timestamp
                         autosize(li);
+                        if (el.internal) {
+                            li.style.backgroundColor = "lightgreen !important";
+                        }
                         li.setAttribute("timestamp", el.timestamp);
                         li.setAttribute("spellcheck", "false");
                         var date1 = new Date(el.timestamp);

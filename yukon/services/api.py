@@ -20,7 +20,7 @@ from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.interface import Interface
 from yukon.domain.update_register_request import UpdateRegisterRequest
 from yukon.domain.avatar import Avatar
-from yukon.services.value_utils import unexplode_value
+from yukon.services.value_utils import unexplode_value, explode_value
 from yukon.domain.god_state import GodState
 from yukon.services.get_electron_path import get_electron_path
 
@@ -51,12 +51,19 @@ def save_text_into_file(file_contents: str) -> None:
     else:
         logger.warning("No file selected")
 
-def is_network_configuration(deserialized_conf):
+
+def is_network_configuration(deserialized_conf: typing.Any) -> bool:
     first_key = list(deserialized_conf.keys())[0]
     first_value = deserialized_conf[first_key]
-    return isinstance(first_key, int) and isinstance(first_value, dict)
+    try:
+        first_key = int(first_key)
+    except ValueError:
+        return False
+    else:
+        return True
 
-def is_configuration_exploded(deserialized_conf):
+
+def is_configuration_simplified(deserialized_conf: typing.Any) -> bool:
     """
     This should determine whether datatypes are shipped with the values.
 
@@ -74,12 +81,24 @@ def is_configuration_exploded(deserialized_conf):
     else:
         # This configuration file only contains keys and values for one node_id
         if isinstance(first_value, dict):
-            return False
-        else:
             return True
+        else:
+            return False
 
-def unexplode_configuration(avatars_by_node_id, deserialized_conf):
-    if is_configuration_exploded(deserialized_conf):
+
+def unexplode_a_register(state: GodState, node_id: int, register_name: str, register_value: str) -> str:
+    """This desimplifies and adds back the datatypes that went missing in the simplification process."""
+    assert isinstance(node_id, int)
+    assert isinstance(register_value, str)
+    avatar = state.avatar.avatars_by_node_id[node_id]
+    prototype = unexplode_value(avatar.register_exploded_values[register_name])
+    value = unexplode_value(register_value, prototype)
+    # This is to get it back into the primitive shape and then serialize as JSON.
+    return json.dumps(explode_value(value))
+
+
+def unexplode_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deserialized_conf: typing.Any) -> str:
+    if is_configuration_simplified(deserialized_conf):
         if is_network_configuration(deserialized_conf):
             # This is the so-called network configuration file with multiple node_ids.
             for node_id, avatar in avatars_by_node_id.items():
@@ -87,8 +106,12 @@ def unexplode_configuration(avatars_by_node_id, deserialized_conf):
                     exploded_value = json.loads(json.dumps(exploded_value))
                     prototype = unexplode_value(avatar.register_exploded_values[register_name])
                     deserialized_conf[node_id][register_name] = unexplode_value(exploded_value, prototype)
+            return json.dumps(deserialized_conf)
         else:
-
+            # In the future the API should end a request to the client to ask the user to select a node_id.
+            return "{}"
+    else:
+        return json.dumps(deserialized_conf)
 
 
 def import_candump_file_contents() -> str:
@@ -100,7 +123,7 @@ def import_candump_file_contents() -> str:
     root.deiconify()
     root.lift()
     root.focus_force()
-    file_path = filedialog.askopenfilename(filetypes=[("Yaml files", ".yml")])
+    file_path = filedialog.askopenfilename(filetypes=[("Yaml files", ".yml .yaml")])
     root.lift()
     root.focus_force()
     root.withdraw()
@@ -156,11 +179,24 @@ class Api:
     def import_node_configuration(self) -> str:
         return import_candump_file_contents()
 
+    def is_configuration_simplified(self, deserialized_configuration: typing.Any) -> str:
+        return json.dumps(is_configuration_simplified(deserialized_configuration))
+
+    def is_network_configuration(self, deserialized_configuration: typing.Any) -> str:
+        return json.dumps(is_network_configuration(deserialized_configuration))
+
     def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
-        self.state.queues.apply_configuration.put(ApplyConfigurationRequest(node_id, configuration))
+        self.state.queues.apply_configuration.put(
+            ApplyConfigurationRequest(node_id, configuration, is_network_configuration(configuration))
+        )
 
     def apply_all_of_configuration(self, configuration: str) -> None:
-        self.state.queues.apply_configuration.put(ApplyConfigurationRequest(None, configuration))
+        self.state.queues.apply_configuration.put(
+            ApplyConfigurationRequest(None, configuration, is_network_configuration(configuration))
+        )
+
+    def unsimplify_configuration(self, configuration: str) -> None:
+        return unexplode_configuration(self.state.avatar.avatars_by_node_id, configuration)
 
     def open_file_dialog(self) -> None:
         import tkinter as tk
@@ -206,7 +242,9 @@ class Api:
         self.state.avatar.hide_yakut_avatar = True
 
     def get_messages(self, since_index: int = 0) -> str:
-        my_list = [x.asdict() for x in list(self.state.queues.messages.queue) if x.index_nr >= since_index]
+        my_list = [
+            x.asdict() for x in list(self.state.queues.messages.queue) if not since_index or x.index_nr >= since_index
+        ]
         messages_serialized = json.dumps(my_list)
         return messages_serialized
 

@@ -95,6 +95,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
         assert isinstance(obj, uavcan.register.Access_1.Response)
         _ = ts
+        if isinstance(obj.value, uavcan.primitive.Empty_1):
+            return
         register_name = self.access_requests_names_by_transfer_id[transfer_id]
         if register_name == "uavcan.node.unique_id":
             unstructured_value = obj.value.unstructured
@@ -223,14 +225,31 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
     def to_builtin(self) -> Any:
         health_meanings = {0: "Nominal", 1: "Advisory", 2: "Caution", 3: "Warning", 4: "No value"}
-        software_major_version = getattr(getattr(getattr(self, "_info"), "software_version"), "major", 0)
-        software_minor_version = getattr(getattr(getattr(self, "_info"), "software_version"), "minor", 0)
-        software_vcs_revision_id = getattr(getattr(self, "_info"), "software_vcs_revision_id")
-        hardware_major_version = getattr(getattr(getattr(self, "_info"), "hardware_version"), "major", 0)
-        hardware_minor_version = getattr(getattr(getattr(self, "_info"), "hardware_version"), "minor", 0)
-        uptime = getattr(getattr(self, "_heartbeat"), "uptime")
-        health_value = getattr(getattr(self._heartbeat, "health"), "value", 4) if self._heartbeat else 4
-        health_text = health_meanings.get(health_value, "Unknown")
+        info = getattr(self, "_info")
+        if info:
+            software_version = getattr(info, "software_version")
+            hardware_version = getattr(info, "hardware_version")
+            software_vcs_revision_id = getattr(info, "software_vcs_revision_id")
+            software_major_version = getattr(software_version, "major", 0)
+            software_minor_version = getattr(getattr(info, "software_version"), "minor", 0)
+            hardware_major_version = getattr(hardware_version, "major", 0)
+            hardware_minor_version = getattr(hardware_version, "minor", 0)
+        else:
+            software_vcs_revision_id = None
+            software_major_version = None
+            software_minor_version = None
+            hardware_major_version = None
+            hardware_minor_version = None
+        heartbeat = getattr(self, "_heartbeat")
+        if heartbeat:
+            uptime = getattr(heartbeat, "uptime")
+            health_value = getattr(getattr(self._heartbeat, "health"), "value", 4) if self._heartbeat else 4
+            health_text = health_meanings.get(health_value, "Unknown")
+        else:
+            uptime = None
+            health_value = None
+            health_text = "No heartbeat"
+
         json_object: Any = {
             "node_id": self._node_id,
             "hash": self.__hash__(),
