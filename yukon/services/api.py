@@ -120,7 +120,7 @@ def unsimplify_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deser
         return json.dumps(deserialized_conf)
 
 
-def simplify_configuration(deserialized_conf) -> str:
+def simplify_configuration(deserialized_conf: typing.Any) -> str:
     if not is_configuration_simplified(deserialized_conf):
         if is_network_configuration(deserialized_conf):
             # This is the so-called network configuration file with multiple node_ids.

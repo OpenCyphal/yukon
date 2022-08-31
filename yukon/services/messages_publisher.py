@@ -1,6 +1,8 @@
 import logging
 import time
 
+import typing
+
 from yukon.domain.message import Message
 from yukon.domain.god_state import GodState
 
@@ -16,6 +18,6 @@ class MessagesPublisher(logging.Handler):
         self._state.queues.messages.put(new_message)
 
 
-def add_local_message(state, text, *args):
+def add_local_message(state: GodState, text: str, *args: typing.List[typing.Any]) -> None:
     state.queues.message_queue_counter += 1
     state.queues.messages.put(Message(text, time.monotonic(), state.queues.message_queue_counter, True, arguments=args))
