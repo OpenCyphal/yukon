@@ -90,12 +90,13 @@ def cyphal_worker(state: GodState) -> None:
                     if config.node_id and not config.is_network_config:
                         data = json.loads(config.configuration)
                         if is_configuration_simplified(data):
+                            at_least_one_register_was_modified = False
                             for register_name, register_value in data.items():
                                 if register_name[-5:] == ".type":
                                     add_local_message(
                                         state,
-                                        "Register %s is a type register on node %d" % (register_update.register_name, register_update.node_id),
-                                        register_update.register_name, register_update.node_id
+                                        "Register %s is a type register on node %d" % (register_name, config.node_id),
+                                        register_name, config.node_id
                                     )
                                     continue
                                 prototype_string = state.avatar.avatars_by_node_id[int(config.node_id)].register_exploded_values.get(register_name, None)
@@ -106,10 +107,17 @@ def cyphal_worker(state: GodState) -> None:
                                         register_name, config.node_id
                                     )
                                     continue
+                                at_least_one_register_was_modified = True
                                 prototype = unexplode_value(prototype_string)
                                 unexploded_value = unexplode_value(register_value, prototype)
                                 state.queues.update_registers.put(
                                     UpdateRegisterRequest(register_name, unexploded_value, config.node_id)
+                                )
+                            if not at_least_one_register_was_modified:
+                                add_local_message(
+                                    state,
+                                    "No registers were modified on node %d" % config.node_id,
+                                    config.node_id
                                 )
                         else:
                             for potential_node_id, v in data.items():

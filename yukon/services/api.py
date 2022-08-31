@@ -97,7 +97,7 @@ def unexplode_a_register(state: GodState, node_id: int, register_name: str, regi
     return json.dumps(explode_value(value))
 
 
-def unexplode_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deserialized_conf: typing.Any) -> str:
+def unsimplify_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deserialized_conf: typing.Any) -> str:
     if is_configuration_simplified(deserialized_conf):
         if is_network_configuration(deserialized_conf):
             # This is the so-called network configuration file with multiple node_ids.
@@ -110,6 +110,24 @@ def unexplode_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deseri
         else:
             # In the future the API should end a request to the client to ask the user to select a node_id.
             return "{}"
+    else:
+        return json.dumps(deserialized_conf)
+
+
+def simplify_configuration(deserialized_conf):
+    if is_configuration_simplified(deserialized_conf):
+        if is_network_configuration(deserialized_conf):
+            # This is the so-called network configuration file with multiple node_ids.
+            for node_id, values in deserialized_conf.items():
+                for register_name, typed_value_dict in deserialized_conf[node_id].items():
+                    simplified_value = explode_value(unexplode_value(typed_value_dict), simplify=True)
+                    deserialized_conf[node_id][register_name] = simplified_value
+            return json.dumps(deserialized_conf)
+        else:
+            for register_name, typed_value_dict in deserialized_conf.items():
+                simplified_value = explode_value(unexplode_value(typed_value_dict), simplify=True)
+                deserialized_conf[register_name] = simplified_value
+            return json.dumps(deserialized_conf)
     else:
         return json.dumps(deserialized_conf)
 
@@ -193,8 +211,11 @@ class Api:
         request = ApplyConfigurationRequest(None, configuration, is_network_configuration(json.loads(configuration)))
         self.state.queues.apply_configuration.put(request)
 
-    def unsimplify_configuration(self, configuration: str) -> None:
-        return unexplode_configuration(self.state.avatar.avatars_by_node_id, configuration)
+    def simplify_configuration(self, configuration: str) -> str:
+        return json.dumps(simplify_configuration(json.loads(configuration)))
+
+    def unsimplify_configuration(self, configuration: str) -> str:
+        return unsimplify_configuration(self.state.avatar.avatars_by_node_id, configuration)
 
     def open_file_dialog(self) -> None:
         import tkinter as tk

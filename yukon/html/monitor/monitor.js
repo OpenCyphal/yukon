@@ -6,6 +6,7 @@
         // Make a callback on the page load event
         console.log("monitor ready");
         const iRegistersFilter = document.getElementById('iRegistersFilter');
+        const cbSimplifyRegisters = document.getElementById('cbSimplifyRegisters');
         let current_avatars = [];
         let last_hashes = { set: new Set() };
         let last_table_hashes = { set: new Set() }; // The same avatar hashes but for tables
@@ -341,11 +342,19 @@
             }
             return final_dict;
         }
-        function export_all_selected_registers(only_of_avatar_of_node_id = null) {
+        function export_all_selected_registers(only_of_avatar_of_node_id = null, get_everything) {
             // A pair is the register_name and the node_id
-            var yaml_string = jsyaml.dump(get_all_selected_pairs({ "only_of_avatar_of_node_id": only_of_avatar_of_node_id, "get_everything": false, "only_of_register_name": null }));
-
-            return zubax_api.save_text(yaml_string);
+            let pairs_object = get_all_selected_pairs({ "only_of_avatar_of_node_id": only_of_avatar_of_node_id, "get_everything": get_everything, "only_of_register_name": null });
+            let json_string = JSON.stringify(pairs_object);
+            var yaml_string = jsyaml.dump(pairs_object);
+            if(cbSimplifyRegisters.checked) {
+                zubax_api.simplify_registers(json_string).then(function(simplified_json_string) {
+                    const simplified_yaml_string = jsyaml.dump(JSON.parse(simplified_json_string));
+                    return zubax_api.save_text(simplified_yaml_string);
+                });
+            } else {
+                return zubax_api.save_text(yaml_string);
+            }
         }
         function refresh_graph_layout() {
             var layout = my_graph.layout(
@@ -608,7 +617,7 @@
                 var button = document.createElement('button');
                 button.innerHTML = 'Save all of configuration';
                 button.onclick = function () {
-                    zubax_api.save_all_of_register_configuration(serialize_configuration_of_all_avatars());
+                    export_all_selected_registers(null, true)
                 }
                 empty_table_header_row_cell.appendChild(button);
                 table_header_row.appendChild(empty_table_header_row_cell);
