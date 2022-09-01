@@ -29,6 +29,39 @@
             "not_selected": "rgba(255, 255, 255, 0.5)",
             "no_value": "rgba(0, 0, 0, 0.5)"
         }
+        const copyIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+
+        const cutIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>`;
+        
+        const pasteIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px; position: relative; top: -1px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>`;
+        
+        const downloadIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px; position: relative; top: -1px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+        
+        const deleteIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" style="margin-right: 7px" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+        
+        const menuItems = [
+            {
+              content: `${downloadIcon}Set value`,
+              events: {
+                click: (e) => console.log(e, "Setting a value")
+                // mouseover: () => console.log("Copy Button Mouseover")
+                // You can use any event listener from here
+              }
+            },
+            { content: `${pasteIcon}Set value from config` },
+            { content: `${copyIcon}Copy datatype`, divider: "top"}, // top, bottom, top-bottom},
+            { content: `${copyIcon}Copy values` },
+            {
+              content: `${downloadIcon}Reread registers`,
+            }
+          ];
+          
+        const light = new ContextMenu({
+            target: "table-cell",
+            mode: "dark", // default: "dark"
+            menuItems
+        });
+        light.init();
         function createMonitorPopup(text) {
             var cy = document.getElementById('cy');
             // Remove all label elements in the div cy
@@ -104,6 +137,10 @@
             zubax_api.get_messages(lastInternalMessageIndex + 1).then(
                 function (received_messages) {
                     let deserialized_messages = JSON.parse(received_messages);
+                    // if deserialized_messages is empty then return
+                    if (deserialized_messages.length == 0) {
+                        return;
+                    }
                     for(message in deserialized_messages) {
                         if(message.internal) {
                             if(message.message.includes("is not mutable")) {
@@ -801,7 +838,8 @@
                     // ALL THE REGISTER VALUES HERE
                     const table_cell = document.createElement('td');
                     table_register_row.appendChild(table_cell);
-                    table_cell.className = 'no-padding';
+                    // Add a table_cell class to table_cell
+                    table_cell.classList.add('no-padding');
                     // Set an attribute on td to store the register name
                     table_cell.setAttribute('id', "register_" + register_name);
                     table_cell.setAttribute("register_name", register_name);
@@ -926,10 +964,15 @@
                     inputFieldReference.style.lineHeight = '140%';
                     inputFieldReference.style.zIndex = '0';
                     inputFieldReference.setAttribute("spellcheck", "false");
+                    inputFieldReference.classList.add('table-cell');
                     inputFieldReference.onmouseover = make_select_cell(avatar, register_name, is_mouse_over = true);
                     // inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
                     var lastClick = null;
                     inputFieldReference.addEventListener('mousedown', function (event) {
+                        // Check if the mouse button was left click
+                        if (event.button !== 0) {
+                            return;
+                        }
                         if (lastClick && new Date() - lastClick < 500 && table_cell.getAttribute("mutable") == "true") {
                             // Make a dialog box to enter the new value
                             var new_value = prompt("Enter new value for " + register_name + ":", value);
