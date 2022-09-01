@@ -1,4 +1,5 @@
-:not(.tab_label):not(.tab-slider):not(.c-tabs-nav *):not(#cy *):not(.selected_element):not(.no-value):not(.tab-slider) {
+/* Support for primitive dark mode */
+:not(.tab_label):not(.tab-slider):not(.c-tabs-nav *):not(#cy *):not(.selected_element):not(.no-value):not(.tab-slider):not(.contextMenu):not(.contextMenu-button):not(svg) {
     color: rgb(173, 186, 199) !important;
     border-color: rgb(173, 186, 199) !important;
     background-color: rgb(47, 57, 71) !important;

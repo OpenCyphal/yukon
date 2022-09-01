@@ -7,7 +7,7 @@
         console.log("monitor ready");
         const iRegistersFilter = document.getElementById('iRegistersFilter');
         const cbSimplifyRegisters = document.getElementById('cbSimplifyRegisters');
-        let current_avatars = [];
+        var current_avatars = [];
         let last_hashes = { set: new Set() };
         let last_table_hashes = { set: new Set() }; // The same avatar hashes but for tables
         let lastHash = "";
@@ -21,6 +21,8 @@
         let selected_rows = {}; // Key is register_name and value is true if selected
         let is_selection_mode_complicated = false;
         let lastInternalMessageIndex = -1;
+        let showAlotOfButtons = false;
+        let myContext = this;
         const colors = {
             "selected_register": 'rgba(0, 255, 0, 0.5)',
             "selected_column": 'rgba(0, 155, 255, 0.5)',
@@ -32,36 +34,127 @@
         const copyIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
 
         const cutIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>`;
-        
+
         const pasteIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px; position: relative; top: -1px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>`;
-        
+
         const downloadIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px; position: relative; top: -1px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-        
+
         const deleteIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" style="margin-right: 7px" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
-        
-        const menuItems = [
+
+        // For table cells
+        const table_cell_context_menu_items = [
             {
-              content: `${downloadIcon}Set value`,
-              events: {
-                click: (e) => console.log(e, "Setting a value")
-                // mouseover: () => console.log("Copy Button Mouseover")
-                // You can use any event listener from here
-              }
+                content: `${downloadIcon}Set value`,
+                events: {
+                    click: (e) => {
+
+                    }
+                },
             },
-            { content: `${pasteIcon}Set value from config` },
-            { content: `${copyIcon}Copy datatype`, divider: "top"}, // top, bottom, top-bottom},
-            { content: `${copyIcon}Copy values` },
             {
-              content: `${downloadIcon}Reread registers`,
+                content: `${pasteIcon}Set value from config`,
+                events: {
+                    click: (e) => {
+
+                    }
+                }
+            },
+            {
+                content: `${copyIcon}Copy datatype`, divider: "top",
+                events: {
+                    click: (e) => {
+
+                    }
+                }
+            }, 
+            {
+                content: `${copyIcon}Copy values`,
+                events: {
+                    click: (e) => {
+
+                    }
+                }
+            },
+            {
+                content: `${downloadIcon}Reread registers`,
+                events: {
+                    click: (e) => {
+
+                    }
+                }
             }
-          ];
-          
-        const light = new ContextMenu({
+        ];
+
+        const table_cell_context_menu = new ContextMenu({
             target: "table-cell",
-            mode: "dark", // default: "dark"
-            menuItems
+            menuItems: table_cell_context_menu_items,
+            mode: "dark",
+            context: this
         });
-        light.init();
+        table_cell_context_menu.init();
+
+        // For table cell headers
+        const table_header_context_menu_items = [
+            { content: `${pasteIcon}Select column` },
+            {
+                content: `${downloadIcon}Apply a config from a file`,
+                events: {
+                    click: (e) => {
+
+                    }
+                },
+                divider: "top"
+            },
+            {
+                content: `${copyIcon}Export column`,
+                events: {
+                    click: (e, elementOpenedOn, _this) => {
+                        const headerCell = elementOpenedOn;
+                        const node_id = headerCell.getAttribute("data-node_id");
+                        const avatar = Object.values(current_avatars).find((e) => e.node_id == parseInt(node_id));
+                        e.stopPropagation();
+                        addLocalMessage("Exporting registers of " + avatar.node_id);
+                        //const result = window.chooseFileSystemEntries({ type: "save-file" });
+                        // Export all but only for this avatar, dried up code
+                        export_all_selected_registers(avatar.node_id);
+                    }
+                }
+            },
+            {
+                content: `${copyIcon}Copy values`,
+                events: {
+                    click: (e) => {
+
+                    }
+                }
+            },
+            {
+                content: `${downloadIcon}Reread registers`,
+                events: {
+                    click: (e) => {
+                        const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": null });
+                        let pairs = [];
+                        // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
+                        for (const node_id of Object.keys(data)) {
+                            const value = data[node_id];
+                            for (const register_name of Object.keys(value)) {
+                                pairs.push([node_id, register_name]);
+                            }
+                        }
+                        zubax_api.reread_registers(pairs)
+                    }
+                }
+            }
+        ];
+
+        const table_header_context_menu = new ContextMenu({
+            target: "node_id_header",
+            mode: "dark",
+            menuItems: table_header_context_menu_items,
+            context: this
+        });
+        table_header_context_menu.init();
+
         function createMonitorPopup(text) {
             var cy = document.getElementById('cy');
             // Remove all label elements in the div cy
@@ -113,7 +206,7 @@
             div.appendChild(p);
             // Add the div to the table cell
             table_cell.appendChild(div);
-            setTimeout(function(){
+            setTimeout(function () {
                 div.parentNode.removeChild(div);
             }, delay);
         }
@@ -123,17 +216,16 @@
                     const table_cell = registers_table.rows[i].cells[j]
                     let node_id = table_cell.getAttribute("node_id")
                     let register_name = table_cell.getAttribute("register_name")
-                    if(register_name == null) { 
+                    if (register_name == null) {
                         continue; // Must be the header cell at the end
                     }
-                    if(parseInt(node_id) == parseInt(node_id2) && register_name == register_name2) {
+                    if (parseInt(node_id) == parseInt(node_id2) && register_name == register_name2) {
                         return table_cell
                     }
                 }
             }
         }
-        function fetchAndHandleInternalMessages()
-        {
+        function fetchAndHandleInternalMessages() {
             zubax_api.get_messages(lastInternalMessageIndex + 1).then(
                 function (received_messages) {
                     let deserialized_messages = JSON.parse(received_messages);
@@ -141,14 +233,14 @@
                     if (deserialized_messages.length == 0) {
                         return;
                     }
-                    for(message in deserialized_messages) {
-                        if(message.internal) {
-                            if(message.message.includes("is not mutable")) {
+                    for (message in deserialized_messages) {
+                        if (message.internal) {
+                            if (message.message.includes("is not mutable")) {
                                 addLocalMessage(message.message);
-                            } else if(message.message.includes("does not exist on node")) {
+                            } else if (message.message.includes("does not exist on node")) {
                                 addLocalMessage(message.message);
                                 markCellWithMessage(findTableCell(message.arguments[0], message.arguments[1]), "This node has no such register but you tried to set it.", 3000);
-                            } else if(message.message.includes("was supplied the wrong value.")) {
+                            } else if (message.message.includes("was supplied the wrong value.")) {
                                 markCellWithMessage();
                             } else {
                                 addLocalMessage("Internal message: " + message.message);
@@ -164,22 +256,19 @@
             let configuration_deserialized = JSON.parse(configuration);
             let potential_node_id;
             let number_input;
-            if(!set_node_id) {
+            if (!set_node_id) {
                 number_input = number_input_for_configuration[selected_config];
                 potential_node_id = parseInt(number_input.value);
             } else {
                 potential_node_id = set_node_id;
             }
-            zubax_api.is_network_configuration(configuration_deserialized).then(function(result)
-            {
+            zubax_api.is_network_configuration(configuration_deserialized).then(function (result) {
                 const is_network_configuration = JSON.parse(result);
-                zubax_api.is_configuration_simplified(configuration_deserialized).then(function(result)
-                {
+                zubax_api.is_configuration_simplified(configuration_deserialized).then(function (result) {
                     const is_configuration_simplified = JSON.parse(result);
-                    if(is_network_configuration && is_configuration_simplified) {
+                    if (is_network_configuration && is_configuration_simplified) {
                         // Start fetching datatypes
-                        zubax_api.unsimplify_configuration(configuration).then(function(result)
-                        {
+                        zubax_api.unsimplify_configuration(configuration).then(function (result) {
                             console.log("Unsimplified configuration: " + selected_config);
                             zubax_api.apply_all_of_configuration(result);
                             let interval1 = setInterval(() => update_tables(true), 1000);
@@ -187,7 +276,7 @@
                         });
                     } else if (!is_network_configuration && is_configuration_simplified) {
                         const isValidNodeid = potential_node_id > 0 || potential_node_id < 128;
-                        if(isValidNodeid) {
+                        if (isValidNodeid) {
                             console.log("Applying configuration: " + selected_config + " to node " + potential_node_id);
                             zubax_api.apply_configuration_to_node(potential_node_id, JSON.stringify(configuration_deserialized))
                             let interval1 = setInterval(() => update_tables(true), 1000);
@@ -230,12 +319,11 @@
                     select_configuration(file_name);
                 }
                 conf_deserialized = JSON.parse(configuration_string);
-                zubax_api.is_network_configuration(conf_deserialized).then(function(result)
-                {
+                zubax_api.is_network_configuration(conf_deserialized).then(function (result) {
                     const is_network_configuration = JSON.parse(result);
-                    zubax_api.is_configuration_simplified(conf_deserialized).then(function(result) {
+                    zubax_api.is_configuration_simplified(conf_deserialized).then(function (result) {
                         const is_simplified = JSON.parse(result);
-                        if(is_simplified) {
+                        if (is_simplified) {
                             label.innerHTML += " (simplified)";
                             simplified_configurations_flags[file_name] = true;
                         }
@@ -265,7 +353,7 @@
                             text.innerHTML = key;
                             label.appendChild(text);
                         }
-                        if(!is_network_configuration && is_simplified) {
+                        if (!is_network_configuration && is_simplified) {
                             var number_input = document.createElement("input");
                             number_input.type = "number";
                             number_input.placeholder = "Node id needed";
@@ -276,7 +364,7 @@
                         available_configurations_radios.appendChild(label);
                     });
                 });
-                
+
             }
         }
         function create_directed_graph() {
@@ -387,7 +475,7 @@
                         avatar_dto[register_name] = register_value;
                     }
                 }
-                if(Object.keys(avatar_dto).length > 0) {
+                if (Object.keys(avatar_dto).length > 0) {
                     final_dict[parseInt(avatar.node_id)] = avatar_dto;
                 }
             }
@@ -398,8 +486,8 @@
             let pairs_object = get_all_selected_pairs({ "only_of_avatar_of_node_id": only_of_avatar_of_node_id, "get_everything": get_everything, "only_of_register_name": null });
             let json_string = JSON.stringify(pairs_object);
             var yaml_string = jsyaml.dump(pairs_object);
-            if(cbSimplifyRegisters.checked) {
-                zubax_api.simplify_configuration(json_string).then(function(simplified_json_string) {
+            if (cbSimplifyRegisters.checked) {
+                zubax_api.simplify_configuration(json_string).then(function (simplified_json_string) {
                     intermediary_structure = JSON.parse(simplified_json_string);
                     const simplified_yaml_string = jsyaml.dump(intermediary_structure);
                     return zubax_api.save_text(simplified_yaml_string);
@@ -512,7 +600,7 @@
         }
         setInterval(updateTextOut, 1000);
         function select_configuration(i) {
-            selected_config = i;    
+            selected_config = i;
             addLocalMessage("Configuration " + i + " selected");
         }
         function updateRegistersTableColors() {
@@ -522,7 +610,7 @@
                 for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
                     const table_cell = registers_table.rows[i].cells[j]
                     let register_name = table_cell.getAttribute("id")
-                    if(register_name == null) { 
+                    if (register_name == null) {
                         continue; // Must be the header cell at the end
                     }
                     // Remove the string "register_" from the register_name
@@ -565,20 +653,24 @@
                 }
             }
         }
-        
+
         function make_select_column(node_id, is_mouse_over = false) {
             return function (event) {
                 if (is_mouse_over) {
                     if (!event.buttons == 1) {
                         return;
-                    } 
+                    }
+                }
+                // Check if the mouse button was not a left click
+                if (event.button !== 0) {
+                    return;
                 }
                 // I want to make sure that the user is not selecting text, that's not when we activate this.
                 if (window.getSelection().toString() !== "") {
                     return;
                 }
                 event.stopPropagation();
-                if(is_selection_mode_complicated) {
+                if (is_selection_mode_complicated) {
                     if (selected_columns[node_id]) {
                         selected_columns[node_id] = false;
                         addLocalMessage("Column " + node_id + " deselected");
@@ -595,7 +687,7 @@
                         if (current_avatar.node_id == node_id) {
                             for (var j = 0; j < current_avatars[i].registers.length; j++) {
                                 const register_name = current_avatars[i].registers[j];
-                                if(selected_registers[[node_id, register_name]]) {
+                                if (selected_registers[[node_id, register_name]]) {
                                     any_register_selected = true;
                                     break;
                                 }
@@ -630,7 +722,7 @@
 
                 }
                 updateRegistersTableColors();
-                
+
             }
         }
         function make_select_row(register_name, is_mouse_over = false) {
@@ -646,7 +738,7 @@
                 // if (window.getSelection().toString() !== "") {
                 //     return;
                 // }
-                if(is_selection_mode_complicated) {
+                if (is_selection_mode_complicated) {
                     if (!selected_rows[register_name]) {
                         selected_rows[register_name] = true;
                     } else {
@@ -662,7 +754,7 @@
                         for (var j = 0; j < current_avatars[i].registers.length; j++) {
                             const register_name2 = current_avatars[i].registers[j];
                             if (register_name2 == register_name) {
-                                if(selected_registers[[node_id, register_name]]) {
+                                if (selected_registers[[node_id, register_name]]) {
                                     any_register_selected = true;
                                     break;
                                 }
@@ -742,24 +834,25 @@
             registers_table.appendChild(registers_table_header);
             // Add the table headers
             var table_header_row = document.createElement('tr');
-            function make_empty_table_header_row_cell()
-            {
+            function make_empty_table_header_row_cell() {
                 var empty_table_header_row_cell = document.createElement('th');
-                // Add a button into the empty table header row cell
-                var button = document.createElement('button');
-                button.innerHTML = 'Apply sel. conf to all nodes';
-                button.onclick = function () {
-                    if (selected_config != null && available_configurations[selected_config] != null) {
-                        applyConfiguration(available_configurations[selected_config]);
+                if (showAlotOfButtons) {
+                    // Add a button into the empty table header row cell
+                    var button = document.createElement('button');
+                    button.innerHTML = 'Apply sel. conf to all nodes';
+                    button.onclick = function () {
+                        if (selected_config != null && available_configurations[selected_config] != null) {
+                            applyConfiguration(available_configurations[selected_config]);
+                        }
                     }
+                    empty_table_header_row_cell.appendChild(button);
+                    var button = document.createElement('button');
+                    button.innerHTML = 'Save all of configuration';
+                    button.onclick = function () {
+                        export_all_selected_registers(null, true)
+                    }
+                    empty_table_header_row_cell.appendChild(button);
                 }
-                empty_table_header_row_cell.appendChild(button);
-                var button = document.createElement('button');
-                button.innerHTML = 'Save all of configuration';
-                button.onclick = function () {
-                    export_all_selected_registers(null, true)
-                }
-                empty_table_header_row_cell.appendChild(button);
                 table_header_row.appendChild(empty_table_header_row_cell);
             }
             make_empty_table_header_row_cell();
@@ -767,37 +860,41 @@
                 let table_header_cell = document.createElement('th');
                 table_header_cell.innerHTML = avatar.node_id;
                 table_header_cell.title = avatar.name;
+                table_header_cell.classList.add("node_id_header");
+                table_header_cell.setAttribute("data-node_id", avatar.node_id);
                 table_header_row.appendChild(table_header_cell);
-                // Add a button to table_header_cell for downloading the table column
-                let btnExportConfig = document.createElement('button');
-                btnExportConfig.innerHTML = 'Export';
-                // Attach an event listener on the button click event
-                btnExportConfig.addEventListener('mousedown', function (event) {
-                    event.stopPropagation();
-                    addLocalMessage("Exporting registers of " + avatar.node_id);
-                    //const result = window.chooseFileSystemEntries({ type: "save-file" });
-                    // Export all but only for this avatar, dried up code
-                    export_all_selected_registers(avatar.node_id);
-                });
-                table_header_cell.appendChild(btnExportConfig);
-                let btnApplyImportedConfig = document.createElement('button');
-                btnApplyImportedConfig.innerHTML = 'Apply imported config';
-                btnApplyImportedConfig.addEventListener('mousedown', function (event) {
-                    event.stopPropagation();
-                    const current_config = available_configurations[selected_config];
-                    if (current_config) {
-                        applyConfiguration(current_config, parseInt(avatar.node_id));
-                    } else {
-                        console.log("No configuration selected");
-                    }
-                });
-                table_header_cell.appendChild(btnApplyImportedConfig);
-                let btnSelectColumn = document.createElement('button');
-                btnSelectColumn.innerHTML = 'Select column';
-                btnSelectColumn.addEventListener('mousedown', make_select_column(avatar.node_id));
+                if (showAlotOfButtons) {
+                    // Add a button to table_header_cell for downloading the table column
+                    let btnExportConfig = document.createElement('button');
+                    btnExportConfig.innerHTML = 'Export';
+                    // Attach an event listener on the button click event
+                    btnExportConfig.addEventListener('mousedown', function (event) {
+                        event.stopPropagation();
+                        addLocalMessage("Exporting registers of " + avatar.node_id);
+                        //const result = window.chooseFileSystemEntries({ type: "save-file" });
+                        // Export all but only for this avatar, dried up code
+                        export_all_selected_registers(avatar.node_id);
+                    });
+                    table_header_cell.appendChild(btnExportConfig);
+                    let btnApplyImportedConfig = document.createElement('button');
+                    btnApplyImportedConfig.innerHTML = 'Apply imported config';
+                    btnApplyImportedConfig.addEventListener('mousedown', function (event) {
+                        event.stopPropagation();
+                        const current_config = available_configurations[selected_config];
+                        if (current_config) {
+                            applyConfiguration(current_config, parseInt(avatar.node_id));
+                        } else {
+                            console.log("No configuration selected");
+                        }
+                    });
+                    table_header_cell.appendChild(btnApplyImportedConfig);
+                    let btnSelectColumn = document.createElement('button');
+                    btnSelectColumn.innerHTML = 'Select column';
+                    btnSelectColumn.addEventListener('mousedown', make_select_column(avatar.node_id));
+                    table_header_cell.appendChild(btnSelectColumn);
+                }
                 table_header_cell.onmousedown = make_select_column(avatar.node_id);
                 table_header_cell.onmouseover = make_select_column(avatar.node_id, true);
-                table_header_cell.appendChild(btnSelectColumn);
             });
             make_empty_table_header_row_cell()
             registers_table_header.appendChild(table_header_row);
@@ -824,11 +921,14 @@
                     table_header_cell.innerHTML = register_name;
                     table_header_cell.onmousedown = make_select_row(register_name);
                     table_header_cell.onmouseover = make_select_row(register_name, true);
-                    let btnSelectRow = document.createElement('button');
-                    btnSelectRow.innerHTML = 'Select row';
-                    // Attach an event listener on the button click event
-                    btnSelectRow.onmousedown = make_select_row(register_name);
-                    table_header_cell.appendChild(btnSelectRow);
+                    if (showAlotOfButtons) {
+                        let btnSelectRow = document.createElement('button');
+                        btnSelectRow.innerHTML = 'Select row';
+                        // Attach an event listener on the button click event
+                        btnSelectRow.onmousedown = make_select_row(register_name);
+                        table_header_cell.appendChild(btnSelectRow);
+                    }
+
                     table_register_row.appendChild(table_header_cell);
                 }
                 make_header_cell();
@@ -946,7 +1046,7 @@
                         label.style.right = '2px';
                         label.style.left = '2px';
                         label.style.zIndex = '1';
-                        table_cell.style.position = 'relative';``
+                        table_cell.style.position = 'relative'; ``
                         label.innerHTML = "";
                         if (isMutable) {
                             label.innerHTML += "M";
