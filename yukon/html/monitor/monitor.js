@@ -46,6 +46,9 @@
         const deleteIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" style="margin-right: 7px" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
         // When escape is double pressed within 400ms, run unselectAll
         let escape_timer = null;
+        var pressedKeys = {};
+        window.onkeyup = function(e) { pressedKeys[e.keyCode] = false; }
+        window.onkeydown = function(e) { pressedKeys[e.keyCode] = true; }
         document.addEventListener('keydown', function (e) {
             if (e.keyCode == 27) {
                 if (escape_timer) {
@@ -66,6 +69,7 @@
             selected_rows = {};
             updateRegistersTableColors();
             window.getSelection()?.removeAllRanges();
+            last_cell_selected = null;
         }
 
         const unselectAllMenuElement = {
@@ -894,28 +898,70 @@
             } else {
                 return [];
             }
+            let all_cells = [];
             let start_table_cell = null;
             let end_table_cell = null;
-            // For every avatar in the current_avatars
-            for (var i = 0; i < current_avatars.length; i++) {
-                const current_avatar = current_avatars[i];
-                // For every register in the avatar
-                for (var j = 0; j < current_avatars[i].registers.length; j++) {
-                    const register_name = current_avatars[i].registers[j];
-                    // If the register_name is the same as the start_cell and the node_id is the same as the start_cell
-                    if (register_name == start_cell.register_name && current_avatar.node_id == start_cell.node_id) {
-
+            if(row_based_selection) {
+                start_table_cell = document.getElementById("cell_" + start_cell.node_id + "_" + start_cell.register_name);
+                end_table_cell = document.getElementById("cell_" + end_cell.node_id + "_" + end_cell.register_name);
+                for (var i = 0; i < current_avatars.length; i++) {
+                    const current_avatar = current_avatars[i];
+                    // For every register in the avatar
+                    for (var j = 0; j < current_avatars[i].registers.length; j++) {
+                        const register_name = current_avatars[i].registers[j];
+                        if(!register_name || register_name !== start_cell.register_name) {
+                            continue;
+                        }
+                        // Get the cell corresponding to this register
+                        const table_cell = document.getElementById("cell_" + current_avatar.node_id + "_" + register_name);
+                        
+                        if (table_cell.offsetLeft > start_table_cell.offsetLeft && table_cell.offsetLeft < end_table_cell.offsetLeft || 
+                            table_cell.offsetLeft < start_table_cell.offsetLeft && table_cell.offsetLeft > end_table_cell.offsetLeft) {
+                            // Add it to the list
+                            all_cells.push({"node_id": current_avatar.node_id, "register_name": register_name});
+                        }
+                    }
+                }
+            } else {
+                start_table_cell = document.getElementById("cell_" + start_cell.node_id + "_" + start_cell.register_name);
+                end_table_cell = document.getElementById("cell_" + end_cell.node_id + "_" + end_cell.register_name);
+                for (var i = 0; i < current_avatars.length; i++) {
+                    const current_avatar = current_avatars[i];
+                    if(current_avatar.node_id !== start_cell.node_id) {
+                        continue;
+                    }
+                    // For every register in the avatar
+                    for (var j = 0; j < current_avatars[i].registers.length; j++) {
+                        const register_name = current_avatars[i].registers[j];
+                        if(!register_name) {
+                            continue;
+                        }
+                        // Get the cell corresponding to this register
+                        const table_cell = document.getElementById("cell_" + current_avatar.node_id + "_" + register_name);
+                        // If the table_cell is above the start_table_cell and below the end_table_cell
+                        if (table_cell.offsetTop > start_table_cell.offsetTop && table_cell.offsetTop < end_table_cell.offsetTop || 
+                            table_cell.offsetTop < start_table_cell.offsetTop && table_cell.offsetTop > end_table_cell.offsetTop) {
+                            // Add it to the list
+                            all_cells.push({"node_id": current_avatar.node_id, "register_name": register_name});
+                        }
+                        
                     }
                 }
             }
-            let all_cells = [];
-            let current_cell = start_cell;
-            // Determine if the start_cell is above or below the end_cell or if they are in the same row
+            return all_cells;
         }
         function make_select_cell(avatar, register_name, is_mouse_over = false) {
             let selectCell = function () {
                 if (!selected_registers[[avatar.node_id, register_name]]) {
                     selected_registers[[avatar.node_id, register_name]] = true;
+                    // If shift is being held down
+                    if(pressedKeys[16] && last_cell_selected) {
+                        const allCells = getAllCellsInBetween(last_cell_selected, {"node_id": avatar.node_id, "register_name": register_name});
+                        for (var i = 0; i < allCells.length; i++) {
+                            const cell = allCells[i];
+                            selected_registers[[cell.node_id, cell.register_name]] = true;
+                        }
+                    }
                     last_cell_selected = {"node_id": avatar.node_id, "register_name": register_name};
                 } else {
                     selected_registers[[avatar.node_id, register_name]] = false;
@@ -1065,7 +1111,7 @@
                     // Add a table_cell class to table_cell
                     table_cell.classList.add('no-padding');
                     // Set an attribute on td to store the register name
-                    table_cell.setAttribute('id', "register_" + register_name);
+                    table_cell.setAttribute('id', "cell_" + avatar.node_id + "_" + register_name);
                     table_cell.setAttribute("register_name", register_name);
                     table_cell.setAttribute("node_id", avatar.node_id);
                     table_cell.title = "Register name: " + register_name;
