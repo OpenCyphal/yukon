@@ -107,6 +107,8 @@ class ContextMenu {
           );
         }, 100); 
       } else {
+        // The original browser context menu is not shown
+        e.preventDefault();
         this.closeMenu(contextMenu);
       }
     });

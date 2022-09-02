@@ -92,15 +92,51 @@
             context: this
         });
         table_cell_context_menu.init();
-
         // For table cell headers
         const table_header_context_menu_items = [
             { content: `${pasteIcon}Select column` },
             {
                 content: `${downloadIcon}Apply a config from a file`,
                 events: {
-                    click: (e) => {
-
+                    click: (e, elementOpenedOn) => {
+                        zubax_api.import_node_configuration().then(
+                            function (result) {
+                                if (result == "") {
+                                    addLocalMessage("No configuration imported");
+                                } else {
+                                    const headerCell = elementOpenedOn;
+                                    const node_id = headerCell.getAttribute("data-node_id");
+                                    const avatar = Object.values(current_avatars).find((e) => e.node_id == parseInt(node_id));
+                                    addLocalMessage("Configuration imported");
+                                    result_deserialized = JSON.parse(result);
+                                    available_configurations[result_deserialized["__file_name"]] = result;
+                                    selected_config = result_deserialized["__file_name"];
+                                    update_available_configurations_list();
+                                    const current_config = available_configurations[selected_config];
+                                    if (current_config) {
+                                        const selections = getAllEntireColumnsThatAreSelected();
+                                        // For key and value in selections
+                                        for (const key in selections) {
+                                            const value = selections[key];
+                                            const node_id2 = key;
+                                            if(node_id2 == node_id) {
+                                                // The column that the context menu is activated on is used anyway
+                                                continue;
+                                            }
+                                            if(value) {
+                                                // If any other columns are fully selected then they are applied aswell.
+                                                console.log("Column " + key + " is fully selected");
+                                                applyConfiguration(current_config, parseInt(node_id2));
+                                            }
+                                        }
+                                        // The column that the context menu is activated on is used anyway
+                                        applyConfiguration(current_config, parseInt(avatar.node_id));
+                                    } else {
+                                        console.log("No configuration selected");
+                                    }
+                                }
+                            }
+                        )
                     }
                 },
                 divider: "top"
@@ -108,7 +144,7 @@
             {
                 content: `${copyIcon}Export column`,
                 events: {
-                    click: (e, elementOpenedOn, _this) => {
+                    click: (e, elementOpenedOn) => {
                         const headerCell = elementOpenedOn;
                         const node_id = headerCell.getAttribute("data-node_id");
                         const avatar = Object.values(current_avatars).find((e) => e.node_id == parseInt(node_id));
@@ -154,7 +190,23 @@
             context: this
         });
         table_header_context_menu.init();
-
+        function getAllEntireColumnsThatAreSelected() {
+            let all_registers_selected = {};
+            // For every register in the avatar with the node_id
+            for (var i = 0; i < current_avatars.length; i++) {
+                const current_avatar = current_avatars[i]
+                const node_id = current_avatar.node_id;
+                all_registers_selected[current_avatar.node_id] = true;
+                for (var j = 0; j < current_avatars[i].registers.length; j++) {
+                    const register_name = current_avatars[i].registers[j];
+                    if (!selected_registers[[node_id, register_name]]) {
+                        all_registers_selected[current_avatar.node_id] = false;
+                        break;
+                    }
+                }
+            }
+            return all_registers_selected;
+        }
         function createMonitorPopup(text) {
             var cy = document.getElementById('cy');
             // Remove all label elements in the div cy
@@ -307,6 +359,10 @@
                 radio.name = "configuration";
                 radio.value = file_name;
                 radio.id = file_name;
+                // if the file_name is the selected_config, then set the radio button to checked
+                if (file_name == selected_config) {
+                    radio.checked = true;
+                }
                 radio.onmousedown = function () {
                     select_configuration(file_name);
                 }
