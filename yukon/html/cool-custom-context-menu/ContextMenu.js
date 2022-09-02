@@ -106,6 +106,8 @@ class ContextMenu {
             --left: ${positionX}px;`
           );
         }, 100); 
+      } else {
+        this.closeMenu(contextMenu);
       }
     });
   }
