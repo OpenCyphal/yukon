@@ -7,6 +7,8 @@
         console.log("monitor ready");
         const iRegistersFilter = document.getElementById('iRegistersFilter');
         const cbSimplifyRegisters = document.getElementById('cbSimplifyRegisters');
+        const divAllRegistersButtons = document.getElementById('divAllRegistersButtons');
+        divAllRegistersButtons.style.display = 'none';
         var current_avatars = [];
         let last_hashes = { set: new Set() };
         let last_table_hashes = { set: new Set() }; // The same avatar hashes but for tables
@@ -16,12 +18,14 @@
         let simplified_configurations_flags = {}; // The key is the file_name and true is is simplified
         let number_input_for_configuration = {}; // The key is the file_name and the value is the input element
         let selected_config = null;
-        let selected_registers = {}; // Key is array of nodeid and register name, value is true if selected
-        let selected_columns = {}; // Key is the node_id and value is true if selected
-        let selected_rows = {}; // Key is register_name and value is true if selected
+        var selected_registers = {}; // Key is array of nodeid and register name, value is true if selected
+        var selected_columns = {}; // Key is the node_id and value is true if selected
+        var selected_rows = {}; // Key is register_name and value is true if selected
+        var last_cell_selected = null;
         let is_selection_mode_complicated = false;
         let lastInternalMessageIndex = -1;
         let showAlotOfButtons = false;
+        let showDoubleRowHeadersFromCount = 6;
         let myContext = this;
         const colors = {
             "selected_register": 'rgba(0, 255, 0, 0.5)',
@@ -40,7 +44,38 @@
         const downloadIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px; position: relative; top: -1px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
 
         const deleteIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" style="margin-right: 7px" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+        // When escape is double pressed within 400ms, run unselectAll
+        let escape_timer = null;
+        document.addEventListener('keydown', function (e) {
+            if (e.keyCode == 27) {
+                if (escape_timer) {
+                    clearTimeout(escape_timer);
+                    escape_timer = null;
+                    unselectAll();
+                } else {
+                    escape_timer = setTimeout(function () {
+                        escape_timer = null;
+                    }, 400);
+                }
+            }
+        });
+        function unselectAll() {
+            addLocalMessage("Unselecting all registers");
+            selected_registers = {};
+            selected_columns = {};
+            selected_rows = {};
+            updateRegistersTableColors();
+            window.getSelection()?.removeAllRanges();
+        }
 
+        const unselectAllMenuElement = {
+            content: "Unselect all (ESC 2x)",
+            events: {
+                click: function () {
+                    unselectAll();
+                }
+            }
+        }
         // For table cells
         const table_cell_context_menu_items = [
             {
@@ -82,7 +117,8 @@
 
                     }
                 }
-            }
+            },
+            unselectAllMenuElement
         ];
 
         const table_cell_context_menu = new ContextMenu({
@@ -180,7 +216,8 @@
                         zubax_api.reread_registers(pairs)
                     }
                 }
-            }
+            },
+            unselectAllMenuElement
         ];
 
         const table_header_context_menu = new ContextMenu({
@@ -847,10 +884,39 @@
                 event.stopPropagation();
             }
         }
+        function getAllCellsInBetween(start_cell, end_cell) {
+            let row_based_selection = false;
+            let column_based_selection = false;
+            if(start_cell.node_id == end_cell.node_id) {
+                column_based_selection = true;
+            } else if (start_cell.register_name == end_cell.register_name) {
+                row_based_selection = true;
+            } else {
+                return [];
+            }
+            let start_table_cell = null;
+            let end_table_cell = null;
+            // For every avatar in the current_avatars
+            for (var i = 0; i < current_avatars.length; i++) {
+                const current_avatar = current_avatars[i];
+                // For every register in the avatar
+                for (var j = 0; j < current_avatars[i].registers.length; j++) {
+                    const register_name = current_avatars[i].registers[j];
+                    // If the register_name is the same as the start_cell and the node_id is the same as the start_cell
+                    if (register_name == start_cell.register_name && current_avatar.node_id == start_cell.node_id) {
+
+                    }
+                }
+            }
+            let all_cells = [];
+            let current_cell = start_cell;
+            // Determine if the start_cell is above or below the end_cell or if they are in the same row
+        }
         function make_select_cell(avatar, register_name, is_mouse_over = false) {
             let selectCell = function () {
                 if (!selected_registers[[avatar.node_id, register_name]]) {
                     selected_registers[[avatar.node_id, register_name]] = true;
+                    last_cell_selected = {"node_id": avatar.node_id, "register_name": register_name};
                 } else {
                     selected_registers[[avatar.node_id, register_name]] = false;
                 }
@@ -952,7 +1018,9 @@
                 table_header_cell.onmousedown = make_select_column(avatar.node_id);
                 table_header_cell.onmouseover = make_select_column(avatar.node_id, true);
             });
-            make_empty_table_header_row_cell()
+            if(current_avatars.length >= showDoubleRowHeadersFromCount) {
+                make_empty_table_header_row_cell()
+            }
             registers_table_header.appendChild(table_header_row);
             // Combine all register names from avatar.registers into an array
             var register_names = [];
@@ -1151,7 +1219,9 @@
                     });
                     // Create a text input element in the table cell
                 });
-                make_header_cell();
+                if(current_avatars.length >= showDoubleRowHeadersFromCount) {
+                    make_header_cell();
+                }
             });
             updateRegistersTableColors();
         }
@@ -1371,11 +1441,7 @@
         });
         const btnUnselectAll = document.getElementById('btnUnselectAll');
         btnUnselectAll.addEventListener('click', function () {
-            addLocalMessage("Unselecting all registers");
-            selected_registers = {};
-            selected_columns = {};
-            selected_rows = {};
-            updateRegistersTableColors();
+            
         });
         const btnExportAllSelectedRegisters = document.getElementById('btnExportAllSelectedRegisters');
         btnExportAllSelectedRegisters.addEventListener('click', function (event) {

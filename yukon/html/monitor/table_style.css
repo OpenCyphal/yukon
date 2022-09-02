@@ -43,6 +43,7 @@ td {
   border: 1px solid black;
   padding: 8px;
   word-wrap: break-word;
+  font-family: monospace;
 }
 
 td.no-padding {

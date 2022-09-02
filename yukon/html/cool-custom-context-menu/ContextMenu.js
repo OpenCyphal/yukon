@@ -79,6 +79,12 @@ class ContextMenu {
     this.renderedMenu = contextMenu;
     document.addEventListener("click", () => {console.log("Clicked"); this.closeMenu(contextMenu)});
     window.addEventListener("blur", () => this.closeMenu(contextMenu));
+    // When escape is pressed, close the menu
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        this.closeMenu(contextMenu);
+      }
+    });
     document.addEventListener("contextmenu", (e) => {
       if(e.target.classList.contains(this.target)) {
         e.preventDefault();
