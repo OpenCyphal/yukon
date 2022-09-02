@@ -26,6 +26,7 @@
         let lastInternalMessageIndex = -1;
         let showAlotOfButtons = false;
         let showDoubleRowHeadersFromCount = 6;
+        let shouldDoubleClickPromptToSetValue = false;
         let myContext = this;
         const colors = {
             "selected_register": 'rgba(0, 255, 0, 0.5)',
@@ -47,8 +48,9 @@
         // When escape is double pressed within 400ms, run unselectAll
         let escape_timer = null;
         var pressedKeys = {};
-        window.onkeyup = function(e) { pressedKeys[e.keyCode] = false; }
-        window.onkeydown = function(e) { pressedKeys[e.keyCode] = true;
+        window.onkeyup = function (e) { pressedKeys[e.keyCode] = false; }
+        window.onkeydown = function (e) {
+            pressedKeys[e.keyCode] = true;
             // If ctrl a was pressed, select all
             if (pressedKeys[17] && pressedKeys[65]) {
                 selectAll();
@@ -72,10 +74,10 @@
             let allSelected = true;
             for (let avatar of current_avatars) {
                 for (let register_name of avatar.registers) {
-                    if(!register_name){
+                    if (!register_name) {
                         continue;
                     }
-                    if(selected_registers[[avatar.node_id, register_name]]) {
+                    if (selected_registers[[avatar.node_id, register_name]]) {
                         continue;
                     } else {
                         allSelected = false;
@@ -97,13 +99,13 @@
         function selectAll() {
             // Iterate through every avatar in current_avatars and register_name and add them to the selected_registers
             addLocalMessage("Selecting all registers");
-            if(isAllSelected()) {
+            if (isAllSelected()) {
                 unselectAll();
                 return;
             }
             for (let avatar of current_avatars) {
                 for (let register_name of avatar.registers) {
-                    if(!register_name){
+                    if (!register_name) {
                         continue;
                     }
                     selected_registers[[avatar.node_id, register_name]] = true;
@@ -145,7 +147,7 @@
 
                     }
                 }
-            }, 
+            },
             {
                 content: `${copyIcon}Copy values`,
                 events: {
@@ -199,11 +201,11 @@
                                         for (const key in selections) {
                                             const value = selections[key];
                                             const node_id2 = key;
-                                            if(node_id2 == node_id) {
+                                            if (node_id2 == node_id) {
                                                 // The column that the context menu is activated on is used anyway
                                                 continue;
                                             }
-                                            if(value) {
+                                            if (value) {
                                                 // If any other columns are fully selected then they are applied aswell.
                                                 console.log("Column " + key + " is fully selected");
                                                 applyConfiguration(current_config, parseInt(node_id2));
@@ -931,7 +933,7 @@
         function getAllCellsInBetween(start_cell, end_cell) {
             let row_based_selection = false;
             let column_based_selection = false;
-            if(start_cell.node_id == end_cell.node_id) {
+            if (start_cell.node_id == end_cell.node_id) {
                 column_based_selection = true;
             } else if (start_cell.register_name == end_cell.register_name) {
                 row_based_selection = true;
@@ -941,7 +943,7 @@
             let all_cells = [];
             let start_table_cell = null;
             let end_table_cell = null;
-            if(row_based_selection) {
+            if (row_based_selection) {
                 start_table_cell = document.getElementById("cell_" + start_cell.node_id + "_" + start_cell.register_name);
                 end_table_cell = document.getElementById("cell_" + end_cell.node_id + "_" + end_cell.register_name);
                 for (var i = 0; i < current_avatars.length; i++) {
@@ -949,16 +951,16 @@
                     // For every register in the avatar
                     for (var j = 0; j < current_avatars[i].registers.length; j++) {
                         const register_name = current_avatars[i].registers[j];
-                        if(!register_name || register_name !== start_cell.register_name) {
+                        if (!register_name || register_name !== start_cell.register_name) {
                             continue;
                         }
                         // Get the cell corresponding to this register
                         const table_cell = document.getElementById("cell_" + current_avatar.node_id + "_" + register_name);
-                        
-                        if (table_cell.offsetLeft > start_table_cell.offsetLeft && table_cell.offsetLeft < end_table_cell.offsetLeft || 
+
+                        if (table_cell.offsetLeft > start_table_cell.offsetLeft && table_cell.offsetLeft < end_table_cell.offsetLeft ||
                             table_cell.offsetLeft < start_table_cell.offsetLeft && table_cell.offsetLeft > end_table_cell.offsetLeft) {
                             // Add it to the list
-                            all_cells.push({"node_id": current_avatar.node_id, "register_name": register_name});
+                            all_cells.push({ "node_id": current_avatar.node_id, "register_name": register_name });
                         }
                     }
                 }
@@ -967,24 +969,24 @@
                 end_table_cell = document.getElementById("cell_" + end_cell.node_id + "_" + end_cell.register_name);
                 for (var i = 0; i < current_avatars.length; i++) {
                     const current_avatar = current_avatars[i];
-                    if(current_avatar.node_id !== start_cell.node_id) {
+                    if (current_avatar.node_id !== start_cell.node_id) {
                         continue;
                     }
                     // For every register in the avatar
                     for (var j = 0; j < current_avatars[i].registers.length; j++) {
                         const register_name = current_avatars[i].registers[j];
-                        if(!register_name) {
+                        if (!register_name) {
                             continue;
                         }
                         // Get the cell corresponding to this register
                         const table_cell = document.getElementById("cell_" + current_avatar.node_id + "_" + register_name);
                         // If the table_cell is above the start_table_cell and below the end_table_cell
-                        if (table_cell.offsetTop > start_table_cell.offsetTop && table_cell.offsetTop < end_table_cell.offsetTop || 
+                        if (table_cell.offsetTop > start_table_cell.offsetTop && table_cell.offsetTop < end_table_cell.offsetTop ||
                             table_cell.offsetTop < start_table_cell.offsetTop && table_cell.offsetTop > end_table_cell.offsetTop) {
                             // Add it to the list
-                            all_cells.push({"node_id": current_avatar.node_id, "register_name": register_name});
+                            all_cells.push({ "node_id": current_avatar.node_id, "register_name": register_name });
                         }
-                        
+
                     }
                 }
             }
@@ -1027,7 +1029,7 @@
             // Add a submit button
             let modal_submit = document.createElement("button");
             modal_submit.innerHTML = "Submit";
-            modal_submit.onclick = function() {
+            modal_submit.onclick = function () {
                 let new_value = modal_value.value;
                 if (new_value != null) {
                     // Update the value in the table
@@ -1041,6 +1043,7 @@
                     addLocalMessage("No value entered");
                 }
             }
+            modal_content.appendChild(modal_submit);
 
             let modal_type = document.createElement("p");
             modal_type.innerHTML = type_string;
@@ -1048,33 +1051,40 @@
 
             let modal_close = document.createElement("button");
             modal_close.innerHTML = "Close";
-            modal_close.onclick = function() {
+            modal_close.onclick = function () {
                 document.body.removeChild(modal);
             }
             // Also close the modal if escape is pressed
-            document.addEventListener("keydown", function(event) {
-                if(event.key == "Escape") {
+            document.addEventListener("keydown", function (event) {
+                if (event.key == "Escape") {
                     document.body.removeChild(modal);
                 }
             });
             modal_content.appendChild(modal_close);
 
+
             modal.appendChild(modal_content);
             document.body.appendChild(modal);
         }
+        function animate(time) {
+            requestAnimationFrame(animate)
+            TWEEN.update(time)
+        }
+        requestAnimationFrame(animate)
+
         function make_select_cell(avatar, register_name, is_mouse_over = false) {
             let selectCell = function () {
                 if (!selected_registers[[avatar.node_id, register_name]]) {
                     selected_registers[[avatar.node_id, register_name]] = true;
                     // If shift is being held down
-                    if(pressedKeys[16] && last_cell_selected) {
-                        const allCells = getAllCellsInBetween(last_cell_selected, {"node_id": avatar.node_id, "register_name": register_name});
+                    if (pressedKeys[16] && last_cell_selected) {
+                        const allCells = getAllCellsInBetween(last_cell_selected, { "node_id": avatar.node_id, "register_name": register_name });
                         for (var i = 0; i < allCells.length; i++) {
                             const cell = allCells[i];
                             selected_registers[[cell.node_id, cell.register_name]] = true;
                         }
                     }
-                    last_cell_selected = {"node_id": avatar.node_id, "register_name": register_name};
+                    last_cell_selected = { "node_id": avatar.node_id, "register_name": register_name };
                 } else {
                     selected_registers[[avatar.node_id, register_name]] = false;
                 }
@@ -1093,6 +1103,37 @@
                     // If control is pressed
                     if (pressedKeys[17]) {
                         showCellValue(avatar.node_id, register_name);
+                        return;
+                    }
+                    // If alt is pressed
+                    if (pressedKeys[18]) {
+                        // Reread the register
+                        let pairs_object = {};
+                        pairs_object[avatar.node_id] = {};
+                        pairs_object[avatar.node_id][register_name] = true;
+                        // Tween the color of the cell
+                        let table_cell = document.getElementById("cell_" + avatar.node_id + "_" + register_name);
+                        // Tween the color of the cell between its current color and white and then back to the current color
+                        // Save the previous table_cell color
+                        let previous_color = table_cell.style.backgroundColor;
+                        const tween = new Tween({ color: table_cell.style.backgroundColor }, TWEEN)
+                            .to({ color: "blue" }, 100)
+                            .easing(Easing.Quadratic.InOut)
+                            .onUpdate(function () {
+                                table_cell.style.backgroundColor = this.color;
+                            })
+                            .onComplete(function () {
+                                let tween2 = new Tween({ color: table_cell.style.backgroundColor }, TWEEN)
+                                    .to({ color: previous_color }, 100)
+                                    .easing(Easing.Quadratic.InOut)
+                                    .onUpdate(function () {
+                                        table_cell.style.backgroundColor = this.color;
+                                    })
+                                    .start();
+                            })
+                        tween.start();
+
+                        zubax_api.reread_registers(pairs_object);
                         return;
                     }
                     selectCell();
@@ -1181,7 +1222,7 @@
                 table_header_cell.onmousedown = make_select_column(avatar.node_id);
                 table_header_cell.onmouseover = make_select_column(avatar.node_id, true);
             });
-            if(current_avatars.length >= showDoubleRowHeadersFromCount) {
+            if (current_avatars.length >= showDoubleRowHeadersFromCount) {
                 make_empty_table_header_row_cell()
             }
             registers_table_header.appendChild(table_header_row);
@@ -1360,7 +1401,8 @@
                         if (event.button !== 0) {
                             return;
                         }
-                        if (lastClick && new Date() - lastClick < 500 && table_cell.getAttribute("mutable") == "true") {
+                        if (lastClick && new Date() - lastClick < 500 && table_cell.getAttribute("mutable") == "true"
+                            && shouldDoubleClickPromptToSetValue) {
                             // Make a dialog box to enter the new value
                             var new_value = prompt("Enter new value for " + register_name + ":", value);
                             // If the user entered a value
@@ -1382,7 +1424,7 @@
                     });
                     // Create a text input element in the table cell
                 });
-                if(current_avatars.length >= showDoubleRowHeadersFromCount) {
+                if (current_avatars.length >= showDoubleRowHeadersFromCount) {
                     make_header_cell();
                 }
             });
@@ -1604,7 +1646,7 @@
         });
         const btnUnselectAll = document.getElementById('btnUnselectAll');
         btnUnselectAll.addEventListener('click', function () {
-            
+
         });
         const btnExportAllSelectedRegisters = document.getElementById('btnExportAllSelectedRegisters');
         btnExportAllSelectedRegisters.addEventListener('click', function (event) {
