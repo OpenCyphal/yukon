@@ -48,7 +48,13 @@
         let escape_timer = null;
         var pressedKeys = {};
         window.onkeyup = function(e) { pressedKeys[e.keyCode] = false; }
-        window.onkeydown = function(e) { pressedKeys[e.keyCode] = true; }
+        window.onkeydown = function(e) { pressedKeys[e.keyCode] = true;
+            // If ctrl a was pressed, select all
+            if (pressedKeys[17] && pressedKeys[65]) {
+                selectAll();
+                e.preventDefault();
+            }
+        }
         document.addEventListener('keydown', function (e) {
             if (e.keyCode == 27) {
                 if (escape_timer) {
@@ -62,6 +68,23 @@
                 }
             }
         });
+        function isAllSelected() {
+            let allSelected = true;
+            for (let avatar of current_avatars) {
+                for (let register_name of avatar.registers) {
+                    if(!register_name){
+                        continue;
+                    }
+                    if(selected_registers[[avatar.node_id, register_name]]) {
+                        continue;
+                    } else {
+                        allSelected = false;
+                        break;
+                    }
+                }
+            }
+            return allSelected;
+        }
         function unselectAll() {
             addLocalMessage("Unselecting all registers");
             selected_registers = {};
@@ -70,6 +93,23 @@
             updateRegistersTableColors();
             window.getSelection()?.removeAllRanges();
             last_cell_selected = null;
+        }
+        function selectAll() {
+            // Iterate through every avatar in current_avatars and register_name and add them to the selected_registers
+            addLocalMessage("Selecting all registers");
+            if(isAllSelected()) {
+                unselectAll();
+                return;
+            }
+            for (let avatar of current_avatars) {
+                for (let register_name of avatar.registers) {
+                    if(!register_name){
+                        continue;
+                    }
+                    selected_registers[[avatar.node_id, register_name]] = true;
+                }
+            }
+            updateRegistersTableColors();
         }
 
         const unselectAllMenuElement = {
