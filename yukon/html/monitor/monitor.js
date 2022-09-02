@@ -51,7 +51,18 @@
         let escape_timer = null;
         var pressedKeys = {};
         window.onkeyup = function (e) { pressedKeys[e.keyCode] = false; }
+        // Add event listeners for focus and blur event handlers to window
+        window.addEventListener('focus', function () {
+            console.log("Window focused");
+            pressedKeys[18] = false;
+        });
+        window.addEventListener('blur', function () {
+            console.log("Window blurred");
+            pressedKeys[18] = false;
+        });
+
         window.onkeydown = function (e) {
+            // If alt tab was pressed return
             pressedKeys[e.keyCode] = true;
             // If ctrl a was pressed, select all
             if (pressedKeys[17] && pressedKeys[65]) {
