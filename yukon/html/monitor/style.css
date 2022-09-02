@@ -131,3 +131,14 @@ textarea#textOut {
 .block-display * {
     margin-top: 0.5em;
 }
+
+.white-text {
+    color: #fff !important;
+}
+.white-text * {
+    color: #fff !important;
+}
+
+.white-text ~ * {
+    color: #fff !important;
+}

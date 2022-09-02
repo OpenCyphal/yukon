@@ -12,11 +12,14 @@ caption {
 }
 
 thead {
-  background-color: #333;
-  color: white;
+  background-color: #00DAC6;
+  color: black;
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 2%;
+}
+thead th {
+  padding-top: 4px;
 }
 
 .cell-highlight {
@@ -25,18 +28,19 @@ thead {
 }
 
 tbody th {
-  background-color: #36c;
+  background-color: #0003EE;
   color: #fff;
   text-align: left;
 }
 
+/* 
 tbody tr:nth-child(odd) {
   background-color: #fff;
 }
 
 tbody tr:nth-child(even) {
   background-color: #eee;
-}
+} */
 
 th,
 td {
@@ -65,4 +69,6 @@ td input {
   padding: 4px;
   padding-top: 1px;
   outline: none;
+  -webkit-touch-callout: none;
+  user-select: none;
 }

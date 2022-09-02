@@ -28,15 +28,16 @@
         let showAlotOfButtons = false;
         let showDoubleRowHeadersFromCount = 6;
         let shouldDoubleClickPromptToSetValue = false;
+        let shouldDoubleClickOpenModal = true;
         let myContext = this;
         const colors = {
-            "selected_register": 'rgba(0, 255, 0, 0.5)',
+            "selected_register": '#0003EE',
             "selected_column": 'rgba(0, 155, 255, 0.5)',
             "selected_row": "rgba(255, 255, 0, 0.5)",
             "selected_row_and_column": "rgba(255, 165, 0, 0.5)",
             "not_selected": "rgba(255, 255, 255, 0.5)",
-            "recently_read": "rgba(255, 0, 0, 0.5)",
-            "no_value": "rgba(0, 0, 0, 0.5)"
+            "recently_read": "#B00036",
+            "no_value": "#007E87"
         }
         const copyIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
 
@@ -100,6 +101,41 @@
             }
             return allSelected;
         }
+        function fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            
+            // Avoid scrolling to bottom
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+          
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+          
+            try {
+              var successful = document.execCommand('copy');
+              var msg = successful ? 'successful' : 'unsuccessful';
+              console.log('Fallback: Copying text command was ' + msg);
+            } catch (err) {
+              console.error('Fallback: Oops, unable to copy', err);
+            }
+          
+            document.body.removeChild(textArea);
+          }
+          function copyTextToClipboard(text) {
+            if (!navigator.clipboard) {
+              fallbackCopyTextToClipboard(text);
+              return;
+            }
+            navigator.clipboard.writeText(text).then(function() {
+              console.log('Async: Copying to clipboard was successful!');
+            }, function(err) {
+              console.error('Async: Could not copy text: ', err);
+            });
+          }
+          
         function unselectAll() {
             addLocalMessage("Unselecting all registers");
             selected_registers = {};
@@ -126,7 +162,46 @@
             }
             updateRegistersTableColors();
         }
-
+        const importFromSelectedConfigurationMenuElement = {
+            content: "Import from selected configuration",
+            events: {
+                click: function (event, elementOpenedOn) {
+                    const cell = elementOpenedOn;
+                    // If cell is a th then
+                    let pairs = null;
+                    if (cell.tagName == "TH") {
+                        // Get the node_id and register_name from the cell
+                        const node_id = cell.getAttribute("data-node_id");
+                        pairs = get_all_selected_pairs({
+                            "only_of_avatar_of_node_id": node_id,
+                            "get_everything": false,
+                            "only_of_register_name": null
+                        });
+                    } else if (cell.tagName == "TD" || cell.tagName == "INPUT") {
+                        // Get the node_id and register_name from the cell
+                        const node_id = cell.getAttribute("node_id");
+                        const register_name = cell.getAttribute("register_name");
+                        pairs = get_all_selected_pairs({
+                            "only_of_avatar_of_node_id": false,
+                            "get_everything": false,
+                            "only_of_register_name": null
+                        });
+                        // If pairs contains nothing then add the node_id and register_name
+                        if (pairs.length == 0) {
+                            pairs[node_id][register_name] = true;
+                        }
+                    }
+                    const node_id = cell.getAttribute("node_id");
+                    const register_name = cell.getAttribute("register_name");
+                    const current_config = available_configurations[selected_config];
+                    if (current_config) {
+                        applyConfiguration(current_config, parseInt(node_id), pairs);
+                    } else {
+                        console.log("No configuration selected");
+                    }
+                }
+            }
+        }
         const unselectAllMenuElement = {
             content: "Unselect all (ESC 2x)",
             events: {
@@ -140,8 +215,19 @@
             {
                 content: `${downloadIcon}Set value`,
                 events: {
+                    click: (e, elementOpenedOn) => {
+                        const cell = elementOpenedOn;
+                        const node_id = cell.getAttribute("node_id");
+                        const register_name = cell.getAttribute("register_name");
+                        showCellValue(avatar.node_id, register_name);
+                    }
+                },
+            },
+            {
+                content: `${downloadIcon}Export selected registers`,
+                events: {
                     click: (e) => {
-
+                        export_all_selected_registers();
                     }
                 },
             },
@@ -156,16 +242,25 @@
             {
                 content: `${copyIcon}Copy datatype`, divider: "top",
                 events: {
-                    click: (e) => {
-
+                    click: (e, elementOpenedOn) => {
+                        const cell = elementOpenedOn;
+                        const node_id = cell.getAttribute("node_id");
+                        const register_name = cell.getAttribute("register_name");
+                        const datatype = Object.keys(current_avatars.find((a) => a.node_id == node_id).registers_exploded_values[register_name])[0];
+                        copyTextToClipboard(datatype);
                     }
                 }
             },
             {
                 content: `${copyIcon}Copy values`,
                 events: {
-                    click: (e) => {
-
+                    click: (e, elementOpenedOn) => {
+                        const cell = elementOpenedOn;
+                        const node_id = cell.getAttribute("node_id");
+                        const register_name = cell.getAttribute("register_name");
+                        const avatar = current_avatars.find((a) => a.node_id == node_id);
+                        let register_value = avatar.registers_values[register_name];
+                        copyTextToClipboard(register_value);
                     }
                 }
             },
@@ -187,12 +282,13 @@
                     }
                 }
             },
-            unselectAllMenuElement
+            unselectAllMenuElement,
+            importFromSelectedConfigurationMenuElement
         ];
         function rereadPairs(pairs) {
             // For every key of node_id in pairs
             for (let node_id in pairs) {
-                if(!recently_reread_registers[node_id]) {
+                if (!recently_reread_registers[node_id]) {
                     recently_reread_registers[node_id] = {};
                 }
                 // For every key of register_name in pairs[node_id]
@@ -270,7 +366,7 @@
                 divider: "top"
             },
             {
-                content: `${copyIcon}Export column`,
+                content: `${copyIcon}Export all registers`,
                 events: {
                     click: (e, elementOpenedOn) => {
                         const headerCell = elementOpenedOn;
@@ -303,7 +399,8 @@
                     }
                 }
             },
-            unselectAllMenuElement
+            unselectAllMenuElement,
+            importFromSelectedConfigurationMenuElement
         ];
 
         const table_header_context_menu = new ContextMenu({
@@ -427,8 +524,9 @@
             );
         }
         setInterval(fetchAndHandleInternalMessages, 1000);
-        function applyConfiguration(configuration, set_node_id) {
+        function applyConfiguration(configuration, set_node_id, applyPairs) {
             let configuration_deserialized = JSON.parse(configuration);
+
             let potential_node_id;
             let number_input;
             if (!set_node_id) {
@@ -437,10 +535,38 @@
             } else {
                 potential_node_id = set_node_id;
             }
+            function removeUnnecessaryPairsFromAvatar(avatar) {
+                for (let j = 0; j < avatar.length; j++) {
+                    let register_name = avatar[j];
+                    // If register.name is not in applyPairs[avatar.node_id]
+                    if (!applyPairs[avatar.node_id] || !applyPairs[avatar.node_id].includes(register_name)) {
+                        // Remove the register
+                        // Remove the register_name key from avatar[node_id]
+                        console.log("Not including " + register_name + " for node " + avatar.node_id);
+                        avatar[node_id].splice(j, 1);
+                        j--;
+                    }
+                }
+            }
             zubax_api.is_network_configuration(configuration_deserialized).then(function (result) {
                 const is_network_configuration = JSON.parse(result);
                 zubax_api.is_configuration_simplified(configuration_deserialized).then(function (result) {
                     const is_configuration_simplified = JSON.parse(result);
+                    if (applyPairs) {
+                        if (is_network_configuration) {
+                            // Iterate over the configuration and remove the keys that are not in applyPairs
+                            // For avatar in configuration_deserialized
+                            for (let i = 0; i < configuration_deserialized.length; i++) {
+                                let avatar = configuration_deserialized[i];
+                                // For register in avatar.registers
+                                removeUnnecessaryPairsFromAvatar(avatar);
+                            }
+                        } else {
+                            let avatar = configuration_deserialized;
+                            // For register in avatar.registers
+                            removeUnnecessaryPairsFromAvatar(avatar);
+                        }
+                    }
                     if (is_network_configuration && is_configuration_simplified) {
                         // Start fetching datatypes
                         zubax_api.unsimplify_configuration(configuration).then(function (result) {
@@ -822,7 +948,7 @@
                     }
                     if (is_register_selected) {
                         contained_input_element.style.backgroundColor = colors["selected_register"];
-                        if(is_recently_reread){
+                        if (is_recently_reread) {
                             contained_input_element.style.backgroundColor = colors["recently_read"];
                             needsRefresh = true;
                         }
@@ -835,15 +961,36 @@
                         contained_input_element.style.backgroundColor = colors["selected_column"];
                     } else {
                         contained_input_element.style.backgroundColor = colors["not_selected"];
+                        contained_input_element.classList.remove("white-text");
+                        // Remove class white-text from all children of table_cell if they have it
+                        for (var k = 0; k < table_cell.childNodes.length; k++) {
+                            const child_node = table_cell.childNodes[k];
+                            if (child_node.classList.contains("white-text")) {
+                                child_node.classList.remove("white-text");
+                            }
+                        }
                     }
-                    if(is_recently_reread){
+                    if (is_recently_reread) {
                         contained_input_element.style.backgroundColor = colors["recently_read"];
                         needsRefresh = true;
                     }
+                    if (is_recently_reread || is_register_selected) {
+                        // Add class white-text to the input element if it doesn't have it
+                        if (!contained_input_element.classList.contains("white-text")) {
+                            contained_input_element.classList.add("white-text");
+                        }
+                        // Add class white-text to all children of table_cell if they don't have it
+                        for (var k = 0; k < table_cell.childNodes.length; k++) {
+                            const child_node = table_cell.childNodes[k];
+                            if (!child_node.classList.contains("white-text")) {
+                                child_node.classList.add("white-text");
+                            }
+                        }
+                    }
                 }
             }
-            if(needsRefresh){
-                if(updateRegistersTableColorsAgainTimer != null){
+            if (needsRefresh) {
+                if (updateRegistersTableColorsAgainTimer != null) {
                     clearTimeout(updateRegistersTableColorsAgainTimer);
                 }
                 updateRegistersTableColorsAgainTimer = setTimeout(updateRegistersTableColors, 1000);
@@ -1366,7 +1513,7 @@
                         label.style.position = 'absolute';
                         label.style.bottom = '13px';
                         label.style.fontSize = '10px';
-                        label.style.color = '#000000';
+                        // label.style.color = '#000000';
                         label.style.backgroundColor = 'transparent !important';
                         label.style.padding = '0px';
                         label.style.margin = '1px';
@@ -1427,7 +1574,7 @@
                     // Set the height of inputFieldReference to match the height of the table cell
                     inputFieldReference.style.height = 100 + '%';
                     inputFieldReference.style.padding = '12px 4px';
-                    inputFieldReference.style["padding-top"]= '2px';
+                    inputFieldReference.style["padding-top"] = '2px';
                     inputFieldReference.style.lineHeight = '140%';
                     inputFieldReference.style.zIndex = '0';
                     inputFieldReference.setAttribute("spellcheck", "false");
@@ -1458,6 +1605,10 @@
                             } else {
                                 addLocalMessage("No value entered");
                             }
+                        } else if (lastClick && new Date() - lastClick < 500 && table_cell.getAttribute("mutable") == "true" &&
+                            shouldDoubleClickOpenModal
+                        ) {
+                            showCellValue(avatar.node_id, register_name);
                         } else {
                             make_select_cell(avatar, register_name)(event)
                         }

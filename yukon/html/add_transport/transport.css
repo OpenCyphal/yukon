@@ -66,6 +66,7 @@ input[type=text] {
 
 #messages {
     flex-grow: 10;
+    display: none;
 }
 
 #messages-list {
