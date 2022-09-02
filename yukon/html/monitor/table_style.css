@@ -41,7 +41,8 @@ tbody tr:nth-child(even) {
 th,
 td {
   border: 1px solid black;
-  padding: 8px;
+  padding: 4px;
+  padding-top: 1px;
   word-wrap: break-word;
   font-family: monospace;
 }
@@ -61,6 +62,7 @@ td input {
   background-color: #fff;
   font-size: 0.875rem;
   text-align: left;
-  padding: 7;
+  padding: 4px;
+  padding-top: 1px;
   outline: none;
 }

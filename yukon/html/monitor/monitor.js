@@ -21,6 +21,7 @@
         var selected_registers = {}; // Key is array of nodeid and register name, value is true if selected
         var selected_columns = {}; // Key is the node_id and value is true if selected
         var selected_rows = {}; // Key is register_name and value is true if selected
+        var recently_reread_registers = {};
         var last_cell_selected = null;
         let is_selection_mode_complicated = false;
         let lastInternalMessageIndex = -1;
@@ -34,6 +35,7 @@
             "selected_row": "rgba(255, 255, 0, 0.5)",
             "selected_row_and_column": "rgba(255, 165, 0, 0.5)",
             "not_selected": "rgba(255, 255, 255, 0.5)",
+            "recently_read": "rgba(255, 0, 0, 0.5)",
             "no_value": "rgba(0, 0, 0, 0.5)"
         }
         const copyIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
@@ -159,14 +161,47 @@
             {
                 content: `${downloadIcon}Reread registers`,
                 events: {
-                    click: (e) => {
-
+                    click: (e, elementOpenedOn) => {
+                        const cell = elementOpenedOn;
+                        const node_id = cell.getAttribute("node_id");
+                        const register_name = cell.getAttribute("register_name");
+                        const pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null });
+                        // The current cell was the element that this context menu was summoned on
+                        // If there are no keys in pairs, then add the current cell
+                        if (Object.keys(pairs).length == 0) {
+                            pairs[node_id] = {}
+                            pairs[node_id][register_name] = true;
+                        }
+                        rereadPairs(pairs);
                     }
                 }
             },
             unselectAllMenuElement
         ];
-
+        function rereadPairs(pairs) {
+            // For every key of node_id in pairs
+            for (let node_id in pairs) {
+                if(!recently_reread_registers[node_id]) {
+                    recently_reread_registers[node_id] = {};
+                }
+                // For every key of register_name in pairs[node_id]
+                for (let register_name in pairs[node_id]) {
+                    // Add the register to recently_reread_registers
+                    recently_reread_registers[node_id][register_name] = true;
+                }
+            }
+            updateRegistersTableColors();
+            let registers_to_reset = JSON.parse(JSON.stringify(recently_reread_registers));
+            setTimeout(() => {
+                // Iterate through registers_to_reset and remove them from recently_reread_registers
+                for (let node_id in registers_to_reset) {
+                    for (let register_name in registers_to_reset[node_id]) {
+                        recently_reread_registers[node_id][register_name] = false;
+                    }
+                }
+            }, 600);
+            zubax_api.reread_registers(pairs);
+        }
         const table_cell_context_menu = new ContextMenu({
             target: "table-cell",
             menuItems: table_cell_context_menu_items,
@@ -247,19 +282,13 @@
                 }
             },
             {
-                content: `${downloadIcon}Reread registers`,
+                content: `${downloadIcon}Reread column`,
                 events: {
-                    click: (e) => {
-                        const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": null });
-                        let pairs = [];
-                        // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
-                        for (const node_id of Object.keys(data)) {
-                            const value = data[node_id];
-                            for (const register_name of Object.keys(value)) {
-                                pairs.push([node_id, register_name]);
-                            }
-                        }
-                        zubax_api.reread_registers(pairs)
+                    click: (e, elementOpenedOn) => {
+                        const headerCell = elementOpenedOn;
+                        const node_id = headerCell.getAttribute("data-node_id");
+                        const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": node_id, "get_everything": false, "only_of_register_name": null });
+                        rereadPairs(data);
                     }
                 }
             },
@@ -742,9 +771,11 @@
             selected_config = i;
             addLocalMessage("Configuration " + i + " selected");
         }
+        let updateRegistersTableColorsAgainTimer = null;
         function updateRegistersTableColors() {
             var registers_table = document.querySelector('#registers_table')
             // For all table cells in registers_table, if the cell has the attribute node_id set to node_id then color it red if the node is selected or white if not
+            let needsRefresh = false;
             for (var i = 1; i < registers_table.rows.length; i++) {
                 for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
                     const table_cell = registers_table.rows[i].cells[j]
@@ -758,6 +789,8 @@
                     const is_register_selected = selected_registers[[node_id, register_name]]
                     const is_column_selected = selected_columns[node_id];
                     const is_row_selected = selected_rows[register_name];
+                    const temp_node = recently_reread_registers[node_id];
+                    const is_recently_reread = temp_node && temp_node[register_name] === true;
                     const contained_input_element = table_cell.querySelector('input');
                     if (!contained_input_element) {
                         continue;
@@ -778,7 +811,10 @@
                     }
                     if (is_register_selected) {
                         contained_input_element.style.backgroundColor = colors["selected_register"];
-
+                        if(is_recently_reread){
+                            contained_input_element.style.backgroundColor = colors["recently_read"];
+                            needsRefresh = true;
+                        }
                     } else if (is_row_selected) {
                         contained_input_element.style.backgroundColor = colors["selected_row"];
                         if (is_column_selected) {
@@ -789,7 +825,17 @@
                     } else {
                         contained_input_element.style.backgroundColor = colors["not_selected"];
                     }
+                    if(is_recently_reread){
+                        contained_input_element.style.backgroundColor = colors["recently_read"];
+                        needsRefresh = true;
+                    }
                 }
+            }
+            if(needsRefresh){
+                if(updateRegistersTableColorsAgainTimer != null){
+                    clearTimeout(updateRegistersTableColorsAgainTimer);
+                }
+                updateRegistersTableColorsAgainTimer = setTimeout(updateRegistersTableColors, 1000);
             }
         }
 
@@ -1066,11 +1112,6 @@
             modal.appendChild(modal_content);
             document.body.appendChild(modal);
         }
-        function animate(time) {
-            requestAnimationFrame(animate)
-            TWEEN.update(time)
-        }
-        requestAnimationFrame(animate)
 
         function make_select_cell(avatar, register_name, is_mouse_over = false) {
             let selectCell = function () {
@@ -1096,49 +1137,35 @@
                         return;
                     }
                     if (event.target.matches(':hover')) {
+                        // If alt is pressed
+                        if (pressedKeys[18]) {
+                            // Reread the register
+                            let pairs_object = {};
+                            pairs_object[avatar.node_id] = {};
+                            pairs_object[avatar.node_id][register_name] = true;
+                            rereadPairs(pairs_object);
+                            return;
+                        }
                         selectCell();
                         event.stopPropagation();
                     }
                 } else {
-                    // If control is pressed
-                    if (pressedKeys[17]) {
-                        showCellValue(avatar.node_id, register_name);
-                        return;
-                    }
                     // If alt is pressed
                     if (pressedKeys[18]) {
                         // Reread the register
                         let pairs_object = {};
                         pairs_object[avatar.node_id] = {};
                         pairs_object[avatar.node_id][register_name] = true;
-                        // Tween the color of the cell
-                        let table_cell = document.getElementById("cell_" + avatar.node_id + "_" + register_name);
-                        // Tween the color of the cell between its current color and white and then back to the current color
-                        // Save the previous table_cell color
-                        let previous_color = table_cell.style.backgroundColor;
-                        const tween = new Tween({ color: table_cell.style.backgroundColor }, TWEEN)
-                            .to({ color: "blue" }, 100)
-                            .easing(Easing.Quadratic.InOut)
-                            .onUpdate(function () {
-                                table_cell.style.backgroundColor = this.color;
-                            })
-                            .onComplete(function () {
-                                let tween2 = new Tween({ color: table_cell.style.backgroundColor }, TWEEN)
-                                    .to({ color: previous_color }, 100)
-                                    .easing(Easing.Quadratic.InOut)
-                                    .onUpdate(function () {
-                                        table_cell.style.backgroundColor = this.color;
-                                    })
-                                    .start();
-                            })
-                        tween.start();
-
-                        zubax_api.reread_registers(pairs_object);
+                        rereadPairs(pairs_object);
+                        return;
+                    }
+                    // If control is pressed
+                    if (pressedKeys[17]) {
+                        showCellValue(avatar.node_id, register_name);
                         return;
                     }
                     selectCell();
                 }
-
             }
         }
         function update_tables(override = false) {
@@ -1388,11 +1415,14 @@
                     }
                     // Set the height of inputFieldReference to match the height of the table cell
                     inputFieldReference.style.height = 100 + '%';
-                    inputFieldReference.style.padding = '15px 10px';
+                    inputFieldReference.style.padding = '12px 4px';
+                    inputFieldReference.style["padding-top"]= '2px';
                     inputFieldReference.style.lineHeight = '140%';
                     inputFieldReference.style.zIndex = '0';
                     inputFieldReference.setAttribute("spellcheck", "false");
                     inputFieldReference.classList.add('table-cell');
+                    inputFieldReference.setAttribute("register_name", register_name);
+                    inputFieldReference.setAttribute("node_id", avatar.node_id);
                     inputFieldReference.onmouseover = make_select_cell(avatar, register_name, is_mouse_over = true);
                     // inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
                     var lastClick = null;
@@ -1674,7 +1704,7 @@
                     pairs.push([node_id, register_name]);
                 }
             }
-            zubax_api.reread_registers(pairs)
+            rereadPairs(pairs);
         });
         const btnRereadSelectedRegisters = document.getElementById('btnRereadSelectedRegisters');
         btnRereadSelectedRegisters.addEventListener('click', function () {
@@ -1687,7 +1717,7 @@
                     pairs.push([node_id, register_name]);
                 }
             }
-            zubax_api.reread_registers(pairs)
+            rereadPairs(pairs);
         });
     }
     try {
