@@ -990,6 +990,78 @@
             }
             return all_cells;
         }
+        function showCellValue(node_id, register_name) {
+            const avatar = current_avatars.find((avatar) => avatar.node_id == node_id);
+            let register_value = avatar.registers_exploded_values[register_name];
+            let type_string = Object.keys(register_value)[0];
+            let value = Object.values(register_value)[0].value;
+            // Create a modal with the value of the register
+            let modal = document.createElement("div");
+            modal.id = "modal";
+            modal.style.position = "fixed";
+            modal.style.top = "0px";
+            modal.style.left = "0px";
+            modal.style.width = "100%";
+            modal.style.height = "100%";
+            modal.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+            modal.style.zIndex = "100";
+            modal.style.display = "flex";
+            modal.style.alignItems = "center";
+            modal.style.justifyContent = "center";
+            let modal_content = document.createElement("div");
+            modal_content.style.backgroundColor = "white";
+            modal_content.style.padding = "20px";
+            modal_content.style.borderRadius = "10px";
+            modal_content.style.width = "80%";
+
+            let modal_title = document.createElement("h2");
+            modal_title.innerHTML = "Value of " + register_name;
+            modal_content.appendChild(modal_title);
+
+            let modal_value = document.createElement("textarea");
+            modal_value.value = value;
+            modal_value.style.width = "100%";
+            modal_content.appendChild(modal_value);
+            autosize(modal_value);
+
+            // Add a submit button
+            let modal_submit = document.createElement("button");
+            modal_submit.innerHTML = "Submit";
+            modal_submit.onclick = function() {
+                let new_value = modal_value.value;
+                if (new_value != null) {
+                    // Update the value in the table
+                    // text_input.value = new_value;
+                    // Update the value in the server
+                    update_register_value(register_name, new_value, avatar.node_id);
+                    // Run update_tables every second, do that only for the next 4 seconds
+                    let interval1 = setInterval(() => update_tables(true), 1000);
+                    setTimeout(() => clearInterval(interval1), 4000);
+                } else {
+                    addLocalMessage("No value entered");
+                }
+            }
+
+            let modal_type = document.createElement("p");
+            modal_type.innerHTML = type_string;
+            modal_content.appendChild(modal_type);
+
+            let modal_close = document.createElement("button");
+            modal_close.innerHTML = "Close";
+            modal_close.onclick = function() {
+                document.body.removeChild(modal);
+            }
+            // Also close the modal if escape is pressed
+            document.addEventListener("keydown", function(event) {
+                if(event.key == "Escape") {
+                    document.body.removeChild(modal);
+                }
+            });
+            modal_content.appendChild(modal_close);
+
+            modal.appendChild(modal_content);
+            document.body.appendChild(modal);
+        }
         function make_select_cell(avatar, register_name, is_mouse_over = false) {
             let selectCell = function () {
                 if (!selected_registers[[avatar.node_id, register_name]]) {
@@ -1018,6 +1090,11 @@
                         event.stopPropagation();
                     }
                 } else {
+                    // If control is pressed
+                    if (pressedKeys[17]) {
+                        showCellValue(avatar.node_id, register_name);
+                        return;
+                    }
                     selectCell();
                 }
 
