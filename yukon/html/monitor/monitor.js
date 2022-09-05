@@ -224,6 +224,19 @@
                 }
             }
         }
+        const moreThanOneSelectedConstraint = (e, elementOpenedOn) => {
+            // If there are more than 1 selected registers
+            if(Object.keys(selected_registers).length > 1) {
+                return true;
+            }
+            return false;
+        }
+        const oneSelectedConstraint = (e, elementOpenedOn) => {
+            if(Object.keys(selected_registers).length <= 1) {
+                return true;
+            }
+            return false;
+        };
         // For table cells
         const table_cell_context_menu_items = [
             {
@@ -236,6 +249,7 @@
                         showCellValue(avatar.node_id, register_name);
                     }
                 },
+                shouldBeDisplayed: oneSelectedConstraint
             },
             {
                 content: `${downloadIcon}Set values`,
@@ -247,13 +261,7 @@
                         showCellValue(avatar.node_id, register_name);
                     }
                 },
-                shouldBeDisplayed: (e, elementOpenedOn) => {
-                    // If there are more than 1 selected registers
-                    if(Object.keys(selected_registers).length > 1) {
-                        return true;
-                    }
-                    return false;
-                }
+                shouldBeDisplayed: moreThanOneSelectedConstraint
             },
             {
                 content: `${downloadIcon}Export selected registers`,
@@ -269,7 +277,8 @@
                     click: (e) => {
 
                     }
-                }
+                },
+                shouldBeDisplayed: oneSelectedConstraint
             },
             {
                 content: `${copyIcon}Copy datatype`, divider: "top",
