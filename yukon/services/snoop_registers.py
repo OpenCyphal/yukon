@@ -29,6 +29,9 @@ async def get_register_value(state: GodState, node_id: int, register_name: str) 
         response = await service_client.call(msg)
         if response is not None:
             return response
+        else:
+            print("Failed response to register value for " + register_name)
+            continue
 
 
 async def get_register_names(state: GodState, node_id: int, new_avatar: Avatar) -> None:
@@ -40,6 +43,7 @@ async def get_register_names(state: GodState, node_id: int, new_avatar: Avatar) 
         list_client.response_timeout = 0.5
         real_response = await list_client.call(msg)
         if not real_response:
+            print("Failed response to port list nr %s", counter)
             continue
         result: uavcan.register.List_1_0.Response = (real_response)[0]
         # I am not using the result here because it gets snooped by the avatar

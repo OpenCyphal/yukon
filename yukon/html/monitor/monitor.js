@@ -881,10 +881,10 @@
                 zubax_api.simplify_configuration(json_string).then(function (simplified_json_string) {
                     intermediary_structure = JSON.parse(simplified_json_string);
                     const simplified_yaml_string = jsyaml.dump(intermediary_structure);
-                    return zubax_api.save_text(simplified_yaml_string);
+                    return zubax_api.save_yaml(simplified_yaml_string);
                 });
             } else {
-                return zubax_api.save_text(yaml_string);
+                return zubax_api.save_yaml(yaml_string);
             }
         }
         function refresh_graph_layout() {

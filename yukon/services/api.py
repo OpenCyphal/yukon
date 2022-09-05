@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import typing
 import webbrowser
 from pathlib import Path
@@ -166,6 +167,12 @@ def import_candump_file_contents() -> str:
     return configuration
 
 
+def make_yaml_string_node_ids_numbers(serialized_conf: str) -> str:
+    # Using regex, replace "(\d)": with "\1": to make the node_ids numbers.
+    # This is to make the YAML file more readable.
+    return re.sub(r"['\"](\d+)['\"]", r"\1", serialized_conf)
+
+
 class SendingApi:
     async def send_message(self, message: typing.Any) -> None:
         async with await websockets.connect("ws://localhost:8765/hello") as websocket:
@@ -190,6 +197,13 @@ class Api:
 
     def add_local_message(self, message: str) -> None:
         logger.info(message)
+
+    def save_yaml(self, text: str, convert_to_numbers: bool = True) -> None:
+        new_text = make_yaml_string_node_ids_numbers(text)
+        if not convert_to_numbers:
+            save_text_into_file(text)
+            return
+        save_text_into_file(new_text)
 
     def save_text(self, text: str) -> None:
         save_text_into_file(text)
@@ -218,7 +232,8 @@ class Api:
         self.state.queues.apply_configuration.put(request)
 
     def simplify_configuration(self, configuration: str) -> str:
-        return simplify_configuration(json.loads(configuration))
+        simplified_configuration_string = simplify_configuration(json.loads(configuration))
+        return simplified_configuration_string
 
     def unsimplify_configuration(self, configuration: str) -> str:
         return unsimplify_configuration(self.state.avatar.avatars_by_node_id, json.loads(configuration))

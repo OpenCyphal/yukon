@@ -101,6 +101,7 @@ def auto_exit_task() -> int:
 
 
 async def main() -> int:
+    asyncio.get_event_loop().slow_callback_duration = 35
     if get_stop_after_value():
         auto_exit_thread = threading.Thread(target=auto_exit_task)
         auto_exit_thread.start()
