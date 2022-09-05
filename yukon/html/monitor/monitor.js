@@ -29,7 +29,14 @@
         let showDoubleRowHeadersFromCount = 6;
         let shouldDoubleClickPromptToSetValue = false;
         let shouldDoubleClickOpenModal = true;
+        var isTableCellTextSelectable = true;
         let myContext = this;
+        const selectingTableCellsIsDisabledStyle = document.createElement('style');
+        selectingTableCellsIsDisabledStyle.innerHTML = `
+        .table-cell {
+            user-select:none;
+        }
+        `;
         const colors = {
             "selected_register": '#0003EE',
             "selected_column": 'rgba(0, 155, 255, 0.5)',
@@ -263,6 +270,26 @@
                     }
                 },
                 shouldBeDisplayed: moreThanOneSelectedConstraint
+            },
+            {
+                content: `Make text unselectable`,
+                events: {
+                    click: (e, elementOpenedOn) => {
+                        isTableCellTextSelectable = false;
+                        document.appendChild(selectingTableCellsIsDisabledStyle);
+                    }
+                },
+                shouldBeDisplayed: () => isTableCellTextSelectable
+            },
+            {
+                content: `Make text selectable`,
+                events: {
+                    click: (e, elementOpenedOn) => {
+                        isTableCellTextSelectable = true;
+                        document.removeChild(selectingTableCellsIsDisabledStyle);
+                    }
+                },
+                shouldBeDisplayed: () => !isTableCellTextSelectable
             },
             {
                 content: `${downloadIcon}Export selected registers`,
@@ -1016,7 +1043,7 @@
                     const is_row_selected = selected_rows[register_name];
                     const temp_node = recently_reread_registers[node_id];
                     const is_recently_reread = temp_node && temp_node[register_name] === true;
-                    const contained_input_element = table_cell.querySelector('input');
+                    const contained_input_element = table_cell;//table_cell.querySelector('div.input');
                     if (!contained_input_element) {
                         continue;
                     }
@@ -1657,9 +1684,7 @@
                     table_header_cell.onmouseover = make_select_column(avatar.node_id, true);
                 });
             }
-            for (let i = 0; i < 6; i++) {
-                add_node_id_headers();
-            }
+            add_node_id_headers();
             if (current_avatars.length >= showDoubleRowHeadersFromCount) {
                 make_empty_table_header_row_cell()
             }
@@ -1703,38 +1728,34 @@
                     // If value is an array
                     if (Array.isArray(value)) {
                         // If the length of the array value is 1 then display the value without brackets
-                        let text_input = document.createElement('input');
+                        let text_input = document.createElement('div');
                         inputFieldReference = text_input;
-                        text_input.setAttribute('type', 'text');
                         if (value.length == 1) {
                             isOnlyValueInArray = true;
-                            text_input.value = value[0];
+                            inputFieldReference.innerHTML = value[0];
                         } else {
-                            text_input.value = JSON.stringify(value);
+                            inputFieldReference.innerHTML = JSON.stringify(value);
                         }
                         // When the text input is clicked
                     } else if (type_string.includes("natural")) {
                         // Create a number input field
-                        let number_input_field = document.createElement('input');
+                        let number_input_field = document.createElement('div');
                         inputFieldReference = number_input_field;
-                        number_input_field.type = 'number';
                         if (register_value == 65535) {
                             number_input_field.style.backgroundColor = '#ee0e0e';
                         }
-                        number_input_field.value = value;
+                        inputFieldReference.innerHTML = value;
                     } else if (type_string === "string") {
-                        let text_input = document.createElement('input');
+                        let text_input = document.createElement('div');
                         inputFieldReference = text_input;
-                        text_input.setAttribute('type', 'text');
-                        text_input.value = value;
+                        inputFieldReference.innerHTML = value;
                         // When the text input is clicked
                     } else {
-                        let text_input = document.createElement('input');
+                        let text_input = document.createElement('div');
                         inputFieldReference = text_input;
-                        text_input.setAttribute('type', 'text');
-                        text_input.disabled = 'true';
-                        text_input.style.backgroundColor = '#ee0e0e !important';
-                        text_input.value = "Unhandled: " + type_string;
+                        inputFieldReference.disabled = 'true';
+                        inputFieldReference.style.backgroundColor = '#ee0e0e !important';
+                        inputFieldReference.innerHTML = "Unhandled: " + value;
                     }
                     table_cell.appendChild(inputFieldReference);
                     function styleLabel(label) {
@@ -1801,20 +1822,16 @@
                         table_cell.insertBefore(label, inputFieldReference);
                     }
                     // Set the height of inputFieldReference to match the height of the table cell
-                    inputFieldReference.style.height = 100 + '%';
-                    inputFieldReference.style.padding = '12px 4px';
-                    inputFieldReference.style["padding-top"] = '2px';
-                    inputFieldReference.style.lineHeight = '140%';
-                    inputFieldReference.style.zIndex = '0';
                     inputFieldReference.setAttribute("spellcheck", "false");
-                    inputFieldReference.classList.add('table-cell');
-                    inputFieldReference.disabled = true;
                     inputFieldReference.setAttribute("register_name", register_name);
                     inputFieldReference.setAttribute("node_id", avatar.node_id);
-                    inputFieldReference.onmouseover = make_select_cell(avatar, register_name, is_mouse_over = true);
+                    inputFieldReference.classList.add('input');
+                    inputFieldReference.style["pointer-events"] = 'none'; // This is to make sure that the table_cell can receive events
+                    table_cell.classList.add('table-cell');
+                    table_cell.onmouseover = make_select_cell(avatar, register_name, is_mouse_over = true);
                     // inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
                     var lastClick = null;
-                    inputFieldReference.addEventListener('mousedown', function (event) {
+                    table_cell.addEventListener('mousedown', function (event) {
                         // Check if the mouse button was left click
                         if (event.button !== 0) {
                             return;
@@ -1873,9 +1890,8 @@
                     table_register_row.appendChild(table_header_cell);
                 }
                 make_header_cell();
-                for (let i = 0; i < 6; i++) {
-                    addContentForCells(register_name, table_register_row);
-                }
+
+                addContentForCells(register_name, table_register_row);
                 // Add table cells for each avatar, containing the value of the register from register_name
 
                 if (current_avatars.length >= showDoubleRowHeadersFromCount) {
