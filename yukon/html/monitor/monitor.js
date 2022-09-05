@@ -1038,69 +1038,43 @@
                     // Remove the string "register_" from the register_name
                     register_name = register_name.substring(9);
                     const node_id = table_cell.getAttribute("node_id");
-                    const is_register_selected = selected_registers[[node_id, register_name]]
+                    const is_register_selected = selected_registers[[node_id, register_name]];
                     const is_column_selected = selected_columns[node_id];
                     const is_row_selected = selected_rows[register_name];
                     const temp_node = recently_reread_registers[node_id];
                     const is_recently_reread = temp_node && temp_node[register_name] === true;
-                    const contained_input_element = table_cell;//table_cell.querySelector('div.input');
-                    if (!contained_input_element) {
+                    if (!table_cell) {
                         continue;
                     }
                     if (!register_name) {
                         console.warn("No register name found in table cell " + i + "," + j)
                         continue;
                     }
-                    if (table_cell.getAttribute("no_value") == "true") {
-                        contained_input_element.style.backgroundColor = colors["no_value"];
-                        continue;
-                    }
                     if (is_register_selected || is_column_selected || is_row_selected) {
-                        contained_input_element.classList.add("selected_element");
+                        table_cell.classList.add("selected-cell");
                     } else {
                         // Remove the class "selected_element" from the input element if it has it
-                        contained_input_element.classList.remove("selected_element");
+                        table_cell.classList.remove("selected-cell");
                     }
                     if (is_register_selected) {
-                        contained_input_element.style.backgroundColor = colors["selected_register"];
+                        table_cell.classList.add("selected-cell");
                         if (is_recently_reread) {
-                            contained_input_element.style.backgroundColor = colors["recently_read"];
+                            table_cell.classList.add("recently_reread_register");
                             needsRefresh = true;
                         }
                     } else if (is_row_selected) {
-                        contained_input_element.style.backgroundColor = colors["selected_row"];
+                        table_cell.style.backgroundColor = colors["selected_row"];
                         if (is_column_selected) {
-                            contained_input_element.style.backgroundColor = colors["selected_row_and_column"];
+                            table_cell.classList.add("selected_row_and_column");
                         }
                     } else if (is_column_selected) {
-                        contained_input_element.style.backgroundColor = colors["selected_column"];
+                        table_cell.classList.add("selected_column");
                     } else {
-                        contained_input_element.style.backgroundColor = colors["not_selected"];
-                        contained_input_element.classList.remove("white-text");
-                        // Remove class white-text from all children of table_cell if they have it
-                        for (var k = 0; k < table_cell.childNodes.length; k++) {
-                            const child_node = table_cell.childNodes[k];
-                            if (child_node.classList.contains("white-text")) {
-                                child_node.classList.remove("white-text");
-                            }
-                        }
+                        table_cell.classList.remove("selected-cell");
                     }
                     if (is_recently_reread) {
-                        contained_input_element.style.backgroundColor = colors["recently_read"];
+                        table_cell.classList.add("recently_reread");
                         needsRefresh = true;
-                    }
-                    if (is_recently_reread || is_register_selected) {
-                        // Add class white-text to the input element if it doesn't have it
-                        if (!contained_input_element.classList.contains("white-text")) {
-                            contained_input_element.classList.add("white-text");
-                        }
-                        // Add class white-text to all children of table_cell if they don't have it
-                        for (var k = 0; k < table_cell.childNodes.length; k++) {
-                            const child_node = table_cell.childNodes[k];
-                            if (!child_node.classList.contains("white-text")) {
-                                child_node.classList.add("white-text");
-                            }
-                        }
                     }
                 }
             }

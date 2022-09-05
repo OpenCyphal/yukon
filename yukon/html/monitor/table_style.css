@@ -95,3 +95,11 @@ th.left-side-table-header {
 tbody>tr:hover,tbody>tr:hover .no-value {
   background-color: #ccc;
 }
+td.selected-cell {
+  background-color: #0003EE;
+  color: white;
+}
+td.selected-cell label {
+  background-color: transparent;
+  color: white;
+}
