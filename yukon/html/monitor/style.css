@@ -142,3 +142,7 @@ textarea#textOut {
 .white-text ~ * {
     color: #fff !important;
 }
+
+.pair-div:hover {
+    background-color: #ccc;
+}

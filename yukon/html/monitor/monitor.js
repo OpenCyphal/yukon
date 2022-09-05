@@ -970,6 +970,8 @@
                 unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_value
             } else if (typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"][0] == "number") {
                 // Split register_value by comma and convert to array of numbers
+                // Remove square brackets
+                register_value = register_value.replace("[", "").replace("]", "");
                 let register_values = register_value.split(",").map(Number);
                 unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_values
             }
@@ -1344,28 +1346,54 @@
                     addLocalMessage("No value entered");
                 }
             }
-            let datatypes = [];
+            let datatypes = new Set();
             let register_count = 0;
             // Create a list with all pairs, displaying the register name and the value and a submit button
             // When the submit button is clicked then the value is updated in the server and the list element is removed
+            // Make a div that is at max 80% of the screen height and has a scrollbar
+            let modal_list = document.createElement("div");
+            modal_list.style.maxHeight = "80vh";
+            modal_list.style.overflowY = "auto";
+            modal_list.style.overflowX = "hidden";
+            modal_list.style.marginBottom = "10px";
+            modal_content.appendChild(modal_list);
+            let array_size = null;
             for (node_id in pairs) {
                 const registers = pairs[node_id];
                 for (register_name in registers) {
                     register_count += 1;
                     const register_value = registers[register_name];
                     const datatype = Object.keys(register_value)[0];
-                    datatypes.push(datatype);
+                    datatypes.add(datatype);
                     const register_value_object = register_value[datatype].value;
                     let pair_div = document.createElement("div");
+                    pair_div.classList.add("pair-div");
                     pair_div.style.display = "flex";
                     pair_div.style.alignItems = "center";
                     let pair_name = document.createElement("span");
                     pair_name.innerHTML = register_name;
                     pair_name.style.marginRight = "10px";
                     pair_div.appendChild(pair_name);
+                    let is_pair_incompatible = false;
+                    let current_array_size = 0;
                     // Add a span for datatype
+                    // if register_value[datatype].value is an array
+                    if (Array.isArray(register_value_object)) {
+                        current_array_size = register_value[datatype].value.length;
+                    } else {
+                        current_array_size = 1;
+                    }
+                    if(array_size === null) {
+                        array_size = current_array_size;
+                    } else if (array_size == current_array_size) {
+                        // Do nothing
+                    } else {
+                        // Color the pair div red
+                        pair_div.style.backgroundColor = "red";
+                        is_pair_incompatible = true;
+                    }
                     let pair_datatype = document.createElement("span");
-                    pair_datatype.innerHTML = datatype + "[" + register_value[datatype].value.length + "]";
+                    pair_datatype.innerHTML = datatype + "[" + current_array_size + "]";
                     pair_datatype.style.marginRight = "10px";
                     pair_div.appendChild(pair_datatype);
                     let pair_value = document.createElement("input");
@@ -1373,8 +1401,19 @@
                     pair_value.style.width = "100%";
                     pair_value.disabled = true;
                     pair_div.appendChild(pair_value);
+                    // Add a discard button
+                    let discard_button = document.createElement("button");
+                    discard_button.innerHTML = "Discard";
+                    discard_button.style.marginLeft = "10px";
+                    discard_button.onclick = function () {
+                        pair_div.remove();
+                    }
+                    pair_div.appendChild(discard_button);
                     let pair_submit = document.createElement("button");
                     pair_submit.innerHTML = "Update";
+                    if(is_pair_incompatible) {
+                        pair_submit.disabled = true;
+                    }
                     pair_submit.onclick = function () {
                         if (modal_value.value != "") {
                             // Remove the list element
@@ -1398,7 +1437,7 @@
                         }
                     }
                     pair_div.appendChild(pair_submit);
-                    modal_content.appendChild(pair_div);
+                    modal_list.appendChild(pair_div);
                 }
             }
 
@@ -1418,8 +1457,8 @@
             // For each pair in pairs, add the datatype to a string variable called type_string
             
             let modal_type = document.createElement("p");
-            const datatypes_string = datatypes.join(", ");
-            modal_type.innerHTML = "The value you are entering has to be castable to these types: " + datatypes_string;
+            const datatypes_string = Array.from(datatypes).join(", ");
+            modal_type.innerHTML = "The value you are entering has to be castable to these types: " + datatypes_string + "<br>It also has to be of size: " + array_size;
             modal_content.appendChild(modal_type);
             document.body.appendChild(modal);
             setTimeout(() => modal_value.focus(), 100);
