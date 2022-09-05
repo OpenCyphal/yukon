@@ -1,5 +1,8 @@
 name: Yukon tests
-on: push
+on:
+  push:
+    branches:
+      - main
 jobs:
   python-quality-check:
     runs-on: ubuntu-22.04
