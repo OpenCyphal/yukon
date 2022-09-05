@@ -35,7 +35,6 @@ class ContextMenu {
   }
 
   createElementMarkup(data) {
-    const elementOpenedOn = this.elementOpenedOn;
     const button = document.createElement("BUTTON");
     const element = document.createElement("LI");
 
@@ -68,6 +67,9 @@ class ContextMenu {
 
     this.menuElementsArray.forEach((item) => {
       if (this.dataOfMenuElements.get(item).shouldBeDisplayed()) {
+        if(this.dataOfMenuElements.get(item).nameChangeNeeded) {
+          this.dataOfMenuElements.get(item).nameChangeNeeded();
+        }
         menuContainer.appendChild(item)
       }
     });
@@ -84,8 +86,9 @@ class ContextMenu {
   }
 
   init() {
-    
-    document.addEventListener("click", () => { console.log("Clicked"); this.closeMenu(this.renderedMenu) });
+    document.addEventListener("click", () => { 
+      this.closeMenu(this.renderedMenu)
+    });
     window.addEventListener("blur", () => this.closeMenu(this.renderedMenu));
     // When escape is pressed, close the menu
     document.addEventListener("keydown", (e) => {
@@ -95,6 +98,7 @@ class ContextMenu {
     });
     document.addEventListener("contextmenu", (e) => {
       if (e.target.classList.contains(this.target)) {
+        this.closeMenu(this.renderedMenu)
         this.renderedMenu = this.renderMenu();
         e.preventDefault();
         this.elementOpenedOn = e.target;

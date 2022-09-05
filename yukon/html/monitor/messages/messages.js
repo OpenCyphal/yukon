@@ -71,7 +71,6 @@
             return Math.floor(seconds) + " seconds";
         }
         function update_messages() {
-            console.log("update_messages");
             zubax_api.get_messages(lastIndex + 1).then(
                 function (messages) {
                     // Clear messages-list

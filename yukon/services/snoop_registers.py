@@ -55,19 +55,10 @@ async def get_register_names(state: GodState, node_id: int, new_avatar: Avatar) 
                     # Convert to hex string
                     hex_string = array.hex(":")
                     register_values[register_name] = hex_string
-                    await asyncio.sleep(0.02)
                     continue
                 register_values[register_name] = str(_simplify_value(obj.value))
         else:
             break
-
-    if len(register_values.keys()) == 0:
-
-        async def get_register_names_after_delay():
-            await asyncio.sleep(1)
-            await get_register_names(state, node_id, new_avatar)
-
-        asyncio.create_task(get_register_names_after_delay())
     new_avatar.register_values = register_values
 
 
