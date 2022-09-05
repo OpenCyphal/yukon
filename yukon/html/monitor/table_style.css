@@ -1,6 +1,10 @@
 table {
   border-collapse: collapse;
-  table-layout: auto;
+  overflow-x:scroll;
+  width:100%;
+  table-layout: fixed;
+  width: auto;
+  border-spacing: 0px;
 }
 
 caption {
@@ -71,4 +75,20 @@ td input {
   outline: none;
   -webkit-touch-callout: none;
   user-select: none;
+}
+th, td {
+  min-width: 400px !important;
+}
+th.left-side-table-header {
+  position: sticky;
+  z-index: 99;
+  left: 0px;
+  border: 1px solid black;
+}
+.no-value {
+  background-color: #007E87;
+}
+/* // Add a hover effect for tr */
+tr:hover,tr:hover .no-value {
+  background-color: #ccc;
 }

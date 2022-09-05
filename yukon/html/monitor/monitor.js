@@ -1383,7 +1383,7 @@
                     } else {
                         current_array_size = 1;
                     }
-                    if(array_size === null) {
+                    if (array_size === null) {
                         array_size = current_array_size;
                     } else if (array_size == current_array_size) {
                         // Do nothing
@@ -1411,7 +1411,7 @@
                     pair_div.appendChild(discard_button);
                     let pair_submit = document.createElement("button");
                     pair_submit.innerHTML = "Update";
-                    if(is_pair_incompatible) {
+                    if (is_pair_incompatible) {
                         pair_submit.disabled = true;
                     }
                     pair_submit.onclick = function () {
@@ -1425,7 +1425,7 @@
                             // Run update_tables every second, do that only for the next 4 seconds
                             let interval1 = setInterval(() => update_tables(true), 1000);
                             setTimeout(() => clearInterval(interval1), 4000);
-                            if(register_count == 1) {
+                            if (register_count == 1) {
                                 document.body.removeChild(modal);
                             } else {
                                 register_count -= 1;
@@ -1455,7 +1455,7 @@
             });
             modal_content.appendChild(modal_submit);
             // For each pair in pairs, add the datatype to a string variable called type_string
-            
+
             let modal_type = document.createElement("p");
             const datatypes_string = Array.from(datatypes).join(", ");
             modal_type.innerHTML = "The value you are entering has to be castable to these types: " + datatypes_string + "<br>It also has to be of size: " + array_size;
@@ -1615,46 +1615,51 @@
                 table_header_row.appendChild(empty_table_header_row_cell);
             }
             make_empty_table_header_row_cell();
-            current_avatars.forEach(function (avatar) {
-                let table_header_cell = document.createElement('th');
-                table_header_cell.innerHTML = avatar.node_id;
-                table_header_cell.title = avatar.name;
-                table_header_cell.classList.add("node_id_header");
-                table_header_cell.setAttribute("data-node_id", avatar.node_id);
-                table_header_row.appendChild(table_header_cell);
-                if (showAlotOfButtons) {
-                    // Add a button to table_header_cell for downloading the table column
-                    let btnExportConfig = document.createElement('button');
-                    btnExportConfig.innerHTML = 'Export';
-                    // Attach an event listener on the button click event
-                    btnExportConfig.addEventListener('mousedown', function (event) {
-                        event.stopPropagation();
-                        addLocalMessage("Exporting registers of " + avatar.node_id);
-                        //const result = window.chooseFileSystemEntries({ type: "save-file" });
-                        // Export all but only for this avatar, dried up code
-                        export_all_selected_registers(avatar.node_id);
-                    });
-                    table_header_cell.appendChild(btnExportConfig);
-                    let btnApplyImportedConfig = document.createElement('button');
-                    btnApplyImportedConfig.innerHTML = 'Apply imported config';
-                    btnApplyImportedConfig.addEventListener('mousedown', function (event) {
-                        event.stopPropagation();
-                        const current_config = available_configurations[selected_config];
-                        if (current_config) {
-                            applyConfiguration(current_config, parseInt(avatar.node_id));
-                        } else {
-                            console.log("No configuration selected");
-                        }
-                    });
-                    table_header_cell.appendChild(btnApplyImportedConfig);
-                    let btnSelectColumn = document.createElement('button');
-                    btnSelectColumn.innerHTML = 'Select column';
-                    btnSelectColumn.addEventListener('mousedown', make_select_column(avatar.node_id));
-                    table_header_cell.appendChild(btnSelectColumn);
-                }
-                table_header_cell.onmousedown = make_select_column(avatar.node_id);
-                table_header_cell.onmouseover = make_select_column(avatar.node_id, true);
-            });
+            function add_node_id_headers() {
+                current_avatars.forEach(function (avatar) {
+                    let table_header_cell = document.createElement('th');
+                    table_header_cell.innerHTML = avatar.node_id;
+                    table_header_cell.title = avatar.name;
+                    table_header_cell.classList.add("node_id_header");
+                    table_header_cell.setAttribute("data-node_id", avatar.node_id);
+                    table_header_row.appendChild(table_header_cell);
+                    if (showAlotOfButtons) {
+                        // Add a button to table_header_cell for downloading the table column
+                        let btnExportConfig = document.createElement('button');
+                        btnExportConfig.innerHTML = 'Export';
+                        // Attach an event listener on the button click event
+                        btnExportConfig.addEventListener('mousedown', function (event) {
+                            event.stopPropagation();
+                            addLocalMessage("Exporting registers of " + avatar.node_id);
+                            //const result = window.chooseFileSystemEntries({ type: "save-file" });
+                            // Export all but only for this avatar, dried up code
+                            export_all_selected_registers(avatar.node_id);
+                        });
+                        table_header_cell.appendChild(btnExportConfig);
+                        let btnApplyImportedConfig = document.createElement('button');
+                        btnApplyImportedConfig.innerHTML = 'Apply imported config';
+                        btnApplyImportedConfig.addEventListener('mousedown', function (event) {
+                            event.stopPropagation();
+                            const current_config = available_configurations[selected_config];
+                            if (current_config) {
+                                applyConfiguration(current_config, parseInt(avatar.node_id));
+                            } else {
+                                console.log("No configuration selected");
+                            }
+                        });
+                        table_header_cell.appendChild(btnApplyImportedConfig);
+                        let btnSelectColumn = document.createElement('button');
+                        btnSelectColumn.innerHTML = 'Select column';
+                        btnSelectColumn.addEventListener('mousedown', make_select_column(avatar.node_id));
+                        table_header_cell.appendChild(btnSelectColumn);
+                    }
+                    table_header_cell.onmousedown = make_select_column(avatar.node_id);
+                    table_header_cell.onmouseover = make_select_column(avatar.node_id, true);
+                });
+            }
+            for (let i = 0; i < 6; i++) {
+                add_node_id_headers();
+            }
             if (current_avatars.length >= showDoubleRowHeadersFromCount) {
                 make_empty_table_header_row_cell()
             }
@@ -1670,31 +1675,7 @@
             });
             register_names.sort();
             // Add the table row headers for each register name
-            register_names.forEach(function (register_name) {
-                if (filter_keyword_inclusive != "" && !register_name.includes(filter_keyword_inclusive)) {
-                    return;
-                }
-                let table_register_row = document.createElement('tr');
-                registers_table_body.appendChild(table_register_row);
-                function make_header_cell() {
-                    let table_header_cell = document.createElement('th');
-                    // REGISTER NAME HERE
-                    table_header_cell.innerHTML = register_name;
-                    table_header_cell.onmousedown = make_select_row(register_name);
-                    table_header_cell.onmouseover = make_select_row(register_name, true);
-                    if (showAlotOfButtons) {
-                        let btnSelectRow = document.createElement('button');
-                        btnSelectRow.innerHTML = 'Select row';
-                        // Attach an event listener on the button click event
-                        btnSelectRow.onmousedown = make_select_row(register_name);
-                        table_header_cell.appendChild(btnSelectRow);
-                    }
-
-                    table_register_row.appendChild(table_header_cell);
-                }
-                make_header_cell();
-
-                // Add table cells for each avatar, containing the value of the register from register_name
+            function addContentForCells(register_name, table_register_row) {
                 current_avatars.forEach(function (avatar) {
                     // ALL THE REGISTER VALUES HERE
                     const table_cell = document.createElement('td');
@@ -1712,7 +1693,7 @@
                     if (register_value == null) {
                         table_cell.setAttribute("no_value", "true");
                         table_cell.classList.add("no-value");
-                        table_cell.style.backgroundColor = colors["no_value"];
+                        // table_cell.style.backgroundColor = colors["no_value"];
                         table_cell.title = "This register doesn't exist for this node";
                         return;
                     }
@@ -1827,6 +1808,7 @@
                     inputFieldReference.style.zIndex = '0';
                     inputFieldReference.setAttribute("spellcheck", "false");
                     inputFieldReference.classList.add('table-cell');
+                    inputFieldReference.disabled = true;
                     inputFieldReference.setAttribute("register_name", register_name);
                     inputFieldReference.setAttribute("node_id", avatar.node_id);
                     inputFieldReference.onmouseover = make_select_cell(avatar, register_name, is_mouse_over = true);
@@ -1864,10 +1846,48 @@
                     });
                     // Create a text input element in the table cell
                 });
+            }
+            function addContentForRegisterName(register_name) {
+                if (filter_keyword_inclusive != "" && !register_name.includes(filter_keyword_inclusive)) {
+                    return;
+                }
+                let table_register_row = document.createElement('tr');
+                registers_table_body.appendChild(table_register_row);
+                function make_header_cell() {
+                    let table_header_cell = document.createElement('th');
+                    // REGISTER NAME HERE
+                    table_header_cell.innerHTML = register_name;
+                    // Make table_header_cell have sticky position
+                    // Add class left-side-table-header
+                    table_header_cell.classList.add('left-side-table-header');
+                    table_header_cell.onmousedown = make_select_row(register_name);
+                    table_header_cell.onmouseover = make_select_row(register_name, true);
+                    if (showAlotOfButtons) {
+                        let btnSelectRow = document.createElement('button');
+                        btnSelectRow.innerHTML = 'Select row';
+                        // Attach an event listener on the button click event
+                        btnSelectRow.onmousedown = make_select_row(register_name);
+                        table_header_cell.appendChild(btnSelectRow);
+                    }
+
+                    table_register_row.appendChild(table_header_cell);
+                }
+                make_header_cell();
+                for (let i = 0; i < 6; i++) {
+                    addContentForCells(register_name, table_register_row);
+                }
+                // Add table cells for each avatar, containing the value of the register from register_name
+
                 if (current_avatars.length >= showDoubleRowHeadersFromCount) {
                     make_header_cell();
                 }
+            }
+
+            register_names.forEach(function (register_name) {
+                addContentForRegisterName(register_name);
             });
+
+
             updateRegistersTableColors();
         }
         function setTableCellSelectability(selectable) {
