@@ -20,12 +20,15 @@ from uavcan.register import List_1
 
 
 async def get_register_value(state: GodState, node_id: int, register_name: str) -> typing.Any:
-    service_client = state.cyphal.local_node.make_client(uavcan.register.Access_1_0, node_id)
-    service_client.response_timeout = 0.5
-    msg = uavcan.register.Access_1_0.Request()
-    msg.name.name = register_name
-    logger.warning("Got register value for %s", register_name)
-    return await service_client.call(msg)
+    while True:
+        service_client = state.cyphal.local_node.make_client(uavcan.register.Access_1_0, node_id)
+        service_client.response_timeout = 0.5
+        msg = uavcan.register.Access_1_0.Request()
+        msg.name.name = register_name
+        logger.warning("Got register value for %s", register_name)
+        response = await service_client.call(msg)
+        if response is not None:
+            return response
 
 
 async def get_register_names(state: GodState, node_id: int, new_avatar: Avatar) -> None:
@@ -34,7 +37,11 @@ async def get_register_names(state: GodState, node_id: int, new_avatar: Avatar) 
     list_client = state.cyphal.local_node.make_client(List_1, node_id)
     while True:
         msg = uavcan.register.List_1_0.Request(counter)
-        result: uavcan.register.List_1_0.Response = (await list_client.call(msg))[0]
+        list_client.response_timeout = 0.5
+        real_response = await list_client.call(msg)
+        if not real_response:
+            continue
+        result: uavcan.register.List_1_0.Response = (real_response)[0]
         # I am not using the result here because it gets snooped by the avatar
         register_name = result.name.name.tobytes().decode()
         if register_name != "" and len(register_name) > 1:
