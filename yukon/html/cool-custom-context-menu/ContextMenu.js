@@ -1,9 +1,10 @@
 class ContextMenu {
   constructor({ target = null, menuItems = [], mode = "dark" }) {
+    this.dataOfMenuElements = new WeakMap();
     this.target = target;
     this.menuItems = menuItems;
     this.mode = mode;
-    this.menuItemsNode = this.getMenuItemsNode();
+    this.menuElementsArray = this.getMenuItemsNode();
     this.isOpened = false;
     this.elementOpenedOn = null;
     this.renderedMenu = null;
@@ -18,33 +19,37 @@ class ContextMenu {
     }
 
     this.menuItems.forEach((data, index) => {
-      const item = this.createItemMarkup(data);
-      item.firstChild.setAttribute(
+      const element = this.createElementMarkup(data);
+      this.dataOfMenuElements.set(element, data);
+      if(!data.shouldBeDisplayed) {
+        data.shouldBeDisplayed = () => true;
+      }
+      element.firstChild.setAttribute(
         "style",
         `animation-delay: ${index * 0.01}s`
       );
-      nodes.push(item);
+      nodes.push(element);
     });
 
     return nodes;
   }
 
-  createItemMarkup(data) {
-    const elementOpenedOn  = this.elementOpenedOn;
+  createElementMarkup(data) {
+    const elementOpenedOn = this.elementOpenedOn;
     const button = document.createElement("BUTTON");
-    const item = document.createElement("LI");
+    const element = document.createElement("LI");
 
     button.innerHTML = data.content;
     button.classList.add("contextMenu-button");
-    item.classList.add("contextMenu-item");
+    element.classList.add("contextMenu-item");
 
-    if (data.divider) item.setAttribute("data-divider", data.divider);
-    item.appendChild(button);
+    if (data.divider) element.setAttribute("data-divider", data.divider);
+    element.appendChild(button);
     const contextMenuThis = this;
     if (data.events && data.events.length !== 0) {
       Object.entries(data.events).forEach((event) => {
         const [key, value] = event;
-        function wrapper(e) { 
+        function wrapper(e) {
           value(e, contextMenuThis.elementOpenedOn);
           contextMenuThis.closeMenu(contextMenuThis.renderedMenu);
         }
@@ -52,7 +57,7 @@ class ContextMenu {
       });
     }
 
-    return item;
+    return element;
   }
 
   renderMenu() {
@@ -61,7 +66,11 @@ class ContextMenu {
     menuContainer.classList.add("contextMenu");
     menuContainer.setAttribute("data-theme", this.mode);
 
-    this.menuItemsNode.forEach((item) => menuContainer.appendChild(item));
+    this.menuElementsArray.forEach((item) => {
+      if (this.dataOfMenuElements.get(item).shouldBeDisplayed()) {
+        menuContainer.appendChild(item)
+      }
+    });
 
     return menuContainer;
   }
@@ -75,47 +84,47 @@ class ContextMenu {
   }
 
   init() {
-    const contextMenu = this.renderMenu();
-    this.renderedMenu = contextMenu;
-    document.addEventListener("click", () => {console.log("Clicked"); this.closeMenu(contextMenu)});
-    window.addEventListener("blur", () => this.closeMenu(contextMenu));
+    
+    document.addEventListener("click", () => { console.log("Clicked"); this.closeMenu(this.renderedMenu) });
+    window.addEventListener("blur", () => this.closeMenu(this.renderedMenu));
     // When escape is pressed, close the menu
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
-        this.closeMenu(contextMenu);
+        this.closeMenu(this.renderedMenu);
       }
     });
     document.addEventListener("contextmenu", (e) => {
-      if(e.target.classList.contains(this.target)) {
+      if (e.target.classList.contains(this.target)) {
+        this.renderedMenu = this.renderMenu();
         e.preventDefault();
         this.elementOpenedOn = e.target;
         this.isOpened = true;
 
         const { clientX, clientY } = e;
-        document.body.appendChild(contextMenu);
+        document.body.appendChild(this.renderedMenu);
 
         const positionY =
-          clientY + contextMenu.scrollHeight >= window.innerHeight
-            ? window.innerHeight - contextMenu.scrollHeight - 20
+          clientY + this.renderedMenu.scrollHeight >= window.innerHeight
+            ? window.innerHeight - this.renderedMenu.scrollHeight - 20
             : clientY;
         const positionX =
-          clientX + contextMenu.scrollWidth >= window.innerWidth
-            ? window.innerWidth - contextMenu.scrollWidth - 20
+          clientX + this.renderedMenu.scrollWidth >= window.innerWidth
+            ? window.innerWidth - this.renderedMenu.scrollWidth - 20
             : clientX;
 
         setTimeout(() => {
-          contextMenu.setAttribute(
+          this.renderedMenu.setAttribute(
             "style",
-            `--width: ${contextMenu.scrollWidth}px;
-            --height: ${contextMenu.scrollHeight}px;
+            `--width: ${this.renderedMenu.scrollWidth}px;
+            --height: ${this.renderedMenu.scrollHeight}px;
             --top: ${positionY}px;
             --left: ${positionX}px;`
           );
-        }, 100); 
+        }, 100);
       } else {
         // The original browser context menu is not shown
         e.preventDefault();
-        this.closeMenu(contextMenu);
+        this.closeMenu(this.renderedMenu);
       }
     });
   }

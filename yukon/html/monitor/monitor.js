@@ -70,6 +70,20 @@
                 selectAll();
                 e.preventDefault();
             }
+            // If F5 is pressed, reread registers
+            if (e.keyCode == 116) {
+                const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": null });
+                let pairs = [];
+                // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
+                for (const node_id of Object.keys(data)) {
+                    const value = data[node_id];
+                    pairs[node_id] = {};
+                    for (const register_name of Object.keys(value)) {
+                        pairs[node_id][register_name] = true;
+                    }
+                }
+                rereadPairs(pairs);
+            }
         }
         document.addEventListener('keydown', function (e) {
             if (e.keyCode == 27) {
@@ -104,38 +118,38 @@
         function fallbackCopyTextToClipboard(text) {
             var textArea = document.createElement("textarea");
             textArea.value = text;
-            
+
             // Avoid scrolling to bottom
             textArea.style.top = "0";
             textArea.style.left = "0";
             textArea.style.position = "fixed";
-          
+
             document.body.appendChild(textArea);
             textArea.focus();
             textArea.select();
-          
+
             try {
-              var successful = document.execCommand('copy');
-              var msg = successful ? 'successful' : 'unsuccessful';
-              console.log('Fallback: Copying text command was ' + msg);
+                var successful = document.execCommand('copy');
+                var msg = successful ? 'successful' : 'unsuccessful';
+                console.log('Fallback: Copying text command was ' + msg);
             } catch (err) {
-              console.error('Fallback: Oops, unable to copy', err);
+                console.error('Fallback: Oops, unable to copy', err);
             }
-          
+
             document.body.removeChild(textArea);
-          }
-          function copyTextToClipboard(text) {
+        }
+        function copyTextToClipboard(text) {
             if (!navigator.clipboard) {
-              fallbackCopyTextToClipboard(text);
-              return;
+                fallbackCopyTextToClipboard(text);
+                return;
             }
-            navigator.clipboard.writeText(text).then(function() {
-              console.log('Async: Copying to clipboard was successful!');
-            }, function(err) {
-              console.error('Async: Could not copy text: ', err);
+            navigator.clipboard.writeText(text).then(function () {
+                console.log('Async: Copying to clipboard was successful!');
+            }, function (err) {
+                console.error('Async: Could not copy text: ', err);
             });
-          }
-          
+        }
+
         function unselectAll() {
             addLocalMessage("Unselecting all registers");
             selected_registers = {};
@@ -222,6 +236,24 @@
                         showCellValue(avatar.node_id, register_name);
                     }
                 },
+            },
+            {
+                content: `${downloadIcon}Set values`,
+                events: {
+                    click: (e, elementOpenedOn) => {
+                        const cell = elementOpenedOn;
+                        const node_id = cell.getAttribute("node_id");
+                        const register_name = cell.getAttribute("register_name");
+                        showCellValue(avatar.node_id, register_name);
+                    }
+                },
+                shouldBeDisplayed: (e, elementOpenedOn) => {
+                    // If there are more than 1 selected registers
+                    if(Object.keys(selected_registers).length > 1) {
+                        return true;
+                    }
+                    return false;
+                }
             },
             {
                 content: `${downloadIcon}Export selected registers`,
@@ -358,6 +390,24 @@
                                     } else {
                                         console.log("No configuration selected");
                                     }
+                                    if(!recently_reread_registers[node_id]) {
+                                        recently_reread_registers[node_id] = {};
+                                    }
+                                    for(let i = 0; i < avatar.registers.length; i++) {
+                                        const register_name = avatar.registers[i];
+                                        recently_reread_registers[node_id][register_name] = true;
+                                    }
+                                    
+                                    updateRegistersTableColors();
+                                    let registers_to_reset = JSON.parse(JSON.stringify(recently_reread_registers));
+                                    setTimeout(() => {
+                                        // Iterate through registers_to_reset and remove them from recently_reread_registers
+                                        for (let node_id in registers_to_reset) {
+                                            for (let register_name in registers_to_reset[node_id]) {
+                                                recently_reread_registers[node_id][register_name] = false;
+                                            }
+                                        }
+                                    }, 600);
                                 }
                             }
                         )
@@ -377,6 +427,24 @@
                         //const result = window.chooseFileSystemEntries({ type: "save-file" });
                         // Export all but only for this avatar, dried up code
                         export_all_selected_registers(avatar.node_id);
+                        if(!recently_reread_registers[node_id]) {
+                            recently_reread_registers[node_id] = {};
+                        }
+                        for(let i = 0; i < avatar.registers.length; i++) {
+                            const register_name = avatar.registers[i];
+                            recently_reread_registers[node_id][register_name] = true;
+                        }
+                        
+                        updateRegistersTableColors();
+                        let registers_to_reset = JSON.parse(JSON.stringify(recently_reread_registers));
+                        setTimeout(() => {
+                            // Iterate through registers_to_reset and remove them from recently_reread_registers
+                            for (let node_id in registers_to_reset) {
+                                for (let register_name in registers_to_reset[node_id]) {
+                                    recently_reread_registers[node_id][register_name] = false;
+                                }
+                            }
+                        }, 600);
                     }
                 }
             },
@@ -1862,8 +1930,9 @@
             // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
             for (const node_id of Object.keys(data)) {
                 const value = data[node_id];
+                pairs[node_id] = {};
                 for (const register_name of Object.keys(value)) {
-                    pairs.push([node_id, register_name]);
+                    pairs[node_id][register_name] = true;
                 }
             }
             rereadPairs(pairs);
@@ -1871,15 +1940,16 @@
         const btnRereadSelectedRegisters = document.getElementById('btnRereadSelectedRegisters');
         btnRereadSelectedRegisters.addEventListener('click', function () {
             const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null });
-            let pairs = [];
+            let pairs = {};
             // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
             for (const node_id of Object.keys(data)) {
                 const value = data[node_id];
+                pairs[node_id] = {};
                 for (const register_name of Object.keys(value)) {
-                    pairs.push([node_id, register_name]);
+                    pairs[node_id][register_name] = true;
                 }
             }
-            rereadPairs(pairs);
+            rereadPairs(data);
         });
     }
     try {
