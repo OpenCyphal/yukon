@@ -38,39 +38,38 @@ async def get_register_names(state: GodState, node_id: int, new_avatar: Avatar) 
     register_values: typing.Any = {}
     counter = 0
     list_client = state.cyphal.local_node.make_client(List_1, node_id)
-    while True:
-        msg = uavcan.register.List_1_0.Request(counter)
-        list_client.response_timeout = 0.5
+
+    async def make_request_and_deal_with_response(i):
+        msg = uavcan.register.List_1_0.Request(i)
+        list_client.response_timeout = 2
         real_response = await list_client.call(msg)
         if not real_response:
-            print("Failed response to port list nr %s", counter)
-            continue
-        result: uavcan.register.List_1_0.Response = (real_response)[0]
+            print("Failed response to port list nr %s", i)
+        result: uavcan.register.List_1_0.Response = real_response[0]
         # I am not using the result here because it gets snooped by the avatar
         register_name = result.name.name.tobytes().decode()
         if register_name != "" and len(register_name) > 1:
             response = await get_register_value(state, node_id, register_name)
             if response:
                 obj = response[0]
-                counter += 1
                 if register_name == "uavcan.node.unique_id":
                     unstructured_value = obj.value.unstructured
                     array = bytearray(unstructured_value.value)
                     # Convert to hex string
                     hex_string = array.hex(":")
                     register_values[register_name] = hex_string
-                    continue
+                    return
                 register_values[register_name] = str(_simplify_value(obj.value))
-        else:
-            break
+    for good_counter in range(0, 100):
+        asyncio.create_task(make_request_and_deal_with_response(good_counter))
     new_avatar.register_values = register_values
 
 
 def make_handler_for_node_detected(
-    state: GodState, iface: Iface
+        state: GodState, iface: Iface
 ) -> typing.Callable[[int, typing.Optional[Entry], typing.Optional[Entry]], None]:
     def handle_getinfo_handler_format(
-        node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
+            node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
     ) -> None:
         logger.debug("Some hearbeat was probably received")
         if next_entry and next_entry.info is None:

@@ -1319,6 +1319,7 @@
             });
             return { "modal": modal, "modal_content": modal_content };
         }
+        //  This is the modal that you see when you click Set values and have multiple registers selected
         function editSelectedCellValues(pairs) {
             let returnObject = createGenericModal();
             let modal = returnObject.modal;
