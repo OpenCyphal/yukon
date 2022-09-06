@@ -32,7 +32,8 @@ thead th {
 }
 
 tbody th {
-  background-color: #0003EE;
+  /* background-color: #0003EE; */
+  background-color: gray;
   color: #fff;
   text-align: left;
 }
@@ -101,5 +102,9 @@ td.selected-cell {
 }
 td.selected-cell label {
   background-color: transparent;
+  color: white;
+}
+td.recently_reread_register {
+  background-color: #B00036;
   color: white;
 }

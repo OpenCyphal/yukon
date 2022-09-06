@@ -1,4 +1,5 @@
 const _zubax_api = { "empty": true }
+
 let zubax_api_ready = false;
 const zubax_api = new Proxy(_zubax_api, {
     get(target, prop) {
