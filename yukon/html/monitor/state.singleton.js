@@ -11,7 +11,7 @@ var yukon_state = {
     "zubax_api": null,
     "last_table_hashes": { set: new Set() }, // The same avatar hashes but for tables
     "last_hashes": { set: new Set() },
-    "existing_hashes": {
+    "existingHashesSet": {
         "set": new Set(),
     },
     "settings": {

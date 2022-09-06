@@ -1,5 +1,8 @@
 import {areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
-export function add_node_id_headers(current_avatars, table_header_row, make_select_column, showAlotOfButtons, yukon_state) {
+import { applyConfiguration } from './yaml.configurations.module.js';
+import {make_select_column} from './registers.selection.module.js';
+export function add_node_id_headers(table_header_row, yukon_state) {
+    const current_avatars = yukon_state.current_avatars;
     current_avatars.forEach(function (avatar) {
         let table_header_cell = document.createElement('th');
         table_header_cell.innerHTML = avatar.node_id;
@@ -7,7 +10,7 @@ export function add_node_id_headers(current_avatars, table_header_row, make_sele
         table_header_cell.classList.add("node_id_header");
         table_header_cell.setAttribute("data-node_id", avatar.node_id);
         table_header_row.appendChild(table_header_cell);
-        if (showAlotOfButtons) {
+        if (yukon_state.settings.showAlotOfButtons) {
             // Add a button to table_header_cell for downloading the table column
             let btnExportConfig = document.createElement('button');
             btnExportConfig.innerHTML = 'Export';
@@ -41,15 +44,15 @@ export function add_node_id_headers(current_avatars, table_header_row, make_sele
         table_header_cell.onmouseover = make_select_column(avatar.node_id, true);
     });
 }
-export function make_empty_table_header_row_cell(table_header_row, selected_config, showAlotOfButtons, applyConfiguration, yukon_state) {
+export function make_empty_table_header_row_cell(table_header_row, yukon_state) {
     var empty_table_header_row_cell = document.createElement('th');
-    if (showAlotOfButtons) {
+    if (yukon_state.settings.showAlotOfButtons) {
         // Add a button into the empty table header row cell
         var button = document.createElement('button');
         button.innerHTML = 'Apply sel. conf to all nodes';
         button.onclick = function () {
-            if (selected_config != null && yukon_state.available_configurations[selected_config] != null) {
-                applyConfiguration(yukon_state.available_configurations[selected_config]);
+            if (yukon_state.selections.selected_config != null && yukon_state.available_configurations[yukon_state.selections.selected_config] != null) {
+                applyConfiguration(yukon_state.available_configurations[yukon_state.selections.selected_config]);
             }
         }
         empty_table_header_row_cell.appendChild(button);
@@ -62,7 +65,7 @@ export function make_empty_table_header_row_cell(table_header_row, selected_conf
     }
     table_header_row.appendChild(empty_table_header_row_cell);
 }
-export function addContentForRegisterName(register_name, current_avatars, showAlotOfButtons, make_select_cell, showCellValue, shouldDoubleClickOpenModal, filter_keyword_inclusive, registers_table_body, make_select_row, showDoubleRowHeadersFromCount, yukon_state) {
+export function addContentForRegisterName(register_name, filter_keyword_inclusive, registers_table_body, yukon_state) {
     if (filter_keyword_inclusive != "" && !register_name.includes(filter_keyword_inclusive)) {
         return;
     }
@@ -89,15 +92,15 @@ export function addContentForRegisterName(register_name, current_avatars, showAl
     }
     make_header_cell();
 
-    addContentForCells(register_name, table_register_row, current_avatars, make_select_cell, showCellValue, shouldDoubleClickOpenModal, yukon_state);
+    addContentForCells(register_name, table_register_row, yukon_state);
     // Add table cells for each avatar, containing the value of the register from register_name
 
-    if (current_avatars.length >= showDoubleRowHeadersFromCount) {
+    if (yukon_state.current_avatars.length >= yukon_state.settings.showDoubleRowHeadersFromCount) {
         make_header_cell();
     }
 }
-export function addContentForCells(register_name, table_register_row, current_avatars, make_select_cell, showCellValue, shouldDoubleClickOpenModal, yukon_state) {
-    current_avatars.forEach(function (avatar) {
+export function addContentForCells(register_name, table_register_row, yukon_state) {
+    yukon_state.current_avatars.forEach(function (avatar) {
         // ALL THE REGISTER VALUES HERE
         const table_cell = document.createElement('td');
         table_register_row.appendChild(table_cell);
@@ -260,7 +263,7 @@ export function addContentForCells(register_name, table_register_row, current_av
         // Create a text input element in the table cell
     });
 }
-export function create_registers_table(_filter_keyword_inclusive = null) {
+export function create_registers_table(_filter_keyword_inclusive, yukon_state) {
     // Clear the table
     const filter_keyword_inclusive = _filter_keyword_inclusive || iRegistersFilter.value;
     var registers_table = document.querySelector('#registers_table')
@@ -272,10 +275,10 @@ export function create_registers_table(_filter_keyword_inclusive = null) {
     // Add the table headers
     var table_header_row = document.createElement('tr');
 
-    make_empty_table_header_row_cell(table_header_row, selected_config, showAlotOfButtons, applyConfiguration, yukon_state);
+    make_empty_table_header_row_cell(table_header_row, yukon_state);
 
-    add_node_id_headers(yukon_state.current_avatars, table_header_row, make_select_column, showAlotOfButtons, yukon_state);
-    if (yukon_state.current_avatars.length >= showDoubleRowHeadersFromCount) {
+    add_node_id_headers(table_header_row, yukon_state);
+    if (yukon_state.current_avatars.length >= yukon_state.settings.showDoubleRowHeadersFromCount) {
         make_empty_table_header_row_cell()
     }
     registers_table_header.appendChild(table_header_row);
@@ -291,14 +294,14 @@ export function create_registers_table(_filter_keyword_inclusive = null) {
     register_names.sort();
 
     register_names.forEach(function (register_name) {
-        addContentForRegisterName(register_name, yukon_state.current_avatars, showAlotOfButtons, make_select_cell, showCellValue, shouldDoubleClickOpenModal, filter_keyword_inclusive, registers_table_body, make_select_row, showDoubleRowHeadersFromCount, yukon_state);
+        addContentForRegisterName(register_name, filter_keyword_inclusive, registers_table_body, yukon_state);
     });
 
     updateRegistersTableColors();
 }
-export function update_tables(override = false) {
-    if (override || areThereAnyNewOrMissingHashes(yukon_state.last_table_hashes, "hash", yukon_state)) {
-        create_registers_table();
+export function update_tables(override) {
+    if (override || areThereAnyNewOrMissingHashes("hash", yukon_state)) {
+        create_registers_table(null, yukon_state);
     }
-    updateLastHashes(last_table_hashes, "hash");
+    updateLastHashes(yukon_state.last_table_hashes, "hash");
 }

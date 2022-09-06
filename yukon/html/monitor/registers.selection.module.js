@@ -61,3 +61,75 @@ export function getAllEntireColumnsThatAreSelected(yukon_state) {
     }
     return all_registers_selected;
 }
+
+export function make_select_column(node_id, is_mouse_over) {
+    return function (event) {
+        if (is_mouse_over) {
+            if (!event.buttons == 1) {
+                return;
+            }
+        }
+        // Check if the mouse button was not a left click
+        if (event.button !== 0) {
+            return;
+        }
+        // I want to make sure that the user is not selecting text, that's not when we activate this.
+        if (window.getSelection().toString() !== "") {
+            return;
+        }
+        event.stopPropagation();
+        if (is_selection_mode_complicated) {
+            if (selected_columns[node_id]) {
+                selected_columns[node_id] = false;
+                addLocalMessage("Column " + node_id + " deselected");
+            } else {
+                selected_columns[node_id] = true;
+                addLocalMessage("Column " + node_id + " selected");
+            }
+        } else {
+            // See if any register of this node_id is selected
+            let any_register_selected = false;
+            // For every register in the avatar with the node_id
+            for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+                const current_avatar = yukon_state.current_avatars[i]
+                if (current_avatar.node_id == node_id) {
+                    for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                        const register_name = yukon_state.current_avatars[i].registers[j];
+                        if (selected_registers[[node_id, register_name]]) {
+                            any_register_selected = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (any_register_selected) {
+                // Deselect all registers of this node_id
+                for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+                    const current_avatar = yukon_state.current_avatars[i]
+                    if (current_avatar.node_id == node_id) {
+                        for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                            const register_name = yukon_state.current_avatars[i].registers[j];
+                            selected_registers[[node_id, register_name]] = false;
+                        }
+                    }
+                }
+                addLocalMessage("Column " + node_id + " deselected");
+            } else {
+                // Select all registers of this node_id
+                for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+                    const current_avatar = yukon_state.current_avatars[i]
+                    if (current_avatar.node_id == node_id) {
+                        for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                            const register_name = yukon_state.current_avatars[i].registers[j];
+                            selected_registers[[node_id, register_name]] = true;
+                        }
+                    }
+                }
+                addLocalMessage("Column " + node_id + " selected");
+            }
+
+        }
+        updateRegistersTableColors();
+
+    }
+}

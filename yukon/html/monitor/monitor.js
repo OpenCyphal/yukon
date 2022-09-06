@@ -304,23 +304,6 @@ import { create_registers_table, update_tables } from './registers.module.js';
         }
         setInterval(fetchAndHandleInternalMessages, 1000);
 
-        function update_register_value(register_name, register_value, node_id) {
-            // Find the avatar which has the node_id
-            const the_avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id === parseInt(node_id));
-            let unprocessed_value = JSON.parse(JSON.stringify(the_avatar["registers_exploded_values"][register_name]))
-            // if unprocessed_value[Object.keys(the_value)[0]]["value"]
-            if (typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] == "string") {
-                unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_value
-            } else if (typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"][0] == "number") {
-                // Split register_value by comma and convert to array of numbers
-                // Remove square brackets
-                register_value = register_value.replace("[", "").replace("]", "");
-                let register_values = register_value.split(",").map(Number);
-                unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_values
-            }
-            console.log("Register value updated for " + register_name + " to " + register_value + " for node " + node_id)
-            zubax_api.update_register_value(register_name, unprocessed_value, node_id);
-        }
         function updateTextOut(refresh_anyway = false) {
             zubax_api.get_avatars().then(
                 function (avatars) {
@@ -400,77 +383,6 @@ import { create_registers_table, update_tables } from './registers.module.js';
             }
         }
 
-        function make_select_column(node_id, is_mouse_over = false) {
-            return function (event) {
-                if (is_mouse_over) {
-                    if (!event.buttons == 1) {
-                        return;
-                    }
-                }
-                // Check if the mouse button was not a left click
-                if (event.button !== 0) {
-                    return;
-                }
-                // I want to make sure that the user is not selecting text, that's not when we activate this.
-                if (window.getSelection().toString() !== "") {
-                    return;
-                }
-                event.stopPropagation();
-                if (is_selection_mode_complicated) {
-                    if (selected_columns[node_id]) {
-                        selected_columns[node_id] = false;
-                        addLocalMessage("Column " + node_id + " deselected");
-                    } else {
-                        selected_columns[node_id] = true;
-                        addLocalMessage("Column " + node_id + " selected");
-                    }
-                } else {
-                    // See if any register of this node_id is selected
-                    let any_register_selected = false;
-                    // For every register in the avatar with the node_id
-                    for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                        const current_avatar = yukon_state.current_avatars[i]
-                        if (current_avatar.node_id == node_id) {
-                            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
-                                const register_name = yukon_state.current_avatars[i].registers[j];
-                                if (selected_registers[[node_id, register_name]]) {
-                                    any_register_selected = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (any_register_selected) {
-                        // Deselect all registers of this node_id
-                        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                            const current_avatar = yukon_state.current_avatars[i]
-                            if (current_avatar.node_id == node_id) {
-                                for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
-                                    const register_name = yukon_state.current_avatars[i].registers[j];
-                                    selected_registers[[node_id, register_name]] = false;
-                                }
-                            }
-                        }
-                        addLocalMessage("Column " + node_id + " deselected");
-                    } else {
-                        // Select all registers of this node_id
-                        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                            const current_avatar = yukon_state.current_avatars[i]
-                            if (current_avatar.node_id == node_id) {
-                                for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
-                                    const register_name = yukon_state.current_avatars[i].registers[j];
-                                    selected_registers[[node_id, register_name]] = true;
-                                }
-                            }
-                        }
-                        addLocalMessage("Column " + node_id + " selected");
-                    }
-
-                }
-                updateRegistersTableColors();
-
-            }
-        }
         function make_select_row(register_name, is_mouse_over = false) {
             return function (event) {
                 // If left mouse button is pressed
@@ -652,7 +564,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
                     // Update the value in the table
                     // text_input.value = new_value;
                     // Update the value in the server
-                    update_register_value(register_name, new_value, avatar.node_id);
+                    update_register_value(register_name, new_value, avatar.node_id, yukon_state);
                     // Run update_tables every second, do that only for the next 4 seconds
                     let interval1 = setInterval(() => update_tables(true), 1000);
                     setTimeout(() => clearInterval(interval1), 4000);
@@ -736,7 +648,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
                             // Update the value in the table
                             // text_input.value = new_value;
                             // Update the value in the server
-                            update_register_value(register_name, modal_value.value, node_id);
+                            update_register_value(register_name, modal_value.value, node_id, yukon_state);
                             // Run update_tables every second, do that only for the next 4 seconds
                             let interval1 = setInterval(() => update_tables(true), 1000);
                             setTimeout(() => clearInterval(interval1), 4000);
@@ -805,7 +717,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
                     // Update the value in the table
                     // text_input.value = new_value;
                     // Update the value in the server
-                    update_register_value(register_name, new_value, avatar.node_id);
+                    update_register_value(register_name, new_value, avatar.node_id, yukon_state);
                     // Run update_tables every second, do that only for the next 4 seconds
                     let interval1 = setInterval(() => update_tables(true), 1000);
                     setTimeout(() => clearInterval(interval1), 4000);
@@ -950,11 +862,11 @@ import { create_registers_table, update_tables } from './registers.module.js';
             return JSON.stringify(configuration);
         }
         function update_directed_graph() {
-            if (!areThereAnyNewOrMissingHashes(last_hashes, "monitor_view_hash", yukon_state)) {
-                updateLastHashes(last_hashes, "monitor_view_hash");
+            if (!areThereAnyNewOrMissingHashes("monitor_view_hash", yukon_state)) {
+                updateLastHashes("monitor_view_hash");
                 return;
             }
-            updateLastHashes(last_hashes, "monitor_view_hash");
+            updateLastHashes(yukon_state.last_hashes, "monitor_view_hash");
             my_graph.elements().remove();
             let available_publishers = {};
             let available_servers = {};
@@ -1083,7 +995,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
                 }
                 const [node_id, register_name] = key.split(",");
                 if (node_id && register_name) {
-                    update_register_value(register_name, new_value, node_id);
+                    update_register_value(register_name, new_value, node_id, yukon_state);
                 }
             }
             // Run update_tables every second, do that only for the next 4 seconds
@@ -1099,7 +1011,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
                 }
                 const [node_id, register_name] = key.split(",");
                 if (node_id && register_name) {
-                    update_register_value(register_name, "65535", node_id);
+                    update_register_value(register_name, "65535", node_id, yukon_state);
                 }
             }
             // Run update_tables every second, do that only for the next 4 seconds
@@ -1122,7 +1034,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
                 clearTimeout(timer);
             }
             timer = setTimeout(function () {
-                create_registers_table()
+                create_registers_table(null, yukon_state)
             }, 500);
         });
         const btnRereadAllRegisters = document.getElementById('btnRereadAllRegisters');
