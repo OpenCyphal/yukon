@@ -32,7 +32,8 @@ thead th {
 }
 
 tbody th {
-  background-color: #0003EE;
+  /* background-color: #0003EE; */
+  background-color: gray;
   color: #fff;
   text-align: left;
 }

@@ -1,3 +1,5 @@
+import {abc} from './monitor.module.js';
+console.log("ABC is " + abc);
 (function () {
     function addLocalMessage(message) {
         zubax_api.add_local_message(message)
@@ -616,7 +618,7 @@
                     if (deserialized_messages.length == 0) {
                         return;
                     }
-                    for (message in deserialized_messages) {
+                    for (const message in deserialized_messages) {
                         if (message.internal) {
                             if (message.message.includes("is not mutable")) {
                                 addLocalMessage(message.message);
@@ -972,8 +974,8 @@
         }
 
         function areThereAnyNewOrMissingHashes(existingHashesSet, hash_property) {
-            current_hashes_set = new Set();
-            for (var i = 0; i < current_avatars.length; i++) {
+            let current_hashes_set = new Set();
+            for (var i = 0; i < current_avatars.length; i++) {  
                 current_hashes_set.add(current_avatars[i][hash_property]);
             }
             return !eqSet(current_hashes_set, existingHashesSet.set);
@@ -1802,7 +1804,7 @@
                     inputFieldReference.classList.add('input');
                     inputFieldReference.style["pointer-events"] = 'none'; // This is to make sure that the table_cell can receive events
                     table_cell.classList.add('table-cell');
-                    table_cell.onmouseover = make_select_cell(avatar, register_name, is_mouse_over = true);
+                    table_cell.onmouseover = make_select_cell(avatar, register_name, true);
                     // inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
                     var lastClick = null;
                     table_cell.addEventListener('mousedown', function (event) {
@@ -1944,14 +1946,14 @@
             }
             updateLastHashes(last_hashes, "monitor_view_hash");
             my_graph.elements().remove();
-            available_publishers = {};
-            available_servers = {};
-            for (avatar of current_avatars) {
+            let available_publishers = {};
+            let available_servers = {};
+            for (const avatar of current_avatars) {
                 console.log(avatar);
                 my_graph.add([{ data: { id: avatar.node_id, label: avatar.node_id + "\n" + avatar.name } }]);
                 if (!avatar.ports) { continue; }
                 // Add a node for each pub and connect, then connect avatar to every pub node
-                for (pub of avatar.ports.pub) {
+                for (const pub of avatar.ports.pub) {
                     my_graph.add([{ data: { id: pub, "publish_subject": true, label: pub + "\nsubject" } }])
                     available_publishers[pub] = true;
                     my_graph.add([{ data: { source: avatar.node_id, target: pub, "publish_edge": true } }]);
@@ -1959,19 +1961,19 @@
                 // clients should point to servers
                 // client node --> [port] --> server node
                 // publisher node --> [port] --> subscriber node
-                for (srv of avatar.ports.srv) {
+                for (const srv of avatar.ports.srv) {
                     my_graph.add([{ data: { id: srv, serve_subject: true, label: srv + "\nservice" } }])
                     my_graph.add([{ data: { source: srv, target: avatar.node_id, label: "A nice label", "serve_edge": true } }])
                 }
 
             }
-            for (avatar of current_avatars) {
-                for (sub of avatar.ports.sub) {
+            for (const avatar of current_avatars) {
+                for (const sub of avatar.ports.sub) {
                     if (available_publishers[sub]) {
                         my_graph.add([{ data: { source: sub, target: avatar.node_id, label: "A nice label" } }]);
                     }
                 }
-                for (cln of avatar.ports.cln) {
+                for (const cln of avatar.ports.cln) {
                     if (available_servers[cln]) {
                         my_graph.add([{ data: { source: avatar.node_id, target: cln, label: "A nice label" } }]);
                     }
@@ -2037,15 +2039,15 @@
             }
         });
         // This is actually one of the tabs in the tabbed interface but it also acts as a refresh layout button
-        btnMonitorTab = document.getElementById('btnMonitorTab');
+        const btnMonitorTab = document.getElementById('btnMonitorTab');
         btnMonitorTab.addEventListener('click', function () {
             refresh_graph_layout();
         });
-        btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
+        const btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
         btnAddAnotherTransport.addEventListener('click', function () {
             zubax_api.open_add_transport_window();
         });
-        btnImportRegistersConfig = document.getElementById('btnImportRegistersConfig');
+        const btnImportRegistersConfig = document.getElementById('btnImportRegistersConfig');
         btnImportRegistersConfig.addEventListener('click', function () {
             zubax_api.import_node_configuration().then(
                 function (result) {
@@ -2060,7 +2062,7 @@
                 }
             )
         });
-        btnSelectedSetFromPrompt = document.getElementById('btnSelectedSetFromPrompt');
+        const btnSelectedSetFromPrompt = document.getElementById('btnSelectedSetFromPrompt');
         btnSelectedSetFromPrompt.addEventListener('click', function () {
             new_value = prompt("Enter the new value of selected registers", "")
             if (new_value == null) { addLocalMessage("No value was provided in the prompt."); return; }
