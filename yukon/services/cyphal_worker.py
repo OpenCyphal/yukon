@@ -35,7 +35,7 @@ def cyphal_worker(state: GodState) -> None:
             make_tracers_trackers(state)
             print("Tracers should have been set up.")
             while state.gui.gui_running:
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.05)
                 if not state.queues.attach_transport.empty():
                     try:
                         atr: AttachTransportRequest = state.queues.attach_transport.get_nowait()
@@ -51,9 +51,11 @@ def cyphal_worker(state: GodState) -> None:
                     finally:
                         attach_transport_response = AttachTransportResponse(False, tb)
                         state.queues.attach_transport_response.put(attach_transport_response)
+                await asyncio.sleep(0.02)
                 if not state.queues.detach_transport.empty():
                     transport = state.queues.detach_transport.get_nowait()
                     state.cyphal.pseudo_transport.detach_inferior(transport)
+                await asyncio.sleep(0.02)
                 if not state.queues.update_registers.empty():
                     register_update = state.queues.update_registers.get_nowait()
                     # make a uavcan.register.Access_1 request to the node
@@ -91,6 +93,7 @@ def cyphal_worker(state: GodState) -> None:
                             register_update.register_name,
                             register_update.node_id,
                         )
+                await asyncio.sleep(0.02)
                 if not state.queues.apply_configuration.empty():
                     config = state.queues.apply_configuration.get_nowait()
                     if config.node_id and not config.is_network_config:
@@ -166,6 +169,7 @@ def cyphal_worker(state: GodState) -> None:
                                 )
                     else:
                         raise Exception("Didn't do anything with this configuration")
+                await asyncio.sleep(0.02)
                 if not state.queues.reread_registers.empty():
                     request2: RereadRegistersRequest = state.queues.reread_registers.get_nowait()
                     for pair in request2.pairs:

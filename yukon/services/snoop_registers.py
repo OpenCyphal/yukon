@@ -31,6 +31,7 @@ async def get_register_value(state: GodState, node_id: int, register_name: str) 
             return response
         else:
             print("Failed response to register value for " + register_name)
+            await asyncio.sleep(0.02)
             continue
 
 

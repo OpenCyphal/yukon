@@ -25,6 +25,8 @@ paths = sys.path
 logger = logging.getLogger()
 logger.setLevel("INFO")
 
+from multiprocessing import Process
+
 
 def run_electron() -> None:
     # Make the thread sleep for 1 second waiting for the server to start
@@ -32,6 +34,10 @@ def run_electron() -> None:
     exe_path = get_electron_path()
     # Use subprocess to run the exe
     os.spawnl(os.P_NOWAIT, str(exe_path), str(exe_path), "http://localhost:5000")
+
+
+def run_server() -> None:
+    server.run(host="0.0.0.0", port=5000)
 
 
 def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
@@ -49,9 +55,6 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
 
     cyphal_worker_thread = threading.Thread(target=cyphal_worker, args=[state])
     cyphal_worker_thread.start()
-
-    def run_server() -> None:
-        server.run(host="0.0.0.0", port=5000)
 
     def open_webbrowser() -> None:
         webbrowser.open("http://localhost:5000/")
