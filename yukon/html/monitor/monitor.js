@@ -1071,8 +1071,10 @@
                         table_cell.classList.remove("selected-cell");
                     }
                     if (is_recently_reread) {
-                        table_cell.classList.add("recently_reread");
+                        table_cell.classList.add("recently_reread_register");
                         needsRefresh = true;
+                    } else {
+                        table_cell.classList.remove("recently_reread_register");
                     }
                 }
             }

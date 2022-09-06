@@ -103,3 +103,7 @@ td.selected-cell label {
   background-color: transparent;
   color: white;
 }
+td.recently_reread_register {
+  background-color: #B00036;
+  color: white;
+}
