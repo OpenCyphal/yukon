@@ -5,7 +5,9 @@ var yukon_state = {
         selected_rows: {}, // Key is register_name and value is true if selected
         selected_registers: {}, // Key is array of nodeid and register name, value is true if selected
         selected_config: null,
+        last_cell_selected: null,
     },
+    "updateRegistersTableColorsAgainTimer": null,
     "recently_reread_registers": {},
     "available_configurations": {},
     "zubax_api": null,

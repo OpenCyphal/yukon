@@ -26,15 +26,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
         var selected_columns = yukon_state.selections.selected_columns;
         var selected_rows = yukon_state.selections.selected_rows;
         var recently_reread_registers = {};
-        var last_cell_selected = null;
-        let is_selection_mode_complicated = false;
         let lastInternalMessageIndex = -1;
-        let showAlotOfButtons = false;
-        let showDoubleRowHeadersFromCount = 6;
-        let shouldDoubleClickPromptToSetValue = false;
-        let shouldDoubleClickOpenModal = true;
-        var isTableCellTextSelectable = true;
-        let myContext = this;
         const selectingTableCellsIsDisabledStyle = document.createElement('style');
         selectingTableCellsIsDisabledStyle.innerHTML = `
         .table-cell {
@@ -93,7 +85,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
                 if (escape_timer) {
                     clearTimeout(escape_timer);
                     escape_timer = null;
-                    unselectAll();
+                    unselectAll(yukon_state);
                 } else {
                     escape_timer = setTimeout(function () {
                         escape_timer = null;
@@ -153,20 +145,20 @@ import { create_registers_table, update_tables } from './registers.module.js';
             });
         }
 
-        function unselectAll() {
+        function unselectAll(yukon_state) {
             addLocalMessage("Unselecting all registers");
-            selected_registers = {};
-            selected_columns = {};
-            selected_rows = {};
-            updateRegistersTableColors();
+            yukon_state.selections.selected_registers = {};
+            yukon_state.selections.selected_columns = {};
+            yukon_state.selections.selected_rows = {};
+            updateRegistersTableColors(yukon_state);
             window.getSelection()?.removeAllRanges();
-            last_cell_selected = null;
+            yukon_state.selections.last_cell_selected = null;
         }
         function selectAll() {
             // Iterate through every avatar in current_avatars and register_name and add them to the selected_registers
             addLocalMessage("Selecting all registers");
             if (isAllSelected()) {
-                unselectAll();
+                unselectAll(yukon_state);
                 return;
             }
             for (let avatar of yukon_state.current_avatars) {
@@ -177,7 +169,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
                     selected_registers[[avatar.node_id, register_name]] = true;
                 }
             }
-            updateRegistersTableColors();
+            updateRegistersTableColors(yukon_state);
         }
 
 
@@ -193,7 +185,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
                     recently_reread_registers[node_id][register_name] = true;
                 }
             }
-            updateRegistersTableColors();
+            updateRegistersTableColors(yukon_state);
             let registers_to_reset = JSON.parse(JSON.stringify(recently_reread_registers));
             setTimeout(() => {
                 // Iterate through registers_to_reset and remove them from recently_reread_registers
@@ -318,137 +310,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
             );
         }
         setInterval(updateTextOut, 1000);
-        let updateRegistersTableColorsAgainTimer = null;
-        function updateRegistersTableColors() {
-            var registers_table = document.querySelector('#registers_table')
-            // For all table cells in registers_table, if the cell has the attribute node_id set to node_id then color it red if the node is selected or white if not
-            let needsRefresh = false;
-            for (var i = 1; i < registers_table.rows.length; i++) {
-                for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
-                    const table_cell = registers_table.rows[i].cells[j]
-                    let register_name = table_cell.getAttribute("id")
-                    if (register_name == null) {
-                        continue; // Must be the header cell at the end
-                    }
-                    // Remove the string "register_" from the register_name
-                    register_name = register_name.substring(9);
-                    const node_id = table_cell.getAttribute("node_id");
-                    const is_register_selected = selected_registers[[node_id, register_name]];
-                    const is_column_selected = selected_columns[node_id];
-                    const is_row_selected = selected_rows[register_name];
-                    const temp_node = recently_reread_registers[node_id];
-                    const is_recently_reread = temp_node && temp_node[register_name] === true;
-                    if (!table_cell) {
-                        continue;
-                    }
-                    if (!register_name) {
-                        console.warn("No register name found in table cell " + i + "," + j)
-                        continue;
-                    }
-                    if (is_register_selected || is_column_selected || is_row_selected) {
-                        table_cell.classList.add("selected-cell");
-                    } else {
-                        // Remove the class "selected_element" from the input element if it has it
-                        table_cell.classList.remove("selected-cell");
-                    }
-                    if (is_register_selected) {
-                        table_cell.classList.add("selected-cell");
-                        if (is_recently_reread) {
-                            table_cell.classList.add("recently_reread_register");
-                            needsRefresh = true;
-                        }
-                    } else if (is_row_selected) {
-                        table_cell.style.backgroundColor = colors["selected_row"];
-                        if (is_column_selected) {
-                            table_cell.classList.add("selected_row_and_column");
-                        }
-                    } else if (is_column_selected) {
-                        table_cell.classList.add("selected_column");
-                    } else {
-                        table_cell.classList.remove("selected-cell");
-                    }
-                    if (is_recently_reread) {
-                        table_cell.classList.add("recently_reread_register");
-                        needsRefresh = true;
-                    } else {
-                        table_cell.classList.remove("recently_reread_register");
-                    }
-                }
-            }
-            if (needsRefresh) {
-                if (updateRegistersTableColorsAgainTimer != null) {
-                    clearTimeout(updateRegistersTableColorsAgainTimer);
-                }
-                updateRegistersTableColorsAgainTimer = setTimeout(updateRegistersTableColors, 1000);
-            }
-        }
 
-        function make_select_row(register_name, is_mouse_over = false) {
-            return function (event) {
-                // If left mouse button is pressed
-                if (is_mouse_over) {
-                    if (!event.buttons == 1) {
-                        return;
-                    }
-                }
-
-                // I want to make sure that the user is not selecting text, that's not when we activate this.
-                // if (window.getSelection().toString() !== "") {
-                //     return;
-                // }
-                if (is_selection_mode_complicated) {
-                    if (!selected_rows[register_name]) {
-                        selected_rows[register_name] = true;
-                    } else {
-                        selected_rows[register_name] = false;
-                    }
-                } else {
-                    // See if any register of this node_id is selected
-                    let any_register_selected = false;
-                    // For every register in the avatar with the node_id
-                    for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                        const current_avatar = yukon_state.current_avatars[i];
-                        const node_id = current_avatar.node_id;
-                        for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
-                            const register_name2 = yukon_state.current_avatars[i].registers[j];
-                            if (register_name2 == register_name) {
-                                if (selected_registers[[node_id, register_name]]) {
-                                    any_register_selected = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (any_register_selected) {
-                        // Deselect all registers with this register_name
-                        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                            const current_avatar = yukon_state.current_avatars[i]
-                            const node_id = current_avatar.node_id;
-                            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
-                                const register_name2 = yukon_state.current_avatars[i].registers[j];
-                                if (register_name2 == register_name) {
-                                    selected_registers[[node_id, register_name]] = false;
-                                }
-                            }
-                        }
-                    } else {
-                        // Select all registers with this register_name
-                        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                            const current_avatar = yukon_state.current_avatars[i]
-                            const node_id = current_avatar.node_id;
-                            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
-                                const register_name2 = yukon_state.current_avatars[i].registers[j];
-                                if (register_name2 == register_name) {
-                                    selected_registers[[node_id, register_name]] = true;
-                                }
-                            }
-                        }
-                    }
-                }
-                updateRegistersTableColors();
-                event.stopPropagation();
-            }
-        }
         function getAllCellsInBetween(start_cell, end_cell) {
             let row_based_selection = false;
             let column_based_selection = false;
@@ -747,61 +609,6 @@ import { create_registers_table, update_tables } from './registers.module.js';
             setTimeout(() => modal_value.focus(), 100);
         }
 
-        function make_select_cell(avatar, register_name, is_mouse_over = false) {
-            let selectCell = function () {
-                if (!selected_registers[[avatar.node_id, register_name]]) {
-                    selected_registers[[avatar.node_id, register_name]] = true;
-                    // If shift is being held down
-                    if (pressedKeys[16] && last_cell_selected) {
-                        const allCells = getAllCellsInBetween(last_cell_selected, { "node_id": avatar.node_id, "register_name": register_name });
-                        for (var i = 0; i < allCells.length; i++) {
-                            const cell = allCells[i];
-                            selected_registers[[cell.node_id, cell.register_name]] = true;
-                        }
-                    }
-                    last_cell_selected = { "node_id": avatar.node_id, "register_name": register_name };
-                } else {
-                    selected_registers[[avatar.node_id, register_name]] = false;
-                }
-                updateRegistersTableColors();
-            }
-            return function (event) {
-                if (is_mouse_over) {
-                    if (!event.buttons == 1) {
-                        return;
-                    }
-                    if (event.target.matches(':hover')) {
-                        // If alt is pressed
-                        if (pressedKeys[18]) {
-                            // Reread the register
-                            let pairs_object = {};
-                            pairs_object[avatar.node_id] = {};
-                            pairs_object[avatar.node_id][register_name] = true;
-                            rereadPairs(pairs_object);
-                            return;
-                        }
-                        selectCell();
-                        event.stopPropagation();
-                    }
-                } else {
-                    // If alt is pressed
-                    if (pressedKeys[18]) {
-                        // Reread the register
-                        let pairs_object = {};
-                        pairs_object[avatar.node_id] = {};
-                        pairs_object[avatar.node_id][register_name] = true;
-                        rereadPairs(pairs_object);
-                        return;
-                    }
-                    // If control is pressed
-                    if (pressedKeys[17]) {
-                        showCellValue(avatar.node_id, register_name);
-                        return;
-                    }
-                    selectCell();
-                }
-            }
-        }
         setInterval(update_tables, 1000)
         setInterval(update_avatars_table, 1000);
 
@@ -864,10 +671,10 @@ import { create_registers_table, update_tables } from './registers.module.js';
         }
         function update_directed_graph() {
             if (!areThereAnyNewOrMissingHashes("monitor_view_hash", yukon_state)) {
-                updateLastHashes("monitor_view_hash");
+                updateLastHashes("monitor_view_hash", yukon_state);
                 return;
             }
-            updateLastHashes(yukon_state.last_hashes, "monitor_view_hash");
+            updateLastHashes("monitor_view_hash", yukon_state);
             my_graph.elements().remove();
             let available_publishers = {};
             let available_servers = {};

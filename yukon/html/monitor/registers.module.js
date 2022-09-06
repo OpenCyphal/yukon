@@ -1,6 +1,6 @@
 import {areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
 import { applyConfiguration } from './yaml.configurations.module.js';
-import {make_select_column} from './registers.selection.module.js';
+import {make_select_column, make_select_row, make_select_cell} from './registers.selection.module.js';
 export function add_node_id_headers(table_header_row, yukon_state) {
     const current_avatars = yukon_state.current_avatars;
     current_avatars.forEach(function (avatar) {
@@ -80,7 +80,7 @@ export function addContentForRegisterName(register_name, filter_keyword_inclusiv
         table_header_cell.classList.add('left-side-table-header');
         table_header_cell.onmousedown = make_select_row(register_name);
         table_header_cell.onmouseover = make_select_row(register_name, true);
-        if (showAlotOfButtons) {
+        if (yukon_state.settings.showAlotOfButtons) {
             let btnSelectRow = document.createElement('button');
             btnSelectRow.innerHTML = 'Select row';
             // Attach an event listener on the button click event
@@ -227,7 +227,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
         inputFieldReference.classList.add('input');
         inputFieldReference.style["pointer-events"] = 'none'; // This is to make sure that the table_cell can receive events
         table_cell.classList.add('table-cell');
-        table_cell.onmouseover = make_select_cell(avatar, register_name, true);
+        table_cell.onmouseover = make_select_cell(avatar, register_name, true, yukon_state);
         // inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
         var lastClick = null;
         table_cell.addEventListener('mousedown', function (event) {
@@ -256,7 +256,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             ) {
                 showCellValue(avatar.node_id, register_name);
             } else {
-                make_select_cell(avatar, register_name)(event)
+                make_select_cell(avatar, register_name, null, yukon_state)(event)
             }
             lastClick = new Date();
         });
@@ -297,11 +297,75 @@ export function create_registers_table(_filter_keyword_inclusive, yukon_state) {
         addContentForRegisterName(register_name, filter_keyword_inclusive, registers_table_body, yukon_state);
     });
 
-    updateRegistersTableColors();
+    updateRegistersTableColors(yukon_state);
 }
 export function update_tables(override) {
     if (override || areThereAnyNewOrMissingHashes("hash", yukon_state)) {
         create_registers_table(null, yukon_state);
     }
-    updateLastHashes(yukon_state.last_table_hashes, "hash");
+    updateLastHashes("hash", yukon_state);
+}
+
+export function updateRegistersTableColors(yukon_state) {
+    var registers_table = document.querySelector('#registers_table')
+    // For all table cells in registers_table, if the cell has the attribute node_id set to node_id then color it red if the node is selected or white if not
+    let needsRefresh = false;
+    for (var i = 1; i < registers_table.rows.length; i++) {
+        for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
+            const table_cell = registers_table.rows[i].cells[j]
+            let register_name = table_cell.getAttribute("id")
+            if (register_name == null) {
+                continue; // Must be the header cell at the end
+            }
+            // Remove the string "register_" from the register_name
+            register_name = register_name.substring(9);
+            const node_id = table_cell.getAttribute("node_id");
+            const is_register_selected = yukon_state.selections.selected_registers[[node_id, register_name]];
+            const is_column_selected = yukon_state.selections.selected_columns[node_id];
+            const is_row_selected = yukon_state.selections.selected_rows[register_name];
+            const temp_node = yukon_state.recently_reread_registers[node_id];
+            const is_recently_reread = temp_node && temp_node[register_name] === true;
+            if (!table_cell) {
+                continue;
+            }
+            if (!register_name) {
+                console.warn("No register name found in table cell " + i + "," + j)
+                continue;
+            }
+            if (is_register_selected || is_column_selected || is_row_selected) {
+                table_cell.classList.add("selected-cell");
+            } else {
+                // Remove the class "selected_element" from the input element if it has it
+                table_cell.classList.remove("selected-cell");
+            }
+            if (is_register_selected) {
+                table_cell.classList.add("selected-cell");
+                if (is_recently_reread) {
+                    table_cell.classList.add("recently_reread_register");
+                    needsRefresh = true;
+                }
+            } else if (is_row_selected) {
+                table_cell.style.backgroundColor = colors["selected_row"];
+                if (is_column_selected) {
+                    table_cell.classList.add("selected_row_and_column");
+                }
+            } else if (is_column_selected) {
+                table_cell.classList.add("selected_column");
+            } else {
+                table_cell.classList.remove("selected-cell");
+            }
+            if (is_recently_reread) {
+                table_cell.classList.add("recently_reread_register");
+                needsRefresh = true;
+            } else {
+                table_cell.classList.remove("recently_reread_register");
+            }
+        }
+    }
+    if (needsRefresh) {
+        if (yukon_state.updateRegistersTableColorsAgainTimer != null) {
+            clearTimeout(yukon_state.updateRegistersTableColorsAgainTimer);
+        }
+        yukon_state.updateRegistersTableColorsAgainTimer = setTimeout(yukon_state.updateRegistersTableColors, 1000);
+    }
 }
