@@ -253,7 +253,7 @@
                         const cell = elementOpenedOn;
                         const node_id = cell.getAttribute("node_id");
                         const register_name = cell.getAttribute("register_name");
-                        showCellValue(avatar.node_id, register_name);
+                        showCellValue(node_id, register_name);
                     }
                 },
                 shouldBeDisplayed: oneSelectedConstraint
@@ -263,8 +263,6 @@
                 events: {
                     click: (e, elementOpenedOn) => {
                         const cell = elementOpenedOn;
-                        const node_id = cell.getAttribute("node_id");
-                        const register_name = cell.getAttribute("register_name");
                         const all_selected_pairs = get_all_selected_pairs();
                         editSelectedCellValues(all_selected_pairs);
                     }
