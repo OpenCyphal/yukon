@@ -1,28 +1,30 @@
-import {abc} from './monitor.module.js';
-console.log("ABC is " + abc);
+import { make_context_menus } from './context-menu.module.js';
+import { create_directed_graph, refresh_graph_layout } from './monitor.module.js';
+import { add_node_id_headers, make_empty_table_header_row_cell, addContentForRegisterName } from './registers.module.js';
+import { applyConfiguration, export_all_selected_registers, update_available_configurations_list } from './yaml.configurations.module.js';
+import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
+import { create_registers_table, update_tables } from './registers.module.js';
+
 (function () {
-    function addLocalMessage(message) {
+    yukon_state.addLocalMessage = function (message) {
         zubax_api.add_local_message(message)
     }
+    const addLocalMessage = yukon_state.addLocalMessage;
     function doStuffWhenReady() {
+        yukon_state.zubax_api = zubax_api;
         // Make a callback on the page load event
         console.log("monitor ready");
         const iRegistersFilter = document.getElementById('iRegistersFilter');
         const cbSimplifyRegisters = document.getElementById('cbSimplifyRegisters');
         const divAllRegistersButtons = document.getElementById('divAllRegistersButtons');
         divAllRegistersButtons.style.display = 'none';
-        var current_avatars = [];
-        let last_hashes = { set: new Set() };
-        let last_table_hashes = { set: new Set() }; // The same avatar hashes but for tables
         let lastHash = "";
-        let my_graph = null;
-        let available_configurations = {};
         let simplified_configurations_flags = {}; // The key is the file_name and true is is simplified
         let number_input_for_configuration = {}; // The key is the file_name and the value is the input element
         let selected_config = null;
-        var selected_registers = {}; // Key is array of nodeid and register name, value is true if selected
-        var selected_columns = {}; // Key is the node_id and value is true if selected
-        var selected_rows = {}; // Key is register_name and value is true if selected
+        var selected_registers = yukon_state.selections.selected_registers;
+        var selected_columns = yukon_state.selections.selected_columns;
+        var selected_rows = yukon_state.selections.selected_rows;
         var recently_reread_registers = {};
         var last_cell_selected = null;
         let is_selection_mode_complicated = false;
@@ -48,15 +50,7 @@ console.log("ABC is " + abc);
             "recently_read": "#B00036",
             "no_value": "#007E87"
         }
-        const copyIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-
-        const cutIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>`;
-
-        const pasteIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px; position: relative; top: -1px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>`;
-
-        const downloadIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px; position: relative; top: -1px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-
-        const deleteIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" style="margin-right: 7px" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+        make_context_menus(yukon_state);
         // When escape is double pressed within 400ms, run unselectAll
         let escape_timer = null;
         var pressedKeys = {};
@@ -81,7 +75,7 @@ console.log("ABC is " + abc);
             }
             // If F5 is pressed, reread registers
             if (e.keyCode == 116) {
-                const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": null });
+                const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": null }, current_avatars);
                 let pairs = [];
                 // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
                 for (const node_id of Object.keys(data)) {
@@ -109,7 +103,7 @@ console.log("ABC is " + abc);
         });
         function isAllSelected() {
             let allSelected = true;
-            for (let avatar of current_avatars) {
+            for (let avatar of yukon_state.current_avatars) {
                 for (let register_name of avatar.registers) {
                     if (!register_name) {
                         continue;
@@ -175,7 +169,7 @@ console.log("ABC is " + abc);
                 unselectAll();
                 return;
             }
-            for (let avatar of current_avatars) {
+            for (let avatar of yukon_state.current_avatars) {
                 for (let register_name of avatar.registers) {
                     if (!register_name) {
                         continue;
@@ -185,183 +179,8 @@ console.log("ABC is " + abc);
             }
             updateRegistersTableColors();
         }
-        const importFromSelectedConfigurationMenuElement = {
-            content: "Import from selected configuration",
-            events: {
-                click: function (event, elementOpenedOn) {
-                    const cell = elementOpenedOn;
-                    // If cell is a th then
-                    let pairs = null;
-                    if (cell.tagName == "TH") {
-                        // Get the node_id and register_name from the cell
-                        const node_id = cell.getAttribute("data-node_id");
-                        pairs = get_all_selected_pairs({
-                            "only_of_avatar_of_node_id": node_id,
-                            "get_everything": false,
-                            "only_of_register_name": null
-                        });
-                    } else if (cell.tagName == "TD" || cell.tagName == "INPUT") {
-                        // Get the node_id and register_name from the cell
-                        const node_id = cell.getAttribute("node_id");
-                        const register_name = cell.getAttribute("register_name");
-                        pairs = get_all_selected_pairs({
-                            "only_of_avatar_of_node_id": false,
-                            "get_everything": false,
-                            "only_of_register_name": null
-                        });
-                        // If pairs contains nothing then add the node_id and register_name
-                        if (pairs.length == 0) {
-                            pairs[node_id][register_name] = true;
-                        }
-                    }
-                    const node_id = cell.getAttribute("node_id");
-                    const register_name = cell.getAttribute("register_name");
-                    const current_config = available_configurations[selected_config];
-                    if (current_config) {
-                        applyConfiguration(current_config, parseInt(node_id), pairs);
-                    } else {
-                        console.log("No configuration selected");
-                    }
-                }
-            }
-        }
-        const unselectAllMenuElement = {
-            content: "Unselect all (ESC 2x)",
-            events: {
-                click: function () {
-                    unselectAll();
-                }
-            }
-        }
-        const moreThanOneSelectedConstraint = (e, elementOpenedOn) => {
-            // If there are more than 1 selected registers
-            if (Object.keys(selected_registers).length > 1) {
-                return true;
-            }
-            return false;
-        }
-        const oneSelectedConstraint = (e, elementOpenedOn) => {
-            if (Object.keys(selected_registers).length <= 1) {
-                return true;
-            }
-            return false;
-        };
-        // For table cells
-        const table_cell_context_menu_items = [
-            {
-                content: `${downloadIcon}Set value`,
-                events: {
-                    click: (e, elementOpenedOn) => {
-                        const cell = elementOpenedOn;
-                        const node_id = cell.getAttribute("node_id");
-                        const register_name = cell.getAttribute("register_name");
-                        showCellValue(node_id, register_name);
-                    }
-                },
-                shouldBeDisplayed: oneSelectedConstraint
-            },
-            {
-                content: `${downloadIcon}Set values`,
-                events: {
-                    click: (e, elementOpenedOn) => {
-                        const cell = elementOpenedOn;
-                        const all_selected_pairs = get_all_selected_pairs();
-                        editSelectedCellValues(all_selected_pairs);
-                    }
-                },
-                shouldBeDisplayed: moreThanOneSelectedConstraint
-            },
-            {
-                content: `Make text unselectable`,
-                events: {
-                    click: (e, elementOpenedOn) => {
-                        isTableCellTextSelectable = false;
-                        document.appendChild(selectingTableCellsIsDisabledStyle);
-                    }
-                },
-                shouldBeDisplayed: () => isTableCellTextSelectable
-            },
-            {
-                content: `Make text selectable`,
-                events: {
-                    click: (e, elementOpenedOn) => {
-                        isTableCellTextSelectable = true;
-                        document.removeChild(selectingTableCellsIsDisabledStyle);
-                    }
-                },
-                shouldBeDisplayed: () => !isTableCellTextSelectable
-            },
-            {
-                content: `${downloadIcon}Export selected registers`,
-                events: {
-                    click: (e) => {
-                        export_all_selected_registers();
-                    }
-                },
-            },
-            {
-                content: `${pasteIcon}Set value from config`,
-                events: {
-                    click: (e) => {
 
-                    }
-                },
-                shouldBeDisplayed: oneSelectedConstraint
-            },
-            {
-                content: `${copyIcon}Copy datatype`, divider: "top",
-                events: {
-                    click: (e, elementOpenedOn) => {
-                        const cell = elementOpenedOn;
-                        const node_id = cell.getAttribute("node_id");
-                        const register_name = cell.getAttribute("register_name");
-                        const current_avatar = current_avatars.find((a) => a.node_id == node_id);
-                        const registers_exploded_values = current_avatar.registers_exploded_values;
-                        let datatype = Object.keys(registers_exploded_values[register_name])[0];
-                        let register_value = registers_exploded_values[register_name];
-                        let value = Object.values(register_value)[0].value;
-                        if (Array.isArray(value)) {
-                            dimensionality = "[" + value.length + "]";
-                        }
-                        datatype = datatype + dimensionality;
-                        copyTextToClipboard(datatype);
-                    }
-                }
-            },
-            {
-                content: `${copyIcon}Copy values`,
-                events: {
-                    click: (e, elementOpenedOn) => {
-                        const cell = elementOpenedOn;
-                        const node_id = cell.getAttribute("node_id");
-                        const register_name = cell.getAttribute("register_name");
-                        const avatar = current_avatars.find((a) => a.node_id == node_id);
-                        let register_value = avatar.registers_values[register_name];
-                        copyTextToClipboard(register_value);
-                    }
-                }
-            },
-            {
-                content: `${downloadIcon}Reread registers`,
-                events: {
-                    click: (e, elementOpenedOn) => {
-                        const cell = elementOpenedOn;
-                        const node_id = cell.getAttribute("node_id");
-                        const register_name = cell.getAttribute("register_name");
-                        const pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null });
-                        // The current cell was the element that this context menu was summoned on
-                        // If there are no keys in pairs, then add the current cell
-                        if (Object.keys(pairs).length == 0) {
-                            pairs[node_id] = {}
-                            pairs[node_id][register_name] = true;
-                        }
-                        rereadPairs(pairs);
-                    }
-                }
-            },
-            unselectAllMenuElement,
-            importFromSelectedConfigurationMenuElement
-        ];
+
         function rereadPairs(pairs) {
             // For every key of node_id in pairs
             for (let node_id in pairs) {
@@ -386,160 +205,7 @@ console.log("ABC is " + abc);
             }, 600);
             zubax_api.reread_registers(pairs);
         }
-        const table_cell_context_menu = new ContextMenu({
-            target: "table-cell",
-            menuItems: table_cell_context_menu_items,
-            mode: "dark",
-            context: this
-        });
-        table_cell_context_menu.init();
-        // For table cell headers
-        const table_header_context_menu_items = [
-            { content: `${pasteIcon}Select column` },
-            {
-                content: `${downloadIcon}Apply a config from a file`,
-                events: {
-                    click: (e, elementOpenedOn) => {
-                        zubax_api.import_node_configuration().then(
-                            function (result) {
-                                if (result == "") {
-                                    addLocalMessage("No configuration imported");
-                                } else {
-                                    const headerCell = elementOpenedOn;
-                                    const node_id = headerCell.getAttribute("data-node_id");
-                                    const avatar = Object.values(current_avatars).find((e) => e.node_id == parseInt(node_id));
-                                    addLocalMessage("Configuration imported");
-                                    result_deserialized = JSON.parse(result);
-                                    available_configurations[result_deserialized["__file_name"]] = result;
-                                    selected_config = result_deserialized["__file_name"];
-                                    update_available_configurations_list();
-                                    const current_config = available_configurations[selected_config];
-                                    if (current_config) {
-                                        const selections = getAllEntireColumnsThatAreSelected();
-                                        // For key and value in selections
-                                        for (const key in selections) {
-                                            const value = selections[key];
-                                            const node_id2 = key;
-                                            if (node_id2 == node_id) {
-                                                // The column that the context menu is activated on is used anyway
-                                                continue;
-                                            }
-                                            if (value) {
-                                                // If any other columns are fully selected then they are applied aswell.
-                                                console.log("Column " + key + " is fully selected");
-                                                applyConfiguration(current_config, parseInt(node_id2));
-                                            }
-                                        }
-                                        // The column that the context menu is activated on is used anyway
-                                        applyConfiguration(current_config, parseInt(avatar.node_id));
-                                    } else {
-                                        console.log("No configuration selected");
-                                    }
-                                    if (!recently_reread_registers[node_id]) {
-                                        recently_reread_registers[node_id] = {};
-                                    }
-                                    for (let i = 0; i < avatar.registers.length; i++) {
-                                        const register_name = avatar.registers[i];
-                                        recently_reread_registers[node_id][register_name] = true;
-                                    }
 
-                                    updateRegistersTableColors();
-                                    let registers_to_reset = JSON.parse(JSON.stringify(recently_reread_registers));
-                                    setTimeout(() => {
-                                        // Iterate through registers_to_reset and remove them from recently_reread_registers
-                                        for (let node_id in registers_to_reset) {
-                                            for (let register_name in registers_to_reset[node_id]) {
-                                                recently_reread_registers[node_id][register_name] = false;
-                                            }
-                                        }
-                                    }, 600);
-                                }
-                            }
-                        )
-                    }
-                },
-                divider: "top"
-            },
-            {
-                content: `${copyIcon}Export all registers`,
-                events: {
-                    click: (e, elementOpenedOn) => {
-                        const headerCell = elementOpenedOn;
-                        const node_id = headerCell.getAttribute("data-node_id");
-                        const avatar = Object.values(current_avatars).find((e) => e.node_id == parseInt(node_id));
-                        e.stopPropagation();
-                        addLocalMessage("Exporting registers of " + avatar.node_id);
-                        //const result = window.chooseFileSystemEntries({ type: "save-file" });
-                        // Export all but only for this avatar, dried up code
-                        export_all_selected_registers(avatar.node_id);
-                        if (!recently_reread_registers[node_id]) {
-                            recently_reread_registers[node_id] = {};
-                        }
-                        for (let i = 0; i < avatar.registers.length; i++) {
-                            const register_name = avatar.registers[i];
-                            recently_reread_registers[node_id][register_name] = true;
-                        }
-
-                        updateRegistersTableColors();
-                        let registers_to_reset = JSON.parse(JSON.stringify(recently_reread_registers));
-                        setTimeout(() => {
-                            // Iterate through registers_to_reset and remove them from recently_reread_registers
-                            for (let node_id in registers_to_reset) {
-                                for (let register_name in registers_to_reset[node_id]) {
-                                    recently_reread_registers[node_id][register_name] = false;
-                                }
-                            }
-                        }, 600);
-                    }
-                }
-            },
-            {
-                content: `${copyIcon}Copy values`,
-                events: {
-                    click: (e) => {
-
-                    }
-                }
-            },
-            {
-                content: `${downloadIcon}Reread column`,
-                events: {
-                    click: (e, elementOpenedOn) => {
-                        const headerCell = elementOpenedOn;
-                        const node_id = headerCell.getAttribute("data-node_id");
-                        const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": node_id, "get_everything": false, "only_of_register_name": null });
-                        rereadPairs(data);
-                    }
-                }
-            },
-            unselectAllMenuElement,
-            importFromSelectedConfigurationMenuElement
-        ];
-
-        const table_header_context_menu = new ContextMenu({
-            target: "node_id_header",
-            mode: "dark",
-            menuItems: table_header_context_menu_items,
-            context: this
-        });
-        table_header_context_menu.init();
-        function getAllEntireColumnsThatAreSelected() {
-            let all_registers_selected = {};
-            // For every register in the avatar with the node_id
-            for (var i = 0; i < current_avatars.length; i++) {
-                const current_avatar = current_avatars[i]
-                const node_id = current_avatar.node_id;
-                all_registers_selected[current_avatar.node_id] = true;
-                for (var j = 0; j < current_avatars[i].registers.length; j++) {
-                    const register_name = current_avatars[i].registers[j];
-                    if (!selected_registers[[node_id, register_name]]) {
-                        all_registers_selected[current_avatar.node_id] = false;
-                        break;
-                    }
-                }
-            }
-            return all_registers_selected;
-        }
         function createMonitorPopup(text) {
             var cy = document.getElementById('cy');
             // Remove all label elements in the div cy
@@ -637,360 +303,10 @@ console.log("ABC is " + abc);
             );
         }
         setInterval(fetchAndHandleInternalMessages, 1000);
-        function applyConfiguration(configuration, set_node_id, applyPairs) {
-            let configuration_deserialized = JSON.parse(configuration);
 
-            let potential_node_id;
-            let number_input;
-            if (!set_node_id) {
-                number_input = number_input_for_configuration[selected_config];
-                potential_node_id = parseInt(number_input.value);
-            } else {
-                potential_node_id = set_node_id;
-            }
-            function removeUnnecessaryPairsFromAvatar(avatar) {
-                for (let j = 0; j < avatar.length; j++) {
-                    let register_name = avatar[j];
-                    // If register.name is not in applyPairs[avatar.node_id]
-                    if (!applyPairs[avatar.node_id] || !applyPairs[avatar.node_id].includes(register_name)) {
-                        // Remove the register
-                        // Remove the register_name key from avatar[node_id]
-                        console.log("Not including " + register_name + " for node " + avatar.node_id);
-                        avatar[node_id].splice(j, 1);
-                        j--;
-                    }
-                }
-            }
-            zubax_api.is_network_configuration(configuration_deserialized).then(function (result) {
-                const is_network_configuration = JSON.parse(result);
-                zubax_api.is_configuration_simplified(configuration_deserialized).then(function (result) {
-                    const is_configuration_simplified = JSON.parse(result);
-                    if (applyPairs) {
-                        if (is_network_configuration) {
-                            // Iterate over the configuration and remove the keys that are not in applyPairs
-                            // For avatar in configuration_deserialized
-                            for (let i = 0; i < configuration_deserialized.length; i++) {
-                                let avatar = configuration_deserialized[i];
-                                // For register in avatar.registers
-                                removeUnnecessaryPairsFromAvatar(avatar);
-                            }
-                        } else {
-                            let avatar = configuration_deserialized;
-                            // For register in avatar.registers
-                            removeUnnecessaryPairsFromAvatar(avatar);
-                        }
-                    }
-                    if (is_network_configuration && is_configuration_simplified) {
-                        // Start fetching datatypes
-                        zubax_api.unsimplify_configuration(configuration).then(function (result) {
-                            console.log("Unsimplified configuration: " + selected_config);
-                            zubax_api.apply_all_of_configuration(result);
-                            let interval1 = setInterval(() => update_tables(true), 1000);
-                            setTimeout(() => clearInterval(interval1), 6000);
-                        });
-                    } else if (!is_network_configuration && is_configuration_simplified) {
-                        const isValidNodeid = potential_node_id > 0 || potential_node_id < 128;
-                        if (isValidNodeid) {
-                            console.log("Applying configuration: " + selected_config + " to node " + potential_node_id);
-                            zubax_api.apply_configuration_to_node(potential_node_id, JSON.stringify(configuration_deserialized))
-                            let interval1 = setInterval(() => update_tables(true), 1000);
-                            setTimeout(() => clearInterval(interval1), 6000);
-                        } else if (number_input) {
-                            console.log("There was no valid node id supplied.");
-                            // Add a small label to the bottom of number_input to indicate that the node id is invalid, color the input red
-                            number_input.style.borderColor = "red";
-                            // Remove 3 seconds later
-                            setTimeout(function () {
-                                // Remove the red border
-                                number_input.style.borderColor = "";
-                            }, 3000);
-                        }
-                    }
-                });
-            });
-        }
-        function update_available_configurations_list() {
-            var available_configurations_radios = document.querySelector("#available_configurations_radios");
-            available_configurations_radios.innerHTML = "";
-            number_input_for_configuration = {};
-            simplified_configurations_flags = {};
-            for (const [file_name, configuration_string] of Object.entries(available_configurations)) {
-                // Fill in the available_configurations_radios with radio buttons
-                var radio = document.createElement("input");
-                radio.type = "radio";
-                radio.name = "configuration";
-                radio.value = file_name;
-                radio.id = file_name;
-                // if the file_name is the selected_config, then set the radio button to checked
-                if (file_name == selected_config) {
-                    radio.checked = true;
-                }
-                radio.onmousedown = function () {
-                    select_configuration(file_name);
-                }
-                available_configurations_radios.appendChild(radio);
-                // Label for radio
-                var label = document.createElement("label");
-                label.htmlFor = file_name;
-                label.innerHTML = file_name;
-                label.onmousedown = function () {
-                    select_configuration(file_name);
-                }
-                conf_deserialized = JSON.parse(configuration_string);
-                zubax_api.is_network_configuration(conf_deserialized).then(function (result) {
-                    const is_network_configuration = JSON.parse(result);
-                    zubax_api.is_configuration_simplified(conf_deserialized).then(function (result) {
-                        const is_simplified = JSON.parse(result);
-                        if (is_simplified) {
-                            label.innerHTML += " (simplified)";
-                            simplified_configurations_flags[file_name] = true;
-                        }
-                        // For each key in the conf_deserialized, add a checkbox under the label with the key as the text and id
-                        let noKeysWereNumbers = true; // This is essentially the same as is_configuration_simplified, but it is determined here locally
-                        for (const [key, value] of Object.entries(conf_deserialized)) {
-                            // If key is not a number continue
-                            if (isNaN(key)) {
-                                console.log("Key is not a number: " + key);
-                                continue;
-                            }
-                            noKeysWereNumbers = false;
-                            var checkbox = document.createElement("input");
-                            checkbox.type = "checkbox";
-                            checkbox.id = key;
-                            checkbox.checked = true;
-                            checkbox.onmousedown = function () {
-                                // If the checkbox is checked, add the key to the configuration
-                                if (checkbox.checked) {
-
-                                } else {
-
-                                }
-                            }
-                            label.appendChild(checkbox);
-                            var text = document.createElement("span");
-                            text.innerHTML = key;
-                            label.appendChild(text);
-                        }
-                        if (!is_network_configuration && is_simplified) {
-                            var number_input = document.createElement("input");
-                            number_input.type = "number";
-                            number_input.placeholder = "Node id needed";
-                            number_input.title = "For determining datatypes, a node id is needed";
-                            number_input_for_configuration[JSON.parse(JSON.stringify(file_name))] = number_input;
-                            label.appendChild(number_input);
-                        }
-                        available_configurations_radios.appendChild(label);
-                    });
-                });
-
-            }
-        }
-        function create_directed_graph() {
-            cytoscape.use(cytoscapeKlay);
-            my_graph = cytoscape({
-                wheelSensitivity: 0.2,
-                container: document.getElementById('cy'), // container to render in
-                // so we can see the ids
-                style: [
-                    {
-                        selector: 'node',
-                        style: {
-                            'text-wrap': 'wrap',
-                            'label': 'data(label)',
-                            'text-valign': 'center',
-                            'text-halign': 'center',
-                            'width': '250px',
-                            'height': '65px',
-                            'background-color': '#e00000',
-                            'shape': 'cut-rectangle',
-                        }
-                    },
-                    {
-                        selector: 'edge',
-                        style:
-                        {
-                            width: 2,
-                            targetArrowShape: 'triangle',
-                            curveStyle: 'bezier',
-                            // 'label': 'data(label)' // maps to data.label
-                        }
-                    },
-                    {
-                        selector: 'node[?publish_subject]',
-                        style: {
-                            'background-color': '#A6E1FA',
-                            'width': '70px',
-                            'height': '70px',
-                            'shape': 'square'
-                        }
-                    },
-                    {
-                        selector: 'node[?serve_subject]',
-                        style: {
-                            'background-color': '#0A2472',
-                            'color': '#A6E1FA',
-                            'width': '70px',
-                            'height': '70px',
-                            'shape': 'barrel'
-                        }
-                    },
-                    {
-                        selector: 'edge[?publish_edge]',
-                        style: {
-                            'line-color': '#A6E1FA',
-                        }
-                    },
-                    {
-                        selector: 'edge[?serve_edge]',
-                        style: {
-                            'line-color': '#0A2472',
-                        }
-                    }
-                ]
-
-            });
-
-            my_graph.on('mouseover', 'node', function (evt) {
-                var node = evt.target;
-                console.log("Mouseover on node " + node.id());
-                // Find the avatar for the node
-                var avatar = current_avatars.find(function (avatar) {
-                    return avatar.node_id == node.id();
-                });
-                if (avatar) {
-                    // Create a label with the avatar's name
-                    createMonitorPopup(avatar.name + " (" + avatar.node_id + ")" + "<br>" + secondsToString(avatar.last_heartbeat.uptime) + "<br>" + avatar.last_heartbeat.health_text + " (" + avatar.last_heartbeat.health + ")");
-                }
-            });
-        }
-        // A pair is a pair of nodeid and register name
-        function get_all_selected_pairs(options = {}) {
-            let final_dict = {};
-            // For each avatar in current_avatars
-            for (var i = 0; i < current_avatars.length; i++) {
-                let avatar_dto = {
-                    // "uavcan.node.id": current_avatars[i].node_id,
-                };
-                var avatar = current_avatars[i];
-                let saving_all = selected_columns[avatar.node_id] || options.only_of_avatar_of_node_id == avatar.node_id;
-                if (options.only_of_avatar_of_node_id && current_avatars[i].node_id != options.only_of_avatar_of_node_id) {
-                    continue;
-                }
-
-                // For each key in avatar.registers_exploded_values
-                for (var key in avatar.registers_exploded_values) {
-                    let register_name = key;
-                    let register_value = avatar.registers_exploded_values[key];
-                    if (options.get_everything) {
-                        avatar_dto[register_name] = register_value;
-                        continue;
-                    }
-                    if (options.only_of_register_name && register_name != options.only_of_register_name) {
-                        continue;
-                    }
-                    if (saving_all || selected_rows[register_name] ||
-                        selected_registers[[avatar.node_id, register_name]]) {
-                        avatar_dto[register_name] = register_value;
-                    }
-                }
-                if (Object.keys(avatar_dto).length > 0) {
-                    final_dict[parseInt(avatar.node_id)] = avatar_dto;
-                }
-            }
-            return final_dict;
-        }
-        function export_all_selected_registers(only_of_avatar_of_node_id = null, get_everything) {
-            // A pair is the register_name and the node_id
-            let pairs_object = get_all_selected_pairs({ "only_of_avatar_of_node_id": only_of_avatar_of_node_id, "get_everything": get_everything, "only_of_register_name": null });
-            let json_string = JSON.stringify(pairs_object);
-            var yaml_string = jsyaml.dump(pairs_object);
-            if (cbSimplifyRegisters.checked) {
-                zubax_api.simplify_configuration(json_string).then(function (simplified_json_string) {
-                    intermediary_structure = JSON.parse(simplified_json_string);
-                    const simplified_yaml_string = jsyaml.dump(intermediary_structure);
-                    return zubax_api.save_yaml(simplified_yaml_string);
-                });
-            } else {
-                return zubax_api.save_yaml(yaml_string);
-            }
-        }
-        function refresh_graph_layout() {
-            var layout = my_graph.layout(
-                {
-                    name: 'klay',
-                    klay: {
-                        // Following descriptions taken from http://layout.rtsys.informatik.uni-kiel.de:9444/Providedlayout.html?algorithm=de.cau.cs.kieler.klay.layered
-                        addUnnecessaryBendpoints: true, // Adds bend points even if an edge does not change direction.
-                        aspectRatio: 1.6, // The aimed aspect ratio of the drawing, that is the quotient of width by height
-                        borderSpacing: 20, // Minimal amount of space to be left to the border
-                        compactComponents: false, // Tries to further compact components (disconnected sub-graphs).
-                        crossingMinimization: 'LAYER_SWEEP', // Strategy for crossing minimization.
-                        /* LAYER_SWEEP The layer sweep algorithm iterates multiple times over the layers, trying to find node orderings that minimize the number of crossings. The algorithm uses randomization to increase the odds of finding a good result. To improve its results, consider increasing the Thoroughness option, which influences the number of iterations done. The Randomization seed also influences results.
-                        INTERACTIVE Orders the nodes of each layer by comparing their positions before the layout algorithm was started. The idea is that the relative order of nodes as it was before layout was applied is not changed. This of course requires valid positions for all nodes to have been set on the input graph before calling the layout algorithm. The interactive layer sweep algorithm uses the Interactive Reference Point option to determine which reference point of nodes are used to compare positions. */
-                        cycleBreaking: 'GREEDY', // Strategy for cycle breaking. Cycle breaking looks for cycles in the graph and determines which edges to reverse to break the cycles. Reversed edges will end up pointing to the opposite direction of regular edges (that is, reversed edges will point left if edges usually point right).
-                        /* GREEDY This algorithm reverses edges greedily. The algorithm tries to avoid edges that have the Priority property set.
-                        INTERACTIVE The interactive algorithm tries to reverse edges that already pointed leftwards in the input graph. This requires node and port coordinates to have been set to sensible values.*/
-                        direction: 'RIGHT', // Overall direction of edges: horizontal (right / left) or vertical (down / up)
-                        /* UNDEFINED, RIGHT, LEFT, DOWN, UP */
-                        edgeRouting: 'SPLINES', // Defines how edges are routed (POLYLINE, ORTHOGONAL, SPLINES)
-                        edgeSpacingFactor: 0.5, // Factor by which the object spacing is multiplied to arrive at the minimal spacing between edges.
-                        feedbackEdges: false, // Whether feedback edges should be highlighted by routing around the nodes.
-                        fixedAlignment: 'NONE', // Tells the BK node placer to use a certain alignment instead of taking the optimal result.  This option should usually be left alone.
-                        /* NONE Chooses the smallest layout from the four possible candidates.
-                        LEFTUP Chooses the left-up candidate from the four possible candidates.
-                        RIGHTUP Chooses the right-up candidate from the four possible candidates.
-                        LEFTDOWN Chooses the left-down candidate from the four possible candidates.
-                        RIGHTDOWN Chooses the right-down candidate from the four possible candidates.
-                        BALANCED Creates a balanced layout from the four possible candidates. */
-                        inLayerSpacingFactor: 1.0, // Factor by which the usual spacing is multiplied to determine the in-layer spacing between objects.
-                        layoutHierarchy: true, // Whether the selected layouter should consider the full hierarchy
-                        linearSegmentsDeflectionDampening: 0.3, // Dampens the movement of nodes to keep the diagram from getting too large.
-                        mergeEdges: false, // Edges that have no ports are merged so they touch the connected nodes at the same points.
-                        mergeHierarchyCrossingEdges: true, // If hierarchical layout is active, hierarchy-crossing edges use as few hierarchical ports as possible.
-                        nodeLayering: 'LONGEST_PATH', // Strategy for node layering.
-                        /* NETWORK_SIMPLEX This algorithm tries to minimize the length of edges. This is the most computationally intensive algorithm. The number of iterations after which it aborts if it hasn't found a result yet can be set with the Maximal Iterations option.
-                        LONGEST_PATH A very simple algorithm that distributes nodes along their longest path to a sink node.
-                        INTERACTIVE Distributes the nodes into layers by comparing their positions before the layout algorithm was started. The idea is that the relative horizontal order of nodes as it was before layout was applied is not changed. This of course requires valid positions for all nodes to have been set on the input graph before calling the layout algorithm. The interactive node layering algorithm uses the Interactive Reference Point option to determine which reference point of nodes are used to compare positions. */
-                        nodePlacement: 'BRANDES_KOEPF', // Strategy for Node Placement
-                        /* BRANDES_KOEPF Minimizes the number of edge bends at the expense of diagram size: diagrams drawn with this algorithm are usually higher than diagrams drawn with other algorithms.
-                        LINEAR_SEGMENTS Computes a balanced placement.
-                        INTERACTIVE Tries to keep the preset y coordinates of nodes from the original layout. For dummy nodes, a guess is made to infer their coordinates. Requires the other interactive phase implementations to have run as well.
-                        SIMPLE Minimizes the area at the expense of... well, pretty much everything else. */
-                        randomizationSeed: 1, // Seed used for pseudo-random number generators to control the layout algorithm; 0 means a new seed is generated
-                        routeSelfLoopInside: false, // Whether a self-loop is routed around or inside its node.
-                        separateConnectedComponents: true, // Whether each connected component should be processed separately
-                        spacing: 50, // Overall setting for the minimal amount of space to be left between objects
-                        thoroughness: 10 // How much effort should be spent to produce a nice layout..
-                    },
-                }
-            );
-            layout.run();
-        }
-        // Look  through the list of current_avatars
-        // and check if any of them have a hash that is not included in the existingHashesList array
-        // If so then return true
-        function eqSet(xs, ys) {
-            return xs.size === ys.size && [...xs].every((x) => ys.has(x));
-        }
-
-        function areThereAnyNewOrMissingHashes(existingHashesSet, hash_property) {
-            let current_hashes_set = new Set();
-            for (var i = 0; i < current_avatars.length; i++) {  
-                current_hashes_set.add(current_avatars[i][hash_property]);
-            }
-            return !eqSet(current_hashes_set, existingHashesSet.set);
-        }
-        // Clear all existing hashes in last_hashes array
-        // Add all hashes from current_avatars array to last_hashes array
-        function updateLastHashes(existingHashesSet, hash_property) {
-            existingHashesSet.set = new Set();
-            for (var i = 0; i < current_avatars.length; i++) {
-                existingHashesSet.set.add(current_avatars[i][hash_property]);
-            }
-        }
         function update_register_value(register_name, register_value, node_id) {
             // Find the avatar which has the node_id
-            const the_avatar = current_avatars.find((avatar) => avatar.node_id === parseInt(node_id));
+            const the_avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id === parseInt(node_id));
             let unprocessed_value = JSON.parse(JSON.stringify(the_avatar["registers_exploded_values"][register_name]))
             // if unprocessed_value[Object.keys(the_value)[0]]["value"]
             if (typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] == "string") {
@@ -1019,10 +335,6 @@ console.log("ABC is " + abc);
             );
         }
         setInterval(updateTextOut, 1000);
-        function select_configuration(i) {
-            selected_config = i;
-            addLocalMessage("Configuration " + i + " selected");
-        }
         let updateRegistersTableColorsAgainTimer = null;
         function updateRegistersTableColors() {
             var registers_table = document.querySelector('#registers_table')
@@ -1116,11 +428,11 @@ console.log("ABC is " + abc);
                     // See if any register of this node_id is selected
                     let any_register_selected = false;
                     // For every register in the avatar with the node_id
-                    for (var i = 0; i < current_avatars.length; i++) {
-                        const current_avatar = current_avatars[i]
+                    for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+                        const current_avatar = yukon_state.current_avatars[i]
                         if (current_avatar.node_id == node_id) {
-                            for (var j = 0; j < current_avatars[i].registers.length; j++) {
-                                const register_name = current_avatars[i].registers[j];
+                            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                                const register_name = yukon_state.current_avatars[i].registers[j];
                                 if (selected_registers[[node_id, register_name]]) {
                                     any_register_selected = true;
                                     break;
@@ -1130,11 +442,11 @@ console.log("ABC is " + abc);
                     }
                     if (any_register_selected) {
                         // Deselect all registers of this node_id
-                        for (var i = 0; i < current_avatars.length; i++) {
-                            const current_avatar = current_avatars[i]
+                        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+                            const current_avatar = yukon_state.current_avatars[i]
                             if (current_avatar.node_id == node_id) {
-                                for (var j = 0; j < current_avatars[i].registers.length; j++) {
-                                    const register_name = current_avatars[i].registers[j];
+                                for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                                    const register_name = yukon_state.current_avatars[i].registers[j];
                                     selected_registers[[node_id, register_name]] = false;
                                 }
                             }
@@ -1142,11 +454,11 @@ console.log("ABC is " + abc);
                         addLocalMessage("Column " + node_id + " deselected");
                     } else {
                         // Select all registers of this node_id
-                        for (var i = 0; i < current_avatars.length; i++) {
-                            const current_avatar = current_avatars[i]
+                        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+                            const current_avatar = yukon_state.current_avatars[i]
                             if (current_avatar.node_id == node_id) {
-                                for (var j = 0; j < current_avatars[i].registers.length; j++) {
-                                    const register_name = current_avatars[i].registers[j];
+                                for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                                    const register_name = yukon_state.current_avatars[i].registers[j];
                                     selected_registers[[node_id, register_name]] = true;
                                 }
                             }
@@ -1182,11 +494,11 @@ console.log("ABC is " + abc);
                     // See if any register of this node_id is selected
                     let any_register_selected = false;
                     // For every register in the avatar with the node_id
-                    for (var i = 0; i < current_avatars.length; i++) {
-                        const current_avatar = current_avatars[i];
+                    for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+                        const current_avatar = yukon_state.current_avatars[i];
                         const node_id = current_avatar.node_id;
-                        for (var j = 0; j < current_avatars[i].registers.length; j++) {
-                            const register_name2 = current_avatars[i].registers[j];
+                        for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                            const register_name2 = yukon_state.current_avatars[i].registers[j];
                             if (register_name2 == register_name) {
                                 if (selected_registers[[node_id, register_name]]) {
                                     any_register_selected = true;
@@ -1197,11 +509,11 @@ console.log("ABC is " + abc);
                     }
                     if (any_register_selected) {
                         // Deselect all registers with this register_name
-                        for (var i = 0; i < current_avatars.length; i++) {
-                            const current_avatar = current_avatars[i]
+                        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+                            const current_avatar = yukon_state.current_avatars[i]
                             const node_id = current_avatar.node_id;
-                            for (var j = 0; j < current_avatars[i].registers.length; j++) {
-                                const register_name2 = current_avatars[i].registers[j];
+                            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                                const register_name2 = yukon_state.current_avatars[i].registers[j];
                                 if (register_name2 == register_name) {
                                     selected_registers[[node_id, register_name]] = false;
                                 }
@@ -1209,11 +521,11 @@ console.log("ABC is " + abc);
                         }
                     } else {
                         // Select all registers with this register_name
-                        for (var i = 0; i < current_avatars.length; i++) {
-                            const current_avatar = current_avatars[i]
+                        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+                            const current_avatar = yukon_state.current_avatars[i]
                             const node_id = current_avatar.node_id;
-                            for (var j = 0; j < current_avatars[i].registers.length; j++) {
-                                const register_name2 = current_avatars[i].registers[j];
+                            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                                const register_name2 = yukon_state.current_avatars[i].registers[j];
                                 if (register_name2 == register_name) {
                                     selected_registers[[node_id, register_name]] = true;
                                 }
@@ -1241,11 +553,11 @@ console.log("ABC is " + abc);
             if (row_based_selection) {
                 start_table_cell = document.getElementById("cell_" + start_cell.node_id + "_" + start_cell.register_name);
                 end_table_cell = document.getElementById("cell_" + end_cell.node_id + "_" + end_cell.register_name);
-                for (var i = 0; i < current_avatars.length; i++) {
-                    const current_avatar = current_avatars[i];
+                for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+                    const current_avatar = yukon_state.current_avatars[i];
                     // For every register in the avatar
-                    for (var j = 0; j < current_avatars[i].registers.length; j++) {
-                        const register_name = current_avatars[i].registers[j];
+                    for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                        const register_name = yukon_state.current_avatars[i].registers[j];
                         if (!register_name || register_name !== start_cell.register_name) {
                             continue;
                         }
@@ -1262,14 +574,14 @@ console.log("ABC is " + abc);
             } else {
                 start_table_cell = document.getElementById("cell_" + start_cell.node_id + "_" + start_cell.register_name);
                 end_table_cell = document.getElementById("cell_" + end_cell.node_id + "_" + end_cell.register_name);
-                for (var i = 0; i < current_avatars.length; i++) {
-                    const current_avatar = current_avatars[i];
+                for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+                    const current_avatar = yukon_state.current_avatars[i];
                     if (current_avatar.node_id !== start_cell.node_id) {
                         continue;
                     }
                     // For every register in the avatar
-                    for (var j = 0; j < current_avatars[i].registers.length; j++) {
-                        const register_name = current_avatars[i].registers[j];
+                    for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                        const register_name = yukon_state.current_avatars[i].registers[j];
                         if (!register_name) {
                             continue;
                         }
@@ -1467,7 +779,7 @@ console.log("ABC is " + abc);
             setTimeout(() => modal_value.focus(), 100);
         }
         function showCellValue(node_id, register_name) {
-            const avatar = current_avatars.find((avatar) => avatar.node_id == node_id);
+            const avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id == node_id);
             let register_value = avatar.registers_exploded_values[register_name];
             let type_string = Object.keys(register_value)[0];
             let value = Object.values(register_value)[0].value;
@@ -1577,311 +889,9 @@ console.log("ABC is " + abc);
                 }
             }
         }
-        function update_tables(override = false) {
-            if (override || areThereAnyNewOrMissingHashes(last_table_hashes, "hash")) {
-                create_registers_table();
-            }
-            updateLastHashes(last_table_hashes, "hash");
-        }
         setInterval(update_tables, 1000)
         setInterval(update_avatars_table, 1000);
-        function create_registers_table(_filter_keyword_inclusive = null) {
-            // Clear the table
-            const filter_keyword_inclusive = _filter_keyword_inclusive || iRegistersFilter.value;
-            var registers_table = document.querySelector('#registers_table')
-            registers_table.innerHTML = '';
-            var registers_table_body = document.createElement('tbody');
-            registers_table.appendChild(registers_table_body);
-            var registers_table_header = document.createElement('thead');
-            registers_table.appendChild(registers_table_header);
-            // Add the table headers
-            var table_header_row = document.createElement('tr');
-            function make_empty_table_header_row_cell() {
-                var empty_table_header_row_cell = document.createElement('th');
-                if (showAlotOfButtons) {
-                    // Add a button into the empty table header row cell
-                    var button = document.createElement('button');
-                    button.innerHTML = 'Apply sel. conf to all nodes';
-                    button.onclick = function () {
-                        if (selected_config != null && available_configurations[selected_config] != null) {
-                            applyConfiguration(available_configurations[selected_config]);
-                        }
-                    }
-                    empty_table_header_row_cell.appendChild(button);
-                    var button = document.createElement('button');
-                    button.innerHTML = 'Save all of configuration';
-                    button.onclick = function () {
-                        export_all_selected_registers(null, true)
-                    }
-                    empty_table_header_row_cell.appendChild(button);
-                }
-                table_header_row.appendChild(empty_table_header_row_cell);
-            }
-            make_empty_table_header_row_cell();
-            function add_node_id_headers() {
-                current_avatars.forEach(function (avatar) {
-                    let table_header_cell = document.createElement('th');
-                    table_header_cell.innerHTML = avatar.node_id;
-                    table_header_cell.title = avatar.name;
-                    table_header_cell.classList.add("node_id_header");
-                    table_header_cell.setAttribute("data-node_id", avatar.node_id);
-                    table_header_row.appendChild(table_header_cell);
-                    if (showAlotOfButtons) {
-                        // Add a button to table_header_cell for downloading the table column
-                        let btnExportConfig = document.createElement('button');
-                        btnExportConfig.innerHTML = 'Export';
-                        // Attach an event listener on the button click event
-                        btnExportConfig.addEventListener('mousedown', function (event) {
-                            event.stopPropagation();
-                            addLocalMessage("Exporting registers of " + avatar.node_id);
-                            //const result = window.chooseFileSystemEntries({ type: "save-file" });
-                            // Export all but only for this avatar, dried up code
-                            export_all_selected_registers(avatar.node_id);
-                        });
-                        table_header_cell.appendChild(btnExportConfig);
-                        let btnApplyImportedConfig = document.createElement('button');
-                        btnApplyImportedConfig.innerHTML = 'Apply imported config';
-                        btnApplyImportedConfig.addEventListener('mousedown', function (event) {
-                            event.stopPropagation();
-                            const current_config = available_configurations[selected_config];
-                            if (current_config) {
-                                applyConfiguration(current_config, parseInt(avatar.node_id));
-                            } else {
-                                console.log("No configuration selected");
-                            }
-                        });
-                        table_header_cell.appendChild(btnApplyImportedConfig);
-                        let btnSelectColumn = document.createElement('button');
-                        btnSelectColumn.innerHTML = 'Select column';
-                        btnSelectColumn.addEventListener('mousedown', make_select_column(avatar.node_id));
-                        table_header_cell.appendChild(btnSelectColumn);
-                    }
-                    table_header_cell.onmousedown = make_select_column(avatar.node_id);
-                    table_header_cell.onmouseover = make_select_column(avatar.node_id, true);
-                });
-            }
-            add_node_id_headers();
-            if (current_avatars.length >= showDoubleRowHeadersFromCount) {
-                make_empty_table_header_row_cell()
-            }
-            registers_table_header.appendChild(table_header_row);
-            // Combine all register names from avatar.registers into an array
-            var register_names = [];
-            current_avatars.forEach(function (avatar) {
-                avatar.registers.forEach(function (register) {
-                    if (register != "" && !register_names.includes(register)) {
-                        register_names.push(register);
-                    }
-                });
-            });
-            register_names.sort();
-            // Add the table row headers for each register name
-            function addContentForCells(register_name, table_register_row) {
-                current_avatars.forEach(function (avatar) {
-                    // ALL THE REGISTER VALUES HERE
-                    const table_cell = document.createElement('td');
-                    table_register_row.appendChild(table_cell);
-                    // Add a table_cell class to table_cell
-                    table_cell.classList.add('no-padding');
-                    // Set an attribute on td to store the register name
-                    table_cell.setAttribute('id', "cell_" + avatar.node_id + "_" + register_name);
-                    table_cell.setAttribute("register_name", register_name);
-                    table_cell.setAttribute("node_id", avatar.node_id);
-                    table_cell.title = "Register name: " + register_name;
-                    let register_value = avatar.registers_exploded_values[register_name];
-                    // Here we check if the register value is a byte string and then we convert it to hex
-                    let inputFieldReference = null;
-                    if (register_value == null) {
-                        table_cell.setAttribute("no_value", "true");
-                        table_cell.classList.add("no-value");
-                        // table_cell.style.backgroundColor = colors["no_value"];
-                        table_cell.title = "This register doesn't exist for this node";
-                        return;
-                    }
-                    let type_string = Object.keys(register_value)[0];
-                    let value = Object.values(register_value)[0].value;
-                    let isOnlyValueInArray = false;
-                    // If value is an array
-                    if (Array.isArray(value)) {
-                        // If the length of the array value is 1 then display the value without brackets
-                        let text_input = document.createElement('div');
-                        inputFieldReference = text_input;
-                        if (value.length == 1) {
-                            isOnlyValueInArray = true;
-                            inputFieldReference.innerHTML = value[0];
-                        } else {
-                            inputFieldReference.innerHTML = JSON.stringify(value);
-                        }
-                        // When the text input is clicked
-                    } else if (type_string.includes("natural")) {
-                        // Create a number input field
-                        let number_input_field = document.createElement('div');
-                        inputFieldReference = number_input_field;
-                        if (register_value == 65535) {
-                            number_input_field.style.backgroundColor = '#ee0e0e';
-                        }
-                        inputFieldReference.innerHTML = value;
-                    } else if (type_string === "string") {
-                        let text_input = document.createElement('div');
-                        inputFieldReference = text_input;
-                        inputFieldReference.innerHTML = value;
-                        // When the text input is clicked
-                    } else {
-                        let text_input = document.createElement('div');
-                        inputFieldReference = text_input;
-                        inputFieldReference.disabled = 'true';
-                        inputFieldReference.style.backgroundColor = '#ee0e0e !important';
-                        inputFieldReference.innerHTML = "Unhandled: " + value;
-                    }
-                    table_cell.appendChild(inputFieldReference);
-                    function styleLabel(label) {
-                        label.style.height = '0px';
-                        label.style.position = 'absolute';
-                        label.style.bottom = '13px';
-                        label.style.fontSize = '10px';
-                        // label.style.color = '#000000';
-                        label.style.backgroundColor = 'transparent !important';
-                        label.style.padding = '0px';
-                        label.style.margin = '1px';
-                        label.style.border = '0px';
-                        label.style.borderRadius = '0px';
-                        label.style.display = 'inline';
-                        label.style.width = 'calc(100% - 4px)';
-                        label.style.fontFamily = 'monospace';
-                        label.style.whiteSpace = 'nowrap';
-                        label.style["pointer-events"] = 'none';
-                        // label.style.zIndex = '-1';
-                        // label.onmouseover = function(event) {
-                        //     event.stopPropagation();
-                        // }
-                    }
-                    // Create a new 10% height label in inputFieldReference and place it in the bottom right corner of the input field
-                    {
-                        // For displaying the value
-                        const label = document.createElement('label');
-                        styleLabel(label);
-                        label.style.textAlign = 'right';
-                        label.style.fontFamily = 'monospace';
-                        label.style.zIndex = '1';
-                        table_cell.style.position = 'relative';
-                        label.style.right = '2px';
-                        label.style.left = '2px';
-                        let dimensionality = "";
-                        if (Array.isArray(value)) {
-                            dimensionality = "[" + value.length + "]";
-                        }
-                        label.innerHTML = type_string + dimensionality;
-                        table_cell.insertBefore(label, inputFieldReference);
-                    }
-                    {
-                        // For displaying the mutability and persistence
-                        const explodedRegister = avatar.registers_exploded_values[register_name];
-                        const isMutable = explodedRegister["_meta_"].mutable;
-                        const isPersistent = explodedRegister["_meta_"].persistent;
-                        const label = document.createElement('label');
-                        styleLabel(label);
-                        label.style.textAlign = 'left';
-                        label.style.verticalAlign = 'bottom';
-                        label.style.right = '2px';
-                        label.style.left = '2px';
-                        label.style.zIndex = '1';
-                        table_cell.style.position = 'relative'; ``
-                        label.innerHTML = "";
-                        if (isMutable) {
-                            label.innerHTML += "M";
-                            table_cell.setAttribute("mutable", "true");
-                        }
-                        if (isPersistent) {
-                            label.innerHTML += "P";
-                            table_cell.setAttribute("persistent", "true");
-                        }
-                        table_cell.insertBefore(label, inputFieldReference);
-                    }
-                    // Set the height of inputFieldReference to match the height of the table cell
-                    inputFieldReference.setAttribute("spellcheck", "false");
-                    inputFieldReference.setAttribute("register_name", register_name);
-                    inputFieldReference.setAttribute("node_id", avatar.node_id);
-                    inputFieldReference.classList.add('input');
-                    inputFieldReference.style["pointer-events"] = 'none'; // This is to make sure that the table_cell can receive events
-                    table_cell.classList.add('table-cell');
-                    table_cell.onmouseover = make_select_cell(avatar, register_name, true);
-                    // inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
-                    var lastClick = null;
-                    table_cell.addEventListener('mousedown', function (event) {
-                        // Check if the mouse button was left click
-                        if (event.button !== 0) {
-                            return;
-                        }
-                        if (lastClick && new Date() - lastClick < 500 && table_cell.getAttribute("mutable") == "true"
-                            && shouldDoubleClickPromptToSetValue) {
-                            // Make a dialog box to enter the new value
-                            var new_value = prompt("Enter new value for " + register_name + ":", value);
-                            // If the user entered a value
-                            if (new_value != null) {
-                                // Update the value in the table
-                                // text_input.value = new_value;
-                                // Update the value in the server
-                                update_register_value(register_name, new_value, avatar.node_id);
-                                // Run update_tables every second, do that only for the next 4 seconds
-                                let interval1 = setInterval(() => update_tables(true), 1000);
-                                setTimeout(() => clearInterval(interval1), 4000);
-                            } else {
-                                addLocalMessage("No value entered");
-                            }
-                        } else if (lastClick && new Date() - lastClick < 500 && table_cell.getAttribute("mutable") == "true" &&
-                            shouldDoubleClickOpenModal
-                        ) {
-                            showCellValue(avatar.node_id, register_name);
-                        } else {
-                            make_select_cell(avatar, register_name)(event)
-                        }
-                        lastClick = new Date();
-                    });
-                    // Create a text input element in the table cell
-                });
-            }
-            function addContentForRegisterName(register_name) {
-                if (filter_keyword_inclusive != "" && !register_name.includes(filter_keyword_inclusive)) {
-                    return;
-                }
-                let table_register_row = document.createElement('tr');
-                registers_table_body.appendChild(table_register_row);
-                function make_header_cell() {
-                    let table_header_cell = document.createElement('th');
-                    // REGISTER NAME HERE
-                    table_header_cell.innerHTML = register_name;
-                    // Make table_header_cell have sticky position
-                    // Add class left-side-table-header
-                    table_header_cell.classList.add('left-side-table-header');
-                    table_header_cell.onmousedown = make_select_row(register_name);
-                    table_header_cell.onmouseover = make_select_row(register_name, true);
-                    if (showAlotOfButtons) {
-                        let btnSelectRow = document.createElement('button');
-                        btnSelectRow.innerHTML = 'Select row';
-                        // Attach an event listener on the button click event
-                        btnSelectRow.onmousedown = make_select_row(register_name);
-                        table_header_cell.appendChild(btnSelectRow);
-                    }
 
-                    table_register_row.appendChild(table_header_cell);
-                }
-                make_header_cell();
-
-                addContentForCells(register_name, table_register_row);
-                // Add table cells for each avatar, containing the value of the register from register_name
-
-                if (current_avatars.length >= showDoubleRowHeadersFromCount) {
-                    make_header_cell();
-                }
-            }
-
-            register_names.forEach(function (register_name) {
-                addContentForRegisterName(register_name);
-            });
-
-
-            updateRegistersTableColors();
-        }
         function setTableCellSelectability(selectable) {
             for (var i = 1; i < registers_table.rows.length; i++) {
                 for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
@@ -1901,13 +911,13 @@ console.log("ABC is " + abc);
         function update_avatars_table() {
             var table_body = document.querySelector('#avatars_table tbody');
             table_body.innerHTML = "";
-            // Take every avatar from current_avatars and make a row in the table
-            for (var i = 0; i < current_avatars.length; i++) {
+            // Take every avatar from yukon_state.current_avatars and make a row in the table
+            for (var i = 0; i < yukon_state.current_avatars.length; i++) {
                 const row = table_body.insertRow(i);
                 const node_id = row.insertCell(0);
-                node_id.innerHTML = current_avatars[i].node_id;
+                node_id.innerHTML = yukon_state.current_avatars[i].node_id;
                 const name = row.insertCell(1);
-                name.innerHTML = current_avatars[i].name || "No name";
+                name.innerHTML = yukon_state.current_avatars[i].name || "No name";
                 // Insert cells for pub, sub, cln and srv
                 const sub_cell = row.insertCell(2);
                 const pub_cell = row.insertCell(3);
@@ -1917,30 +927,30 @@ console.log("ABC is " + abc);
                 const software_version_cell = row.insertCell(7);
                 const hardware_version_cell = row.insertCell(8);
                 const uptime_cell = row.insertCell(9);
-                if (!current_avatars[i].ports) { continue; }
-                pub_cell.innerHTML = current_avatars[i].ports.pub.toString();
-                if (current_avatars[i].ports.sub.length == 8192) {
+                if (!yukon_state.current_avatars[i].ports) { continue; }
+                pub_cell.innerHTML = yukon_state.current_avatars[i].ports.pub.toString();
+                if (yukon_state.current_avatars[i].ports.sub.length == 8192) {
                     sub_cell.innerHTML = "All";
                 } else {
-                    sub_cell.innerHTML = current_avatars[i].ports.sub.toString();
+                    sub_cell.innerHTML = yukon_state.current_avatars[i].ports.sub.toString();
                 }
-                cln_cell.innerHTML = current_avatars[i].ports.cln.toString();
-                srv_cell.innerHTML = current_avatars[i].ports.srv.toString();
-                health_cell.innerHTML = current_avatars[i].last_heartbeat.health_text;
-                software_version_cell.innerHTML = current_avatars[i].versions.software_version;
-                hardware_version_cell.innerHTML = current_avatars[i].versions.hardware_version;
-                uptime_cell.innerHTML = secondsToString(current_avatars[i].last_heartbeat.uptime);
+                cln_cell.innerHTML = yukon_state.current_avatars[i].ports.cln.toString();
+                srv_cell.innerHTML = yukon_state.current_avatars[i].ports.srv.toString();
+                health_cell.innerHTML = yukon_state.current_avatars[i].last_heartbeat.health_text;
+                software_version_cell.innerHTML = yukon_state.current_avatars[i].versions.software_version;
+                hardware_version_cell.innerHTML = yukon_state.current_avatars[i].versions.hardware_version;
+                uptime_cell.innerHTML = secondsToString(yukon_state.current_avatars[i].last_heartbeat.uptime);
             }
         }
         function serialize_configuration_of_all_avatars() {
             var configuration = {};
-            current_avatars.forEach(function (avatar) {
+            yukon_state.current_avatars.forEach(function (avatar) {
                 configuration[avatar.node_id] = avatar.registers_exploded_values;
             });
             return JSON.stringify(configuration);
         }
         function update_directed_graph() {
-            if (!areThereAnyNewOrMissingHashes(last_hashes, "monitor_view_hash")) {
+            if (!areThereAnyNewOrMissingHashes(last_hashes, "monitor_view_hash", yukon_state)) {
                 updateLastHashes(last_hashes, "monitor_view_hash");
                 return;
             }
@@ -1948,7 +958,7 @@ console.log("ABC is " + abc);
             my_graph.elements().remove();
             let available_publishers = {};
             let available_servers = {};
-            for (const avatar of current_avatars) {
+            for (const avatar of yukon_state.current_avatars) {
                 console.log(avatar);
                 my_graph.add([{ data: { id: avatar.node_id, label: avatar.node_id + "\n" + avatar.name } }]);
                 if (!avatar.ports) { continue; }
@@ -1967,7 +977,7 @@ console.log("ABC is " + abc);
                 }
 
             }
-            for (const avatar of current_avatars) {
+            for (const avatar of yukon_state.current_avatars) {
                 for (const sub of avatar.ports.sub) {
                     if (available_publishers[sub]) {
                         my_graph.add([{ data: { source: sub, target: avatar.node_id, label: "A nice label" } }]);
@@ -1979,7 +989,7 @@ console.log("ABC is " + abc);
                     }
                 }
             }
-            refresh_graph_layout();
+            refresh_graph_layout(my_graph);
         }
         function update_plot() {
             // Plotly.newPlot("plot_placeholder", /* JSON object */ {
@@ -1993,14 +1003,14 @@ console.log("ABC is " + abc);
             zubax_api.get_avatars().then(
                 function (avatars) {
                     var DTO = JSON.parse(avatars);
-                    current_avatars = DTO.avatars;
+                    yukon_state.current_avatars = DTO.avatars;
                     update_directed_graph();
                 }
             );
         }
 
         setInterval(get_and_display_avatars, 1000);
-        create_directed_graph();
+        var my_graph = create_directed_graph(yukon_state.current_avatars);
         update_directed_graph();
 
         //        var btnFetch = document.getElementById('btnFetch');
@@ -2009,7 +1019,7 @@ console.log("ABC is " + abc);
         //        });
         var btnRefreshGraphLayout = document.getElementById('btnRefreshGraphLayout');
         btnRefreshGraphLayout.addEventListener('click', function () {
-            refresh_graph_layout()
+            refresh_graph_layout(my_graph)
         });
         var messagesList = document.querySelector("#messages-list");
         cbShowTimestamp.addEventListener('change', function () {
@@ -2041,7 +1051,7 @@ console.log("ABC is " + abc);
         // This is actually one of the tabs in the tabbed interface but it also acts as a refresh layout button
         const btnMonitorTab = document.getElementById('btnMonitorTab');
         btnMonitorTab.addEventListener('click', function () {
-            refresh_graph_layout();
+            refresh_graph_layout(my_graph);
         });
         const btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
         btnAddAnotherTransport.addEventListener('click', function () {
@@ -2056,8 +1066,8 @@ console.log("ABC is " + abc);
                     } else {
                         addLocalMessage("Configuration imported");
                         result_deserialized = JSON.parse(result);
-                        available_configurations[result_deserialized["__file_name"]] = result;
-                        update_available_configurations_list();
+                        yukon_state.available_configurations[result_deserialized["__file_name"]] = result;
+                        update_available_configurations_list(yukon_state);
                     }
                 }
             )
@@ -2102,7 +1112,7 @@ console.log("ABC is " + abc);
         });
         const btnExportAllSelectedRegisters = document.getElementById('btnExportAllSelectedRegisters');
         btnExportAllSelectedRegisters.addEventListener('click', function (event) {
-            export_all_selected_registers();
+            export_all_selected_registers(null, null, yukon_state);
             event.stopPropagation();
         });
 
