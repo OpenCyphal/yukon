@@ -249,7 +249,10 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             uptime = None
             health_value = None
             health_text = "No heartbeat"
-
+        if self._ts_heartbeat:
+            timestamp_value = self._ts_heartbeat
+        else:
+            timestamp_value = "No value"
         json_object: Any = {
             "node_id": self._node_id,
             "hash": self.__hash__(),
@@ -263,7 +266,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                 "health": health_value,
                 "health_text": health_text,
                 "uptime": uptime,
-                "timestamp": self._ts_heartbeat if self._ts_heartbeat is not None and abs(self._ts_heartbeat) != math.inf else "No Value",
+                "timestamp": timestamp_value,
             },
             "versions": {
                 "software_version": f"{software_major_version}.{software_minor_version}.{software_vcs_revision_id}",
