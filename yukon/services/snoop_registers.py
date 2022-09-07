@@ -20,9 +20,10 @@ from uavcan.register import List_1
 
 
 async def get_register_value(state: GodState, node_id: int, register_name: str) -> typing.Any:
-    while True:
+    retry_count = 0
+    while retry_count < 3:
         service_client = state.cyphal.local_node.make_client(uavcan.register.Access_1_0, node_id)
-        service_client.response_timeout = 0.5
+        # service_client.response_timeout = 0.5
         msg = uavcan.register.Access_1_0.Request()
         msg.name.name = register_name
         logger.warning("Got register value for %s", register_name)
@@ -32,6 +33,7 @@ async def get_register_value(state: GodState, node_id: int, register_name: str) 
         else:
             print("Failed response to register value for " + register_name)
             await asyncio.sleep(0.02)
+            retry_count += 1
             continue
 
 
@@ -42,7 +44,7 @@ async def get_register_names(state: GodState, node_id: int, new_avatar: Avatar) 
 
     async def make_request_and_deal_with_response(i):
         msg = uavcan.register.List_1_0.Request(i)
-        list_client.response_timeout = 2
+        # list_client.response_timeout = 2
         real_response = await list_client.call(msg)
         if not real_response:
             print("Failed response to port list nr %s", i)
