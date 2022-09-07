@@ -78,11 +78,11 @@ export function export_all_selected_registers(only_of_avatar_of_node_id, get_eve
     // A pair is the register_name and the node_id
     let pairs_object = get_all_selected_pairs({ "only_of_avatar_of_node_id": only_of_avatar_of_node_id, "get_everything": get_everything, "only_of_register_name": null }, yukon_state);
     let json_string = JSON.stringify(pairs_object);
-    var yaml_string = jsyaml.dump(pairs_object);
+    var yaml_string = jsyaml.dump(pairs_object, { flowLevel: 2 });
     if (yukon_state.settings.simplifyRegisters) {
         zubax_api.simplify_configuration(json_string).then(function (simplified_json_string) {
             const intermediary_structure = JSON.parse(simplified_json_string);
-            const simplified_yaml_string = jsyaml.dump(intermediary_structure);
+            const simplified_yaml_string = jsyaml.dump(intermediary_structure);//, { flowLevel: 2 });
             return zubax_api.save_yaml(simplified_yaml_string);
         });
     } else {
