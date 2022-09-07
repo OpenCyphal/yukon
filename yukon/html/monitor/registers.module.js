@@ -1,6 +1,6 @@
-import {areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
+import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
 import { applyConfiguration } from './yaml.configurations.module.js';
-import {make_select_column, make_select_row, make_select_cell} from './registers.selection.module.js';
+import { make_select_column, make_select_row, make_select_cell } from './registers.selection.module.js';
 import { update_register_value } from './registers.data.module.js';
 export function add_node_id_headers(table_header_row, yukon_state) {
     const current_avatars = yukon_state.current_avatars;
@@ -237,7 +237,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
                 return;
             }
             if (lastClick && new Date() - lastClick < 500 && table_cell.getAttribute("mutable") == "true"
-                && shouldDoubleClickPromptToSetValue) {
+                && yukon_state.settings.shouldDoubleClickPromptToSetValue) {
                 // Make a dialog box to enter the new value
                 var new_value = prompt("Enter new value for " + register_name + ":", value);
                 // If the user entered a value
@@ -253,9 +253,9 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
                     yukon_state.addLocalMessage("No value entered");
                 }
             } else if (lastClick && new Date() - lastClick < 500 && table_cell.getAttribute("mutable") == "true" &&
-                shouldDoubleClickOpenModal
+                yukon_state.settings.shouldDoubleClickOpenModal
             ) {
-                showCellValue(avatar.node_id, register_name);
+                showCellValue(avatar.node_id, register_name, yukon_state);
             } else {
                 make_select_cell(avatar, register_name, null, yukon_state)(event)
             }
@@ -314,12 +314,11 @@ export function updateRegistersTableColors(yukon_state) {
     for (var i = 1; i < registers_table.rows.length; i++) {
         for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
             const table_cell = registers_table.rows[i].cells[j]
-            let register_name = table_cell.getAttribute("id")
+            // Remove the string "register_" from the register_name
+            const register_name = table_cell.getAttribute("register_name");
             if (register_name == null) {
                 continue; // Must be the header cell at the end
             }
-            // Remove the string "register_" from the register_name
-            register_name = register_name.substring(9);
             const node_id = table_cell.getAttribute("node_id");
             const is_register_selected = yukon_state.selections.selected_registers[[node_id, register_name]];
             const is_column_selected = yukon_state.selections.selected_columns[node_id];
@@ -388,6 +387,8 @@ export function showCellValue(node_id, register_name, yukon_state) {
     let modal_value = document.createElement("textarea");
     modal_value.value = value;
     modal_value.style.width = "100%";
+    // Disable spellcheck
+    modal_value.setAttribute("spellcheck", "false");
 
     modal_content.appendChild(modal_value);
     autosize(modal_value);
@@ -605,7 +606,9 @@ function createGenericModal() {
     document.addEventListener("keydown", function (event) {
         if (event.key == "Escape") {
             document.removeEventListener("keydown", this);
-            document.body.removeChild(modal);
+            if (modal.parentNode == document.body) {
+                document.body.removeChild(modal);
+            }
         }
     });
     return { "modal": modal, "modal_content": modal_content };

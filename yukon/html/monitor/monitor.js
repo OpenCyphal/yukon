@@ -4,6 +4,8 @@ import { add_node_id_headers, make_empty_table_header_row_cell, addContentForReg
 import { applyConfiguration, export_all_selected_registers, update_available_configurations_list } from './yaml.configurations.module.js';
 import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
 import { create_registers_table, update_tables } from './registers.module.js';
+import {get_all_selected_pairs} from './registers.selection.module.js';
+import { rereadPairs } from "./registers.data.module.js"
 
 (function () {
     yukon_state.addLocalMessage = function (message) {
@@ -51,7 +53,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
             }
             // If F5 is pressed, reread registers
             if (e.keyCode == 116) {
-                const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": null }, current_avatars);
+                const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": null }, yukon_state);
                 let pairs = [];
                 // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
                 for (const node_id of Object.keys(data)) {

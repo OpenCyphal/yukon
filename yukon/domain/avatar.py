@@ -263,7 +263,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                 "health": health_value,
                 "health_text": health_text,
                 "uptime": uptime,
-                "timestamp": self._ts_heartbeat if self._ts_heartbeat is not None else "No Value",
+                "timestamp": self._ts_heartbeat if self._ts_heartbeat is not None and abs(self._ts_heartbeat) != math.inf else "No Value",
             },
             "versions": {
                 "software_version": f"{software_major_version}.{software_minor_version}.{software_vcs_revision_id}",
