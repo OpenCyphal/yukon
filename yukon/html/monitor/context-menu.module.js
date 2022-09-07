@@ -1,6 +1,41 @@
 import { export_all_selected_registers, update_available_configurations_list, applyConfiguration } from "./yaml.configurations.module.js";
-import {getAllEntireColumnsThatAreSelected} from "./registers.selection.module.js";
-import {updateRegistersTableColors} from "./registers.module.js";
+import { getAllEntireColumnsThatAreSelected, get_all_selected_pairs } from "./registers.selection.module.js";
+import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./registers.module.js";
+import { rereadPairs } from "./registers.data.module.js";
+function fallbackCopyTextToClipboard(text) {
+    var textArea = document.createElement("textarea");
+    textArea.value = text;
+
+    // Avoid scrolling to bottom
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        var successful = document.execCommand('copy');
+        var msg = successful ? 'successful' : 'unsuccessful';
+        console.log('Fallback: Copying text command was ' + msg);
+    } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+    }
+
+    document.body.removeChild(textArea);
+}
+function copyTextToClipboard(text) {
+    if (!navigator.clipboard) {
+        fallbackCopyTextToClipboard(text);
+        return;
+    }
+    navigator.clipboard.writeText(text).then(function () {
+        console.log('Async: Copying to clipboard was successful!');
+    }, function (err) {
+        console.error('Async: Could not copy text: ', err);
+    });
+}
 export function make_context_menus(yukon_state) {
     const addLocalMessage = yukon_state.addLocalMessage;
     const copyIcon = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" style="margin-right: 7px" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
@@ -22,7 +57,7 @@ export function make_context_menus(yukon_state) {
                         "only_of_avatar_of_node_id": node_id,
                         "get_everything": false,
                         "only_of_register_name": null
-                    });
+                    }, yukon_state);
                 } else if (cell.tagName == "TD" || cell.tagName == "INPUT") {
                     // Get the node_id and register_name from the cell
                     const node_id = cell.getAttribute("node_id");
@@ -31,7 +66,7 @@ export function make_context_menus(yukon_state) {
                         "only_of_avatar_of_node_id": false,
                         "get_everything": false,
                         "only_of_register_name": null
-                    });
+                    }, yukon_state);
                     // If pairs contains nothing then add the node_id and register_name
                     if (pairs.length == 0) {
                         pairs[node_id][register_name] = true;
@@ -78,7 +113,7 @@ export function make_context_menus(yukon_state) {
                     const cell = elementOpenedOn;
                     const node_id = cell.getAttribute("node_id");
                     const register_name = cell.getAttribute("register_name");
-                    showCellValue(node_id, register_name);
+                    showCellValue(node_id, register_name, yukon_state);
                 }
             },
             shouldBeDisplayed: oneSelectedConstraint
@@ -88,7 +123,7 @@ export function make_context_menus(yukon_state) {
             events: {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
-                    const all_selected_pairs = get_all_selected_pairs();
+                    const all_selected_pairs = get_all_selected_pairs(null, yukon_state);
                     editSelectedCellValues(all_selected_pairs);
                 }
             },
@@ -171,14 +206,14 @@ export function make_context_menus(yukon_state) {
                     const cell = elementOpenedOn;
                     const node_id = cell.getAttribute("node_id");
                     const register_name = cell.getAttribute("register_name");
-                    const pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null });
+                    const pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
                     // The current cell was the element that this context menu was summoned on
                     // If there are no keys in pairs, then add the current cell
                     if (Object.keys(pairs).length == 0) {
                         pairs[node_id] = {}
                         pairs[node_id][register_name] = true;
                     }
-                    rereadPairs(pairs);
+                    rereadPairs(pairs, yukon_state);
                 }
             }
         },
@@ -306,8 +341,8 @@ export function make_context_menus(yukon_state) {
                 click: (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
                     const node_id = headerCell.getAttribute("data-node_id");
-                    const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": node_id, "get_everything": false, "only_of_register_name": null });
-                    rereadPairs(data);
+                    const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": node_id, "get_everything": false, "only_of_register_name": null }, yukon_state);
+                    rereadPairs(data, yukon_state);
                 }
             }
         },

@@ -10,17 +10,18 @@ var yukon_state = {
     "updateRegistersTableColorsAgainTimer": null,
     "recently_reread_registers": {},
     "available_configurations": {},
+    "number_input_for_configuration": {}, // The key is the file_name and the value is the input element
+    "simplified_configurations_flags": {}, // The key is the file_name and true is is simplified
     "zubax_api": null,
-    "last_table_hashes": { set: new Set() }, // The same avatar hashes but for tables
-    "last_hashes": { set: new Set() },
+    "pressedKeys": {},
     "existingHashesSet": {
-        "set": new Set(),
     },
     "settings": {
         "showAlotOfButtons": false,
         "showDoubleRowHeadersFromCount": 6,
         "shouldDoubleClickOpenModal": true,
         "isTableCellTextSelectable": false,
-        "isSelectionModeComplicated": false
+        "isSelectionModeComplicated": false,
+        "simplifyRegisters": true,
     }
 };

@@ -1,6 +1,6 @@
 import { make_context_menus } from './context-menu.module.js';
 import { create_directed_graph, refresh_graph_layout } from './monitor.module.js';
-import { add_node_id_headers, make_empty_table_header_row_cell, addContentForRegisterName } from './registers.module.js';
+import { add_node_id_headers, make_empty_table_header_row_cell, addContentForRegisterName, updateRegistersTableColors } from './registers.module.js';
 import { applyConfiguration, export_all_selected_registers, update_available_configurations_list } from './yaml.configurations.module.js';
 import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
 import { create_registers_table, update_tables } from './registers.module.js';
@@ -18,13 +18,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
         const cbSimplifyRegisters = document.getElementById('cbSimplifyRegisters');
         const divAllRegistersButtons = document.getElementById('divAllRegistersButtons');
         divAllRegistersButtons.style.display = 'none';
-        let lastHash = "";
-        let simplified_configurations_flags = {}; // The key is the file_name and true is is simplified
-        let number_input_for_configuration = {}; // The key is the file_name and the value is the input element
-        let selected_config = null;
         var selected_registers = yukon_state.selections.selected_registers;
-        var selected_columns = yukon_state.selections.selected_columns;
-        var selected_rows = yukon_state.selections.selected_rows;
         var recently_reread_registers = {};
         let lastInternalMessageIndex = -1;
         const selectingTableCellsIsDisabledStyle = document.createElement('style');
@@ -33,35 +27,25 @@ import { create_registers_table, update_tables } from './registers.module.js';
             user-select:none;
         }
         `;
-        const colors = {
-            "selected_register": '#0003EE',
-            "selected_column": 'rgba(0, 155, 255, 0.5)',
-            "selected_row": "rgba(255, 255, 0, 0.5)",
-            "selected_row_and_column": "rgba(255, 165, 0, 0.5)",
-            "not_selected": "rgba(255, 255, 255, 0.5)",
-            "recently_read": "#B00036",
-            "no_value": "#007E87"
-        }
         make_context_menus(yukon_state);
         // When escape is double pressed within 400ms, run unselectAll
         let escape_timer = null;
-        var pressedKeys = {};
-        window.onkeyup = function (e) { pressedKeys[e.keyCode] = false; }
+        window.onkeyup = function (e) { yukon_state.pressedKeys[e.keyCode] = false; }
         // Add event listeners for focus and blur event handlers to window
         window.addEventListener('focus', function () {
             console.log("Window focused");
-            pressedKeys[18] = false;
+            yukon_state.pressedKeys[18] = false;
         });
         window.addEventListener('blur', function () {
             console.log("Window blurred");
-            pressedKeys[18] = false;
+            yukon_state.pressedKeys[18] = false;
         });
 
         window.onkeydown = function (e) {
             // If alt tab was pressed return
-            pressedKeys[e.keyCode] = true;
+            yukon_state.pressedKeys[e.keyCode] = true;
             // If ctrl a was pressed, select all
-            if (pressedKeys[17] && pressedKeys[65]) {
+            if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[65]) {
                 selectAll();
                 e.preventDefault();
             }
@@ -77,7 +61,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
                         pairs[node_id][register_name] = true;
                     }
                 }
-                rereadPairs(pairs);
+                rereadPairs(pairs, yukon_state);
             }
         }
         document.addEventListener('keydown', function (e) {
@@ -110,40 +94,6 @@ import { create_registers_table, update_tables } from './registers.module.js';
             }
             return allSelected;
         }
-        function fallbackCopyTextToClipboard(text) {
-            var textArea = document.createElement("textarea");
-            textArea.value = text;
-
-            // Avoid scrolling to bottom
-            textArea.style.top = "0";
-            textArea.style.left = "0";
-            textArea.style.position = "fixed";
-
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-
-            try {
-                var successful = document.execCommand('copy');
-                var msg = successful ? 'successful' : 'unsuccessful';
-                console.log('Fallback: Copying text command was ' + msg);
-            } catch (err) {
-                console.error('Fallback: Oops, unable to copy', err);
-            }
-
-            document.body.removeChild(textArea);
-        }
-        function copyTextToClipboard(text) {
-            if (!navigator.clipboard) {
-                fallbackCopyTextToClipboard(text);
-                return;
-            }
-            navigator.clipboard.writeText(text).then(function () {
-                console.log('Async: Copying to clipboard was successful!');
-            }, function (err) {
-                console.error('Async: Could not copy text: ', err);
-            });
-        }
 
         function unselectAll(yukon_state) {
             addLocalMessage("Unselecting all registers");
@@ -171,32 +121,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
             }
             updateRegistersTableColors(yukon_state);
         }
-
-
-        function rereadPairs(pairs) {
-            // For every key of node_id in pairs
-            for (let node_id in pairs) {
-                if (!recently_reread_registers[node_id]) {
-                    recently_reread_registers[node_id] = {};
-                }
-                // For every key of register_name in pairs[node_id]
-                for (let register_name in pairs[node_id]) {
-                    // Add the register to recently_reread_registers
-                    recently_reread_registers[node_id][register_name] = true;
-                }
-            }
-            updateRegistersTableColors(yukon_state);
-            let registers_to_reset = JSON.parse(JSON.stringify(recently_reread_registers));
-            setTimeout(() => {
-                // Iterate through registers_to_reset and remove them from recently_reread_registers
-                for (let node_id in registers_to_reset) {
-                    for (let register_name in registers_to_reset[node_id]) {
-                        recently_reread_registers[node_id][register_name] = false;
-                    }
-                }
-            }, 600);
-            zubax_api.reread_registers(pairs);
-        }
+        
 
         function createMonitorPopup(text) {
             var cy = document.getElementById('cy');
@@ -301,8 +226,8 @@ import { create_registers_table, update_tables } from './registers.module.js';
                 function (avatars) {
                     const textOut = document.querySelector("#textOut");
                     const DTO = JSON.parse(avatars);
-                    if (DTO.hash != lastHash || refresh_anyway) {
-                        lastHash = DTO.hash;
+                    if (DTO.hash != yukon_state.lastHash || refresh_anyway) {
+                        yukon_state.lastHash = DTO.hash;
                         textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
                     }
                     // Parse avatars as json
@@ -310,304 +235,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
             );
         }
         setInterval(updateTextOut, 1000);
-
-        function getAllCellsInBetween(start_cell, end_cell) {
-            let row_based_selection = false;
-            let column_based_selection = false;
-            if (start_cell.node_id == end_cell.node_id) {
-                column_based_selection = true;
-            } else if (start_cell.register_name == end_cell.register_name) {
-                row_based_selection = true;
-            } else {
-                return [];
-            }
-            let all_cells = [];
-            let start_table_cell = null;
-            let end_table_cell = null;
-            if (row_based_selection) {
-                start_table_cell = document.getElementById("cell_" + start_cell.node_id + "_" + start_cell.register_name);
-                end_table_cell = document.getElementById("cell_" + end_cell.node_id + "_" + end_cell.register_name);
-                for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                    const current_avatar = yukon_state.current_avatars[i];
-                    // For every register in the avatar
-                    for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
-                        const register_name = yukon_state.current_avatars[i].registers[j];
-                        if (!register_name || register_name !== start_cell.register_name) {
-                            continue;
-                        }
-                        // Get the cell corresponding to this register
-                        const table_cell = document.getElementById("cell_" + current_avatar.node_id + "_" + register_name);
-
-                        if (table_cell.offsetLeft > start_table_cell.offsetLeft && table_cell.offsetLeft < end_table_cell.offsetLeft ||
-                            table_cell.offsetLeft < start_table_cell.offsetLeft && table_cell.offsetLeft > end_table_cell.offsetLeft) {
-                            // Add it to the list
-                            all_cells.push({ "node_id": current_avatar.node_id, "register_name": register_name });
-                        }
-                    }
-                }
-            } else {
-                start_table_cell = document.getElementById("cell_" + start_cell.node_id + "_" + start_cell.register_name);
-                end_table_cell = document.getElementById("cell_" + end_cell.node_id + "_" + end_cell.register_name);
-                for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                    const current_avatar = yukon_state.current_avatars[i];
-                    if (current_avatar.node_id !== start_cell.node_id) {
-                        continue;
-                    }
-                    // For every register in the avatar
-                    for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
-                        const register_name = yukon_state.current_avatars[i].registers[j];
-                        if (!register_name) {
-                            continue;
-                        }
-                        // Get the cell corresponding to this register
-                        const table_cell = document.getElementById("cell_" + current_avatar.node_id + "_" + register_name);
-                        // If the table_cell is above the start_table_cell and below the end_table_cell
-                        if (table_cell.offsetTop > start_table_cell.offsetTop && table_cell.offsetTop < end_table_cell.offsetTop ||
-                            table_cell.offsetTop < start_table_cell.offsetTop && table_cell.offsetTop > end_table_cell.offsetTop) {
-                            // Add it to the list
-                            all_cells.push({ "node_id": current_avatar.node_id, "register_name": register_name });
-                        }
-
-                    }
-                }
-            }
-            return all_cells;
-        }
-        function createGenericModal() {
-            let modal = document.createElement("div");
-            modal.id = "modal";
-            modal.style.position = "fixed";
-            modal.style.top = "0px";
-            modal.style.left = "0px";
-            modal.style.width = "100%";
-            modal.style.height = "100%";
-            modal.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-            modal.style.zIndex = "100";
-            modal.style.display = "flex";
-            modal.style.alignItems = "center";
-            modal.style.justifyContent = "center";
-            let modal_content = document.createElement("div");
-            modal_content.style.backgroundColor = "white";
-            modal_content.style.padding = "20px";
-            modal_content.style.borderRadius = "10px";
-            modal_content.style.width = "80%";
-            modal.appendChild(modal_content);
-            let modal_close = document.createElement("button");
-            modal_close.innerHTML = "Close";
-            modal_close.onclick = function () {
-                document.body.removeChild(modal);
-            }
-            modal_content.appendChild(modal_close);
-            // Also close the modal if escape is pressed
-            document.addEventListener("keydown", function (event) {
-                if (event.key == "Escape") {
-                    document.removeEventListener("keydown", this);
-                    document.body.removeChild(modal);
-                }
-            });
-            return { "modal": modal, "modal_content": modal_content };
-        }
-        //  This is the modal that you see when you click Set values and have multiple registers selected
-        function editSelectedCellValues(pairs) {
-            let returnObject = createGenericModal();
-            let modal = returnObject.modal;
-            let modal_content = returnObject.modal_content;
-            let modal_title = document.createElement("h2");
-            modal_title.innerHTML = "Selected cell values";
-            modal_content.appendChild(modal_title);
-            let modal_value = document.createElement("textarea");
-            modal_value.value = "";
-            modal_value.style.width = "100%";
-
-            modal_content.appendChild(modal_value);
-            autosize(modal_value);
-            let submit_modal = function () {
-                let new_value = modal_value.value;
-                if (new_value != null) {
-                    // Update the value in the table
-                    // text_input.value = new_value;
-                    // Update the value in the server
-                    update_register_value(register_name, new_value, avatar.node_id, yukon_state);
-                    // Run update_tables every second, do that only for the next 4 seconds
-                    let interval1 = setInterval(() => update_tables(true), 1000);
-                    setTimeout(() => clearInterval(interval1), 4000);
-                    document.body.removeChild(modal);
-                } else {
-                    addLocalMessage("No value entered");
-                }
-            }
-            let datatypes = new Set();
-            let register_count = 0;
-            // Create a list with all pairs, displaying the register name and the value and a submit button
-            // When the submit button is clicked then the value is updated in the server and the list element is removed
-            // Make a div that is at max 80% of the screen height and has a scrollbar
-            let modal_list = document.createElement("div");
-            modal_list.style.maxHeight = "80vh";
-            modal_list.style.overflowY = "auto";
-            modal_list.style.overflowX = "hidden";
-            modal_list.style.marginBottom = "10px";
-            modal_content.appendChild(modal_list);
-            let array_size = null;
-            for (node_id in pairs) {
-                const registers = pairs[node_id];
-                for (register_name in registers) {
-                    register_count += 1;
-                    const register_value = registers[register_name];
-                    const datatype = Object.keys(register_value)[0];
-                    datatypes.add(datatype);
-                    const register_value_object = register_value[datatype].value;
-                    let pair_div = document.createElement("div");
-                    pair_div.classList.add("pair-div");
-                    pair_div.style.display = "flex";
-                    pair_div.style.alignItems = "center";
-                    let pair_name = document.createElement("span");
-                    pair_name.innerHTML = register_name;
-                    pair_name.style.marginRight = "10px";
-                    pair_div.appendChild(pair_name);
-                    let is_pair_incompatible = false;
-                    let current_array_size = 0;
-                    // Add a span for datatype
-                    // if register_value[datatype].value is an array
-                    if (Array.isArray(register_value_object)) {
-                        current_array_size = register_value[datatype].value.length;
-                    } else {
-                        current_array_size = 1;
-                    }
-                    if (array_size === null) {
-                        array_size = current_array_size;
-                    } else if (array_size == current_array_size) {
-                        // Do nothing
-                    } else {
-                        // Color the pair div red
-                        pair_div.style.backgroundColor = "red";
-                        is_pair_incompatible = true;
-                    }
-                    let pair_datatype = document.createElement("span");
-                    pair_datatype.innerHTML = datatype + "[" + current_array_size + "]";
-                    pair_datatype.style.marginRight = "10px";
-                    pair_div.appendChild(pair_datatype);
-                    let pair_value = document.createElement("input");
-                    pair_value.value = JSON.stringify(register_value_object);
-                    pair_value.style.width = "100%";
-                    pair_value.disabled = true;
-                    pair_div.appendChild(pair_value);
-                    // Add a discard button
-                    let discard_button = document.createElement("button");
-                    discard_button.innerHTML = "Discard";
-                    discard_button.style.marginLeft = "10px";
-                    discard_button.onclick = function () {
-                        pair_div.remove();
-                    }
-                    pair_div.appendChild(discard_button);
-                    let pair_submit = document.createElement("button");
-                    pair_submit.innerHTML = "Update";
-                    if (is_pair_incompatible) {
-                        pair_submit.disabled = true;
-                    }
-                    pair_submit.onclick = function () {
-                        if (modal_value.value != "") {
-                            // Remove the list element
-                            pair_div.parentNode.removeChild(pair_div);
-                            // Update the value in the table
-                            // text_input.value = new_value;
-                            // Update the value in the server
-                            update_register_value(register_name, modal_value.value, node_id, yukon_state);
-                            // Run update_tables every second, do that only for the next 4 seconds
-                            let interval1 = setInterval(() => update_tables(true), 1000);
-                            setTimeout(() => clearInterval(interval1), 4000);
-                            if (register_count == 1) {
-                                document.body.removeChild(modal);
-                            } else {
-                                register_count -= 1;
-                                // Remove the submit button
-                                pair_submit.parentNode.removeChild(pair_submit);
-                            }
-                        } else {
-                            addLocalMessage("No value entered");
-                        }
-                    }
-                    pair_div.appendChild(pair_submit);
-                    modal_list.appendChild(pair_div);
-                }
-            }
-
-            // Add a submit button
-            let modal_submit = document.createElement("button");
-            modal_submit.innerHTML = "Submit all";
-            modal_submit.onclick = submit_modal;
-            // If enter is pressed the modal should submit too
-            document.addEventListener("keydown", function (event) {
-                if (event.key == "Enter") {
-                    console.log("Enter pressed");
-                    submit_modal();
-                    document.removeEventListener("keydown", arguments.callee);
-                }
-            });
-            modal_content.appendChild(modal_submit);
-            // For each pair in pairs, add the datatype to a string variable called type_string
-
-            let modal_type = document.createElement("p");
-            const datatypes_string = Array.from(datatypes).join(", ");
-            modal_type.innerHTML = "The value you are entering has to be castable to these types: " + datatypes_string + "<br>It also has to be of size: " + array_size;
-            modal_content.appendChild(modal_type);
-            document.body.appendChild(modal);
-            setTimeout(() => modal_value.focus(), 100);
-        }
-        function showCellValue(node_id, register_name) {
-            const avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id == node_id);
-            let register_value = avatar.registers_exploded_values[register_name];
-            let type_string = Object.keys(register_value)[0];
-            let value = Object.values(register_value)[0].value;
-            // Create a modal with the value of the register
-            let returnObject = createGenericModal();
-            let modal = returnObject.modal;
-            document.body.appendChild(modal);
-            let modal_content = returnObject.modal_content;
-            document.body.appendChild(modal);
-            let modal_title = document.createElement("h2");
-            modal_title.innerHTML = "Value of " + register_name;
-            modal_content.appendChild(modal_title);
-
-            let modal_value = document.createElement("textarea");
-            modal_value.value = value;
-            modal_value.style.width = "100%";
-
-            modal_content.appendChild(modal_value);
-            autosize(modal_value);
-            let submit_modal = function () {
-                let new_value = modal_value.value;
-                if (new_value != null) {
-                    // Update the value in the table
-                    // text_input.value = new_value;
-                    // Update the value in the server
-                    update_register_value(register_name, new_value, avatar.node_id, yukon_state);
-                    // Run update_tables every second, do that only for the next 4 seconds
-                    let interval1 = setInterval(() => update_tables(true), 1000);
-                    setTimeout(() => clearInterval(interval1), 4000);
-                    document.body.removeChild(modal);
-                } else {
-                    addLocalMessage("No value entered");
-                }
-            }
-            // Add a submit button
-            let modal_submit = document.createElement("button");
-            modal_submit.innerHTML = "Submit";
-            modal_submit.onclick = submit_modal;
-            // If enter is pressed the modal should submit too
-            document.addEventListener("keydown", function (event) {
-                if (event.key == "Enter") {
-                    console.log("Enter pressed");
-                    submit_modal();
-                    document.removeEventListener("keydown", arguments.callee);
-                }
-            });
-            modal_content.appendChild(modal_submit);
-
-            let modal_type = document.createElement("p");
-            modal_type.innerHTML = type_string;
-            modal_content.appendChild(modal_type);
-            setTimeout(() => modal_value.focus(), 100);
-        }
+        
 
         setInterval(update_tables, 1000)
         setInterval(update_avatars_table, 1000);
@@ -857,7 +485,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
                     pairs[node_id][register_name] = true;
                 }
             }
-            rereadPairs(pairs);
+            rereadPairs(pairs, yukon_state);
         });
         const btnRereadSelectedRegisters = document.getElementById('btnRereadSelectedRegisters');
         btnRereadSelectedRegisters.addEventListener('click', function () {
@@ -871,7 +499,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
                     pairs[node_id][register_name] = true;
                 }
             }
-            rereadPairs(data);
+            rereadPairs(data, yukon_state);
         });
     }
     try {

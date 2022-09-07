@@ -1,14 +1,15 @@
-import { updateRegistersTableColors } from "./registers.module.js";
+import { updateRegistersTableColors, showCellValue } from "./registers.module.js";
+import {rereadPairs} from "./registers.data.module.js";
 // A pair is a pair of nodeid and register name
-export function get_all_selected_pairs(options, state) {
+export function get_all_selected_pairs(options, yukon_state) {
     if (!options) {
         options = {};
     }
     let final_dict = {};
-    let current_avatars = state.current_avatars;
-    let selected_columns = state.selections.selected_columns;
-    let selected_rows = state.selections.selected_rows;
-    let selected_registers = state.selections.selected_registers;
+    let current_avatars = yukon_state.current_avatars;
+    let selected_columns = yukon_state.selections.selected_columns;
+    let selected_rows = yukon_state.selections.selected_rows;
+    let selected_registers = yukon_state.selections.selected_registers;
     // For each avatar in current_avatars
     for (var i = 0; i < current_avatars.length; i++) {
         let avatar_dto = {
@@ -122,7 +123,7 @@ export function make_select_column(node_id, is_mouse_over, yukon_state) {
                     if (current_avatar.node_id == node_id) {
                         for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
                             const register_name = yukon_state.current_avatars[i].registers[j];
-                            selected_registers[[node_id, register_name]] = true;
+                            yukon_state.selections.selected_registers[[node_id, register_name]] = true;
                         }
                     }
                 }
@@ -178,7 +179,7 @@ export function make_select_row(register_name, is_mouse_over, yukon_state) {
                     for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
                         const register_name2 = yukon_state.current_avatars[i].registers[j];
                         if (register_name2 == register_name) {
-                            selected_registers[[node_id, register_name]] = false;
+                            yukon_state.selections.selected_registers[[node_id, register_name]] = false;
                         }
                     }
                 }
@@ -206,7 +207,7 @@ export function make_select_cell(avatar, register_name, is_mouse_over, yukon_sta
         if (!yukon_state.selections.selected_registers[[avatar.node_id, register_name]]) {
             yukon_state.selections.selected_registers[[avatar.node_id, register_name]] = true;
             // If shift is being held down
-            if (pressedKeys[16] && yukon_state.selections.last_cell_selected) {
+            if (yukon_state.pressedKeys[16] && yukon_state.selections.last_cell_selected) {
                 const allCells = getAllCellsInBetween(yukon_state.selections.last_cell_selected, { "node_id": avatar.node_id, "register_name": register_name });
                 for (var i = 0; i < allCells.length; i++) {
                     const cell = allCells[i];
@@ -226,12 +227,12 @@ export function make_select_cell(avatar, register_name, is_mouse_over, yukon_sta
             }
             if (event.target.matches(':hover')) {
                 // If alt is pressed
-                if (pressedKeys[18]) {
+                if (yukon_state.pressedKeys[18]) {
                     // Reread the register
                     let pairs_object = {};
                     pairs_object[avatar.node_id] = {};
                     pairs_object[avatar.node_id][register_name] = true;
-                    rereadPairs(pairs_object);
+                    rereadPairs(pairs_object, yukon_state);
                     return;
                 }
                 selectCell();
@@ -239,20 +240,83 @@ export function make_select_cell(avatar, register_name, is_mouse_over, yukon_sta
             }
         } else {
             // If alt is pressed
-            if (pressedKeys[18]) {
+            if (yukon_state.pressedKeys[18]) {
                 // Reread the register
                 let pairs_object = {};
                 pairs_object[avatar.node_id] = {};
                 pairs_object[avatar.node_id][register_name] = true;
-                rereadPairs(pairs_object);
+                rereadPairs(pairs_object, yukon_state);
                 return;
             }
             // If control is pressed
-            if (pressedKeys[17]) {
+            if (yukon_state.pressedKeys[17]) {
                 showCellValue(avatar.node_id, register_name);
                 return;
             }
             selectCell();
         }
     }
+}
+
+function getAllCellsInBetween(start_cell, end_cell, yukon_state) {
+    let row_based_selection = false;
+    let column_based_selection = false;
+    if (start_cell.node_id == end_cell.node_id) {
+        column_based_selection = true;
+    } else if (start_cell.register_name == end_cell.register_name) {
+        row_based_selection = true;
+    } else {
+        return [];
+    }
+    let all_cells = [];
+    let start_table_cell = null;
+    let end_table_cell = null;
+    if (row_based_selection) {
+        start_table_cell = document.getElementById("cell_" + start_cell.node_id + "_" + start_cell.register_name);
+        end_table_cell = document.getElementById("cell_" + end_cell.node_id + "_" + end_cell.register_name);
+        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+            const current_avatar = yukon_state.current_avatars[i];
+            // For every register in the avatar
+            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                const register_name = yukon_state.current_avatars[i].registers[j];
+                if (!register_name || register_name !== start_cell.register_name) {
+                    continue;
+                }
+                // Get the cell corresponding to this register
+                const table_cell = document.getElementById("cell_" + current_avatar.node_id + "_" + register_name);
+
+                if (table_cell.offsetLeft > start_table_cell.offsetLeft && table_cell.offsetLeft < end_table_cell.offsetLeft ||
+                    table_cell.offsetLeft < start_table_cell.offsetLeft && table_cell.offsetLeft > end_table_cell.offsetLeft) {
+                    // Add it to the list
+                    all_cells.push({ "node_id": current_avatar.node_id, "register_name": register_name });
+                }
+            }
+        }
+    } else {
+        start_table_cell = document.getElementById("cell_" + start_cell.node_id + "_" + start_cell.register_name);
+        end_table_cell = document.getElementById("cell_" + end_cell.node_id + "_" + end_cell.register_name);
+        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+            const current_avatar = yukon_state.current_avatars[i];
+            if (current_avatar.node_id !== start_cell.node_id) {
+                continue;
+            }
+            // For every register in the avatar
+            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                const register_name = yukon_state.current_avatars[i].registers[j];
+                if (!register_name) {
+                    continue;
+                }
+                // Get the cell corresponding to this register
+                const table_cell = document.getElementById("cell_" + current_avatar.node_id + "_" + register_name);
+                // If the table_cell is above the start_table_cell and below the end_table_cell
+                if (table_cell.offsetTop > start_table_cell.offsetTop && table_cell.offsetTop < end_table_cell.offsetTop ||
+                    table_cell.offsetTop < start_table_cell.offsetTop && table_cell.offsetTop > end_table_cell.offsetTop) {
+                    // Add it to the list
+                    all_cells.push({ "node_id": current_avatar.node_id, "register_name": register_name });
+                }
+
+            }
+        }
+    }
+    return all_cells;
 }
