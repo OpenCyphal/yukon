@@ -73,6 +73,48 @@ export function applyConfiguration(configuration, set_node_id, applyPairs, yukon
         });
     });
 }
+function saveString(string, yukon_state) {
+    try {
+        var userAgent = yukon_state.navigator.userAgent.toLowerCase();
+        if(window.showSaveFilePicker) {
+            const fileHandle = window.showSaveFilePicker();
+            fileHandle.then(function(fileHandle)
+            {
+                yukon_state.addLocalMessage("We got this path: " + fileHandle);
+                if(fileHandle) {
+                    // Create a FileSystemWritableFileStream to write to.
+                    fileHandle.createWritable().then(function(writable)
+                    {
+                        // Write the contents of the file to the stream.
+                        writable.write(string).then(function() {
+                            writable.close().then(function()
+                            {
+                                yukon_state.addLocalMessage("File written to disk.");
+                            });
+                        });
+
+                        // Close the file and write the contents to disk.
+                        
+                    });
+
+                    
+                } else {
+                    yukon_state.addLocalMessage("User didn't specify a file path in the dialog");
+                }
+            });
+            
+        } else {
+            return yukon_state.zubax_api.save_yaml(string);
+        }
+    } catch (e) {
+        yukon_state.addLocalMessage("Error saving yaml: " + e);
+    }
+}
+function saveYaml(string, yukon_state) {
+    // Use regex ['\"](\d+)['\"] and replace with $1
+    string = string.replace(/['"](\d+)['"]/g, "$1");
+    saveString(string, yukon_state);
+}
 export function export_all_selected_registers(only_of_avatar_of_node_id, get_everything, yukon_state) {
     let zubax_api = yukon_state.zubax_api;
     // A pair is the register_name and the node_id
@@ -83,10 +125,10 @@ export function export_all_selected_registers(only_of_avatar_of_node_id, get_eve
         zubax_api.simplify_configuration(json_string).then(function (simplified_json_string) {
             const intermediary_structure = JSON.parse(simplified_json_string);
             const simplified_yaml_string = jsyaml.dump(intermediary_structure);//, { flowLevel: 2 });
-            return zubax_api.save_yaml(simplified_yaml_string);
+            return saveYaml(simplified_yaml_string, yukon_state);
         });
     } else {
-        return zubax_api.save_yaml(yaml_string);
+        return saveYaml(yaml_string, yukon_state);
     }
 }
 export function update_available_configurations_list(yukon_state) {

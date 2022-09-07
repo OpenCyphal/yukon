@@ -3,13 +3,13 @@
     var lastMessageIndex = -1;
     const transport_types = Object.freeze({
         MANUAL: "MANUAL",
-//        TCP: 'TCP',
+       UDP: 'UDP',
         SLCAN: "SLCAN",
         SOCKETCAN: "SOCKETCAN",
 //        CANDUMP: "CANDUMP",
 //        PICAN: "PICAN",
     })
-    var currentSelectedTransport = transport_types.TCP;
+    var currentSelectedTransport = transport_types.MANUAL;
     // zubax_reception_api.hello.connect(function(message)
     // {
         // console.log("Message from hello: " + message);
@@ -121,8 +121,8 @@
                     h1TransportType.innerHTML = "A connection string";
                     divSelectTransport.style.display = "none";
                     break;
-                case transport_types.TCP:
-                    h1TransportType.innerHTML = "TCP";
+                case transport_types.UDP:
+                    h1TransportType.innerHTML = "UDP";
                     divTypeTransport.style.display = "none";
                     divSelectTransport.style.display = "none";
                     divMtu.style.display = "none";
@@ -180,8 +180,8 @@
             {
                 const labelChildren = getLabelChildren();
                 const child = labelChildren[index];
-                const targetLeftValue = child.getBoundingClientRect().left - maybe_tabs.getBoundingClientRect().left - 12;
-                const targetWidth = child.getBoundingClientRect().width + 24
+                const targetLeftValue = child.getBoundingClientRect().left - maybe_tabs.getBoundingClientRect().left;
+                const targetWidth = child.getBoundingClientRect().width
 
                 var t = new Tween(slider.style, 'left', Tween.regularEaseOut, parseInt(slider.style.left), targetLeftValue, 0.3, 'px');
                 t.start();

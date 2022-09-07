@@ -11,6 +11,7 @@ import { rereadPairs } from "./registers.data.module.js"
     yukon_state.addLocalMessage = function (message) {
         zubax_api.add_local_message(message)
     }
+    yukon_state.navigator = navigator;
     const addLocalMessage = yukon_state.addLocalMessage;
     function doStuffWhenReady() {
         yukon_state.zubax_api = zubax_api;

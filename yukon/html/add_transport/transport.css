@@ -20,6 +20,7 @@ body {
 
 form#transport-selection-form {
     display: block;
+    max-width: 800px;
     margin: 0.5em;
     margin-right: 0.8em;
     padding: 0.5em;
@@ -129,6 +130,7 @@ form#transport-selection-form > #maybe-tabs {
 form#transport-selection-form>#maybe-tabs>label {
     display: inline !important;
     height: 100%;
+    flex-grow: 3;
     padding: 0.5em;
     background-color: #e0e0e0;
 }

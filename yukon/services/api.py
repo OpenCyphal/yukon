@@ -32,18 +32,23 @@ logger.setLevel(logging.NOTSET)
 
 
 def save_text_into_file(file_contents: str) -> None:
+    import tkinter
     import tkinter as tk
-    from tkinter import filedialog
+    from tkinter.filedialog import SaveAs
 
     root = tk.Tk()
-    root.geometry("1x1+1+1")
-
+    root.geometry("1x1+0+0")
+    root.eval('tk::PlaceWindow . center')
+    second_win = tkinter.Toplevel(root)
+    second_win.withdraw()
+    root.eval(f'tk::PlaceWindow {str(second_win)} center')
     # Show window again and lift it to top so it can get focus,
     # otherwise dialogs will end up behind the terminal.
     root.deiconify()
     root.lift()
     root.focus_force()
-    file_path = filedialog.asksaveasfilename()
+    save_as_dialog = SaveAs(root)
+    file_path = save_as_dialog.show()
     root.withdraw()
     root.destroy()
     if file_path:
@@ -141,14 +146,15 @@ def simplify_configuration(deserialized_conf: typing.Any) -> str:
 
 def import_candump_file_contents() -> str:
     import tkinter as tk
-    from tkinter import filedialog
+    from tkinter.filedialog import askopenfilename, Open
 
     root = tk.Tk()
-    root.geometry("1x1+1+1")
-    root.deiconify()
+    root.geometry("1x1+0+0")
+    root.eval('tk::PlaceWindow . center')
     root.lift()
     root.focus_force()
-    file_path = filedialog.askopenfilename(filetypes=[("Yaml files", ".yml .yaml")])
+    open_dialog = Open(filetypes=[("Yaml files", ".yml .yaml")])
+    file_path = open_dialog.show()
     root.lift()
     root.focus_force()
     root.withdraw()
