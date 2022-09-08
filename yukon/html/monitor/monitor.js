@@ -6,6 +6,7 @@ import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.m
 import { create_registers_table, update_tables } from './registers.module.js';
 import {get_all_selected_pairs} from './registers.selection.module.js';
 import { rereadPairs } from "./registers.data.module.js"
+import { openFile } from "./yaml.configurations.module.js"
 
 (function () {
     yukon_state.addLocalMessage = function (message) {
@@ -78,6 +79,9 @@ import { rereadPairs } from "./registers.data.module.js"
                         escape_timer = null;
                     }, 400);
                 }
+            }
+            if (e.keyCode == 69 && yukon_state.pressedKeys[18]) {
+                openFile(yukon_state);
             }
         });
         function isAllSelected() {
@@ -462,8 +466,8 @@ import { rereadPairs } from "./registers.data.module.js"
 
         });
         const btnExportAllSelectedRegisters = document.getElementById('btnExportAllSelectedRegisters');
-        btnExportAllSelectedRegisters.addEventListener('click', function (event) {
-            export_all_selected_registers(null, null, yukon_state);
+        btnExportAllSelectedRegisters.addEventListener('click', async function (event) {
+            await export_all_selected_registers(null, null, yukon_state);
             event.stopPropagation();
         });
 

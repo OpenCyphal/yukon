@@ -152,8 +152,8 @@ export function make_context_menus(yukon_state) {
         {
             content: `${downloadIcon}Export selected registers`,
             events: {
-                click: (e) => {
-                    export_all_selected_registers(null, null, yukon_state);
+                click: async (e) => {
+                    await export_all_selected_registers(null, null, yukon_state);
                 }
             },
         },
@@ -297,7 +297,7 @@ export function make_context_menus(yukon_state) {
         {
             content: `${copyIcon}Export all registers`,
             events: {
-                click: (e, elementOpenedOn) => {
+                click: async (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
                     const node_id = headerCell.getAttribute("data-node_id");
                     const avatar = Object.values(yukon_state.current_avatars).find((e) => e.node_id == parseInt(node_id));
@@ -305,7 +305,7 @@ export function make_context_menus(yukon_state) {
                     addLocalMessage("Exporting registers of " + avatar.node_id);
                     //const result = window.chooseFileSystemEntries({ type: "save-file" });
                     // Export all but only for this avatar, dried up code
-                    export_all_selected_registers(avatar.node_id, null, yukon_state);
+                    await export_all_selected_registers(avatar.node_id, null, yukon_state);
                     if (!yukon_state.recently_reread_registers[node_id]) {
                         yukon_state.recently_reread_registers[node_id] = {};
                     }

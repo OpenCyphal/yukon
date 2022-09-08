@@ -73,57 +73,66 @@ export function applyConfiguration(configuration, set_node_id, applyPairs, yukon
         });
     });
 }
-function saveString(string, yukon_state) {
-    try {
-        var userAgent = yukon_state.navigator.userAgent.toLowerCase();
-        if(window.showSaveFilePicker && !yukon_state.settings.preferSmallerFileSelectionDialog) {
-            const fileHandle = window.showSaveFilePicker();
-            fileHandle.then(function(fileHandle)
-            {
-                yukon_state.addLocalMessage("We got this path: " + fileHandle);
-                if(fileHandle) {
-                    // Create a FileSystemWritableFileStream to write to.
-                    fileHandle.createWritable().then(function(writable)
-                    {
-                        // Write the contents of the file to the stream.
-                        writable.write(string).then(function() {
-                            writable.close().then(function()
-                            {
-                                yukon_state.addLocalMessage("File written to disk.");
-                            });
-                        });
-                    });
-                } else {
-                    yukon_state.addLocalMessage("User didn't specify a file path in the dialog");
-                }
-            });
-            
+async function saveString(string, yukon_state) {
+    var userAgent = yukon_state.navigator.userAgent.toLowerCase();
+    if(window.showSaveFilePicker && !yukon_state.settings.preferSmallerFileSelectionDialog) {
+        const fileHandle = await window.showSaveFilePicker();
+        yukon_state.addLocalMessage("We got this path: " + fileHandle);
+        if(fileHandle) {
+            // Create a FileSystemWritableFileStream to write to.
+            const writable = await fileHandle.createWritable()
+            // Write the contents of the file to the stream.
+            await writable.write(string)
+            await writable.close()
+            yukon_state.addLocalMessage("File written to disk.");
         } else {
-            return yukon_state.zubax_api.save_yaml(string);
+            yukon_state.addLocalMessage("User didn't specify a file path in the dialog");
         }
-    } catch (e) {
-        yukon_state.addLocalMessage("Error saving yaml: " + e);
+    } else {
+        return await yukon_state.zubax_api.save_yaml(string);
     }
 }
-function saveYaml(string, yukon_state) {
+async function saveYaml(string, yukon_state) {
     // Use regex ['\"](\d+)['\"] and replace with $1
     string = string.replace(/['"](\d+)['"]/g, "$1");
     saveString(string, yukon_state);
 }
-export function export_all_selected_registers(only_of_avatar_of_node_id, get_everything, yukon_state) {
+export async function openFile(yukon_state) {
+    try {
+        if(window.showOpenFilePicker) {
+            const fileHandlesArray = await window.showOpenFilePicker();
+            if(fileHandlesArray) {
+                const fileHandle = fileHandlesArray[0];
+                yukon_state.addLocalMessage("We got this path: " + fileHandle);
+                if(fileHandle) {
+                    // Create a FileSystemWritableFileStream to write to.
+                    const file = await fileHandle.getFile();
+                    const text = await file.text()
+                    yukon_state.addLocalMessage("File contents: " + text);                        
+                } else {
+                    yukon_state.addLocalMessage("User didn't specify a file path in the dialog");
+                }
+            }
+        } else {
+            return await yukon_state.zubax_api.open_yaml();
+        }
+    } catch (e) {
+        yukon_state.addLocalMessage("Error opening yaml: " + e);
+    }
+}
+export async function export_all_selected_registers(only_of_avatar_of_node_id, get_everything, yukon_state) {
     let zubax_api = yukon_state.zubax_api;
     // A pair is the register_name and the node_id
     let pairs_object = get_all_selected_pairs({ "only_of_avatar_of_node_id": only_of_avatar_of_node_id, "get_everything": get_everything, "only_of_register_name": null }, yukon_state);
     let json_string = JSON.stringify(pairs_object);
     var yaml_string = jsyaml.dump(pairs_object, { flowLevel: 2 });
     if (yukon_state.settings.simplifyRegisters) {
-        zubax_api.simplify_configuration(json_string).then(function (simplified_json_string) {
-            const intermediary_structure = JSON.parse(simplified_json_string);
-            const simplified_yaml_string = jsyaml.dump(intermediary_structure);//, { flowLevel: 2 });
-            return saveYaml(simplified_yaml_string, yukon_state);
-        });
+        const simplified_json_string = await zubax_api.simplify_configuration(json_string)
+        const intermediary_structure = JSON.parse(simplified_json_string);
+        const simplified_yaml_string = jsyaml.dump(intermediary_structure);//, { flowLevel: 2 });
+        return await saveYaml(simplified_yaml_string, yukon_state);
     } else {
-        return saveYaml(yaml_string, yukon_state);
+        return await saveYaml(yaml_string, yukon_state);
     }
 }
 export function update_available_configurations_list(yukon_state) {
