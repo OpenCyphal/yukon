@@ -2,17 +2,15 @@
   --menu-border: rgba(255, 255, 255, 0.08);
   --menu-bg: linear-gradient(
     45deg,
-    rgba(10, 20, 28, 0.2) 0%,
-    rgba(10, 20, 28, 0.7) 100%
+    rgba(10, 20, 28, 1) 0%,
+    rgba(10, 20, 28, 1) 100%
   );
-  --item-border: rgba(255, 255, 255, 0.1);
+  --item-border: rgba(255, 255, 255, 0);
   --item-color: #fff;
-  --item-bg-hover: rgba(255, 255, 255, 0.1);
+  --item-bg-hover: rgb(82, 77, 77);
   height: 0;
   overflow: hidden;
   background: var(--menu-bg);
-  -webkit-backdrop-filter: blur(5px);
-          backdrop-filter: blur(5px);
   position: fixed;
   top: var(--top);
   left: var(--left);

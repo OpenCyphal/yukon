@@ -233,63 +233,61 @@ export function make_context_menus(yukon_state) {
         {
             content: `${downloadIcon}Apply a config from a file`,
             events: {
-                click: (e, elementOpenedOn) => {
-                    zubax_api.import_node_configuration().then(
-                        function (result) {
-                            if (result == "") {
-                                addLocalMessage("No configuration imported");
+                click: async (e, elementOpenedOn) => {
+                    const result = await zubax_api.import_node_configuration()
+                        if (result == "") {
+                            addLocalMessage("No configuration imported");
+                        } else {
+                            const headerCell = elementOpenedOn;
+                            const node_id = headerCell.getAttribute("data-node_id");
+                            const avatar = Object.values(yukon_state.current_avatars).find((e) => e.node_id == parseInt(node_id));
+                            addLocalMessage("Configuration imported");
+                            let result_deserialized = JSON.parse(result);
+                            yukon_state.available_configurations[result_deserialized["__file_name"]] = result;
+                            const selected_config = result_deserialized["__file_name"];
+                            update_available_configurations_list(yukon_state);
+                            const current_config = yukon_state.available_configurations[selected_config];
+                            if (current_config) {
+                                const selections = getAllEntireColumnsThatAreSelected(yukon_state);
+                                // For key and value in selections
+                                for (const key in selections) {
+                                    const value = selections[key];
+                                    const node_id2 = key;
+                                    if (node_id2 == node_id) {
+                                        // The column that the context menu is activated on is used anyway
+                                        continue;
+                                    }
+                                    if (value) {
+                                        // If any other columns are fully selected then they are applied aswell.
+                                        console.log("Column " + key + " is fully selected");
+                                        applyConfiguration(current_config, parseInt(node_id2), null, yukon_state);
+                                    }
+                                }
+                                // The column that the context menu is activated on is used anyway
+                                applyConfiguration(current_config, parseInt(avatar.node_id), null, yukon_state);
                             } else {
-                                const headerCell = elementOpenedOn;
-                                const node_id = headerCell.getAttribute("data-node_id");
-                                const avatar = Object.values(yukon_state.current_avatars).find((e) => e.node_id == parseInt(node_id));
-                                addLocalMessage("Configuration imported");
-                                let result_deserialized = JSON.parse(result);
-                                yukon_state.available_configurations[result_deserialized["__file_name"]] = result;
-                                const selected_config = result_deserialized["__file_name"];
-                                update_available_configurations_list(yukon_state);
-                                const current_config = yukon_state.available_configurations[selected_config];
-                                if (current_config) {
-                                    const selections = getAllEntireColumnsThatAreSelected(yukon_state);
-                                    // For key and value in selections
-                                    for (const key in selections) {
-                                        const value = selections[key];
-                                        const node_id2 = key;
-                                        if (node_id2 == node_id) {
-                                            // The column that the context menu is activated on is used anyway
-                                            continue;
-                                        }
-                                        if (value) {
-                                            // If any other columns are fully selected then they are applied aswell.
-                                            console.log("Column " + key + " is fully selected");
-                                            applyConfiguration(current_config, parseInt(node_id2), null, yukon_state);
-                                        }
-                                    }
-                                    // The column that the context menu is activated on is used anyway
-                                    applyConfiguration(current_config, parseInt(avatar.node_id), null, yukon_state);
-                                } else {
-                                    console.log("No configuration selected");
-                                }
-                                if (!yukon_state.recently_reread_registers[node_id]) {
-                                    yukon_state.recently_reread_registers[node_id] = {};
-                                }
-                                for (let i = 0; i < avatar.registers.length; i++) {
-                                    const register_name = avatar.registers[i];
-                                    yukon_state.recently_reread_registers[node_id][register_name] = true;
-                                }
-
-                                updateRegistersTableColors(yukon_state);
-                                let registers_to_reset = JSON.parse(JSON.stringify(yukon_state.recently_reread_registers));
-                                setTimeout(() => {
-                                    // Iterate through registers_to_reset and remove them from recently_reread_registers
-                                    for (let node_id in registers_to_reset) {
-                                        for (let register_name in registers_to_reset[node_id]) {
-                                            yukon_state.recently_reread_registers[node_id][register_name] = false;
-                                        }
-                                    }
-                                }, 600);
+                                console.log("No configuration selected");
                             }
+                            if (!yukon_state.recently_reread_registers[node_id]) {
+                                yukon_state.recently_reread_registers[node_id] = {};
+                            }
+                            for (let i = 0; i < avatar.registers.length; i++) {
+                                const register_name = avatar.registers[i];
+                                yukon_state.recently_reread_registers[node_id][register_name] = true;
+                            }
+
+                            updateRegistersTableColors(yukon_state);
+                            let registers_to_reset = JSON.parse(JSON.stringify(yukon_state.recently_reread_registers));
+                            setTimeout(() => {
+                                // Iterate through registers_to_reset and remove them from recently_reread_registers
+                                for (let node_id in registers_to_reset) {
+                                    for (let register_name in registers_to_reset[node_id]) {
+                                        yukon_state.recently_reread_registers[node_id][register_name] = false;
+                                    }
+                                }
+                            }, 600);
                         }
-                    )
+                    }
                 }
             },
             divider: "top"

@@ -20,8 +20,7 @@ from uavcan.register import List_1
 
 
 async def get_register_value(state: GodState, node_id: int, register_name: str) -> typing.Any:
-    retry_count = 0
-    while retry_count < 3:
+    while True:
         service_client = state.cyphal.local_node.make_client(uavcan.register.Access_1_0, node_id)
         # service_client.response_timeout = 0.5
         msg = uavcan.register.Access_1_0.Request()
@@ -32,8 +31,6 @@ async def get_register_value(state: GodState, node_id: int, register_name: str) 
             return response
         else:
             print("Failed response to register value for " + register_name)
-            await asyncio.sleep(0.02)
-            retry_count += 1
             continue
 
 
@@ -41,30 +38,27 @@ async def get_register_names(state: GodState, node_id: int, new_avatar: Avatar) 
     register_values: typing.Any = {}
     counter = 0
     list_client = state.cyphal.local_node.make_client(List_1, node_id)
-
-    async def make_request_and_deal_with_response(i):
-        msg = uavcan.register.List_1_0.Request(i)
-        # list_client.response_timeout = 2
-        real_response = await list_client.call(msg)
-        if not real_response:
-            print("Failed response to port list nr %s", i)
-        result: uavcan.register.List_1_0.Response = real_response[0]
+    while True:
+        msg = uavcan.register.List_1_0.Request(counter)
+        result: uavcan.register.List_1_0.Response = (await list_client.call(msg))[0]
         # I am not using the result here because it gets snooped by the avatar
         register_name = result.name.name.tobytes().decode()
         if register_name != "" and len(register_name) > 1:
             response = await get_register_value(state, node_id, register_name)
             if response:
                 obj = response[0]
+                counter += 1
                 if register_name == "uavcan.node.unique_id":
                     unstructured_value = obj.value.unstructured
                     array = bytearray(unstructured_value.value)
                     # Convert to hex string
                     hex_string = array.hex(":")
                     register_values[register_name] = hex_string
-                    return
+                    await asyncio.sleep(0.02)
+                    continue
                 register_values[register_name] = str(_simplify_value(obj.value))
-    for good_counter in range(0, 100):
-        asyncio.create_task(make_request_and_deal_with_response(good_counter))
+        else:
+            break
     new_avatar.register_values = register_values
 
 
