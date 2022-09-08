@@ -23,5 +23,6 @@ var yukon_state = {
         "isTableCellTextSelectable": false,
         "isSelectionModeComplicated": false,
         "simplifyRegisters": true,
+        "preferSmallerFileSelectionDialog": false,
     }
 };

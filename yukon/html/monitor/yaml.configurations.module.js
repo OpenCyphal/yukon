@@ -76,7 +76,7 @@ export function applyConfiguration(configuration, set_node_id, applyPairs, yukon
 function saveString(string, yukon_state) {
     try {
         var userAgent = yukon_state.navigator.userAgent.toLowerCase();
-        if(window.showSaveFilePicker) {
+        if(window.showSaveFilePicker && !yukon_state.settings.preferSmallerFileSelectionDialog) {
             const fileHandle = window.showSaveFilePicker();
             fileHandle.then(function(fileHandle)
             {
@@ -92,12 +92,7 @@ function saveString(string, yukon_state) {
                                 yukon_state.addLocalMessage("File written to disk.");
                             });
                         });
-
-                        // Close the file and write the contents to disk.
-                        
                     });
-
-                    
                 } else {
                     yukon_state.addLocalMessage("User didn't specify a file path in the dialog");
                 }
