@@ -38,10 +38,10 @@ def save_text_into_file(file_contents: str) -> None:
 
     root = tk.Tk()
     root.geometry("1x1+0+0")
-    root.eval('tk::PlaceWindow . center')
+    root.eval("tk::PlaceWindow . center")
     second_win = tkinter.Toplevel(root)
     second_win.withdraw()
-    root.eval(f'tk::PlaceWindow {str(second_win)} center')
+    root.eval(f"tk::PlaceWindow {str(second_win)} center")
     # Show window again and lift it to top so it can get focus,
     # otherwise dialogs will end up behind the terminal.
     root.deiconify()
@@ -58,7 +58,7 @@ def save_text_into_file(file_contents: str) -> None:
         logger.warning("No file selected")
 
 
-def make_sure_is_deserialized(any_conf: typing.Any):
+def make_sure_is_deserialized(any_conf: typing.Any) -> typing.Any:
     if isinstance(any_conf, str):
         # if the first character in deserialize_conf is a {, then it is a JSON string.
         if any_conf[0] == "{":
@@ -163,7 +163,7 @@ def import_candump_file_contents() -> str:
 
     root = tk.Tk()
     root.geometry("1x1+0+0")
-    root.eval('tk::PlaceWindow . center')
+    root.eval("tk::PlaceWindow . center")
     root.lift()
     root.focus_force()
     open_dialog = Open(filetypes=[("Yaml files", ".yml .yaml")])
@@ -270,7 +270,7 @@ class Api:
                 deserialized_conf = yaml.load(configuration, Loader=Loader)
         return unsimplify_configuration(self.state.avatar.avatars_by_node_id, deserialized_conf)
 
-    def open_file_dialog(self) -> None:
+    def open_file_dialog(self) -> typing.Any:
         import tkinter as tk
         from tkinter import filedialog
 
@@ -290,7 +290,7 @@ class Api:
         new_value: uavcan.register.Value_1 = unexplode_value(register_value)
         self.state.queues.update_registers.put(UpdateRegisterRequest(register_name, new_value, int(node_id)))
 
-    def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> None:
+    def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> str:
         logger.info(f"Attaching UDP transport to {udp_iface}")
         interface = Interface()
         interface.udp_iface = udp_iface

@@ -25,8 +25,6 @@ paths = sys.path
 logger = logging.getLogger()
 logger.setLevel("INFO")
 
-from multiprocessing import Process
-
 
 def run_electron() -> None:
     # Make the thread sleep for 1 second waiting for the server to start

@@ -20,11 +20,11 @@ logger.setLevel("ERROR")
 
 class Avatar:  # pylint: disable=too-many-instance-attributes
     def __init__(
-            self,
-            iface: Iface,
-            node_id: int,
-            info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
-            previous_port_list_hash: Optional[int] = None,
+        self,
+        iface: Iface,
+        node_id: int,
+        info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
+        previous_port_list_hash: Optional[int] = None,
     ) -> None:
         import uavcan.node
         import uavcan.node.port
@@ -141,7 +141,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
         # Invalidate the node info if the uptime goes backwards or if we received a heartbeat after a long pause.
         restart = self._heartbeat and (
-                (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
+            (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
         )
         if restart:
             logger.info("%r: Restart detected: %r", self, obj)
@@ -162,8 +162,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         from pycyphal.dsdl import get_fixed_port_id
 
         own = (
-                tr.metadata.session_specifier.source_node_id == self._node_id
-                or tr.metadata.session_specifier.destination_node_id == self._node_id
+            tr.metadata.session_specifier.source_node_id == self._node_id
+            or tr.metadata.session_specifier.destination_node_id == self._node_id
         )
         if not own:
             return
@@ -176,9 +176,9 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                 type, role = type
                 assert isinstance(role, ServiceDataSpecifier.Role)
                 if (
-                        isinstance(ds, ServiceDataSpecifier)
-                        and ds.role == role
-                        and ds.service_id == get_fixed_port_id(type)
+                    isinstance(ds, ServiceDataSpecifier)
+                    and ds.role == role
+                    and ds.service_id == get_fixed_port_id(type)
                 ):
                     if handler == self._on_access_request:
                         logger.debug("%r: Received access request", self)
@@ -252,15 +252,15 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         if self._ts_heartbeat:
             timestamp_value = self._ts_heartbeat
         else:
-            timestamp_value = "No value"
+            timestamp_value = "No value"  # type: ignore
         json_object: Any = {
             "node_id": self._node_id,
             "hash": self.__hash__(),
             "monitor_view_hash": hash(frozenset(self._ports.pub))
-                                 ^ hash(frozenset(self._ports.sub))
-                                 ^ hash(frozenset(self._ports.cln))
-                                 ^ hash(frozenset(self._ports.srv))
-                                 ^ hash(self._info.name.tobytes().decode() if self._info is not None else None),
+            ^ hash(frozenset(self._ports.sub))
+            ^ hash(frozenset(self._ports.cln))
+            ^ hash(frozenset(self._ports.srv))
+            ^ hash(self._info.name.tobytes().decode() if self._info is not None else None),
             "name": self._info.name.tobytes().decode() if self._info is not None else None,
             "last_heartbeat": {
                 "health": health_value,
@@ -288,12 +288,12 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     def __hash__(self) -> int:
         # Create a hash from __ports.pub, __ports.sub, __ports.cln and __ports.srv
         return (
-                hash(frozenset(self._ports.pub))
-                ^ hash(frozenset(self._ports.sub))
-                ^ hash(frozenset(self._ports.cln))
-                ^ hash(frozenset(self._ports.srv))
-                ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
-                ^ hash(frozenset(self.register_values))
+            hash(frozenset(self._ports.pub))
+            ^ hash(frozenset(self._ports.sub))
+            ^ hash(frozenset(self._ports.cln))
+            ^ hash(frozenset(self._ports.srv))
+            ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
+            ^ hash(frozenset(self.register_values))
         )
 
     def __repr__(self) -> str:
