@@ -46,7 +46,7 @@ export function make_context_menus(yukon_state) {
     const importFromSelectedConfigurationMenuElement = {
         content: "Import from selected configuration",
         events: {
-            click: function (event, elementOpenedOn) {
+            click: async function (event, elementOpenedOn) {
                 const cell = elementOpenedOn;
                 // If cell is a th then
                 let pairs = null;
@@ -245,7 +245,7 @@ export function make_context_menus(yukon_state) {
                         addLocalMessage("Configuration imported");
                         const selected_config = result_dto.name;
                         yukon_state.available_configurations[selected_config] = result_dto.text;
-                        update_available_configurations_list(yukon_state);
+                        await update_available_configurations_list(yukon_state);
                         const current_config = yukon_state.available_configurations[yukon_state.selections.selected_config];
                         if (current_config) {
                             const selections = getAllEntireColumnsThatAreSelected(yukon_state);

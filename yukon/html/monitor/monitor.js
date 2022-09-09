@@ -369,19 +369,16 @@ import { openFile } from "./yaml.configurations.module.js"
             zubax_api.open_add_transport_window();
         });
         const btnImportRegistersConfig = document.getElementById('btnImportRegistersConfig');
-        btnImportRegistersConfig.addEventListener('click', function () {
-            zubax_api.import_node_configuration().then(
-                function (result) {
-                    if (result == "") {
-                        addLocalMessage("No configuration imported");
-                    } else {
-                        addLocalMessage("Configuration imported");
-                        result_deserialized = JSON.parse(result);
-                        yukon_state.available_configurations[result_deserialized["__file_name"]] = result;
-                        update_available_configurations_list(yukon_state);
-                    }
-                }
-            )
+        btnImportRegistersConfig.addEventListener('click', async function () {
+            let result = await zubax_api.import_node_configuration()
+            if (result == "") {
+                addLocalMessage("No configuration imported");
+            } else {
+                addLocalMessage("Configuration imported");
+                result_deserialized = JSON.parse(result);
+                yukon_state.available_configurations[result_deserialized["__file_name"]] = result;
+                await update_available_configurations_list(yukon_state);
+            }
         });
         const btnSelectedSetFromPrompt = document.getElementById('btnSelectedSetFromPrompt');
         btnSelectedSetFromPrompt.addEventListener('click', function () {

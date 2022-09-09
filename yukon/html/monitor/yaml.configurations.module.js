@@ -1,6 +1,6 @@
 import { get_all_selected_pairs, select_configuration } from "./registers.selection.module.js";
 import { update_tables } from "./registers.module.js";
-export function applyConfiguration(configuration, set_node_id, applyPairs, yukon_state) {
+export async function applyConfiguration(configuration, set_node_id, applyPairs, yukon_state) {
     let zubax_api = yukon_state.zubax_api;
     let configuration_deserialized = JSON.parse(configuration);
 
@@ -25,60 +25,54 @@ export function applyConfiguration(configuration, set_node_id, applyPairs, yukon
             }
         }
     }
-    zubax_api.is_network_configuration(configuration_deserialized).then(function (result) {
-        const is_network_configuration = JSON.parse(result);
-        zubax_api.is_configuration_simplified(configuration_deserialized).then(function (result) {
-            const is_configuration_simplified = JSON.parse(result);
-            if (applyPairs) {
-                if (is_network_configuration) {
-                    // Iterate over the configuration and remove the keys that are not in applyPairs
-                    // For avatar in configuration_deserialized
-                    for (let i = 0; i < configuration_deserialized.length; i++) {
-                        let avatar = configuration_deserialized[i];
-                        // For register in avatar.registers
-                        removeUnnecessaryPairsFromAvatar(avatar);
-                    }
-                } else {
-                    let avatar = configuration_deserialized;
-                    // For register in avatar.registers
-                    removeUnnecessaryPairsFromAvatar(avatar);
-                }
+    const is_network_configuration = await zubax_api.is_network_configuration(configuration_deserialized)
+    const is_configuration_simplified = await JSON.parse(zubax_api.is_configuration_simplified(configuration_deserialized));
+    if (applyPairs) {
+        if (is_network_configuration) {
+            // Iterate over the configuration and remove the keys that are not in applyPairs
+            // For avatar in configuration_deserialized
+            for (let i = 0; i < configuration_deserialized.length; i++) {
+                let avatar = configuration_deserialized[i];
+                // For register in avatar.registers
+                removeUnnecessaryPairsFromAvatar(avatar);
             }
-            if (is_network_configuration && is_configuration_simplified) {
-                // Start fetching datatypes
-                zubax_api.unsimplify_configuration(configuration).then(function (result) {
-                    console.log("Unsimplified configuration: " + selected_config);
-                    zubax_api.apply_all_of_configuration(result);
-                    let interval1 = setInterval(() => update_tables(true), 1000);
-                    setTimeout(() => clearInterval(interval1), 6000);
-                });
-            } else if (!is_network_configuration && is_configuration_simplified) {
-                const isValidNodeid = potential_node_id > 0 || potential_node_id < 128;
-                if (isValidNodeid) {
-                    console.log("Applying configuration: " + yukon_state.selections.selected_config + " to node " + potential_node_id);
-                    zubax_api.apply_configuration_to_node(potential_node_id, JSON.stringify(configuration_deserialized))
-                    let interval1 = setInterval(() => update_tables(true), 1000);
-                    setTimeout(() => clearInterval(interval1), 6000);
-                } else if (number_input) {
-                    console.log("There was no valid node id supplied.");
-                    // Add a small label to the bottom of number_input to indicate that the node id is invalid, color the input red
-                    number_input.style.borderColor = "red";
-                    // Remove 3 seconds later
-                    setTimeout(function () {
-                        // Remove the red border
-                        number_input.style.borderColor = "";
-                    }, 3000);
-                }
-            }
-        });
-    });
+        } else {
+            let avatar = configuration_deserialized;
+            // For register in avatar.registers
+            removeUnnecessaryPairsFromAvatar(avatar);
+        }
+    }
+    if (is_network_configuration && is_configuration_simplified) {
+        // Start fetching datatypes
+        const unsimplified_configuration = await zubax_api.unsimplify_configuration(configuration)
+        zubax_api.apply_all_of_configuration(unsimplified_configuration);
+        let interval1 = setInterval(() => update_tables(true), 1000);
+        setTimeout(() => clearInterval(interval1), 6000);
+    } else if (!is_network_configuration && is_configuration_simplified) {
+        const isValidNodeid = potential_node_id > 0 || potential_node_id < 128;
+        if (isValidNodeid) {
+            console.log("Applying configuration: " + yukon_state.selections.selected_config + " to node " + potential_node_id);
+            zubax_api.apply_configuration_to_node(potential_node_id, JSON.stringify(configuration_deserialized))
+            let interval1 = setInterval(() => update_tables(true), 1000);
+            setTimeout(() => clearInterval(interval1), 6000);
+        } else if (number_input) {
+            console.log("There was no valid node id supplied.");
+            // Add a small label to the bottom of number_input to indicate that the node id is invalid, color the input red
+            number_input.style.borderColor = "red";
+            // Remove 3 seconds later
+            setTimeout(function () {
+                // Remove the red border
+                number_input.style.borderColor = "";
+            }, 3000);
+        }
+    }
 }
 async function saveString(string, yukon_state) {
     var userAgent = yukon_state.navigator.userAgent.toLowerCase();
-    if(window.showSaveFilePicker && !yukon_state.settings.preferSmallerFileSelectionDialog) {
+    if (window.showSaveFilePicker && !yukon_state.settings.preferSmallerFileSelectionDialog) {
         const fileHandle = await window.showSaveFilePicker();
         yukon_state.addLocalMessage("We got this path: " + fileHandle);
-        if(fileHandle) {
+        if (fileHandle) {
             // Create a FileSystemWritableFileStream to write to.
             const writable = await fileHandle.createWritable()
             // Write the contents of the file to the stream.
@@ -100,12 +94,12 @@ async function saveYaml(string, yukon_state) {
 export async function openFile(yukon_state) {
     let file_dto = {};
     try {
-        if(!yukon_state.settings.preferSmallerFileSelectionDialog && window.showOpenFilePicker) {
+        if (!yukon_state.settings.preferSmallerFileSelectionDialog && window.showOpenFilePicker) {
             const fileHandlesArray = await window.showOpenFilePicker();
-            if(fileHandlesArray) {
+            if (fileHandlesArray) {
                 const fileHandle = fileHandlesArray[0];
                 yukon_state.addLocalMessage("We got this path: " + fileHandle);
-                if(fileHandle) {
+                if (fileHandle) {
                     // Create a FileSystemWritableFileStream to write to.
                     const file = await fileHandle.getFile();
                     const text = await file.text()
@@ -138,7 +132,7 @@ export async function export_all_selected_registers(only_of_avatar_of_node_id, g
         return await saveYaml(yaml_string, yukon_state);
     }
 }
-export function update_available_configurations_list(yukon_state) {
+export async function update_available_configurations_list(yukon_state) {
     let zubax_api = yukon_state.zubax_api;
     var available_configurations_radios = document.querySelector("#available_configurations_radios");
     available_configurations_radios.innerHTML = "";
@@ -168,51 +162,47 @@ export function update_available_configurations_list(yukon_state) {
         }
         let conf_yaml_deserialized = jsyaml.load(configuration_string);
         let conf_deserialized = JSON.parse(configuration_string);
-        zubax_api.is_network_configuration(conf_deserialized).then(function (result) {
-            const is_network_configuration = JSON.parse(result);
-            zubax_api.is_configuration_simplified(conf_deserialized).then(function (result) {
-                const is_simplified = JSON.parse(result);
-                if (is_simplified) {
-                    label.innerHTML += " (simplified)";
-                    simplified_configurations_flags[file_name] = true;
-                }
-                // For each key in the conf_deserialized, add a checkbox under the label with the key as the text and id
-                let noKeysWereNumbers = true; // This is essentially the same as is_configuration_simplified, but it is determined here locally
-                for (const [key, value] of Object.entries(conf_deserialized)) {
-                    // If key is not a number continue
-                    if (isNaN(key)) {
-                        console.log("Key is not a number: " + key);
-                        continue;
-                    }
-                    noKeysWereNumbers = false;
-                    var checkbox = document.createElement("input");
-                    checkbox.type = "checkbox";
-                    checkbox.id = key;
-                    checkbox.checked = true;
-                    checkbox.onmousedown = function () {
-                        // If the checkbox is checked, add the key to the configuration
-                        if (checkbox.checked) {
+        let is_network_configuration = await zubax_api.is_network_configuration(conf_deserialized);
+        let is_configuration_simplified = await zubax_api.is_configuration_simplified(conf_deserialized);
+        const is_simplified = JSON.parse(result);
+        if (is_simplified) {
+            label.innerHTML += " (simplified)";
+            simplified_configurations_flags[file_name] = true;
+        }
+        // For each key in the conf_deserialized, add a checkbox under the label with the key as the text and id
+        let noKeysWereNumbers = true; // This is essentially the same as is_configuration_simplified, but it is determined here locally
+        for (const [key, value] of Object.entries(conf_deserialized)) {
+            // If key is not a number continue
+            if (isNaN(key)) {
+                console.log("Key is not a number: " + key);
+                continue;
+            }
+            noKeysWereNumbers = false;
+            var checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.id = key;
+            checkbox.checked = true;
+            checkbox.onmousedown = function () {
+                // If the checkbox is checked, add the key to the configuration
+                if (checkbox.checked) {
 
-                        } else {
+                } else {
 
-                        }
-                    }
-                    label.appendChild(checkbox);
-                    var text = document.createElement("span");
-                    text.innerHTML = key;
-                    label.appendChild(text);
                 }
-                if (!is_network_configuration && is_simplified) {
-                    var number_input = document.createElement("input");
-                    number_input.type = "number";
-                    number_input.placeholder = "Node id needed";
-                    number_input.title = "For determining datatypes, a node id is needed";
-                    number_input_for_configuration[JSON.parse(JSON.stringify(file_name))] = number_input;
-                    label.appendChild(number_input);
-                }
-                available_configurations_radios.appendChild(label);
-            });
-        });
-
+            }
+            label.appendChild(checkbox);
+            var text = document.createElement("span");
+            text.innerHTML = key;
+            label.appendChild(text);
+        }
+        if (!is_network_configuration && is_simplified) {
+            var number_input = document.createElement("input");
+            number_input.type = "number";
+            number_input.placeholder = "Node id needed";
+            number_input.title = "For determining datatypes, a node id is needed";
+            number_input_for_configuration[JSON.parse(JSON.stringify(file_name))] = number_input;
+            label.appendChild(number_input);
+        }
+        available_configurations_radios.appendChild(label);
     }
 }
