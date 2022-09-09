@@ -12,7 +12,7 @@ from yukon.domain.port_set import PortSet
 from yukon.domain._expand_subjects import expand_subjects, expand_mask
 from yukon.domain.iface import Iface
 import uavcan
-from yukon.services.value_utils import _simplify_value, explode_value
+from yukon.services.value_utils import explode_value
 
 logger = logging.getLogger()
 logger.setLevel("ERROR")
@@ -20,11 +20,11 @@ logger.setLevel("ERROR")
 
 class Avatar:  # pylint: disable=too-many-instance-attributes
     def __init__(
-        self,
-        iface: Iface,
-        node_id: int,
-        info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
-        previous_port_list_hash: Optional[int] = None,
+            self,
+            iface: Iface,
+            node_id: int,
+            info: Optional[uavcan.node.GetInfo_1_0.Response] = None,
+            previous_port_list_hash: Optional[int] = None,
     ) -> None:
         import uavcan.node
         import uavcan.node.port
@@ -98,16 +98,16 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         if isinstance(obj.value, uavcan.primitive.Empty_1):
             return
         register_name = self.access_requests_names_by_transfer_id[transfer_id]
-        if register_name == "uavcan.node.unique_id":
-            unstructured_value = obj.value.unstructured
-            array = bytearray(unstructured_value.value)
-            # Convert to hex string
-            hex_string = array.hex(":")
-            self.register_values[register_name] = hex_string
-            return
+        # if register_name == "uavcan.node.unique_id":
+        #     unstructured_value = obj.value.unstructured
+        #     array = bytearray(unstructured_value.value)
+        #     # Convert to hex string
+        #     hex_string = array.hex(":")
+        #     self.register_values[register_name] = hex_string
+        #     return
         exploded_value = explode_value(obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent})
         self.register_exploded_values[register_name] = exploded_value
-        self.register_values[register_name] = str(_simplify_value(obj.value))
+        self.register_values[register_name] = str(explode_value(obj.value, simplify=True))
 
     def _on_list_response(self, ts: float, obj: Any) -> None:
         import uavcan.node
@@ -141,7 +141,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
         # Invalidate the node info if the uptime goes backwards or if we received a heartbeat after a long pause.
         restart = self._heartbeat and (
-            (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
+                (self._heartbeat.uptime > obj.uptime) or (ts - self._ts_heartbeat > Heartbeat.OFFLINE_TIMEOUT)
         )
         if restart:
             logger.info("%r: Restart detected: %r", self, obj)
@@ -162,8 +162,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         from pycyphal.dsdl import get_fixed_port_id
 
         own = (
-            tr.metadata.session_specifier.source_node_id == self._node_id
-            or tr.metadata.session_specifier.destination_node_id == self._node_id
+                tr.metadata.session_specifier.source_node_id == self._node_id
+                or tr.metadata.session_specifier.destination_node_id == self._node_id
         )
         if not own:
             return
@@ -176,9 +176,9 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                 type, role = type
                 assert isinstance(role, ServiceDataSpecifier.Role)
                 if (
-                    isinstance(ds, ServiceDataSpecifier)
-                    and ds.role == role
-                    and ds.service_id == get_fixed_port_id(type)
+                        isinstance(ds, ServiceDataSpecifier)
+                        and ds.role == role
+                        and ds.service_id == get_fixed_port_id(type)
                 ):
                     if handler == self._on_access_request:
                         logger.debug("%r: Received access request", self)
@@ -257,10 +257,10 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             "node_id": self._node_id,
             "hash": self.__hash__(),
             "monitor_view_hash": hash(frozenset(self._ports.pub))
-            ^ hash(frozenset(self._ports.sub))
-            ^ hash(frozenset(self._ports.cln))
-            ^ hash(frozenset(self._ports.srv))
-            ^ hash(self._info.name.tobytes().decode() if self._info is not None else None),
+                                 ^ hash(frozenset(self._ports.sub))
+                                 ^ hash(frozenset(self._ports.cln))
+                                 ^ hash(frozenset(self._ports.srv))
+                                 ^ hash(self._info.name.tobytes().decode() if self._info is not None else None),
             "name": self._info.name.tobytes().decode() if self._info is not None else None,
             "last_heartbeat": {
                 "health": health_value,
@@ -288,12 +288,12 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     def __hash__(self) -> int:
         # Create a hash from __ports.pub, __ports.sub, __ports.cln and __ports.srv
         return (
-            hash(frozenset(self._ports.pub))
-            ^ hash(frozenset(self._ports.sub))
-            ^ hash(frozenset(self._ports.cln))
-            ^ hash(frozenset(self._ports.srv))
-            ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
-            ^ hash(frozenset(self.register_exploded_values))
+                hash(frozenset(self._ports.pub))
+                ^ hash(frozenset(self._ports.sub))
+                ^ hash(frozenset(self._ports.cln))
+                ^ hash(frozenset(self._ports.srv))
+                ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
+                ^ hash(frozenset(self.register_values))
         )
 
     def __repr__(self) -> str:

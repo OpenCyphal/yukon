@@ -4,6 +4,7 @@
     }
     
     function doStuffWhenReady() {
+        let isRefreshTextOutAllowed = true;
         console.log("Messages javascript is ready");
         var lastHash = "";
         var lastIndex = -1;
@@ -134,6 +135,7 @@
                 autosize.update(textOut);
             }
         });
+        
         // Run applyTextFilterToMessages() when there is a change in the filter text after the input has
         // stopped for 0.5 seconds
         var iTextFilter = document.getElementById("iTextFilter");

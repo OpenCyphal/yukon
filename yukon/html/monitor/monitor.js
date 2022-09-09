@@ -183,8 +183,9 @@ import { openFile } from "./yaml.configurations.module.js"
             );
         }
         setInterval(fetchAndHandleInternalMessages, 1000);
-
-        function updateTextOut(refresh_anyway = false) {
+        let isRefreshTextOutAllowed = true;
+        async function updateTextOut(refresh_anyway = false) {
+            if(!isRefreshTextOutAllowed && !refresh_anyway) {return;}
             zubax_api.get_avatars().then(
                 function (avatars) {
                     const textOut = document.querySelector("#textOut");
@@ -198,7 +199,18 @@ import { openFile } from "./yaml.configurations.module.js"
             );
         }
         setInterval(updateTextOut, 1000);
-        
+        const cbStopTextOutRefresh = document.querySelector("#cbStopTextOutRefresh");
+        cbStopTextOutRefresh.addEventListener("change", () => {
+            if(cbStopTextOutRefresh.checked) {
+                isRefreshTextOutAllowed = false;
+            } else {
+                isRefreshTextOutAllowed = true;
+            }
+        });
+        const btnRefreshTextOut = document.querySelector("#btnRefreshTextOut");
+        btnRefreshTextOut.addEventListener("click", async () => {
+            await updateTextOut(true);
+        });
 
         setInterval(update_tables, 1000)
         setInterval(update_avatars_table, 1000);
@@ -348,15 +360,13 @@ import { openFile } from "./yaml.configurations.module.js"
         });
         // if hide-yakut is checked then send a message to the server to hide the yakut
         var hideYakut = document.getElementById('hide-yakut');
-        hideYakut.addEventListener('change', function () {
+        hideYakut.addEventListener('change', async function () {
             if (hideYakut.checked) {
-                zubax_api.hide_yakut().then(() => {
-                    updateTextOut(true);
-                });
+                await zubax_api.hide_yakut()
+                await updateTextOut(true);
             } else {
-                zubax_api.show_yakut().then(() => {
-                    updateTextOut(true);
-                });
+                await zubax_api.show_yakut()
+                await updateTextOut(true);
             }
         });
         // This is actually one of the tabs in the tabbed interface but it also acts as a refresh layout button

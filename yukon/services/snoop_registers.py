@@ -48,14 +48,6 @@ async def get_register_names(state: GodState, node_id: int, new_avatar: Avatar) 
             if response:
                 obj = response[0]
                 counter += 1
-                if register_name == "uavcan.node.unique_id":
-                    unstructured_value = obj.value.unstructured
-                    array = bytearray(unstructured_value.value)
-                    # Convert to hex string
-                    hex_string = array.hex(":")
-                    register_values[register_name] = hex_string
-                    await asyncio.sleep(0.02)
-                    continue
                 register_values[register_name] = str(_simplify_value(obj.value))
         else:
             break

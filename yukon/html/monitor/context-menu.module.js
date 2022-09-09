@@ -74,7 +74,7 @@ export function make_context_menus(yukon_state) {
                 }
                 const node_id = cell.getAttribute("node_id");
                 const register_name = cell.getAttribute("register_name");
-                const current_config = yukon_state.available_configurations[selected_config];
+                const current_config = yukon_state.available_configurations[yukon_state.selections.selected_config];
                 if (current_config) {
                     applyConfiguration(current_config, parseInt(node_id), pairs, yukon_state);
                 } else {
@@ -236,15 +236,15 @@ export function make_context_menus(yukon_state) {
                 click: async (e, elementOpenedOn) => {
                     let result_dto = null;
                     result_dto = await openFile(yukon_state);
-                    if (result_dto.text == "") {
+                    if (result_dto == null || result_dto.text == "") {
                         addLocalMessage("No configuration imported");
                     } else {
                         const headerCell = elementOpenedOn;
                         const node_id = headerCell.getAttribute("data-node_id");
                         const avatar = Object.values(yukon_state.current_avatars).find((e) => e.node_id == parseInt(node_id));
                         addLocalMessage("Configuration imported");
-                        const selected_config = result_dto.name;
-                        yukon_state.available_configurations[selected_config] = result_dto.text;
+                        yukon_state.selections.selected_config = result_dto.name;
+                        yukon_state.available_configurations[yukon_state.selections.selected_config] = result_dto.text;
                         await update_available_configurations_list(yukon_state);
                         const current_config = yukon_state.available_configurations[yukon_state.selections.selected_config];
                         if (current_config) {
@@ -276,7 +276,7 @@ export function make_context_menus(yukon_state) {
                             yukon_state.recently_reread_registers[node_id][register_name] = true;
                         }
 
-                        updateRegistersTableColors(yukon_state);
+                        updateRegistersTableColors(yukon_state, 4, 1000);
                         let registers_to_reset = JSON.parse(JSON.stringify(yukon_state.recently_reread_registers));
                         setTimeout(() => {
                             // Iterate through registers_to_reset and remove them from recently_reread_registers
@@ -285,6 +285,7 @@ export function make_context_menus(yukon_state) {
                                     yukon_state.recently_reread_registers[node_id][register_name] = false;
                                 }
                             }
+                            updateRegistersTableColors(yukon_state);
                         }, 600);
                     }
                 }

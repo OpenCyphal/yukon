@@ -2,7 +2,13 @@ import { get_all_selected_pairs, select_configuration } from "./registers.select
 import { update_tables } from "./registers.module.js";
 export async function applyConfiguration(configuration, set_node_id, applyPairs, yukon_state) {
     let zubax_api = yukon_state.zubax_api;
-    let configuration_deserialized = JSON.parse(configuration);
+    // If configuration starts with a { then it is json
+    let configuration_deserialized = null;
+    if(configuration.startsWith("{")) {
+        configuration_deserialized = JSON.parse(configuration);
+    } else {
+        configuration_deserialized = yukon_state.jsyaml.load(configuration);
+    }
 
     let potential_node_id;
     let number_input;
@@ -25,8 +31,8 @@ export async function applyConfiguration(configuration, set_node_id, applyPairs,
             }
         }
     }
-    const is_network_configuration = await zubax_api.is_network_configuration(configuration_deserialized)
-    const is_configuration_simplified = await JSON.parse(zubax_api.is_configuration_simplified(configuration_deserialized));
+    const is_network_configuration = await isNetworkConfiguration(configuration_deserialized);
+    const is_configuration_simplified = await isSimplifiedConfiguration(configuration_deserialized);
     if (applyPairs) {
         if (is_network_configuration) {
             // Iterate over the configuration and remove the keys that are not in applyPairs
@@ -66,6 +72,12 @@ export async function applyConfiguration(configuration, set_node_id, applyPairs,
             }, 3000);
         }
     }
+}
+async function isNetworkConfiguration(yamlOrJSONSerializedConfiguration) {
+    return await zubax_api.is_network_configuration(yamlOrJSONSerializedConfiguration) == "true";
+}
+async function isSimplifiedConfiguration(yamlOrJSONSerializedConfiguration) {
+    return await zubax_api.is_configuration_simplified(yamlOrJSONSerializedConfiguration) == "true";
 }
 async function saveString(string, yukon_state) {
     var userAgent = yukon_state.navigator.userAgent.toLowerCase();
@@ -150,7 +162,7 @@ export async function update_available_configurations_list(yukon_state) {
             radio.checked = true;
         }
         radio.onmousedown = function () {
-            select_configuration(file_name);
+            select_configuration(file_name, yukon_state);
         }
         available_configurations_radios.appendChild(radio);
         // Label for radio
@@ -158,20 +170,18 @@ export async function update_available_configurations_list(yukon_state) {
         label.htmlFor = file_name;
         label.innerHTML = file_name;
         label.onmousedown = function () {
-            select_configuration(file_name);
+            select_configuration(file_name, yukon_state);
         }
-        let conf_yaml_deserialized = jsyaml.load(configuration_string);
-        let conf_deserialized = JSON.parse(configuration_string);
-        let is_network_configuration = await zubax_api.is_network_configuration(conf_deserialized);
-        let is_configuration_simplified = await zubax_api.is_configuration_simplified(conf_deserialized);
-        const is_simplified = JSON.parse(result);
-        if (is_simplified) {
+        let conf_yaml_deserialized = yukon_state.jsyaml.load(configuration_string);
+        let is_network_configuration = await isNetworkConfiguration(configuration_string);
+        let is_configuration_simplified = await isSimplifiedConfiguration(configuration_string);
+        if (is_configuration_simplified) {
             label.innerHTML += " (simplified)";
             simplified_configurations_flags[file_name] = true;
         }
         // For each key in the conf_deserialized, add a checkbox under the label with the key as the text and id
         let noKeysWereNumbers = true; // This is essentially the same as is_configuration_simplified, but it is determined here locally
-        for (const [key, value] of Object.entries(conf_deserialized)) {
+        for (const [key, value] of Object.entries(conf_yaml_deserialized)) {
             // If key is not a number continue
             if (isNaN(key)) {
                 console.log("Key is not a number: " + key);

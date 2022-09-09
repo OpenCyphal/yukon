@@ -43,8 +43,8 @@ export function get_all_selected_pairs(options, yukon_state) {
     }
     return final_dict;
 }
-export function select_configuration(yukon_state, i) {
-    yukon_state.selections.selected_config = i;
+export function select_configuration(file_name, yukon_state) {
+    yukon_state.selections.selected_config = file_name;
 }
 export function getAllEntireColumnsThatAreSelected(yukon_state) {
     let all_registers_selected = {};

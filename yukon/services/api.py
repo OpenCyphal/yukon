@@ -58,7 +58,19 @@ def save_text_into_file(file_contents: str) -> None:
         logger.warning("No file selected")
 
 
+def make_sure_is_deserialized(any_conf: typing.Any):
+    if isinstance(any_conf, str):
+        # if the first character in deserialize_conf is a {, then it is a JSON string.
+        if any_conf[0] == "{":
+            return json.loads(any_conf)
+        else:
+            return yaml.load(any_conf, Loader=Loader)
+    else:
+        return any_conf
+
+
 def is_network_configuration(deserialized_conf: typing.Any) -> bool:
+    deserialized_conf = make_sure_is_deserialized(deserialized_conf)
     first_key = list(deserialized_conf.keys())[0]
     first_value = deserialized_conf[first_key]
     try:
@@ -75,6 +87,7 @@ def is_configuration_simplified(deserialized_conf: typing.Any) -> bool:
 
     Exploded means that the datatype was removed.
     """
+    deserialized_conf = make_sure_is_deserialized(deserialized_conf)
     first_key = list(deserialized_conf.keys())[0]
     first_value = deserialized_conf[first_key]
     if is_network_configuration(deserialized_conf):
@@ -126,22 +139,22 @@ def unsimplify_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deser
         return json.dumps(deserialized_conf)
 
 
-def simplify_configuration(deserialized_conf: typing.Any) -> str:
-    if not is_configuration_simplified(deserialized_conf):
-        if is_network_configuration(deserialized_conf):
+def simplify_configuration(any_conf: typing.Any) -> str:
+    if not is_configuration_simplified(any_conf):
+        if is_network_configuration(any_conf):
             # This is the so-called network configuration file with multiple node_ids.
-            for node_id, values in deserialized_conf.items():
-                for register_name, typed_value_dict in deserialized_conf[node_id].items():
+            for node_id, values in any_conf.items():
+                for register_name, typed_value_dict in any_conf[node_id].items():
                     simplified_value = explode_value(unexplode_value(typed_value_dict), simplify=True)
-                    deserialized_conf[node_id][register_name] = simplified_value
-            return json.dumps(deserialized_conf)
+                    any_conf[node_id][register_name] = simplified_value
+            return json.dumps(any_conf)
         else:
-            for register_name, typed_value_dict in deserialized_conf.items():
+            for register_name, typed_value_dict in any_conf.items():
                 simplified_value = explode_value(unexplode_value(typed_value_dict), simplify=True)
-                deserialized_conf[register_name] = simplified_value
-            return json.dumps(deserialized_conf)
+                any_conf[register_name] = simplified_value
+            return json.dumps(any_conf)
     else:
-        return json.dumps(deserialized_conf)
+        return json.dumps(any_conf)
 
 
 def import_candump_file_contents() -> str:
@@ -227,22 +240,35 @@ class Api:
         return json.dumps(is_configuration_simplified(deserialized_configuration))
 
     def is_network_configuration(self, deserialized_configuration: typing.Any) -> str:
-        return json.dumps(is_network_configuration(deserialized_configuration))
+        value = is_network_configuration(deserialized_configuration)
+        return json.dumps(value)
 
     def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
-        request = ApplyConfigurationRequest(node_id, configuration, is_network_configuration(json.loads(configuration)))
+        request = ApplyConfigurationRequest(node_id, configuration, is_network_configuration(configuration))
         self.state.queues.apply_configuration.put(request)
 
     def apply_all_of_configuration(self, configuration: str) -> None:
-        request = ApplyConfigurationRequest(None, configuration, is_network_configuration(json.loads(configuration)))
+        request = ApplyConfigurationRequest(None, configuration, is_network_configuration(configuration))
         self.state.queues.apply_configuration.put(request)
 
     def simplify_configuration(self, configuration: str) -> str:
-        simplified_configuration_string = simplify_configuration(json.loads(configuration))
+        if isinstance(configuration, str):
+            # if the first character in deserialize_conf is a {, then it is a JSON string.
+            if configuration[0] == "{":
+                deserialized_conf = json.loads(configuration)
+            else:
+                deserialized_conf = yaml.load(configuration, Loader=Loader)
+        simplified_configuration_string = simplify_configuration(deserialized_conf)
         return simplified_configuration_string
 
     def unsimplify_configuration(self, configuration: str) -> str:
-        return unsimplify_configuration(self.state.avatar.avatars_by_node_id, json.loads(configuration))
+        if isinstance(configuration, str):
+            # if the first character in deserialize_conf is a {, then it is a JSON string.
+            if configuration[0] == "{":
+                deserialized_conf = json.loads(configuration)
+            else:
+                deserialized_conf = yaml.load(configuration, Loader=Loader)
+        return unsimplify_configuration(self.state.avatar.avatars_by_node_id, deserialized_conf)
 
     def open_file_dialog(self) -> None:
         import tkinter as tk
