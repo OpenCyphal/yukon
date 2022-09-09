@@ -98,8 +98,9 @@ async function saveYaml(string, yukon_state) {
     saveString(string, yukon_state);
 }
 export async function openFile(yukon_state) {
+    let file_dto = {};
     try {
-        if(window.showOpenFilePicker) {
+        if(!yukon_state.settings.preferSmallerFileSelectionDialog && window.showOpenFilePicker) {
             const fileHandlesArray = await window.showOpenFilePicker();
             if(fileHandlesArray) {
                 const fileHandle = fileHandlesArray[0];
@@ -108,16 +109,18 @@ export async function openFile(yukon_state) {
                     // Create a FileSystemWritableFileStream to write to.
                     const file = await fileHandle.getFile();
                     const text = await file.text()
-                    yukon_state.addLocalMessage("File contents: " + text);                        
+                    file_dto.text = text;
+                    file_dto.name = file.name;
+                    return file_dto;
                 } else {
                     yukon_state.addLocalMessage("User didn't specify a file path in the dialog");
                 }
             }
         } else {
-            return await yukon_state.zubax_api.open_yaml();
+            return await JSON.parse(yukon_state.zubax_api.open_file_dialog());
         }
     } catch (e) {
-        yukon_state.addLocalMessage("Error opening yaml: " + e);
+        yukon_state.addLocalMessage("Error opening file: " + e);
     }
 }
 export async function export_all_selected_registers(only_of_avatar_of_node_id, get_everything, yukon_state) {
@@ -163,6 +166,7 @@ export function update_available_configurations_list(yukon_state) {
         label.onmousedown = function () {
             select_configuration(file_name);
         }
+        let conf_yaml_deserialized = jsyaml.load(configuration_string);
         let conf_deserialized = JSON.parse(configuration_string);
         zubax_api.is_network_configuration(conf_deserialized).then(function (result) {
             const is_network_configuration = JSON.parse(result);

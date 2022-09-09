@@ -251,8 +251,13 @@ class Api:
         root = tk.Tk()
         root.withdraw()
 
-        file_path = filedialog.askopenfilename(filetypes=[("Candump files", ".candump .txt .json")])
-        _ = file_path
+        file_path = filedialog.askopenfilename()
+        file_dto = {}
+        # Get the file contents
+        with open(file_path, "r") as f:
+            file_dto["contents"] = f.read()
+            file_dto["name"] = Path(file_path).name
+        return file_dto
 
     def update_register_value(self, register_name: str, register_value: str, node_id: str) -> None:
         # Check if register_value can be converted to an int, is purely numeric

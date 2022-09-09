@@ -1,4 +1,4 @@
-import { export_all_selected_registers, update_available_configurations_list, applyConfiguration } from "./yaml.configurations.module.js";
+import { export_all_selected_registers, update_available_configurations_list, applyConfiguration, openFile } from "./yaml.configurations.module.js";
 import { getAllEntireColumnsThatAreSelected, get_all_selected_pairs, unselectAll } from "./registers.selection.module.js";
 import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./registers.module.js";
 import { rereadPairs } from "./registers.data.module.js";
@@ -134,7 +134,7 @@ export function make_context_menus(yukon_state) {
             events: {
                 click: (e, elementOpenedOn) => {
                     yukon_state.settings.isTableCellTextSelectable = false;
-                    document.appendChild(selectingTableCellsIsDisabledStyle);
+                    document.body.appendChild(yukon_state.selectingTableCellsIsDisabledStyle);
                 }
             },
             shouldBeDisplayed: () => yukon_state.settings.isTableCellTextSelectable
@@ -144,7 +144,7 @@ export function make_context_menus(yukon_state) {
             events: {
                 click: (e, elementOpenedOn) => {
                     yukon_state.settings.isTableCellTextSelectable = true;
-                    document.removeChild(selectingTableCellsIsDisabledStyle);
+                    document.body.removeChild(yukon_state.selectingTableCellsIsDisabledStyle);
                 }
             },
             shouldBeDisplayed: () => !yukon_state.settings.isTableCellTextSelectable
@@ -234,17 +234,17 @@ export function make_context_menus(yukon_state) {
             content: `${downloadIcon}Apply a config from a file`,
             events: {
                 click: async (e, elementOpenedOn) => {
-                    const result = await zubax_api.import_node_configuration()
-                    if (result == "") {
+                    let result_dto = null;
+                    result_dto = await openFile(yukon_state);
+                    if (result_dto.text == "") {
                         addLocalMessage("No configuration imported");
                     } else {
                         const headerCell = elementOpenedOn;
                         const node_id = headerCell.getAttribute("data-node_id");
                         const avatar = Object.values(yukon_state.current_avatars).find((e) => e.node_id == parseInt(node_id));
                         addLocalMessage("Configuration imported");
-                        let result_deserialized = JSON.parse(result);
-                        yukon_state.available_configurations[result_deserialized["__file_name"]] = result;
-                        const selected_config = result_deserialized["__file_name"];
+                        const selected_config = result_dto.name;
+                        yukon_state.available_configurations[selected_config] = result_dto.text;
                         update_available_configurations_list(yukon_state);
                         const current_config = yukon_state.available_configurations[yukon_state.selections.selected_config];
                         if (current_config) {
@@ -312,7 +312,7 @@ export function make_context_menus(yukon_state) {
                     }
 
                     updateRegistersTableColors(yukon_state);
-                    let registers_to_reset = JSON.parse(JSON.stringify(recently_reread_registers));
+                    let registers_to_reset = JSON.parse(JSON.stringify(yukon_state.recently_reread_registers));
                     setTimeout(() => {
                         // Iterate through registers_to_reset and remove them from recently_reread_registers
                         for (let node_id in registers_to_reset) {

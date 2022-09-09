@@ -16,6 +16,7 @@ import { openFile } from "./yaml.configurations.module.js"
     const addLocalMessage = yukon_state.addLocalMessage;
     function doStuffWhenReady() {
         yukon_state.zubax_api = zubax_api;
+        yukon_state.jsyaml = jsyaml;
         // Make a callback on the page load event
         console.log("monitor ready");
         const iRegistersFilter = document.getElementById('iRegistersFilter');
@@ -25,8 +26,8 @@ import { openFile } from "./yaml.configurations.module.js"
         var selected_registers = yukon_state.selections.selected_registers;
         var recently_reread_registers = {};
         let lastInternalMessageIndex = -1;
-        const selectingTableCellsIsDisabledStyle = document.createElement('style');
-        selectingTableCellsIsDisabledStyle.innerHTML = `
+        yukon_state.selectingTableCellsIsDisabledStyle = document.createElement('style');
+        yukon_state.selectingTableCellsIsDisabledStyle.innerHTML = `
         .table-cell {
             user-select:none;
         }
