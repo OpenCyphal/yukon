@@ -5,3 +5,4 @@ from dataclasses import dataclass
 class ApplyConfigurationRequest:
     node_id: int
     configuration: str
+    is_network_config: bool

@@ -1,0 +1,110 @@
+table {
+  border-collapse: collapse;
+  overflow-x:scroll;
+  width:100%;
+  table-layout: fixed;
+  width: auto;
+  border-spacing: 0px;
+}
+
+caption {
+  font-weight: bold;
+  font-size: 24px;
+  text-align: left;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+thead {
+  background-color: #00DAC6;
+  color: black;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 2%;
+}
+thead th {
+  padding-top: 4px;
+}
+
+.cell-highlight {
+  background-color: gold;
+  font-weight: bold;
+}
+
+tbody th {
+  /* background-color: #0003EE; */
+  background-color: gray;
+  color: #fff;
+  text-align: left;
+}
+
+/* 
+tbody tr:nth-child(odd) {
+  background-color: #fff;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #eee;
+} */
+
+th,
+td {
+  border: 1px solid black;
+  padding: 4px;
+  padding-top: 1px;
+  word-wrap: break-word;
+  font-family: monospace;
+}
+
+td.no-padding {
+  padding: 1px;
+}
+
+th button {
+  margin-left: 0.5em;
+}
+
+td>div.input {
+  border: none;
+  background-color: transparent;
+  font-size: 0.875rem;
+  text-align: left;
+  padding: 0.5em;
+  /* padding-top: 1px; */
+  padding-top: 0.5em;
+  outline: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -khtml-user-select: none;
+}
+th, td {
+  min-width: 400px !important;
+  max-width: 400px !important;
+}
+th.left-side-table-header {
+  position: sticky;
+  z-index: 99;
+  left: 0px;
+  border: 1px solid black;
+}
+.no-value {
+  background-color: #007E87;
+}
+/* // Add a hover effect for tr */
+tbody>tr:hover,tbody>tr:hover .no-value {
+  background-color: #ccc;
+}
+td.selected-cell {
+  background-color: #0003EE;
+  color: white;
+}
+td.selected-cell label {
+  background-color: transparent;
+  color: white;
+}
+td.recently_reread_register {
+  background-color: #B00036;
+  color: white;
+}

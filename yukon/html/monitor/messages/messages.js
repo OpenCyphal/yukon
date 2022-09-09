@@ -4,10 +4,12 @@
     }
     
     function doStuffWhenReady() {
+        let isRefreshTextOutAllowed = true;
         console.log("Messages javascript is ready");
         var lastHash = "";
         var lastIndex = -1;
         var messagesList = document.querySelector("#messages-list");
+        var cbAutoscroll = document.getElementById("cbAutoscroll");
         function showAllMessages() {
             // For each message in messagesList
             for (child of messagesList.children) {
@@ -70,7 +72,6 @@
             return Math.floor(seconds) + " seconds";
         }
         function update_messages() {
-            console.log("update_messages");
             zubax_api.get_messages(lastIndex + 1).then(
                 function (messages) {
                     // Clear messages-list
@@ -95,6 +96,9 @@
                         li.innerHTML = el.message;
                         // Set an attribute on the list element with current timestamp
                         autosize(li);
+                        if (el.internal) {
+                            li.style.backgroundColor = "lightgreen !important";
+                        }
                         li.setAttribute("timestamp", el.timestamp);
                         li.setAttribute("spellcheck", "false");
                         var date1 = new Date(el.timestamp);
@@ -102,7 +106,7 @@
                         // If el is the last in d
                         if (messagesObject.indexOf(el) == messagesObject.length - 1) {
                             // Scroll to bottom of messages-list
-                            var cbAutoscroll = document.getElementById("cbAutoscroll");
+                            
                             var iAutoscrollFilter = document.getElementById("iAutoscrollFilter");
                             if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
                                 messagesList.scrollTop = messagesList.scrollHeight;
@@ -131,11 +135,17 @@
                 autosize.update(textOut);
             }
         });
+        
         // Run applyTextFilterToMessages() when there is a change in the filter text after the input has
         // stopped for 0.5 seconds
         var iTextFilter = document.getElementById("iTextFilter");
         var taExcludedKeywords = document.getElementById("taExcludedKeywords");
         var timer = null;
+        cbAutoscroll.addEventListener('change', function () {
+            if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
+                messagesList.scrollTop = messagesList.scrollHeight;
+            }
+        });
         iTextFilter.addEventListener("input", function () {
             if (timer) {
                 clearTimeout(timer);

@@ -12,7 +12,7 @@ from yukon.domain.port_set import PortSet
 from yukon.domain._expand_subjects import expand_subjects, expand_mask
 from yukon.domain.iface import Iface
 import uavcan
-from yukon.services.value_utils import _simplify_value, explode_value
+from yukon.services.value_utils import explode_value
 
 logger = logging.getLogger()
 logger.setLevel("ERROR")
@@ -95,17 +95,19 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
         assert isinstance(obj, uavcan.register.Access_1.Response)
         _ = ts
-        register_name = self.access_requests_names_by_transfer_id[transfer_id]
-        if register_name == "uavcan.node.unique_id":
-            unstructured_value = obj.value.unstructured
-            array = bytearray(unstructured_value.value)
-            # Convert to hex string
-            hex_string = array.hex(":")
-            self.register_values[register_name] = hex_string
+        if isinstance(obj.value, uavcan.primitive.Empty_1):
             return
+        register_name = self.access_requests_names_by_transfer_id[transfer_id]
+        # if register_name == "uavcan.node.unique_id":
+        #     unstructured_value = obj.value.unstructured
+        #     array = bytearray(unstructured_value.value)
+        #     # Convert to hex string
+        #     hex_string = array.hex(":")
+        #     self.register_values[register_name] = hex_string
+        #     return
         exploded_value = explode_value(obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent})
         self.register_exploded_values[register_name] = exploded_value
-        self.register_values[register_name] = str(_simplify_value(obj.value))
+        self.register_values[register_name] = str(explode_value(obj.value, simplify=True))
 
     def _on_list_response(self, ts: float, obj: Any) -> None:
         import uavcan.node
@@ -222,12 +224,35 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         )
 
     def to_builtin(self) -> Any:
-        health_meanings = {
-            0: "Nominal",
-            1: "Advisory",
-            2: "Caution",
-            3: "Warning"
-        }
+        health_meanings = {0: "Nominal", 1: "Advisory", 2: "Caution", 3: "Warning", 4: "No value"}
+        info = getattr(self, "_info")
+        if info:
+            software_version = getattr(info, "software_version")
+            hardware_version = getattr(info, "hardware_version")
+            software_vcs_revision_id = getattr(info, "software_vcs_revision_id")
+            software_major_version = getattr(software_version, "major", 0)
+            software_minor_version = getattr(getattr(info, "software_version"), "minor", 0)
+            hardware_major_version = getattr(hardware_version, "major", 0)
+            hardware_minor_version = getattr(hardware_version, "minor", 0)
+        else:
+            software_vcs_revision_id = None
+            software_major_version = None
+            software_minor_version = None
+            hardware_major_version = None
+            hardware_minor_version = None
+        heartbeat = getattr(self, "_heartbeat")
+        if heartbeat:
+            uptime = getattr(heartbeat, "uptime")
+            health_value = getattr(getattr(self._heartbeat, "health"), "value", 4) if self._heartbeat else 4
+            health_text = health_meanings.get(health_value, "Unknown")
+        else:
+            uptime = None
+            health_value = None
+            health_text = "No heartbeat"
+        if self._ts_heartbeat:
+            timestamp_value = self._ts_heartbeat
+        else:
+            timestamp_value = "No value"  # type: ignore
         json_object: Any = {
             "node_id": self._node_id,
             "hash": self.__hash__(),
@@ -238,14 +263,14 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None),
             "name": self._info.name.tobytes().decode() if self._info is not None else None,
             "last_heartbeat": {
-                "health": self._heartbeat.health.value,
-                "health_text": health_meanings[self._heartbeat.health.value],
-                "uptime": self._heartbeat.uptime,
-                "timestamp": self._ts_heartbeat,
+                "health": health_value,
+                "health_text": health_text,
+                "uptime": uptime,
+                "timestamp": timestamp_value,
             },
             "versions": {
-                "software_version": f"{self._info.software_version.major}.{self._info.software_version.minor}.{self._info.software_vcs_revision_id}",
-                "hardware_version": f"{self._info.hardware_version.major}.{self._info.hardware_version.minor}",
+                "software_version": f"{software_major_version}.{software_minor_version}.{software_vcs_revision_id}",
+                "hardware_version": f"{hardware_major_version}.{hardware_minor_version}",
             },
             "ports": {
                 "pub": list(self._ports.pub),
@@ -268,7 +293,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(frozenset(self._ports.cln))
             ^ hash(frozenset(self._ports.srv))
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
-            ^ hash(frozenset(self.register_exploded_values))
+            ^ hash(frozenset(self.register_values))
         )
 
     def __repr__(self) -> str:

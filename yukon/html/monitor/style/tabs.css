@@ -19,7 +19,7 @@
     margin-right: 4px;
     padding: 12px;
     color: #fff;
-    background-color: #b3b3b3;
+    background-color: #007E87;
     text-align: center;
     -webkit-transition: color 0.3s;
             transition: color 0.3s;
@@ -28,10 +28,10 @@
     margin-right: 0;
   }
   .c-tabs-nav__link:hover {
-    color: #6d6d6d;
+    font-weight: bold;
   }
   .c-tabs-nav__link.is-active {
-    color: #dc446e;
+    color: #B00036;
     background-color: #e7e7e7;
   }
   .c-tabs-nav__link i,

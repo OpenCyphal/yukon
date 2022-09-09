@@ -16,7 +16,7 @@ from yukon.services.terminate_handler import make_terminate_handler
 from yukon.domain.god_state import GodState
 from yukon.sentry_setup import setup_sentry
 from yukon.server import server, make_landing_and_bridge
-from yukon.services.api import Api
+from yukon.services.api import Api, SendingApi
 from yukon.services.get_electron_path import get_electron_path
 
 setup_sentry(sentry_sdk)
@@ -34,7 +34,11 @@ def run_electron() -> None:
     os.spawnl(os.P_NOWAIT, str(exe_path), str(exe_path), "http://localhost:5000")
 
 
-def run_gui_app(state: GodState, api: Api) -> None:
+def run_server() -> None:
+    server.run(host="0.0.0.0", port=5000)
+
+
+def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     logging.getLogger("pycyphal").setLevel(logging.INFO)
     logging.getLogger("can").setLevel(logging.INFO)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
@@ -50,9 +54,6 @@ def run_gui_app(state: GodState, api: Api) -> None:
     cyphal_worker_thread = threading.Thread(target=cyphal_worker, args=[state])
     cyphal_worker_thread.start()
 
-    def run_server() -> None:
-        server.run(host="0.0.0.0", port=5000)
-
     def open_webbrowser() -> None:
         webbrowser.open("http://localhost:5000/")
 
@@ -63,6 +64,12 @@ def run_gui_app(state: GodState, api: Api) -> None:
     # dpg.enable_docking(dock_space=False)
     make_terminate_handler(exit_handler)
 
+    async def sendAMessage() -> None:
+        # while await asyncio.sleep(1):
+        #     await api2.send_message("Hello World")
+        pass
+
+    asyncio.get_event_loop().create_task(sendAMessage())
     start_server_thread = threading.Thread(target=run_server)
     start_server_thread.start()
     # if environment variable IS_BROWSER_BASED is set, open the webbrowser
@@ -95,12 +102,14 @@ def auto_exit_task() -> int:
 
 
 async def main() -> int:
+    asyncio.get_event_loop().slow_callback_duration = 35
     if get_stop_after_value():
         auto_exit_thread = threading.Thread(target=auto_exit_task)
         auto_exit_thread.start()
     state: GodState = GodState()
     api: Api = Api(state)
-    run_gui_app(state, api)
+    api2: SendingApi = SendingApi()
+    run_gui_app(state, api, api2)
     if get_stop_after_value():
         auto_exit_thread.join()
     return 0

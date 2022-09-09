@@ -1,4 +1,5 @@
 const _zubax_api = { "empty": true }
+
 let zubax_api_ready = false;
 const zubax_api = new Proxy(_zubax_api, {
     get(target, prop) {
@@ -22,6 +23,35 @@ const zubax_api = new Proxy(_zubax_api, {
             return myPromise;
         }
     },
+});
+const _zubax_reception_api = { "empty": true }
+const zubax_reception_api = new Proxy(_zubax_reception_api, {
+    get(target, prop) {
+        return {
+            "connect": function(callback)
+            {
+                setInterval(function()
+                {
+                    const uri = "ws://localhost:8765/" + prop;
+                    console.log("Trying to connect to " + uri);
+                    const socket = new WebSocket(uri);
+                    socket.onopen = function()
+                    {
+                        console.log("Connected to " + prop);
+                    }
+                    socket.onmessage = function(message)
+                    {
+                        console.log("Message from " + prop + ": " + message.data);
+                        callback(message.data);
+                        socket.send("Yep, it works!");
+                    }
+                    socket.onerror = function(error) {
+                        console.error(`[error] ${error.message}`);
+                    };
+                }, 200);
+            }
+        }
+    }
 });
 window.addEventListener('load', function () {
     window.dispatchEvent(new Event('zubax_api_ready'));

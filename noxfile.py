@@ -31,6 +31,7 @@ def black(session):
 
 @nox.session(reuse_venv=True)
 def mypy(session):
+    session.run("pip", "install", "-r", "dev-requirements.txt")
     session.run("pip", "install", "mypy==0.961")
     session.run("mypy", "yukon")
 

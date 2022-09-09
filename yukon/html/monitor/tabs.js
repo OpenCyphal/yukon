@@ -57,7 +57,7 @@
      * @param {Number} index The index of the tab to go to
      */
     var goToTab = function(index) {
-      if (index !== activeIndex && index >= 0 && index <= tabNavigationLinks.length) {
+      if (index !== activeIndex && index >= 0 && index <= tabNavigationLinks.length && tabContentContainers[index]) {
         tabNavigationLinks[activeIndex].classList.remove('is-active');
         tabNavigationLinks[index].classList.add('is-active');
         tabContentContainers[activeIndex].classList.remove('is-active');

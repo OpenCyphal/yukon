@@ -16,14 +16,14 @@ jobs:
           pip install yakut
           yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
           pip install nox
-          python3.10 -m pip install -r requirements.txt
+          python3.10 -m pip install -r requirements.txt -r dev-requirements.txt
       - name: Testing GUI
         run: |
           PYTHONPATH=".:.." nox -s mypy
           PYTHONPATH=".:.." nox -s black
           PYTHONPATH=".:.." nox -s pylint
   immediate-release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     if:
       contains(github.event.head_commit.message, '#release')
     steps:
@@ -39,7 +39,7 @@ jobs:
           pip install yakut
           yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
           pip install nox
-          python3.10 -m pip install -r requirements.txt
+          python3.10 -m pip install -r requirements.txt -r dev-requirements.txt
       - name: Testing GUI
         run: |
           PYTHONPATH=".:.." nox -s mypy

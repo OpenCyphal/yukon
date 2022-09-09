@@ -49,6 +49,9 @@ def unexplode_value(xpl: Any, prototype: Optional[Value] = None) -> Optional["Va
         except (ValueError, TypeError):
             pass
     if prototype is not None:
+        if prototype.unstructured:
+            if isinstance(xpl, str):
+                return Value(unstructured=Unstructured(bytes.fromhex(xpl)))
         ret = ValueProxy(prototype)
         try:
             ret.assign(xpl)
@@ -102,7 +105,7 @@ def _simplify_value(msg: "Value") -> Any:
     if msg.empty:
         return None
     if msg.unstructured:
-        return msg.unstructured.value.tobytes()
+        return msg.unstructured.value.tobytes().hex()  # FIXME update the unexploder accordingly
     if msg.string:
         return msg.string.value.tobytes().decode(errors="replace")
     ((_ty, val),) = pycyphal.dsdl.to_builtin(msg).items()

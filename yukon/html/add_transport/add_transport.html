@@ -17,53 +17,63 @@
 </head>
 
 <body>
-    <div class="left-right-panel">
-        <form id="transport-selection-form">
-            <div id="maybe-tabs" class="noselect">
-                <span class="tab-slider"></span>
-            </div>
-            <h1 id="TransportType"></h1>
-            <div id="divTypeTransport">
-                <label for="iTransport">Transport interface</label>
-                <input type="text" id="iTransport" placeholder="Transport" value="socketcan:vcan0">
-            </div>
-            <div id="divCandump">
-                <button id="btnOpenCandumpFile">Open candump file</button>
-            </div>
-            <div id="divSelectTransport">
-                <label for="sTransport">Select transport</label>
-                <select id="sTransport"></select>
-            </div>
-            <div class="" id="divMtu">
-                <label for="iMtu">MTU</label>
-                <input type="number" id="iMtu" value="64" min="8" max="1500" class="form-control">
-            </div>
-            <div class="" id="divArbRate">
-                <label for="iArbRate">Arbitration rate</label>
-                <input type="number" id="iArbRate" value="1000000" min="1000000" max="2000000">
-            </div>
-            <div class="" id="divDataRate">
-                <label for="iDataRate">Data rate</label>
-                <input type="number" id="iDataRate" value="1000000" min="1000000" max="2000000">
-            </div>
-            <div class="" id="divNodeId">
-                <label for="iNodeId">Node ID</label>
-                <input type="number" id="iNodeId" value="1" min="1" max="255" class="form-control">
-            </div>
-            <button type="button" id="btnStart" class="btn btn-lg btn-primary btn-block">Start this transport</button>
-            <button type="button" id="btnAddTransport" class="btn btn-lg btn-primary btn-block">Configure another
-                transport</button>
-        </form>
-        <div id="messages">
-            <p id="messages_title">Messages</p>
-            <div id="messages-list">
-
-            </div>
-            <span>
-                <label for="cDeleteOldMessages">Delete old messages</label>
-                <input type="checkbox" id="cDeleteOldMessages" value="">
-            </span>
+    <form id="transport-selection-form">
+        <div id="maybe-tabs" class="noselect">
+            <span class="tab-slider"></span>
         </div>
+        <h1 id="TransportType"></h1>
+        <div id="divTypeTransport">
+            <label for="iTransport">Transport interface</label>
+            <input type="text" id="iTransport" placeholder="Transport" value="socketcan:slcan0">
+        </div>
+        <div id="divUdpIface" title="Whitespace-separated list of /16 IP subnet addresses">
+            <label for="iUdpIface">UDP interface</label>
+            <input type="text" id="iUdpIface" placeholder="Whitespace-separated list of /16 IP subnet addresses" value="">
+        </div>
+        <div id="divUdpMtu">
+            <label for="iUdpMtu">UDP MTU</label>
+            <input type="number" id="iUdpMtu" placeholder="UDP MTU" value="1200">
+        </div>
+        <div id="divCandump">
+            <button id="btnOpenCandumpFile">Open candump file</button>
+        </div>
+        <div id="divSelectTransport">
+            <label for="sTransport">Select transport</label>
+            <select id="sTransport"></select>
+        </div>
+        <div class="" id="divMtu">
+            <label for="iMtu">MTU</label>
+            <input type="number" id="iMtu" value="8" min="8" max="1500" class="form-control">
+        </div>
+        <div class="" id="divArbRate">
+            <label for="iArbRate">Arbitration rate</label>
+            <input type="number" id="iArbRate" value="1000000" min="1000000" max="2000000">
+        </div>
+        <div class="" id="divDataRate">
+            <label for="iDataRate">Data rate</label>
+            <input type="number" id="iDataRate" value="1000000" min="1000000" max="2000000">
+        </div>
+        <div class="" id="divNodeId">
+            <label for="iNodeId">Node ID</label>
+            <input type="number" id="iNodeId" value="1" min="1" max="255" class="form-control">
+        </div>
+        <div id="divServiceTransferMultiplier">
+            <label for="iServiceTransferMultiplier">Service transfer multiplier</label>
+            <input type="number" id="iServiceTransferMultiplier" placeholder="Service transfer multiplier" value="1">
+        </div>
+        <button type="button" id="btnStart" class="btn btn-lg btn-primary btn-block">Start this transport</button>
+        <button type="button" id="btnAddTransport" class="btn btn-lg btn-primary btn-block">Configure another
+            transport</button>
+    </form>
+    <div id="messages">
+        <p id="messages_title">Messages</p>
+        <div id="messages-list">
+
+        </div>
+        <span>
+            <label for="cDeleteOldMessages">Delete old messages</label>
+            <input type="checkbox" id="cDeleteOldMessages" value="">
+        </span>
     </div>
 
 </body>
