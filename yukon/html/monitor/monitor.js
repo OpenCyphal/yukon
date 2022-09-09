@@ -4,7 +4,7 @@ import { add_node_id_headers, make_empty_table_header_row_cell, addContentForReg
 import { applyConfiguration, export_all_selected_registers, update_available_configurations_list } from './yaml.configurations.module.js';
 import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
 import { create_registers_table, update_tables } from './registers.module.js';
-import {get_all_selected_pairs} from './registers.selection.module.js';
+import {get_all_selected_pairs, unselectAll, selectAll} from './registers.selection.module.js';
 import { rereadPairs } from "./registers.data.module.js"
 import { openFile } from "./yaml.configurations.module.js"
 
@@ -50,7 +50,7 @@ import { openFile } from "./yaml.configurations.module.js"
             yukon_state.pressedKeys[e.keyCode] = true;
             // If ctrl a was pressed, select all
             if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[65]) {
-                selectAll();
+                selectAll(yukon_state);
                 e.preventDefault();
             }
             // If F5 is pressed, reread registers
@@ -84,51 +84,6 @@ import { openFile } from "./yaml.configurations.module.js"
                 openFile(yukon_state);
             }
         });
-        function isAllSelected() {
-            let allSelected = true;
-            for (let avatar of yukon_state.current_avatars) {
-                for (let register_name of avatar.registers) {
-                    if (!register_name) {
-                        continue;
-                    }
-                    if (selected_registers[[avatar.node_id, register_name]]) {
-                        continue;
-                    } else {
-                        allSelected = false;
-                        break;
-                    }
-                }
-            }
-            return allSelected;
-        }
-
-        function unselectAll(yukon_state) {
-            addLocalMessage("Unselecting all registers");
-            yukon_state.selections.selected_registers = {};
-            yukon_state.selections.selected_columns = {};
-            yukon_state.selections.selected_rows = {};
-            updateRegistersTableColors(yukon_state);
-            window.getSelection()?.removeAllRanges();
-            yukon_state.selections.last_cell_selected = null;
-        }
-        function selectAll() {
-            // Iterate through every avatar in current_avatars and register_name and add them to the selected_registers
-            addLocalMessage("Selecting all registers");
-            if (isAllSelected()) {
-                unselectAll(yukon_state);
-                return;
-            }
-            for (let avatar of yukon_state.current_avatars) {
-                for (let register_name of avatar.registers) {
-                    if (!register_name) {
-                        continue;
-                    }
-                    selected_registers[[avatar.node_id, register_name]] = true;
-                }
-            }
-            updateRegistersTableColors(yukon_state);
-        }
-        
 
         function createMonitorPopup(text) {
             var cy = document.getElementById('cy');

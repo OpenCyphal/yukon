@@ -26,6 +26,14 @@
             <label for="iTransport">Transport interface</label>
             <input type="text" id="iTransport" placeholder="Transport" value="socketcan:slcan0">
         </div>
+        <div id="divUdpIface" title="Whitespace-separated list of /16 IP subnet addresses">
+            <label for="iUdpIface">UDP interface</label>
+            <input type="text" id="iUdpIface" placeholder="Whitespace-separated list of /16 IP subnet addresses" value="">
+        </div>
+        <div id="divUdpMtu">
+            <label for="iUdpMtu">UDP MTU</label>
+            <input type="number" id="iUdpMtu" placeholder="UDP MTU" value="1200">
+        </div>
         <div id="divCandump">
             <button id="btnOpenCandumpFile">Open candump file</button>
         </div>
@@ -48,6 +56,10 @@
         <div class="" id="divNodeId">
             <label for="iNodeId">Node ID</label>
             <input type="number" id="iNodeId" value="1" min="1" max="255" class="form-control">
+        </div>
+        <div id="divServiceTransferMultiplier">
+            <label for="iServiceTransferMultiplier">Service transfer multiplier</label>
+            <input type="number" id="iServiceTransferMultiplier" placeholder="Service transfer multiplier" value="1">
         </div>
         <button type="button" id="btnStart" class="btn btn-lg btn-primary btn-block">Start this transport</button>
         <button type="button" id="btnAddTransport" class="btn btn-lg btn-primary btn-block">Configure another

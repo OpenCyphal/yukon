@@ -154,6 +154,8 @@ def cyphal_worker(state: GodState) -> None:
                 if not state.queues.reread_registers.empty():
                     request2: RereadRegistersRequest = state.queues.reread_registers.get_nowait()
                     for pair in request2.pairs:
+                        if pair is None:
+                            continue
                         node_id2 = int(pair)
                         register_name2 = list(request2.pairs[pair].keys())[0]
                         asyncio.create_task(get_register_value(state, node_id2, register_name2))

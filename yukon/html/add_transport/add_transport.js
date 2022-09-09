@@ -97,13 +97,19 @@
             const divCandump = document.getElementById("divCandump");
             const divTypeTransport = document.getElementById("divTypeTransport");
             const divSelectTransport = document.getElementById("divSelectTransport");
+            const divUdpIface = document.getElementById("divUdpIface");
+            const divServiceTransferMultiplier = document.getElementById("divServiceTransferMultiplier");
+            const divUdpMtu = document.getElementById("divUdpMtu");
             divTypeTransport.style.display = "block";
             divSelectTransport.style.display = "block";
             divMtu.style.display = "block";
             divArbRate.style.display = "block";
             divDataRate.style.display = "block";
             divNodeId.style.display = "block";
+            divServiceTransferMultiplier.style.display = "none";
+            divUdpIface.style.display = "none";
             divCandump.style.display = "none";
+            divUdpMtu.style.display = "none";
             const iArbRate = document.getElementById("iArbRate");
             const iDataRate = document.getElementById("iDataRate");
             const iNodeId = document.getElementById("iNodeId");
@@ -125,9 +131,12 @@
                     h1TransportType.innerHTML = "UDP";
                     divTypeTransport.style.display = "none";
                     divSelectTransport.style.display = "none";
-                    divMtu.style.display = "none";
                     divArbRate.style.display = "none";
                     divDataRate.style.display = "none";
+                    divUdpIface.style.display = "block";
+                    divServiceTransferMultiplier.style.display = "block";
+                    divUdpMtu.style.display = "block";
+                    divMtu.style.display = "none";
                     break;
                 case transport_types.SLCAN:
                     h1TransportType.innerHTML = "SLCAN";
@@ -159,6 +168,34 @@
                     break;
             }
         }
+        // Disable all inputs contained in these divs that are not visible
+        function disableAllInputs() {
+            const divTypeTransport = document.getElementById("divTypeTransport");
+            const divSelectTransport = document.getElementById("divSelectTransport");
+            const divMtu = document.getElementById("divMtu");
+            const divArbRate = document.getElementById("divArbRate");
+            const divDataRate = document.getElementById("divDataRate");
+            const divNodeId = document.getElementById("divNodeId");
+            const divCandump = document.getElementById("divCandump");
+            const divUdpIface = document.getElementById("divUdpIface");
+            const divServiceTransferMultiplier = document.getElementById("divServiceTransferMultiplier");
+            const divUdpMtu = document.getElementById("divUdpMtu");
+            const divs = [divTypeTransport, divSelectTransport, divMtu, divArbRate, divDataRate, divNodeId, divCandump, divUdpIface, divServiceTransferMultiplier, divUdpMtu];
+            for (div of divs) {
+                if (div.style.display == "none") {
+                    for (input of div.getElementsByTagName("input")) {
+                        input.disabled = true;
+                    }
+                    for (select of div.getElementsByTagName("select")) {
+                        select.disabled = true;
+                    }
+                    for (button of div.getElementsByTagName("button")) {
+                        button.disabled = true;
+                    }
+                }
+            }
+        }
+        disableAllInputs();
         setInterval(function () {
             let currentWidth = messagesList.getBoundingClientRect().width
             if (currentWidth != messagesListWidth) {
@@ -252,6 +289,8 @@
             const iArbRate = document.getElementById("iArbRate");
             const iDataRate = document.getElementById("iDataRate");
             const iNodeId = document.getElementById("iNodeId");
+            const iUdpMtu = document.getElementById("iUdpMtu");
+            const iUdpIface = document.getElementById("iUdpIface");
             // Remove is-danger from every input
             iTransport.classList.remove("is-danger");
             sTransport.classList.remove("is-danger");
@@ -278,76 +317,98 @@
                     iTransport.classList.add("is-danger");
                     isFormCorrect = false;
                 }
+            } else if (currentSelectedTransport == transport_types.UDP) {
+                // Check if value of iUdpMtu is a number in range 1200 to 9000 inclusive and value of iUdpIface is a string separated by whitespace
+                if (isNaN(iUdpMtu.value) || iUdpMtu.value < 1200 || iUdpMtu.value > 9000) {
+                    iUdpMtu.classList.add("is-danger");
+                    displayOneMessage("MTU should be a number in range 1200 to 9000");
+                    isFormCorrect = false;
+                }
+                if (iUdpIface.value == "") {
+                    iUdpIface.classList.add("is-danger");
+                    isFormCorrect = false;
+                }
             } else if (sTransport.value == "") {
                 sTransport.classList.add("is-danger");
                 displayOneMessage("Transport shouldn't be empty");
                 isFormCorrect = false;
+            } else {
+                // This is a temporary CAN specific section
+                if (iMtu.value == "" || isNaN(iMtu.value)) {
+                    displayOneMessage("MTU should be a number");
+                    iMtu.classList.add("is-danger");
+                    isFormCorrect = false;
+                }
+                if (iArbRate.value == "" || isNaN(iArbRate.value)) {
+                    displayOneMessage("Arbitration rate should be a number");
+                    iArbRate.classList.add("is-danger");
+                    isFormCorrect = false;
+                }
+                if (iDataRate.value == "" || isNaN(iDataRate.value)) {
+                    displayOneMessage("Data rate should be a number");
+                    iDataRate.classList.add("is-danger");
+                    isFormCorrect = false;
+                }
+                if (iNodeId.value == "" || isNaN(iNodeId.value) || iNodeId.value < 0 || iNodeId.value > 128) {
+                    displayOneMessage("Node ID should be a number between 0 and 128");
+                    iNodeId.classList.add("is-danger");
+                    isFormCorrect = false;
+                }
             }
 
-            if (iMtu.value == "" || isNaN(iMtu.value)) {
-                displayOneMessage("MTU should be a number");
-                iMtu.classList.add("is-danger");
-                isFormCorrect = false;
-            }
-            if (iArbRate.value == "" || isNaN(iArbRate.value)) {
-                displayOneMessage("Arbitration rate should be a number");
-                iArbRate.classList.add("is-danger");
-                isFormCorrect = false;
-            }
-            if (iDataRate.value == "" || isNaN(iDataRate.value)) {
-                displayOneMessage("Data rate should be a number");
-                iDataRate.classList.add("is-danger");
-                isFormCorrect = false;
-            }
-            if (iNodeId.value == "" || isNaN(iNodeId.value) || iNodeId.value < 0 || iNodeId.value > 128) {
-                displayOneMessage("Node ID should be a number between 0 and 128");
-                iNodeId.classList.add("is-danger");
-                isFormCorrect = false;
-            }
+            
             return isFormCorrect;
         }
 
-        btnStart.addEventListener('click', function () {
-            if (!verifyInputs()) { return; }
-            let port = "";
-            const useSocketCan = currentSelectedTransport == transport_types.SOCKETCAN;
-            if (currentSelectedTransport != transport_types.MANUAL) {
-                if (useSocketCan) {
-                    port_type = "socketcan";
-                } else {
-                    port_type = "slcan";
-                }
-                port = port_type + ":" + sTransport.value;
+        btnStart.addEventListener('click', async function () {
+            if (!verifyInputs()) { console.error("Invalid input values."); return; }
+            
+            if(currentSelectedTransport == transport_types.UDP) {
+                console.log("UDP");
+                const udp_iface = document.getElementById('iUdpIface').value;
+                const udp_mtu = document.getElementById('iUdpMtu').value;
+                const node_id = document.getElementById('iNodeId').value;
+                result = await zubax_api.attach_udp_transport(udp_iface, udp_mtu, node_id);
             } else {
-                port = iTransport.value;
+                console.log("CAN");
+                let port = "";
+                const useSocketCan = currentSelectedTransport == transport_types.SOCKETCAN;
+                if (currentSelectedTransport != transport_types.MANUAL) {
+                    if (useSocketCan) {
+                        port_type = "socketcan";
+                    } else {
+                        port_type = "slcan";
+                    }
+                    port = port_type + ":" + sTransport.value;
+                } else {
+                    port = iTransport.value;
+                }
+                const data_rate = document.getElementById('iDataRate').value;
+                const arb_rate = document.getElementById('iArbRate').value;
+                const node_id = document.getElementById('iNodeId').value;
+                const mtu = document.getElementById('iMtu').value;
+                result = await zubax_api.attach_transport(port, data_rate, arb_rate, node_id, mtu)
             }
-            const data_rate = document.getElementById('iDataRate').value;
-            const arb_rate = document.getElementById('iArbRate').value;
-            const node_id = document.getElementById('iNodeId').value;
-            const mtu = document.getElementById('iMtu').value;
+            
+
 
             addLocalMessage("Going to attach now!")
-            zubax_api.attach_transport(port, data_rate, arb_rate, node_id, mtu).then(
-                function (result) {
-                    var resultObject = JSON.parse(result);
-                    if (resultObject.success) {
-                        addLocalMessage("Now attached: " + resultObject.message);
-                        //zubax_api.hide_transport_window();
-                        zubax_api.open_monitor_window();
-                    } else {
-                        console.error("Error: " + resultObject.message);
-                        addLocalMessage("Error: " + resultObject.message);
-                    }
-                }
-            );
+            
+            var resultObject = JSON.parse(result);
+            if (resultObject.success) {
+                addLocalMessage("Now attached: " + resultObject.message);
+                //zubax_api.hide_transport_window();
+                zubax_api.open_monitor_window();
+            } else {
+                console.error("Error: " + resultObject.message);
+                addLocalMessage("Error: " + resultObject.message);
+            }
         });
         // Toggle between showing divTypeTransport and divSelectTransport by clicking on the respective buttons
         const divTypeTransport = document.getElementById('divTypeTransport');
         const divSelectTransport = document.getElementById('divSelectTransport');
         const btnOpenCandumpFile = document.getElementById('btnOpenCandumpFile');
-        btnOpenCandumpFile.addEventListener('click', function () {
-            zubax_api.open_file_dialog();
-        });
+
         setInterval(fetchAndDisplayMessages, 1000);
 
 

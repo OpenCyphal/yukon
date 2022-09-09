@@ -259,6 +259,20 @@ class Api:
         new_value: uavcan.register.Value_1 = unexplode_value(register_value)
         self.state.queues.update_registers.put(UpdateRegisterRequest(register_name, new_value, int(node_id)))
 
+    def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> None:
+        logger.info(f"Attaching UDP transport to {udp_iface}")
+        interface = Interface()
+        interface.udp_iface = udp_iface
+        interface.udp_mtu = int(udp_mtu)
+        atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
+        self.state.queues.attach_transport.put(atr)
+        while True:
+            if self.state.queues.attach_transport_response.empty():
+                sleep(0.1)
+            else:
+                break
+        return json.dumps(self.state.queues.attach_transport_response.get(), cls=EnhancedJSONEncoder)
+
     def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()

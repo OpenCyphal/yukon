@@ -320,3 +320,49 @@ function getAllCellsInBetween(start_cell, end_cell, yukon_state) {
     }
     return all_cells;
 }
+
+export function unselectAll(yukon_state) {
+    yukon_state.addLocalMessage("Unselecting all registers");
+    yukon_state.selections.selected_registers = {};
+    yukon_state.selections.selected_columns = {};
+    yukon_state.selections.selected_rows = {};
+    updateRegistersTableColors(yukon_state);
+    window.getSelection()?.removeAllRanges();
+    yukon_state.selections.last_cell_selected = null;
+}
+
+export function selectAll(yukon_state) {
+    // Iterate through every avatar in current_avatars and register_name and add them to the selected_registers
+    yukon_state.addLocalMessage("Selecting all registers");
+    if (isAllSelected()) {
+        unselectAll(yukon_state);
+        return;
+    }
+    for (let avatar of yukon_state.current_avatars) {
+        for (let register_name of avatar.registers) {
+            if (!register_name) {
+                continue;
+            }
+            yukon_state.selections.selected_registers[[avatar.node_id, register_name]] = true;
+        }
+    }
+    updateRegistersTableColors(yukon_state);
+}
+
+function isAllSelected() {
+    let allSelected = true;
+    for (let avatar of yukon_state.current_avatars) {
+        for (let register_name of avatar.registers) {
+            if (!register_name) {
+                continue;
+            }
+            if (selected_registers[[avatar.node_id, register_name]]) {
+                continue;
+            } else {
+                allSelected = false;
+                break;
+            }
+        }
+    }
+    return allSelected;
+}
