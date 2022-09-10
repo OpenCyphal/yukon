@@ -1,4 +1,4 @@
-export function create_directed_graph(current_avatars) {
+export function create_directed_graph(yukon_state) {
     cytoscape.use(cytoscapeKlay);
     let my_graph = cytoscape({
         wheelSensitivity: 0.2,
@@ -67,15 +67,52 @@ export function create_directed_graph(current_avatars) {
         var node = evt.target;
         console.log("Mouseover on node " + node.id());
         // Find the avatar for the node
-        var avatar = current_avatars.find(function (avatar) {
+        var avatar = yukon_state.current_avatars.find(function (avatar) {
             return avatar.node_id == node.id();
         });
         if (avatar) {
             // Create a label with the avatar's name
-            createMonitorPopup(avatar.name + " (" + avatar.node_id + ")" + "<br>" + secondsToString(avatar.last_heartbeat.uptime) + "<br>" + avatar.last_heartbeat.health_text + " (" + avatar.last_heartbeat.health + ")");
+            const assembled_text = avatar.name + " (" + avatar.node_id + ")" + "<br>" + secondsToString(avatar.last_heartbeat.uptime) + "<br>" + avatar.last_heartbeat.health_text + " (" + avatar.last_heartbeat.health + ")";
+            createMonitorPopup(assembled_text, yukon_state);
         }
     });
     return my_graph
+}
+function createMonitorPopup(text, yukon_state) {
+    var cy = document.getElementById('cy');
+    // Remove all label elements in the div cy
+    var labels = cy.getElementsByTagName('div');
+    for (var i = 0; i < labels.length; i++) {
+        // Check if className of the element is 'label'
+        if (labels[i].className == 'label') {
+            // Remove the element
+            labels[i].parentNode.removeChild(labels[i]);
+        }
+    }
+    // Create a sticky div in cy to display a label with text
+    var label = document.createElement('div');
+    label.className = 'label';
+    label.innerHTML = text;
+    cy.appendChild(label);
+    // Make the label stick to the top of the cy
+    label.style.position = 'absolute';
+    label.style.top = '0px';
+    label.style.left = '0px';
+    label.style.width = '380px';
+    label.style.minHeight = '90px';
+    label.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    label.style.color = 'white';
+    label.style.textAlign = 'center';
+    label.style.fontSize = '20px';
+    label.style.fontWeight = 'bold';
+    label.style.paddingTop = '20px';
+    label.style.paddingBottom = '20px';
+    label.style.zIndex = '1';
+    label.style.pointerEvents = 'none';
+    // Remove the label after 3 seconds
+    setTimeout(function () {
+        label.parentNode.removeChild(label);
+    }, 3000);
 }
 export function refresh_graph_layout(my_graph) {
     var layout = my_graph.layout(
@@ -128,4 +165,12 @@ export function refresh_graph_layout(my_graph) {
         }
     );
     layout.run();
+}
+export function secondsToString(seconds) {
+    var numyears = Math.floor(seconds / 31536000);
+    var numdays = Math.floor((seconds % 31536000) / 86400);
+    var numhours = Math.floor(((seconds % 31536000) % 86400) / 3600);
+    var numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
+    var numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
+    return numyears + " years " + numdays + " days " + numhours + " hours " + numminutes + " minutes " + numseconds + " seconds";
 }

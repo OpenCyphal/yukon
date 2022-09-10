@@ -1,5 +1,5 @@
 import { make_context_menus } from './context-menu.module.js';
-import { create_directed_graph, refresh_graph_layout } from './monitor.module.js';
+import { create_directed_graph, refresh_graph_layout, secondsToString } from './monitor.module.js';
 import { add_node_id_headers, make_empty_table_header_row_cell, addContentForRegisterName, updateRegistersTableColors } from './registers.module.js';
 import { applyConfiguration, export_all_selected_registers, update_available_configurations_list } from './yaml.configurations.module.js';
 import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
@@ -13,6 +13,8 @@ import { openFile } from "./yaml.configurations.module.js"
         zubax_api.add_local_message(message)
     }
     yukon_state.navigator = navigator;
+    yukon_state.document = document;
+    yukon_state.window = window;
     const addLocalMessage = yukon_state.addLocalMessage;
     function doStuffWhenReady() {
         yukon_state.zubax_api = zubax_api;
@@ -85,43 +87,6 @@ import { openFile } from "./yaml.configurations.module.js"
                 openFile(yukon_state);
             }
         });
-
-        function createMonitorPopup(text) {
-            var cy = document.getElementById('cy');
-            // Remove all label elements in the div cy
-            var labels = cy.getElementsByTagName('div');
-            for (var i = 0; i < labels.length; i++) {
-                // Check if className of the element is 'label'
-                if (labels[i].className == 'label') {
-                    // Remove the element
-                    labels[i].parentNode.removeChild(labels[i]);
-                }
-            }
-            // Create a sticky div in cy to display a label with text
-            var label = document.createElement('div');
-            label.className = 'label';
-            label.innerHTML = text;
-            cy.appendChild(label);
-            // Make the label stick to the top of the cy
-            label.style.position = 'absolute';
-            label.style.top = '0px';
-            label.style.left = '0px';
-            label.style.width = '380px';
-            label.style.minHeight = '90px';
-            label.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-            label.style.color = 'white';
-            label.style.textAlign = 'center';
-            label.style.fontSize = '20px';
-            label.style.fontWeight = 'bold';
-            label.style.paddingTop = '20px';
-            label.style.paddingBottom = '20px';
-            label.style.zIndex = '1';
-            label.style.pointerEvents = 'none';
-            // Remove the label after 3 seconds
-            setTimeout(function () {
-                label.parentNode.removeChild(label);
-            }, 3000);
-        }
         function markCellWithMessage(table_cell, message, delay) {
             // Make an absolute positioned div positioned over the table cell
             var div = document.createElement('div');
@@ -223,14 +188,7 @@ import { openFile } from "./yaml.configurations.module.js"
                 }
             }
         }
-        function secondsToString(seconds) {
-            var numyears = Math.floor(seconds / 31536000);
-            var numdays = Math.floor((seconds % 31536000) / 86400);
-            var numhours = Math.floor(((seconds % 31536000) % 86400) / 3600);
-            var numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
-            var numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
-            return numyears + " years " + numdays + " days " + numhours + " hours " + numminutes + " minutes " + numseconds + " seconds";
-        }
+
         function update_avatars_table() {
             var table_body = document.querySelector('#avatars_table tbody');
             table_body.innerHTML = "";
@@ -333,7 +291,7 @@ import { openFile } from "./yaml.configurations.module.js"
         }
 
         setInterval(get_and_display_avatars, 1000);
-        var my_graph = create_directed_graph(yukon_state.current_avatars);
+        var my_graph = create_directed_graph(yukon_state);
         update_directed_graph();
 
         //        var btnFetch = document.getElementById('btnFetch');
