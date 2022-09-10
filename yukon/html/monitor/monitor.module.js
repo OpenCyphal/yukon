@@ -115,6 +115,12 @@ function createMonitorPopup(text, yukon_state) {
         label.parentNode.removeChild(label);
     }, 3000);
 }
+function getDrawingAspectRatio() {
+    var cy = document.getElementById('cy');
+    var cy_width = cy.clientWidth;
+    var cy_height = cy.clientHeight;
+    return cy_width / cy_height;
+}
 export function refresh_graph_layout(my_graph) {
     var layout = my_graph.layout(
         {
@@ -122,7 +128,7 @@ export function refresh_graph_layout(my_graph) {
             klay: {
                 // Following descriptions taken from http://layout.rtsys.informatik.uni-kiel.de:9444/Providedlayout.html?algorithm=de.cau.cs.kieler.klay.layered
                 addUnnecessaryBendpoints: true, // Adds bend points even if an edge does not change direction.
-                aspectRatio: 1.6, // The aimed aspect ratio of the drawing, that is the quotient of width by height
+                aspectRatio: getDrawingAspectRatio(), // The aimed aspect ratio of the drawing, that is the quotient of width by height
                 borderSpacing: 20, // Minimal amount of space to be left to the border
                 compactComponents: false, // Tries to further compact components (disconnected sub-graphs).
                 crossingMinimization: 'LAYER_SWEEP', // Strategy for crossing minimization.
