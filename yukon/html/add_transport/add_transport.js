@@ -1,18 +1,23 @@
 // document load event
 (function () {
     var lastMessageIndex = -1;
-    const transport_types = Object.freeze({
-        MANUAL: "MANUAL",
-       UDP: 'UDP',
-        SLCAN: "SLCAN",
-        SOCKETCAN: "SOCKETCAN",
-//        CANDUMP: "CANDUMP",
-//        PICAN: "PICAN",
-    })
-    var currentSelectedTransport = transport_types.MANUAL;
+    const transports = Object.freeze({
+        UDP: {
+            UDP: "UDP",
+        },
+        CAN: {
+            MANUAL: "MANUAL",
+            SLCAN: "SLCAN",
+            SOCKETCAN: "SOCKETCAN",
+            CANDUMP: "CANDUMP",
+            PICAN: "PICAN"
+        },
+    });
+    var currentSelectedTransportType = transport_types.MANUAL;
+    var currentSelectedTransportCategory = transport_categories.UDP;
     // zubax_reception_api.hello.connect(function(message)
     // {
-        // console.log("Message from hello: " + message);
+    // console.log("Message from hello: " + message);
     // })
     function doStuffWhenReady() {
         console.log("zubax_api_ready in add_transport.js");
@@ -122,12 +127,12 @@
             iDataRate.classList.remove("is-danger");
             iNodeId.classList.remove("is-danger");
 
-            switch (currentSelectedTransport) {
-                case transport_types.MANUAL:
+            switch (currentSelectedTransportType) {
+                case transports.CAN.MANUAL:
                     h1TransportType.innerHTML = "A connection string";
                     divSelectTransport.style.display = "none";
                     break;
-                case transport_types.UDP:
+                case transports.UDP.UDP:
                     h1TransportType.innerHTML = "UDP";
                     divTypeTransport.style.display = "none";
                     divSelectTransport.style.display = "none";
@@ -138,13 +143,13 @@
                     divUdpMtu.style.display = "block";
                     divMtu.style.display = "none";
                     break;
-                case transport_types.SLCAN:
+                case transports.CAN.SLCAN:
                     h1TransportType.innerHTML = "SLCAN";
                     divTypeTransport.style.display = "none";
                     iMtu.value = 8;
                     fillSelectionWithSlcan();
                     break;
-                case transport_types.SOCKETCAN:
+                case transports.CAN.SOCKETCAN:
                     h1TransportType.innerHTML = "SocketCAN";
                     divTypeTransport.style.display = "none";
                     divArbRate.style.display = "none";
@@ -152,7 +157,7 @@
                     iMtu.value = 64;
                     fillSelectionWithSocketcan();
                     break;
-                case transport_types.CANDUMP:
+                case transports.CAN.CANDUMP:
                     h1TransportType.innerHTML = "CANDUMP";
                     divTypeTransport.style.display = "none";
                     divSelectTransport.style.display = "none";
@@ -162,7 +167,7 @@
                     divNodeId.style.display = "none";
                     divCandump.style.display = "block";
                     break;
-                case transport_types.PICAN:
+                case transports.CAN.PICAN:
                     h1TransportType.innerHTML = "PICAN";
                     divTypeTransport.style.display = "none";
                     break;
@@ -205,27 +210,76 @@
                 }
             }
         }, 500);
+        function getCoords(elem) {
+            let box = elem.getBoundingClientRect();
+
+            return {
+                top: box.top + window.pageYOffset,
+                right: box.right + window.pageXOffset,
+                bottom: box.bottom + window.pageYOffset,
+                left: box.left + window.pageXOffset
+            };
+        }
+        function addOneTabRow(tabNameArray) {
+            let tabRow = {};
+            tabRow.div = document.createElement("div");
+            tabRow.div.classList.add("tab-row");
+            tabRow.slider = document.createElement("span");
+            tabRow.slider.classList.add("tab-slider");
+            tabRow.div.appendChild(tabRow.slider);
+            let current_child_index = 0;
+            for (var tabName in tabNameArray) {
+                let thisChildIndex = current_child_index + 0;
+                var new_radio = document.createElement('input');
+                new_radio.setAttribute('type', 'radio');
+                new_radio.setAttribute('name', 'transport');
+                new_radio.setAttribute('id', "transport" + property);
+                new_radio.setAttribute('value', property);
+                // A label for new_radio
+                var new_label = document.createElement('label');
+                new_label.setAttribute('for', "transport" + property);
+                new_label.innerHTML = property;
+                new_label.classList.add('tab_label');
+                new_label.setAttribute("value", property);
+                firstRow.appendChild(new_radio);
+                firstRow.appendChild(new_label);
+                new_radio.addEventListener('change', function () {
+                    if (this.checked) {
+                        moveTab(firstRow, thisChildIndex);
+                    }
+                });
+                current_child_index++;
+            }
+        }
         function InitTabStuff() {
             const maybe_tabs = document.querySelector('#maybe-tabs');
-            const slider = document.querySelector('#maybe-tabs > .tab-slider');
-            
+            const slider1 = document.querySelector('#tab-slider1');
+            const slider2 = document.querySelector('#tab-slider2');
             // Iterate over each property of transport_types and add it to maybe-tabs
-            const getInputChildren = () => [].slice.call(maybe_tabs.children).filter((child) => child.tagName == "INPUT");
-            const getLabelChildren = () => [].slice.call(maybe_tabs.children).filter((child) => child.tagName == "LABEL");
+            const firstRow = document.querySelector("#firstRow");
+            const secondRow = document.querySelector("#secondRow");
+            const getChildTopAndLeftPosition = (element) => [getCoords(element).top, getCoords(element).left];
+            const getInputChildren = (row) => [].slice.call(row.children).filter((child) => child.tagName == "INPUT");
+            const getLabelChildren = (row) => [].slice.call(row.children).filter((child) => child.tagName == "LABEL");
             const getChildrenLength = () => maybe_tabs.children.length;
-            function moveTab(index)
-            {
-                const labelChildren = getLabelChildren();
+            function moveTab(row, index) {
+                if (row == firstRow) {
+                    slider = slider1;
+                } else {
+                    slider = slider2;
+                }
+                const labelChildren = getLabelChildren(row);
                 const child = labelChildren[index];
-                const targetLeftValue = child.getBoundingClientRect().left - maybe_tabs.getBoundingClientRect().left;
                 const targetWidth = child.getBoundingClientRect().width
-
-                var t = new Tween(slider.style, 'left', Tween.regularEaseOut, parseInt(slider.style.left), targetLeftValue, 0.3, 'px');
+                var [topValue, leftValue] = getChildTopAndLeftPosition(child);
+                var t = new Tween(slider.style, 'left', Tween.regularEaseOut, parseInt(slider.style.left), leftValue, 0.3, 'px');
+                t.start();
+                var t = new Tween(slider.style, 'top', Tween.regularEaseOut, parseInt(slider.style.top), topValue, 0.3, 'px');
                 t.start();
                 var t2 = new Tween(slider.style, 'width', Tween.regularEaseOut, parseInt(slider.style.width), targetWidth, 0.3, 'px');
                 t2.start();
 
-                currentSelectedTransport = child.getAttribute("value");
+                currentSelectedTransportType = child.getAttribute("value");
                 doTheTabSwitching();
                 for (const child2 of labelChildren) {
                     if (child2 != child) {
@@ -239,47 +293,26 @@
                     }
                 }
             }
-            {
-                let current_child_index = 0;
-                for (var property in transport_types) {
-                    if (transport_types.hasOwnProperty(property)) {
-                        let thisChildIndex = current_child_index + 0;
-                        var new_radio = document.createElement('input');
-                        new_radio.setAttribute('type', 'radio');
-                        new_radio.setAttribute('name', 'transport');
-                        new_radio.setAttribute('id', "transport" + property);
-                        new_radio.setAttribute('value', property);
-                        // A label for new_radio
-                        var new_label = document.createElement('label');
-                        new_label.setAttribute('for', "transport" + property);
-                        new_label.innerHTML = property;
-                        new_label.classList.add('tab_label');
-                        new_label.setAttribute("value", property);
-                        maybe_tabs.insertBefore(new_radio, slider);
-                        maybe_tabs.insertBefore(new_label, slider);
-                        new_radio.addEventListener('change', function () {
-                            if (this.checked) {
-                                moveTab(thisChildIndex);
-                            }
-                        });
-                        current_child_index++;
-                    }
-                }
-            }
-            
+            // I was here
 
-            const maybe_tabs_bounding_rect = maybe_tabs.getBoundingClientRect();
-            const width_of_first_child = getLabelChildren()[0].getBoundingClientRect().width;
-            
-            getLabelChildren()[0].style.backgroundColor = 'transparent';
-            slider.style.width = width_of_first_child + 'px';
-            slider.style.height = maybe_tabs_bounding_rect.height + 'px';
-            slider.style.left = 0;
-            slider.style["z-index"] = "0";
-            slider.style.left = getLabelChildren()[0].getBoundingClientRect().left - maybe_tabs.getBoundingClientRect().left - 12 + 'px';
-            slider.style.width = getLabelChildren()[0].getBoundingClientRect().width + 24 + 'px';
-            moveTab(0);
-            currentSelectedTransport = transport_types.MANUAL;
+            for (row of [firstRow, secondRow]) {
+                if (row == firstRow) {
+                    slider = slider1;
+                } else {
+                    slider = slider2;
+                }
+                const width_of_first_child = getLabelChildren(row)[0].getBoundingClientRect().width;
+                const [topPos, leftPos] = getChildTopAndLeftPosition(getLabelChildren(row)[0]);
+                getLabelChildren(row)[0].style.backgroundColor = 'transparent';
+                getLabelChildren(row)[0].style.backgroundColor = 'transparent';
+                slider.style.width = width_of_first_child + 'px';
+                slider.style.height = row.getBoundingClientRect().height + 'px';
+                slider.style.top = topPos + 'px';
+                slider.style.left = leftPos + 'px';
+                slider.style["z-index"] = "0";
+                moveTab(row, 0);
+            }
+            currentSelectedTransportType = transport_types.MANUAL;
             doTheTabSwitching();
         }
         function verifyInputs() {
@@ -299,7 +332,7 @@
             iDataRate.classList.remove("is-danger");
             iNodeId.classList.remove("is-danger");
             let isFormCorrect = true;
-            if (currentSelectedTransport == transport_types.MANUAL) {
+            if (currentSelectedTransportType == transport_types.MANUAL) {
                 if (iTransport.value == "" || !iTransport.value.includes(":")) {
                     iTransport.classList.add("is-danger");
                     displayOneMessage("Transport shouldn't be empty and should be in the format <slcan|socketcan>:<port>");
@@ -317,7 +350,7 @@
                     iTransport.classList.add("is-danger");
                     isFormCorrect = false;
                 }
-            } else if (currentSelectedTransport == transport_types.UDP) {
+            } else if (currentSelectedTransportType == transport_types.UDP) {
                 // Check if value of iUdpMtu is a number in range 1200 to 9000 inclusive and value of iUdpIface is a string separated by whitespace
                 if (isNaN(iUdpMtu.value) || iUdpMtu.value < 1200 || iUdpMtu.value > 9000) {
                     iUdpMtu.classList.add("is-danger");
@@ -356,14 +389,14 @@
                 }
             }
 
-            
+
             return isFormCorrect;
         }
 
         btnStart.addEventListener('click', async function () {
             if (!verifyInputs()) { console.error("Invalid input values."); return; }
-            
-            if(currentSelectedTransport == transport_types.UDP) {
+
+            if (currentSelectedTransportType == transport_types.UDP) {
                 console.log("UDP");
                 const udp_iface = document.getElementById('iUdpIface').value;
                 const udp_mtu = document.getElementById('iUdpMtu').value;
@@ -372,8 +405,8 @@
             } else {
                 console.log("CAN");
                 let port = "";
-                const useSocketCan = currentSelectedTransport == transport_types.SOCKETCAN;
-                if (currentSelectedTransport != transport_types.MANUAL) {
+                const useSocketCan = currentSelectedTransportType == transport_types.SOCKETCAN;
+                if (currentSelectedTransportType != transport_types.MANUAL) {
                     if (useSocketCan) {
                         port_type = "socketcan";
                     } else {
@@ -389,11 +422,11 @@
                 const mtu = document.getElementById('iMtu').value;
                 result = await zubax_api.attach_transport(port, data_rate, arb_rate, node_id, mtu)
             }
-            
+
 
 
             addLocalMessage("Going to attach now!")
-            
+
             var resultObject = JSON.parse(result);
             if (resultObject.success) {
                 addLocalMessage("Now attached: " + resultObject.message);
