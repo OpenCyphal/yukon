@@ -1,10 +1,11 @@
 import { get_all_selected_pairs, select_configuration } from "./registers.selection.module.js";
 import { update_tables } from "./registers.module.js";
+import { copyObject } from "./utilities.module.js";
 export async function applyConfiguration(configuration, set_node_id, applyPairs, yukon_state) {
     let zubax_api = yukon_state.zubax_api;
     // If configuration starts with a { then it is json
     let configuration_deserialized = null;
-    if(configuration.startsWith("{")) {
+    if (configuration.startsWith("{")) {
         configuration_deserialized = JSON.parse(configuration);
     } else {
         configuration_deserialized = yukon_state.jsyaml.load(configuration);
@@ -210,9 +211,83 @@ export async function update_available_configurations_list(yukon_state) {
             number_input.type = "number";
             number_input.placeholder = "Node id needed";
             number_input.title = "For determining datatypes, a node id is needed";
-            number_input_for_configuration[JSON.parse(JSON.stringify(file_name))] = number_input;
+            number_input_for_configuration[copyObject(file_name)] = number_input;
             label.appendChild(number_input);
         }
         available_configurations_radios.appendChild(label);
+    }
+}
+export async function loadConfigurationFromOpenDialog(selectImmediately, yukon_state)
+{
+    const result_dto = await openFile(yukon_state);
+    if(!result_dto || result_dto.text == "") {
+        return null;
+    }
+    yukon_state.addLocalMessage("Configuration imported");
+    if (selectImmediately) {
+        yukon_state.selections.selected_config = result_dto.name;
+    }
+    yukon_state.available_configurations[result_dto.name] = result_dto.text;
+    await update_available_configurations_list(yukon_state);
+}
+export async function actionApplyConfiguration(selectImmediately, applyToAll, avatar, onlyApplySelected, yukon_state) {
+    let result_dto = await loadConfigurationFromOpenDialog(selectImmediately, yukon_state);
+    let pairs = null;
+    if(result_dto) {
+        const current_config = yukon_state.available_configurations[yukon_state.selections.selected_config];
+        if(onlyApplySelected) {
+            pairs = get_all_selected_pairs({
+                "only_of_avatar_of_node_id": false,
+                "get_everything": false,
+                "only_of_register_name": null
+            }, yukon_state);
+        }
+        if (current_config) {
+            if(avatar && !applyToAll) {
+                const node_id = avatar.node_id;
+                const selections = getAllEntireColumnsThatAreSelected(yukon_state);
+
+                // For key and value in selections
+                for (const key in selections) {
+                    const value = selections[key];
+                    const node_id2 = key;
+                    if (node_id2 == node_id) {
+                        // The column that the context menu is activated on is used anyway
+                        continue;
+                    }
+                    if (value) {
+                        // If any other columns are fully selected then they are applied aswell.
+                        applyConfiguration(current_config, parseInt(node_id2), pairs, yukon_state);
+                    }
+                }
+                // The column that the context menu is activated on is used anyway
+                applyConfiguration(current_config, parseInt(avatar.node_id), pairs, yukon_state);
+            } else {
+                for (const avatar of yukon_state.current_avatars) {
+                    applyConfiguration(current_config, parseInt(avatar.node_id, pairs, yukon_state))
+                }
+            }
+        } else {
+            console.log("No configuration selected");
+        }
+        if (!yukon_state.recently_reread_registers[node_id]) {
+            yukon_state.recently_reread_registers[node_id] = {};
+        }
+        for (let i = 0; i < avatar.registers.length; i++) {
+            const register_name = avatar.registers[i];
+            yukon_state.recently_reread_registers[node_id][register_name] = true;
+        }
+
+        updateRegistersTableColors(yukon_state, 4, 1000);
+        let registers_to_reset = copyObject(yukon_state.recently_reread_registers);
+        setTimeout(() => {
+            // Iterate through registers_to_reset and remove them from recently_reread_registers
+            for (let node_id in registers_to_reset) {
+                for (let register_name in registers_to_reset[node_id]) {
+                    yukon_state.recently_reread_registers[node_id][register_name] = false;
+                }
+            }
+            updateRegistersTableColors(yukon_state);
+        }, 600);
     }
 }

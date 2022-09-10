@@ -1,7 +1,8 @@
 import { make_context_menus } from './context-menu.module.js';
-import { create_directed_graph, refresh_graph_layout, secondsToString } from './monitor.module.js';
+import { create_directed_graph, refresh_graph_layout } from './monitor.module.js';
+import { secondsToString } from "./utilities.module.js";
 import { add_node_id_headers, make_empty_table_header_row_cell, addContentForRegisterName, updateRegistersTableColors } from './registers.module.js';
-import { applyConfiguration, export_all_selected_registers, update_available_configurations_list } from './yaml.configurations.module.js';
+import { applyConfiguration, export_all_selected_registers, update_available_configurations_list, loadConfigurationFromOpenDialog } from './yaml.configurations.module.js';
 import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
 import { create_registers_table, update_tables } from './registers.module.js';
 import {get_all_selected_pairs, unselectAll, selectAll} from './registers.selection.module.js';
@@ -338,15 +339,7 @@ import { openFile } from "./yaml.configurations.module.js"
         });
         const btnImportRegistersConfig = document.getElementById('btnImportRegistersConfig');
         btnImportRegistersConfig.addEventListener('click', async function () {
-            let result = await zubax_api.import_node_configuration()
-            if (result == "") {
-                addLocalMessage("No configuration imported");
-            } else {
-                addLocalMessage("Configuration imported");
-                result_deserialized = JSON.parse(result);
-                yukon_state.available_configurations[result_deserialized["__file_name"]] = result;
-                await update_available_configurations_list(yukon_state);
-            }
+            loadConfigurationFromOpenDialog(false, yukon_state)
         });
         const btnSelectedSetFromPrompt = document.getElementById('btnSelectedSetFromPrompt');
         btnSelectedSetFromPrompt.addEventListener('click', function () {

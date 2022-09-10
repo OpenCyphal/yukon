@@ -1,9 +1,10 @@
 import {updateRegistersTableColors} from "./registers.module.js";
+import { copyObject } from "./utilities.module.js";
 export function update_register_value(register_name, register_value, node_id, yukon_state) {
     const zubax_api = yukon_state.zubax_api;
     // Find the avatar which has the node_id
     const the_avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id === parseInt(node_id));
-    let unprocessed_value = JSON.parse(JSON.stringify(the_avatar["registers_exploded_values"][register_name]))
+    let unprocessed_value = copyObject(the_avatar["registers_exploded_values"][register_name])
     // if unprocessed_value[Object.keys(the_value)[0]]["value"]
     if (typeof unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] == "string") {
         unprocessed_value[Object.keys(unprocessed_value)[0]]["value"] = register_value
@@ -30,7 +31,7 @@ export function rereadPairs(pairs, yukon_state) {
         }
     }
     updateRegistersTableColors(yukon_state);
-    let registers_to_reset = JSON.parse(JSON.stringify(yukon_state.recently_reread_registers));
+    let registers_to_reset = copyObject(yukon_state.recently_reread_registers);
     setTimeout(() => {
         // Iterate through registers_to_reset and remove them from recently_reread_registers
         for (let node_id in registers_to_reset) {
