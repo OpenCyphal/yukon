@@ -219,17 +219,81 @@
                 left: box.left + window.pageXOffset
             };
         }
-        function addOneTabRow(tabNameArray) {
+        const getChildTopAndLeftPosition = (element) => [getCoords(element).top, getCoords(element).left];
+        function setCurrentTransport(tabRow, index, isTopMost) {
+            if (isTopMost) {
+                currentSelectedTransportType = [tabRow, tabRow.tabNames[0]];
+            }
+            else {
+                currentSelectedTransportType = [tabRow.parentTabName, tabRow.tabNames[index]];
+            }
+        }
+        function moveTab(tabRow, index, isTopMost) {
+            const labelChildren = tabRow.getLabelChildren();
+            setCurrentTransport(tabRow, index, isTopMost);
+            const child = labelChildren[index];
+            const targetWidth = child.getBoundingClientRect().width
+            var [topValue, leftValue] = getChildTopAndLeftPosition(child);
+            var t = new Tween(tabRow.slider.style, 'left', Tween.regularEaseOut, parseInt(tabRow.slider.style.left), leftValue, 0.3, 'px');
+            t.start();
+            var t = new Tween(tabRow.slider.style, 'top', Tween.regularEaseOut, parseInt(tabRow.slider.style.top), topValue, 0.3, 'px');
+            t.start();
+            var t2 = new Tween(tabRow.slider.style, 'width', Tween.regularEaseOut, parseInt(tabRow.slider.style.width), targetWidth, 0.3, 'px');
+            t2.start();
+            setTimeout(function() {
+                tabRow.slider.style.width = targetWidth + "px";
+                tabRow.slider.style.left = leftValue + "px";
+                tabRow.slider.style.top = topValue + "px";
+            }, 0.3)
+            tabRow.slider.style.height = tabRow.div.getBoundingClientRect().height + 4 + 'px';
+            if(isTopMost) {
+                const selectedTabName = Object.keys(transports)[index];
+                addChildTabRow(tabRow, selectedTabName);
+            }
+            
+            doTheTabSwitching();
+            for (const child2 of labelChildren) {
+                if (child2 != child) {
+                    child2.style.backgroundColor = '#e0e0e0';
+                    child2.style.color = '#000';
+                    child2.style["z-index"] = "0";
+                } else {
+                    child2.style.backgroundColor = 'transparent';
+                    child2.style.color = '#fff';
+                    child2.style["z-index"] = "1";
+                }
+            }
+        }
+        const maybe_tabs = document.querySelector('#maybe-tabs');
+        function addChildTabRow(ParentTabRow, selectedTabName) {
+            ParentTabRow.removeCurrentChildTabRow();
+            const arrayOfTabNames = Object.values(transports[selectedTabName]);
+            const tabRow = addOneTabRow(arrayOfTabNames, false);
+            tabRow.parent = ParentTabRow;
+            tabRow.parentTabName = selectedTabName;
+            ParentTabRow.childTabRow = tabRow;
+            maybe_tabs.appendChild(tabRow.div);
+        }
+        function addOneTabRow(tabNameArray, isTopMost) {
             let tabRow = {};
             tabRow.div = document.createElement("div");
             tabRow.div.classList.add("tab-row");
+            tabRow.tabNames = tabNameArray;
             tabRow.slider = document.createElement("span");
             tabRow.slider.classList.add("tab-slider");
             tabRow.getInputChildren = () => [].slice.call(tabRow.div.children).filter((child) => child.tagName == "INPUT");
             tabRow.getLabelChildren = () => [].slice.call(tabRow.div.children).filter((child) => child.tagName == "LABEL");
+            tabRow.removeCurrentChildTabRow = () => {
+                if (tabRow.childTabRow) {
+                    tabRow.childTabRow.div.remove();
+                    tabRow.childTabRow.slider.remove();
+                    tabRow.childTabRow.removeCurrentChildTabRow();
+                    tabRow.childTabRow = null;
+                }
+            };
             tabRow.div.appendChild(tabRow.slider);
             let current_child_index = 0;
-            for (var tabName in tabNameArray) {
+            for (var tabName of tabNameArray) {
                 let thisChildIndex = current_child_index + 0;
                 var new_radio = document.createElement('input');
                 new_radio.setAttribute('type', 'radio');
@@ -246,50 +310,27 @@
                 tabRow.div.appendChild(new_label);
                 new_radio.addEventListener('change', function () {
                     if (this.checked) {
-                        moveTab(tabRow, thisChildIndex);
+                        moveTab(tabRow, thisChildIndex, isTopMost);
                     }
                 });
                 current_child_index++;
             }
+            setTimeout(() => moveTab(tabRow, 0, isTopMost), 30);
             return tabRow;
         }
         function InitTabStuff() {
+            
+            
+            const firstMainRow = addOneTabRow(Object.keys(transports), true)
+            maybe_tabs.appendChild(firstMainRow.div);
             for(const child in transports) {
                 if(currentSelectedTransportType[0] == transports[child]) {
-                    const arrayOfTabNames = Object.values(transports[child]);
-                    console.log(arrayOfTabNames);
-                    addOneTabRow(arrayOfTabNames);
+                    addChildTabRow(firstMainRow, child);
                 }
             }
-            // const maybe_tabs = document.querySelector('#maybe-tabs');
+            
             // // Iterate over each property of transport_types and add it to maybe-tabs
-            // const getChildTopAndLeftPosition = (element) => [getCoords(element).top, getCoords(element).left];
-            // function moveTab(row, index) {
-            //     const labelChildren = getLabelChildren(row);
-            //     const child = labelChildren[index];
-            //     const targetWidth = child.getBoundingClientRect().width
-            //     var [topValue, leftValue] = getChildTopAndLeftPosition(child);
-            //     var t = new Tween(slider.style, 'left', Tween.regularEaseOut, parseInt(slider.style.left), leftValue, 0.3, 'px');
-            //     t.start();
-            //     var t = new Tween(slider.style, 'top', Tween.regularEaseOut, parseInt(slider.style.top), topValue, 0.3, 'px');
-            //     t.start();
-            //     var t2 = new Tween(slider.style, 'width', Tween.regularEaseOut, parseInt(slider.style.width), targetWidth, 0.3, 'px');
-            //     t2.start();
-
-            //     currentSelectedTransportType = child.getAttribute("value");
-            //     doTheTabSwitching();
-            //     for (const child2 of labelChildren) {
-            //         if (child2 != child) {
-            //             child2.style.backgroundColor = '#e0e0e0';
-            //             child2.style.color = '#000';
-            //             child2.style["z-index"] = "0";
-            //         } else {
-            //             child2.style.backgroundColor = 'transparent';
-            //             child2.style.color = '#fff';
-            //             child2.style["z-index"] = "1";
-            //         }
-            //     }
-            // }
+            
             // I was here
             
             // for (row of [firstRow, secondRow]) {
