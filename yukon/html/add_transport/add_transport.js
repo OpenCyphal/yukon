@@ -13,8 +13,7 @@
             PICAN: "PICAN"
         },
     });
-    var currentSelectedTransportType = transport_types.MANUAL;
-    var currentSelectedTransportCategory = transport_categories.UDP;
+    var currentSelectedTransportType = [transports.CAN, transports.CAN.MANUAL];
     // zubax_reception_api.hello.connect(function(message)
     // {
     // console.log("Message from hello: " + message);
@@ -127,7 +126,7 @@
             iDataRate.classList.remove("is-danger");
             iNodeId.classList.remove("is-danger");
 
-            switch (currentSelectedTransportType) {
+            switch (currentSelectedTransportType[1]) {
                 case transports.CAN.MANUAL:
                     h1TransportType.innerHTML = "A connection string";
                     divSelectTransport.style.display = "none";
@@ -226,6 +225,8 @@
             tabRow.div.classList.add("tab-row");
             tabRow.slider = document.createElement("span");
             tabRow.slider.classList.add("tab-slider");
+            tabRow.getInputChildren = () => [].slice.call(tabRow.div.children).filter((child) => child.tagName == "INPUT");
+            tabRow.getLabelChildren = () => [].slice.call(tabRow.div.children).filter((child) => child.tagName == "LABEL");
             tabRow.div.appendChild(tabRow.slider);
             let current_child_index = 0;
             for (var tabName in tabNameArray) {
@@ -233,87 +234,78 @@
                 var new_radio = document.createElement('input');
                 new_radio.setAttribute('type', 'radio');
                 new_radio.setAttribute('name', 'transport');
-                new_radio.setAttribute('id', "transport" + property);
-                new_radio.setAttribute('value', property);
+                new_radio.setAttribute('id', "transport" + tabName);
+                new_radio.setAttribute('value', tabName);
                 // A label for new_radio
                 var new_label = document.createElement('label');
-                new_label.setAttribute('for', "transport" + property);
-                new_label.innerHTML = property;
+                new_label.setAttribute('for', "transport" + tabName);
+                new_label.innerHTML = tabName;
                 new_label.classList.add('tab_label');
-                new_label.setAttribute("value", property);
-                firstRow.appendChild(new_radio);
-                firstRow.appendChild(new_label);
+                new_label.setAttribute("value", tabName);
+                tabRow.div.appendChild(new_radio);
+                tabRow.div.appendChild(new_label);
                 new_radio.addEventListener('change', function () {
                     if (this.checked) {
-                        moveTab(firstRow, thisChildIndex);
+                        moveTab(tabRow, thisChildIndex);
                     }
                 });
                 current_child_index++;
             }
+            return tabRow;
         }
         function InitTabStuff() {
-            const maybe_tabs = document.querySelector('#maybe-tabs');
-            const slider1 = document.querySelector('#tab-slider1');
-            const slider2 = document.querySelector('#tab-slider2');
-            // Iterate over each property of transport_types and add it to maybe-tabs
-            const firstRow = document.querySelector("#firstRow");
-            const secondRow = document.querySelector("#secondRow");
-            const getChildTopAndLeftPosition = (element) => [getCoords(element).top, getCoords(element).left];
-            const getInputChildren = (row) => [].slice.call(row.children).filter((child) => child.tagName == "INPUT");
-            const getLabelChildren = (row) => [].slice.call(row.children).filter((child) => child.tagName == "LABEL");
-            const getChildrenLength = () => maybe_tabs.children.length;
-            function moveTab(row, index) {
-                if (row == firstRow) {
-                    slider = slider1;
-                } else {
-                    slider = slider2;
-                }
-                const labelChildren = getLabelChildren(row);
-                const child = labelChildren[index];
-                const targetWidth = child.getBoundingClientRect().width
-                var [topValue, leftValue] = getChildTopAndLeftPosition(child);
-                var t = new Tween(slider.style, 'left', Tween.regularEaseOut, parseInt(slider.style.left), leftValue, 0.3, 'px');
-                t.start();
-                var t = new Tween(slider.style, 'top', Tween.regularEaseOut, parseInt(slider.style.top), topValue, 0.3, 'px');
-                t.start();
-                var t2 = new Tween(slider.style, 'width', Tween.regularEaseOut, parseInt(slider.style.width), targetWidth, 0.3, 'px');
-                t2.start();
-
-                currentSelectedTransportType = child.getAttribute("value");
-                doTheTabSwitching();
-                for (const child2 of labelChildren) {
-                    if (child2 != child) {
-                        child2.style.backgroundColor = '#e0e0e0';
-                        child2.style.color = '#000';
-                        child2.style["z-index"] = "0";
-                    } else {
-                        child2.style.backgroundColor = 'transparent';
-                        child2.style.color = '#fff';
-                        child2.style["z-index"] = "1";
-                    }
+            for(const child in transports) {
+                if(currentSelectedTransportType[0] == transports[child]) {
+                    const arrayOfTabNames = Object.values(transports[child]);
+                    console.log(arrayOfTabNames);
+                    addOneTabRow(arrayOfTabNames);
                 }
             }
+            // const maybe_tabs = document.querySelector('#maybe-tabs');
+            // // Iterate over each property of transport_types and add it to maybe-tabs
+            // const getChildTopAndLeftPosition = (element) => [getCoords(element).top, getCoords(element).left];
+            // function moveTab(row, index) {
+            //     const labelChildren = getLabelChildren(row);
+            //     const child = labelChildren[index];
+            //     const targetWidth = child.getBoundingClientRect().width
+            //     var [topValue, leftValue] = getChildTopAndLeftPosition(child);
+            //     var t = new Tween(slider.style, 'left', Tween.regularEaseOut, parseInt(slider.style.left), leftValue, 0.3, 'px');
+            //     t.start();
+            //     var t = new Tween(slider.style, 'top', Tween.regularEaseOut, parseInt(slider.style.top), topValue, 0.3, 'px');
+            //     t.start();
+            //     var t2 = new Tween(slider.style, 'width', Tween.regularEaseOut, parseInt(slider.style.width), targetWidth, 0.3, 'px');
+            //     t2.start();
+
+            //     currentSelectedTransportType = child.getAttribute("value");
+            //     doTheTabSwitching();
+            //     for (const child2 of labelChildren) {
+            //         if (child2 != child) {
+            //             child2.style.backgroundColor = '#e0e0e0';
+            //             child2.style.color = '#000';
+            //             child2.style["z-index"] = "0";
+            //         } else {
+            //             child2.style.backgroundColor = 'transparent';
+            //             child2.style.color = '#fff';
+            //             child2.style["z-index"] = "1";
+            //         }
+            //     }
+            // }
             // I was here
-
-            for (row of [firstRow, secondRow]) {
-                if (row == firstRow) {
-                    slider = slider1;
-                } else {
-                    slider = slider2;
-                }
-                const width_of_first_child = getLabelChildren(row)[0].getBoundingClientRect().width;
-                const [topPos, leftPos] = getChildTopAndLeftPosition(getLabelChildren(row)[0]);
-                getLabelChildren(row)[0].style.backgroundColor = 'transparent';
-                getLabelChildren(row)[0].style.backgroundColor = 'transparent';
-                slider.style.width = width_of_first_child + 'px';
-                slider.style.height = row.getBoundingClientRect().height + 'px';
-                slider.style.top = topPos + 'px';
-                slider.style.left = leftPos + 'px';
-                slider.style["z-index"] = "0";
-                moveTab(row, 0);
-            }
-            currentSelectedTransportType = transport_types.MANUAL;
-            doTheTabSwitching();
+            
+            // for (row of [firstRow, secondRow]) {
+            //     const width_of_first_child = getLabelChildren(row)[0].getBoundingClientRect().width;
+            //     const [topPos, leftPos] = getChildTopAndLeftPosition(getLabelChildren(row)[0]);
+            //     getLabelChildren(row)[0].style.backgroundColor = 'transparent';
+            //     getLabelChildren(row)[0].style.backgroundColor = 'transparent';
+            //     slider.style.width = width_of_first_child + 'px';
+            //     slider.style.height = row.getBoundingClientRect().height + 'px';
+            //     slider.style.top = topPos + 'px';
+            //     slider.style.left = leftPos + 'px';
+            //     slider.style["z-index"] = "0";
+            //     moveTab(row, 0);
+            // }
+            // currentSelectedTransportType = transport_types.MANUAL;
+            // doTheTabSwitching();
         }
         function verifyInputs() {
             const iTransport = document.getElementById("iTransport");
@@ -396,7 +388,7 @@
         btnStart.addEventListener('click', async function () {
             if (!verifyInputs()) { console.error("Invalid input values."); return; }
 
-            if (currentSelectedTransportType == transport_types.UDP) {
+            if (currentSelectedTransportType[0] == transports.UDP) {
                 console.log("UDP");
                 const udp_iface = document.getElementById('iUdpIface').value;
                 const udp_mtu = document.getElementById('iUdpMtu').value;
