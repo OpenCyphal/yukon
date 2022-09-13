@@ -68,6 +68,8 @@ def detect_hidden_imports() -> typing.List[str]:
 detected_hidden_imports = detect_hidden_imports()
 detected_hidden_imports += ["can.interfaces.slcan"]
 detected_hidden_imports += ["can.interfaces.virtual"]
+detected_hidden_imports += ["pkg_about"]
+detected_hidden_imports += ["pkg_about"]
 # noinspection PyUnresolvedReferences
 a = Analysis(['yukon/__main__.py'],
              pathex=paths,

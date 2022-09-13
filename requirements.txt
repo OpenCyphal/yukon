@@ -1,3 +1,4 @@
+libpcap==1.10.0b15  # The next version has some problems with pkg-about
 pycyphal[transport-can-pythoncan,transport-serial,transport-udp]
 sentry-sdk==1.*
 pytest
@@ -13,3 +14,4 @@ beautifulsoup4==4.11.*
 requests
 websockets==10.*
 PyYAML==6.*
+pkg_about
