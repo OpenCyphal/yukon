@@ -10,7 +10,7 @@
             SLCAN: "SLCAN",
             SOCKETCAN: "SOCKETCAN",
             CANDUMP: "CANDUMP",
-            PICAN: "PICAN"
+            PICAN: "P-CAN"
         },
     });
     var currentSelectedTransportType = [transports.CAN, transports.CAN.MANUAL];
@@ -365,7 +365,7 @@
             iDataRate.classList.remove("is-danger");
             iNodeId.classList.remove("is-danger");
             let isFormCorrect = true;
-            if (currentSelectedTransportType == transport_types.MANUAL) {
+            if (currentSelectedTransportType[1] == transports.CAN.MANUAL) {
                 if (iTransport.value == "" || !iTransport.value.includes(":")) {
                     iTransport.classList.add("is-danger");
                     displayOneMessage("Transport shouldn't be empty and should be in the format <slcan|socketcan>:<port>");
@@ -383,9 +383,9 @@
                     iTransport.classList.add("is-danger");
                     isFormCorrect = false;
                 }
-            } else if (currentSelectedTransportType == transport_types.UDP) {
+            } else if (currentSelectedTransportType[1] == transports.UDP.UDP) {
                 // Check if value of iUdpMtu is a number in range 1200 to 9000 inclusive and value of iUdpIface is a string separated by whitespace
-                if (isNaN(iUdpMtu.value) || iUdpMtu.value < 1200 || iUdpMtu.value > 9000) {
+                if (isNaN(parseInt(iUdpMtu.value)) || parseInt(iUdpMtu.value) < 1200 || parseInt(iUdpMtu.value) > 9000) {
                     iUdpMtu.classList.add("is-danger");
                     displayOneMessage("MTU should be a number in range 1200 to 9000");
                     isFormCorrect = false;
@@ -429,7 +429,7 @@
         btnStart.addEventListener('click', async function () {
             if (!verifyInputs()) { console.error("Invalid input values."); return; }
 
-            if (currentSelectedTransportType[0] == transports.UDP) {
+            if (currentSelectedTransportType[1] == transports.UDP.UDP) {
                 console.log("UDP");
                 const udp_iface = document.getElementById('iUdpIface').value;
                 const udp_mtu = document.getElementById('iUdpMtu').value;
@@ -438,8 +438,8 @@
             } else {
                 console.log("CAN");
                 let port = "";
-                const useSocketCan = currentSelectedTransportType == transport_types.SOCKETCAN;
-                if (currentSelectedTransportType != transport_types.MANUAL) {
+                const useSocketCan = currentSelectedTransportType[1] == transports.CAN.SOCKETCAN;
+                if (currentSelectedTransportType[1] != transports.CAN.MANUAL) {
                     if (useSocketCan) {
                         port_type = "socketcan";
                     } else {
