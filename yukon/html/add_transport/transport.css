@@ -116,7 +116,7 @@ input[type=text] {
     display: inline-block !important;
 }
 
-form#transport-selection-form > #maybe-tabs {
+form#transport-selection-form > #maybe-tabs > div.tab-row {
     overflow: hidden;
     position: relative;
     /* Making it an anchor point for tab-slider */
@@ -127,7 +127,7 @@ form#transport-selection-form > #maybe-tabs {
     height: 33px;
 }
 
-form#transport-selection-form>#maybe-tabs>label {
+form#transport-selection-form>#maybe-tabs label {
     display: inline !important;
     height: 100%;
     flex-grow: 3;
@@ -135,7 +135,7 @@ form#transport-selection-form>#maybe-tabs>label {
     background-color: #e0e0e0;
 }
 
-form#transport-selection-form>#maybe-tabs>input {
+form#transport-selection-form>#maybe-tabs input {
     margin: 0;
     padding: 0;
     width: 0;
@@ -143,8 +143,8 @@ form#transport-selection-form>#maybe-tabs>input {
     visibility: hidden;
 }
 
-form#transport-selection-form>#maybe-tabs>.tab-slider {
-    position: absolute;
+form#transport-selection-form>#maybe-tabs .tab-slider {
+    position: fixed;
     background-color: #ee0000;
     z-index: -1;
 }

@@ -1,5 +1,6 @@
 table {
   border-collapse: collapse;
+  border: 1px solid gray;
   overflow-x:scroll;
   width:100%;
   table-layout: fixed;
@@ -49,7 +50,7 @@ tbody tr:nth-child(even) {
 
 th,
 td {
-  border: 1px solid black;
+  border: none;
   padding: 4px;
   padding-top: 1px;
   word-wrap: break-word;
@@ -87,7 +88,7 @@ th.left-side-table-header {
   position: sticky;
   z-index: 99;
   left: 0px;
-  border: 1px solid black;
+  /* border: 1px solid black; */
 }
 .no-value {
   background-color: #007E87;
@@ -107,4 +108,7 @@ td.selected-cell label {
 td.recently_reread_register {
   background-color: #B00036;
   color: white;
+}
+tr {
+  border: none;
 }
