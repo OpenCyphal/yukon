@@ -44,7 +44,7 @@ jobs:
         run: |
           Add-Content -Path "C:\Users\runneradmin\.ssh\access" -Value "`n" -NoNewLine  # Hack: add newline to end of key on Windows Server 2022
           $YUKON_VERSION = (python3 -c "from yukon.version import __version__; print(__version__)")
-          $YUKON_TARGET_DIR = "/var/www/files/products/com.zubax.yukon/testing_release/${YUKON_VERSION}/windows-x86_64"
+          $YUKON_TARGET_DIR = "/var/www/files/products/com.zubax.yukon/releases/${YUKON_VERSION}/windows-x86_64"
           ssh target "mkdir -p $YUKON_TARGET_DIR; echo $YUKON_TARGET_DIR"
           scp $Env:YUKON_ARTIFACT target:${YUKON_TARGET_DIR}
         env:
