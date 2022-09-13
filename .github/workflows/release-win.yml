@@ -1,0 +1,51 @@
+name: Yukon Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Yukon Windows Build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout GitHub repository
+        uses: actions/checkout@v3
+      - name: Installing Python3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      - name: Installing dependencies
+        run: |
+          pip install wheel yakut
+          yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
+          pip install nox
+          python3 --version
+          python3 -m pip install -r requirements.txt
+      - name: Testing GUI
+        run: |
+          $Env:PYTHONPATH = ".:.."
+          nox -s mypy
+          nox -s black
+          nox -s pylint
+      - name: Building release
+        run: python3 build_exe.py
+      - name: Configure OpenSSH parameters
+        if: ${{ success() }}
+        uses: LuisEnMarroquin/setup-ssh-action@v2.0.0
+        with:
+          ORIGIN: ${{ secrets.SSH_HOST }}
+          SSHKEY: ${{ secrets.SSH_KEY }}
+          NAME: target
+          USER: ${{ secrets.SSH_USERNAME }}
+      - name: Copy artifact to remote file server
+        run: |
+          Add-Content -Path "C:\Users\runneradmin\.ssh\access" -Value "`n" -NoNewLine  # Hack: add newline to end of key on Windows Server 2022
+          $YUKON_VERSION = (python3 -c "from yukon.version import __version__; print(__version__)")
+          $YUKON_TARGET_DIR = "/var/www/files/products/com.zubax.yukon/releases/${YUKON_VERSION}/windows-x86_64"
+          ssh target "mkdir -p $YUKON_TARGET_DIR; echo $YUKON_TARGET_DIR"
+          scp $Env:YUKON_ARTIFACT target:${YUKON_TARGET_DIR}
+        env:
+          YUKON_ARTIFACT: ./dist/Yukon.exe
