@@ -1,4 +1,4 @@
-libpcap==1.10.0b15  # The next version has some problems with pkg-about
+libpcap==1.10.0b15
 pycyphal[transport-can-pythoncan,transport-serial,transport-udp]
 sentry-sdk==1.*
 pytest
