@@ -24,7 +24,7 @@ jobs:
           yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
           pip install nox
           python3 --version
-          python3 -m pip install -r requirements.txt
+          python3.10 -m pip install -r requirements.txt -r dev-requirements.txt
       - name: Testing GUI
         run: |
           $Env:PYTHONPATH = ".:.."

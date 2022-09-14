@@ -1,5 +1,11 @@
 name: Yukon tests
-on: push
+on:
+  push:
+    branches:
+      - '*'         # matches every branch that doesn't contain a '/'
+      - '*/*'       # matches every branch containing a single '/'
+      - '**'        # matches every branch
+      - '!main'   # excludes master
 jobs:
   python-quality-check:
     runs-on: ubuntu-22.04
