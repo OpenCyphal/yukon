@@ -60,6 +60,10 @@
             <label for="iServiceTransferMultiplier">Service transfer multiplier</label>
             <input type="number" id="iServiceTransferMultiplier" placeholder="Service transfer multiplier" value="1">
         </div>
+        <div id="UDPLinuxWarning">
+            <p>On GNU/Linux systems, the command for fixing UDP packet sniffing permissions is: </p>
+            <pre>sudo setcap cap_net_raw+eip "$(readlink -f /home/silver/yukon/venv/bin/python)"</pre>
+        </div>
         <button type="button" id="btnStart" class="btn btn-lg btn-primary btn-block">Start this transport</button>
         <button type="button" id="btnAddTransport" class="btn btn-lg btn-primary btn-block">Configure another
             transport</button>

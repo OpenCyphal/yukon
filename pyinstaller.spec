@@ -23,6 +23,9 @@ import sys
 import glob
 import typing
 
+import platform
+my_os = platform.system()
+
 sys.path.insert(0, os.getcwd())
 
 import yukon
@@ -48,6 +51,8 @@ datas = [
     ('yukon', '.'), ('.electron', 'electron')
 ]
 
+if my_os == "Linux":
+    datas += [('venv/lib/python3.10/site-packages/libpcap', "libpcap")]
 
 def detect_hidden_imports() -> typing.List[str]:
     """
@@ -69,7 +74,8 @@ detected_hidden_imports = detect_hidden_imports()
 detected_hidden_imports += ["can.interfaces.slcan"]
 detected_hidden_imports += ["can.interfaces.virtual"]
 detected_hidden_imports += ["pkg_about"]
-detected_hidden_imports += ["pkg_about"]
+if my_os == "Linux":
+    detected_hidden_imports += ["libpcap"]
 # noinspection PyUnresolvedReferences
 a = Analysis(['yukon/__main__.py'],
              pathex=paths,

@@ -1,7 +1,10 @@
 import asyncio
 import json
 import logging
+import subprocess
 import traceback
+
+import platform
 
 from pycyphal.application import make_node, NodeInfo, make_transport
 
@@ -19,6 +22,8 @@ from yukon.services.messages_publisher import add_local_message
 
 logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
+
+my_os = platform.system()
 
 
 def cyphal_worker(state: GodState) -> None:
@@ -44,6 +49,25 @@ def cyphal_worker(state: GodState) -> None:
                         attach_transport_response = AttachTransportResponse(True, atr.requested_interface.iface)
                         state.queues.attach_transport_response.put(attach_transport_response)
                         print("Added a new interface")
+                    except PermissionError as pe:
+                        tb = traceback.format_exc()
+                        if "You need special privileges" in str(pe):
+                            if my_os == "Linux":
+                                from tkinter import Tk, messagebox
+
+                                ws = Tk()
+                                ws.title("Python Guides")
+                                ws.deiconify()
+                                ws.lift()
+                                ws.focus_force()
+                                ws.geometry("1x1+0+0")
+                                ws.config(bg="#5FB691")
+                                messagebox.showinfo(
+                                    "You need to adjust permissions for UDP packet sniffing",
+                                    "The command is shown in the transport configuration window",
+                                )
+                                ws.withdraw()
+                                ws.destroy()
                     except Exception as e:
                         tb = traceback.format_exc()
                     else:

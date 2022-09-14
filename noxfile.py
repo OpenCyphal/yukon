@@ -40,3 +40,4 @@ def mypy(session):
 def pylint(session):
     session.run("pip", "install", "pylint==2.*")
     session.run("pylint", *map(str, src_dirs), env={"PYTHONPATH": str(compiled_dir)})
+    session.run("pylint", "build_exe.py", env={"PYTHONPATH": str(compiled_dir)})

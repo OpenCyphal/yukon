@@ -104,6 +104,7 @@
             const divUdpIface = document.getElementById("divUdpIface");
             const divServiceTransferMultiplier = document.getElementById("divServiceTransferMultiplier");
             const divUdpMtu = document.getElementById("divUdpMtu");
+            const UDPLinuxWarning = document.getElementById("UDPLinuxWarning");
             divTypeTransport.style.display = "block";
             divSelectTransport.style.display = "block";
             divMtu.style.display = "block";
@@ -114,6 +115,7 @@
             divUdpIface.style.display = "none";
             divCandump.style.display = "none";
             divUdpMtu.style.display = "none";
+            UDPLinuxWarning.style.display = "none";
             const iArbRate = document.getElementById("iArbRate");
             const iDataRate = document.getElementById("iDataRate");
             const iNodeId = document.getElementById("iNodeId");
@@ -141,6 +143,7 @@
                     divServiceTransferMultiplier.style.display = "block";
                     divUdpMtu.style.display = "block";
                     divMtu.style.display = "none";
+                    UDPLinuxWarning.style.display = "block";
                     break;
                 case transports.CAN.SLCAN:
                     h1TransportType.innerHTML = "SLCAN";
