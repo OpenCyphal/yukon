@@ -12,17 +12,22 @@ import { openFile } from "./yaml.configurations.module.js"
 (async function () {
     function waitForElm(selector, timeOutMilliSeconds) {
         return new Promise(resolve => {
-            let timeOutTimeout = setTimeout(() => {
-                console.error("Timeout waiting for element: " + selector);
-                resolve(null);
-            }, timeOutMilliSeconds);
+            let timeOutTimeout
+            if(timeOutMilliSeconds) {
+                timeOutTimeout = setTimeout(() => {
+                    console.error("Timeout waiting for element: " + selector);
+                    resolve(null);
+                }, timeOutMilliSeconds);
+            }
             if (document.querySelector(selector)) {
                 return resolve(document.querySelector(selector));
             }
     
             const observer = new MutationObserver(mutations => {
                 if (document.querySelector(selector)) {
-                    clearTimeout(timeOutTimeout);
+                    if(timeOutTimeout) {
+                        clearTimeout(timeOutTimeout);
+                    }
                     resolve(document.querySelector(selector));
                     observer.disconnect();
                 }
@@ -135,7 +140,7 @@ import { openFile } from "./yaml.configurations.module.js"
         console.log("monitor ready");
         const iRegistersFilter = document.getElementById('iRegistersFilter');
         const cbSimplifyRegisters = document.getElementById('cbSimplifyRegisters');
-        const divAllRegistersButtons = await waitForElm('#divAllRegistersButtons', 300);
+        const divAllRegistersButtons = await waitForElm('#divAllRegistersButtons');
         divAllRegistersButtons.style.display = 'none';
         var selected_registers = yukon_state.selections.selected_registers;
         var recently_reread_registers = {};
@@ -416,7 +421,7 @@ import { openFile } from "./yaml.configurations.module.js"
             refresh_graph_layout(yukon_state.my_graph)
         });
         var messagesList = document.querySelector("#messages-list");
-        var cbShowTimestamp = await waitForElm('#cbShowTimestamp', 300);
+        var cbShowTimestamp = await waitForElm('#cbShowTimestamp');
         cbShowTimestamp.addEventListener('change', function () {
             if (cbShowTimestamp.checked) {
                 // For every message, add a timestamp to the message, use a for each loop
@@ -450,7 +455,7 @@ import { openFile } from "./yaml.configurations.module.js"
         btnAddAnotherTransport.addEventListener('click', function () {
             zubax_api.open_add_transport_window();
         });
-        const btnImportRegistersConfig = await waitForElm('#btnImportRegistersConfig', 300);
+        const btnImportRegistersConfig = await waitForElm('#btnImportRegistersConfig');
         btnImportRegistersConfig.addEventListener('click', async function () {
             loadConfigurationFromOpenDialog(false, yukon_state)
         });
