@@ -80,7 +80,7 @@ td>div.input {
   -ms-user-select: none;
   -khtml-user-select: none;
 }
-th, td {
+#registers_table th, #registers_table td {
   min-width: 400px !important;
   max-width: 400px !important;
 }

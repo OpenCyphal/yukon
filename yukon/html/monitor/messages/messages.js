@@ -1,22 +1,44 @@
-(function () {
+(async function () {
+    function waitForElm(selector) {
+        return new Promise(resolve => {
+            if (document.querySelector(selector)) {
+                return resolve(document.querySelector(selector));
+            }
+    
+            const observer = new MutationObserver(mutations => {
+                if (document.querySelector(selector)) {
+                    resolve(document.querySelector(selector));
+                    observer.disconnect();
+                }
+            });
+    
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        });
+    }
     function addLocalMessage(message) {
         zubax_api.add_local_message(message)
     }
     
-    function doStuffWhenReady() {
+    async function doStuffWhenReady() {
         let isRefreshTextOutAllowed = true;
         console.log("Messages javascript is ready");
         var lastHash = "";
         var lastIndex = -1;
-        var messagesList = document.querySelector("#messages-list");
-        var cbAutoscroll = document.getElementById("cbAutoscroll");
+        var messagesList = await waitForElm("#messages-list");
+        var cbAutoscroll = await waitForElm("#cbAutoscroll");
         function showAllMessages() {
+            var messagesList = document.querySelector("#messages-list");
+            if(!messagesList) { return; }
             // For each message in messagesList
             for (child of messagesList.children) {
                 child.style.display = "block";
             }
         }
         function applyExcludingTextFilterToMessage() {
+            var messagesList = document.querySelector("#messages-list");
             var taExcludedKeywords = document.getElementById("taExcludedKeywords");
             var excludedKeywords = taExcludedKeywords.value.split("\n");
             for (child of messagesList.children) {
@@ -72,10 +94,12 @@
             return Math.floor(seconds) + " seconds";
         }
         function update_messages() {
+            var messagesList = document.querySelector("#messages-list");
+            var cbAutoscroll = document.querySelector("#cbAutoscroll");
+            if(!messagesList || !cbAutoscroll) { return; }
             zubax_api.get_messages(lastIndex + 1).then(
                 function (messages) {
                     // Clear messages-list
-                    var messagesList = document.querySelector("#messages-list");
                     if (document.getElementById("cDeleteOldMessages").checked) {
                         for (child of messagesList.children) {
                             if (child && child.getAttribute("timestamp")) {
@@ -173,6 +197,8 @@
         let messagesListWidth = messagesList.getBoundingClientRect().width
 
         setInterval(function () {
+            var messagesList = document.querySelector("#messages-list");
+            if(!messagesList) { return; }
             let currentWidth = messagesList.getBoundingClientRect().width
             if (currentWidth != messagesListWidth) {
                 messagesListWidth = currentWidth
@@ -184,10 +210,10 @@
         
     }
     if (zubax_api_ready) {
-        doStuffWhenReady();
+        await doStuffWhenReady();
     } else {
-        window.addEventListener('zubax_api_ready', function () {
-            doStuffWhenReady();
+        window.addEventListener('zubax_api_ready', async function () {
+            await doStuffWhenReady();
         });
     }
 })();

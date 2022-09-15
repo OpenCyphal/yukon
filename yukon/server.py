@@ -36,17 +36,12 @@ def add_header(response: T_after_request) -> T_after_request:
 
 
 def make_landing_and_bridge(state: GodState, api: Api) -> None:
-    @server.route("/main", methods=["GET"])
-    def monitor() -> typing.Any:
-        """For some reason it requires paths to be explicitly defined for my pages."""
-        return render_template("monitor/monitor.html", token=our_token)
+    @server.route("/<path:path>", methods=["GET"])
+    def any_file(path: str) -> typing.Any:
+        return render_template(path, token=our_token)
 
-    @server.route("/", defaults={"path": ""}, methods=["GET", "POST"])
-    @server.route("/<path:path>", methods=["GET", "POST"])
+    @server.route("/api/<path:path>", methods=["GET", "POST"])
     def landing_and_bridge(path: str) -> typing.Any:
-        if path == "":
-            return render_template("add_transport/add_transport.html", token=our_token)
-
         _object: typing.Any = {"arguments": []}
         try:
             _object = request.get_json()

@@ -122,6 +122,9 @@ function getDrawingAspectRatio() {
     return cy_width / cy_height;
 }
 export function refresh_graph_layout(my_graph) {
+    if(typeof my_graph == "undefined") {
+        return;
+    }
     var layout = my_graph.layout(
         {
             name: 'klay',

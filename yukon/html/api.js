@@ -3,7 +3,7 @@ const _zubax_api = { "empty": true }
 let zubax_api_ready = false;
 const zubax_api = new Proxy(_zubax_api, {
     get(target, prop) {
-        let url = "/" + prop;
+        let url = "/api/" + prop;
         return function () {
             let data = { "arguments": [] };
             // For each argument in arguments, put it into data.arguments
