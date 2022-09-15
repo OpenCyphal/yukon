@@ -24,6 +24,7 @@ import glob
 import typing
 
 import platform
+
 my_os = platform.system()
 
 sys.path.insert(0, os.getcwd())
@@ -37,22 +38,21 @@ try:
 except AttributeError:
     RUNNING_ON_WINDOWS = False
 
-name = 'Yukon'
+name = "Yukon"
 
 paths = yukon.THIRDPARTY_PATH + [
-    'yukon',
+    "yukon",
 ]
 
 # Pack up the entire source tree with the redistributed archive.
 # It adds a bit of redundant data to the resulting package, but greatly simplifies maintenance and
 # ensures that the layout used for development exactly reflects the environment used in production.
 # The added size penalty is insignificant.
-datas = [
-    ('yukon', '.'), ('.electron', 'electron')
-]
+datas = [("yukon", "."), (".electron", "electron")]
 
 if my_os == "Linux":
-    datas += [('venv/lib/python3.10/site-packages/libpcap', "libpcap")]
+    datas += [("venv/lib/python3.10/site-packages/libpcap", "libpcap")]
+
 
 def detect_hidden_imports() -> typing.List[str]:
     """
@@ -60,11 +60,11 @@ def detect_hidden_imports() -> typing.List[str]:
     and transforms that into a list of Python module names that is then fed to PyInstaller.
     This way we may also end up with unused stuff, but it's easier to maintain.
     """
-    all_sources = glob.glob('yukon/**/*', recursive=True)
+    all_sources = glob.glob("yukon/**/*", recursive=True)
 
     out = set()
     for s in all_sources:
-        module = s.replace('.py', '').replace(os.sep, '.').replace('.__init__', '')
+        module = s.replace(".py", "").replace(os.sep, ".").replace(".__init__", "")
         out.add(module)
 
     return list(out)
@@ -77,31 +77,34 @@ detected_hidden_imports += ["pkg_about"]
 if my_os == "Linux":
     detected_hidden_imports += ["libpcap"]
 # noinspection PyUnresolvedReferences
-a = Analysis(['yukon/__main__.py'],
-             pathex=paths,
-             binaries=[],
-             datas=datas,
-             hiddenimports=detected_hidden_imports + ['pycyphal'],
-             hookspath=[],
-             runtime_hooks=[],
-             excludes=[],
-             win_no_prefer_redirects=False,
-             win_private_assemblies=False,
-             cipher=None)
+a = Analysis(
+    ["yukon/__main__.py"],
+    pathex=paths,
+    binaries=[],
+    datas=datas,
+    hiddenimports=detected_hidden_imports + ["pycyphal"],
+    hookspath=[],
+    runtime_hooks=[],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=None,
+)
 
 # noinspection PyUnresolvedReferences
-pyz = PYZ(a.pure, a.zipped_data,
-          cipher=None)
+pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 
 # noinspection PyUnresolvedReferences
-exe = EXE(pyz,
-          a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
-          name=name,
-          debug=True,
-          strip=False,
-          upx=False,
-          runtime_tmpdir=None,
-          console=True)
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    name=name,
+    debug=True,
+    strip=False,
+    upx=False,
+    runtime_tmpdir=None,
+    console=True,
+)

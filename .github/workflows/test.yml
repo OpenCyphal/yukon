@@ -29,6 +29,7 @@ jobs:
           PYTHONPATH=".:.." nox -s black
           PYTHONPATH=".:.." nox -s pylint
   immediate-release-linux:
+    name: Yukon Linux Immediate Build
     runs-on: ubuntu-20.04
     if:
       contains(github.event.head_commit.message, '#release-linux')
@@ -83,7 +84,7 @@ jobs:
         env:
           YUKON_ARTIFACT: dist/Yukon
   immediate-release-windows:
-    name: Yukon Windows Build
+    name: Yukon Windows Immediate Build
     runs-on: windows-latest
     if:
       contains(github.event.head_commit.message, '#release-windows')
