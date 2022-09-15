@@ -50,7 +50,8 @@ import { openFile } from "./yaml.configurations.module.js"
                     type: 'component',
                     componentName: 'statusComponent',
                     componentState: { label: 'A' }
-                },{
+                },
+                {
                     type: 'column',
                     content:[{
                         type: 'component',
@@ -60,11 +61,30 @@ import { openFile } from "./yaml.configurations.module.js"
                         type: 'component',
                         componentName: 'monitorComponent',
                         componentState: { label: 'C' }
-                    }]
+                    },
+                    {
+                        type: 'component',
+                        componentName: 'registersComponent',
+                        componentState: { label: 'C' }
+                    }
+                ]   
                 }]
             }]
         };
         var myLayout = new GoldenLayout( config );
+        myLayout.registerComponent('registersComponent', function( container, componentState ){
+            const xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4) {
+                    if (this.status == 200) {
+                        container.getElement().html(this.responseText);
+                    }
+                    if (this.status == 404) {container.getElement().html("Page not found.");}
+                }
+            }
+            xhttp.open("GET", "../registers.panel.html", true);
+            xhttp.send();
+        });
         myLayout.registerComponent('statusComponent', function( container, componentState ){
             const xhttp = new XMLHttpRequest();
             xhttp.onreadystatechange = function() {
@@ -115,7 +135,7 @@ import { openFile } from "./yaml.configurations.module.js"
         console.log("monitor ready");
         const iRegistersFilter = document.getElementById('iRegistersFilter');
         const cbSimplifyRegisters = document.getElementById('cbSimplifyRegisters');
-        const divAllRegistersButtons = document.getElementById('divAllRegistersButtons');
+        const divAllRegistersButtons = await waitForElm('#divAllRegistersButtons', 300);
         divAllRegistersButtons.style.display = 'none';
         var selected_registers = yukon_state.selections.selected_registers;
         var recently_reread_registers = {};
@@ -430,7 +450,7 @@ import { openFile } from "./yaml.configurations.module.js"
         btnAddAnotherTransport.addEventListener('click', function () {
             zubax_api.open_add_transport_window();
         });
-        const btnImportRegistersConfig = document.getElementById('btnImportRegistersConfig');
+        const btnImportRegistersConfig = await waitForElm('#btnImportRegistersConfig', 300);
         btnImportRegistersConfig.addEventListener('click', async function () {
             loadConfigurationFromOpenDialog(false, yukon_state)
         });
