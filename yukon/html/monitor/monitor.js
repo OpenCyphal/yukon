@@ -10,14 +10,19 @@ import { rereadPairs } from "./registers.data.module.js"
 import { openFile } from "./yaml.configurations.module.js"
 
 (async function () {
-    function waitForElm(selector) {
+    function waitForElm(selector, timeOutMilliSeconds) {
         return new Promise(resolve => {
+            let timeOutTimeout = setTimeout(() => {
+                console.error("Timeout waiting for element: " + selector);
+                resolve(null);
+            }, timeOutMilliSeconds);
             if (document.querySelector(selector)) {
                 return resolve(document.querySelector(selector));
             }
     
             const observer = new MutationObserver(mutations => {
                 if (document.querySelector(selector)) {
+                    clearTimeout(timeOutTimeout);
                     resolve(document.querySelector(selector));
                     observer.disconnect();
                 }
@@ -27,6 +32,7 @@ import { openFile } from "./yaml.configurations.module.js"
                 childList: true,
                 subtree: true
             });
+            
         });
     }
     yukon_state.addLocalMessage = function (message) {
@@ -80,7 +86,7 @@ import { openFile } from "./yaml.configurations.module.js"
                         container.getElement().html(this.responseText);
                         setTimeout(function()
                         {
-                            var my_graph = create_directed_graph(yukon_state);
+                            yukon_state.my_graph = create_directed_graph(yukon_state);
                         }, 100);
                     }
                     if (this.status == 404) {container.getElement().html("Page not found.");}
@@ -317,6 +323,7 @@ import { openFile } from "./yaml.configurations.module.js"
             return JSON.stringify(configuration);
         }
         function update_directed_graph() {
+            let my_graph = yukon_state.my_graph;
             if(typeof my_graph == "undefined") {return;}
             if (!areThereAnyNewOrMissingHashes("monitor_view_hash", yukon_state)) {
                 updateLastHashes("monitor_view_hash", yukon_state);
@@ -386,10 +393,10 @@ import { openFile } from "./yaml.configurations.module.js"
         //        });
         var btnRefreshGraphLayout = document.getElementById('btnRefreshGraphLayout');
         btnRefreshGraphLayout.addEventListener('click', function () {
-            refresh_graph_layout(my_graph)
+            refresh_graph_layout(yukon_state.my_graph)
         });
         var messagesList = document.querySelector("#messages-list");
-        var cbShowTimestamp = await waitForElm('#cbShowTimestamp');
+        var cbShowTimestamp = await waitForElm('#cbShowTimestamp', 300);
         cbShowTimestamp.addEventListener('change', function () {
             if (cbShowTimestamp.checked) {
                 // For every message, add a timestamp to the message, use a for each loop
@@ -417,7 +424,7 @@ import { openFile } from "./yaml.configurations.module.js"
         // This is actually one of the tabs in the tabbed interface but it also acts as a refresh layout button
         const btnMonitorTab = document.getElementById('btnMonitorTab');
         btnMonitorTab.addEventListener('click', function () {
-            refresh_graph_layout(my_graph);
+            refresh_graph_layout(yukon_state.my_graph);
         });
         const btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
         btnAddAnotherTransport.addEventListener('click', function () {
