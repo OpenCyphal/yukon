@@ -25,11 +25,11 @@ export function get_all_selected_pairs(options, yukon_state) {
         for (var key in avatar.registers_exploded_values) {
             let register_name = key;
             let register_value = avatar.registers_exploded_values[key];
-            if (options.get_everything) {
-                avatar_dto[register_name] = register_value;
+            if (options.only_of_register_name && register_name != options.only_of_register_name) {
                 continue;
             }
-            if (options.only_of_register_name && register_name != options.only_of_register_name) {
+            if (options.get_everything) {
+                avatar_dto[register_name] = register_value;
                 continue;
             }
             if (saving_all || selected_rows[register_name] ||

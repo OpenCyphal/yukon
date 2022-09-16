@@ -1,4 +1,4 @@
-import { export_all_selected_registers, update_available_configurations_list, applyConfiguration, openFile, actionApplyConfiguration } from "./yaml.configurations.module.js";
+import { export_all_selected_registers, return_all_selected_registers_as_yaml, update_available_configurations_list, applyConfiguration, openFile, actionApplyConfiguration } from "./yaml.configurations.module.js";
 import { selectRow, getAllEntireColumnsThatAreSelected, get_all_selected_pairs, make_select_row, unselectAll } from "./registers.selection.module.js";
 import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./registers.module.js";
 import { rereadPairs } from "./registers.data.module.js";
@@ -161,7 +161,8 @@ export function make_context_menus(yukon_state) {
                     datatype = datatype + dimensionality;
                     copyTextToClipboard(datatype);
                 }
-            }
+            },
+            shouldBeDisplayed: oneSelectedConstraint
         },
         {
             content: `${copyIcon}Copy value`,
@@ -174,20 +175,21 @@ export function make_context_menus(yukon_state) {
                     let register_value = avatar.registers_values[register_name];
                     copyTextToClipboard(register_value);
                 }
-            }
+            },
+            shouldBeDisplayed: oneSelectedConstraint
         },
         {
-            content: `${copyIcon}Copy value`,
+            content: `${copyIcon}Copy selected as yaml`,
             events: {
-                click: (e, elementOpenedOn) => {
-                    const cell = elementOpenedOn;
-                    const node_id = cell.getAttribute("node_id");
-                    const register_name = cell.getAttribute("register_name");
-                    const avatar = yukon_state.current_avatars.find((a) => a.node_id == node_id);
-                    let register_value = avatar.registers_values[register_name];
-                    copyTextToClipboard(register_value);
+                click: async (e, elementOpenedOn) => {
+                    const headerCell = elementOpenedOn;
+                    const node_id = headerCell.getAttribute("data-node_id");
+                    let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
+                    copyTextToClipboard(await return_all_selected_registers_as_yaml(pairs, yukon_state));
+                    e.stopPropagation();
                 }
-            }
+            },
+            shouldBeDisplayed: moreThanOneSelectedConstraint
         },
         {
             content: `${downloadIcon}Reread registers`,
@@ -266,12 +268,16 @@ export function make_context_menus(yukon_state) {
             }
         },
         {
-            content: `${copyIcon}Copy values`,
+            content: `${copyIcon}Copy column as yaml`,
             events: {
-                click: (e) => {
-
+                click: async (e, elementOpenedOn) => {
+                    const headerCell = elementOpenedOn;
+                    const node_id = headerCell.getAttribute("data-node_id");
+                    let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": node_id, "get_everything": false, "only_of_register_name": null }, yukon_state);
+                    copyTextToClipboard(await return_all_selected_registers_as_yaml(pairs, yukon_state));
+                    e.stopPropagation();
                 }
-            }
+            },
         },
         {
             content: `${downloadIcon}Reread column`,
@@ -307,7 +313,19 @@ export function make_context_menus(yukon_state) {
                 }
             },
         },
-        importFromSelectedConfigurationMenuElement
+        importFromSelectedConfigurationMenuElement,
+        {
+            content: `Copy row as yaml`,
+            events: {
+                click: async (e, elementOpenedOn) => {
+                    const cell = elementOpenedOn;
+                    const register_name = cell.getAttribute("data-register_name");
+                    let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": register_name }, yukon_state);
+                    copyTextToClipboard(await return_all_selected_registers_as_yaml(pairs, yukon_state));
+                    e.stopPropagation();
+                }
+            },
+        },
     ];
     const table_row_header_context_menu = new ContextMenu({
         target: "left-side-table-header",
