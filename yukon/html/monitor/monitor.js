@@ -49,32 +49,50 @@ import { openFile } from "./yaml.configurations.module.js"
     const addLocalMessage = yukon_state.addLocalMessage;
     async function doStuffWhenReady() {
         var config = {
-            content: [{
-                type: 'row',
-                content:[{
-                    type: 'component',
-                    componentName: 'statusComponent',
-                    componentState: { label: 'A' }
-                },
+            content: [
                 {
-                    type: 'column',
-                    content:[{
-                        type: 'component',
-                        componentName: 'messagesComponent',
-                        componentState: { label: 'B' }
-                    },{
-                        type: 'component',
-                        componentName: 'monitorComponent',
-                        componentState: { label: 'C' }
-                    },
-                    {
-                        type: 'component',
-                        componentName: 'registersComponent',
-                        componentState: { label: 'C' }
-                    }
-                ]   
-                }]
-            }]
+                    type: 'row',
+                    content: [
+                        {
+                            type: "column",
+                            content: [
+                                {
+                                    type: 'stack',
+                                    content:[
+                                        {
+                                            type: 'component',
+                                            componentName: 'monitorComponent',
+                                            componentState: { label: 'C' }
+                                        },
+                                        {
+                                            type: 'component',
+                                            componentName: 'registersComponent',
+                                            componentState: { label: 'C' }
+                                        },
+                                    ]
+                                },
+                                {
+                                    type: 'component',
+                                    height: 15,
+                                    componentName: 'statusComponent',
+                                    componentState: { label: 'A' }
+                                }
+                            ]
+                        },
+                        {
+                            type: 'column',
+                            width: 30,
+                            content:[
+                                {
+                                type: 'component',
+                                componentName: 'messagesComponent',
+                                componentState: { label: 'B' }
+                            }
+                        ]   
+                        }
+                    ]
+                }
+            ]
         };
         var myLayout = new GoldenLayout( config );
         myLayout.registerComponent('registersComponent', function( container, componentState ){

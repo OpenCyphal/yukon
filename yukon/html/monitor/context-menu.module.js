@@ -1,5 +1,5 @@
 import { export_all_selected_registers, update_available_configurations_list, applyConfiguration, openFile, actionApplyConfiguration } from "./yaml.configurations.module.js";
-import { getAllEntireColumnsThatAreSelected, get_all_selected_pairs, unselectAll } from "./registers.selection.module.js";
+import { getAllEntireColumnsThatAreSelected, get_all_selected_pairs, make_select_row, unselectAll } from "./registers.selection.module.js";
 import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./registers.module.js";
 import { rereadPairs } from "./registers.data.module.js";
 import { downloadIcon, copyIcon, pasteIcon } from "./icons.module.js";
@@ -175,6 +175,7 @@ export function make_context_menus(yukon_state) {
                     let datatype = Object.keys(registers_exploded_values[register_name])[0];
                     let register_value = registers_exploded_values[register_name];
                     let value = Object.values(register_value)[0].value;
+                    let dimensionality = "";
                     if (Array.isArray(value)) {
                         dimensionality = "[" + value.length + "]";
                     }
@@ -302,4 +303,23 @@ export function make_context_menus(yukon_state) {
         context: this
     });
     table_header_context_menu.init();
+    const table_row_header_context_menu_items = [
+        {
+            content: `Select row`,
+            events: {
+                click: (e, elementOpenedOn) => {
+                    const cell = elementOpenedOn;
+                    const register_name = cell.getAttribute("data-register_name");
+                    make_select_row(register_name, false, yukon_state)(e);
+                }
+            },
+        },
+    ];
+    const table_row_header_context_menu = new ContextMenu({
+        target: "left-side-table-header",
+        mode: "dark",
+        menuItems: table_row_header_context_menu_items,
+        context: this
+    });
+    table_row_header_context_menu.init();
 }
