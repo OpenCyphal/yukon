@@ -358,7 +358,7 @@ class Api:
         if "IS_BROWSER_BASED" in os.environ:
             webbrowser.open_new_tab(url)
         else:
-            os.spawnl(os.P_NOWAIT, exe_path, exe_path, "http://localhost:5000/main")
+            os.spawnl(os.P_NOWAIT, exe_path, exe_path, "http://localhost:5000/monitor/monitor.html")
 
     def open_add_transport_window(self) -> None:
         exe_path = get_electron_path()

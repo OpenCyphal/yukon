@@ -80,9 +80,10 @@ async function isNetworkConfiguration(yamlOrJSONSerializedConfiguration) {
 async function isSimplifiedConfiguration(yamlOrJSONSerializedConfiguration) {
     return await zubax_api.is_configuration_simplified(yamlOrJSONSerializedConfiguration) == "true";
 }
+
 async function saveString(string, yukon_state) {
-    var userAgent = yukon_state.navigator.userAgent.toLowerCase();
-    if (window.showSaveFilePicker && !yukon_state.settings.preferSmallerFileSelectionDialog) {
+    let isElectron = typeof yukon_state.navigator === 'object' && typeof yukon_state.navigator.userAgent === 'string' && yukon_state.navigator.userAgent.indexOf('Electron') >= 0;
+    if (window.showSaveFilePicker && !yukon_state.settings.preferSmallerFileSelectionDialog & !isElectron) {
         const fileHandle = await window.showSaveFilePicker();
         yukon_state.addLocalMessage("We got this path: " + fileHandle);
         if (fileHandle) {
@@ -130,7 +131,7 @@ export async function openFile(yukon_state) {
         yukon_state.addLocalMessage("Error opening file: " + e);
     }
 }
-export async function export_all_selected_registers(only_of_avatar_of_node_id, get_everything, yukon_state) {
+export async function return_all_selected_registers_as_yaml(only_of_avatar_of_node_id, get_everything, yukon_state, to_clipboard) {
     let zubax_api = yukon_state.zubax_api;
     // A pair is the register_name and the node_id
     let pairs_object = get_all_selected_pairs({ "only_of_avatar_of_node_id": only_of_avatar_of_node_id, "get_everything": get_everything, "only_of_register_name": null }, yukon_state);
@@ -140,10 +141,13 @@ export async function export_all_selected_registers(only_of_avatar_of_node_id, g
         const simplified_json_string = await zubax_api.simplify_configuration(json_string)
         const intermediary_structure = JSON.parse(simplified_json_string);
         const simplified_yaml_string = jsyaml.dump(intermediary_structure);//, { flowLevel: 2 });
-        return await saveYaml(simplified_yaml_string, yukon_state);
+        return simplified_yaml_string;
     } else {
-        return await saveYaml(yaml_string, yukon_state);
+        return yaml_string;
     }
+}
+export async function export_all_selected_registers(only_of_avatar_of_node_id, get_everything, yukon_state) {
+     await saveYaml(await return_all_selected_registers_as_yaml(only_of_avatar_of_node_id, get_everything, yukon_state), yukon_state);
 }
 export async function update_available_configurations_list(yukon_state) {
     let zubax_api = yukon_state.zubax_api;

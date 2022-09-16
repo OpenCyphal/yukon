@@ -134,7 +134,7 @@ export function make_select_column(node_id, is_mouse_over, yukon_state) {
 
     }
 }
-export function actuallySelectRow(register_name, yukon_state) {
+export function selectRow(register_name, yukon_state) {
     if (yukon_state.settings.is_selection_mode_complicated) {
         if (!yukon_state.selections.selected_rows[register_name]) {
             yukon_state.selections.selected_rows[register_name] = true;
@@ -199,7 +199,7 @@ export function make_select_row(register_name, is_mouse_over, yukon_state) {
         // if (window.getSelection().toString() !== "") {
         //     return;
         // }
-        actuallySelectRow(register_name, yukon_state);
+        selectRow(register_name, yukon_state);
         event.stopPropagation();
     }
 }

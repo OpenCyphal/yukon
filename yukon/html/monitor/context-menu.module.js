@@ -1,43 +1,11 @@
 import { export_all_selected_registers, update_available_configurations_list, applyConfiguration, openFile, actionApplyConfiguration } from "./yaml.configurations.module.js";
-import { actuallySelectRow, getAllEntireColumnsThatAreSelected, get_all_selected_pairs, make_select_row, unselectAll } from "./registers.selection.module.js";
+import { selectRow, getAllEntireColumnsThatAreSelected, get_all_selected_pairs, make_select_row, unselectAll } from "./registers.selection.module.js";
 import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./registers.module.js";
 import { rereadPairs } from "./registers.data.module.js";
 import { downloadIcon, copyIcon, pasteIcon } from "./icons.module.js";
 import { copyObject } from "./utilities.module.js";
-function fallbackCopyTextToClipboard(text) {
-    var textArea = document.createElement("textarea");
-    textArea.value = text;
+import { copyTextToClipboard } from "./copy.module.js";
 
-    // Avoid scrolling to bottom
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.position = "fixed";
-
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    try {
-        var successful = document.execCommand('copy');
-        var msg = successful ? 'successful' : 'unsuccessful';
-        console.log('Fallback: Copying text command was ' + msg);
-    } catch (err) {
-        console.error('Fallback: Oops, unable to copy', err);
-    }
-
-    document.body.removeChild(textArea);
-}
-function copyTextToClipboard(text) {
-    if (!navigator.clipboard) {
-        fallbackCopyTextToClipboard(text);
-        return;
-    }
-    navigator.clipboard.writeText(text).then(function () {
-        console.log('Async: Copying to clipboard was successful!');
-    }, function (err) {
-        console.error('Async: Could not copy text: ', err);
-    });
-}
 export function make_context_menus(yukon_state) {
     const addLocalMessage = yukon_state.addLocalMessage;
     const importFromSelectedConfigurationMenuElement = {
@@ -48,13 +16,24 @@ export function make_context_menus(yukon_state) {
                 // If cell is a th then
                 let pairs = null;
                 if (cell.tagName == "TH") {
-                    // Get the node_id and register_name from the cell
-                    const node_id = cell.getAttribute("data-node_id");
-                    pairs = get_all_selected_pairs({
-                        "only_of_avatar_of_node_id": node_id,
-                        "get_everything": false,
-                        "only_of_register_name": null
-                    }, yukon_state);
+                    // If the cell has class left-side-table-header
+                    if (cell.classList.contains("left-side-table-header")) {
+                        const register_name = cell.getAttribute("data-register_name");
+                        pairs = get_all_selected_pairs({
+                            "only_of_avatar_of_node_id": null,
+                            "get_everything": false,
+                            "only_of_register_name": register_name
+                        }, yukon_state);
+                    } else {
+                        // Get the node_id and register_name from the cell
+                        const node_id = cell.getAttribute("data-node_id");
+                        pairs = get_all_selected_pairs({
+                            "only_of_avatar_of_node_id": node_id,
+                            "get_everything": false,
+                            "only_of_register_name": null
+                        }, yukon_state);
+                    }
+                    
                 } else if (cell.tagName == "TD" || cell.tagName == "INPUT") {
                     // Get the node_id and register_name from the cell
                     const node_id = cell.getAttribute("node_id");
@@ -185,7 +164,20 @@ export function make_context_menus(yukon_state) {
             }
         },
         {
-            content: `${copyIcon}Copy values`,
+            content: `${copyIcon}Copy value`,
+            events: {
+                click: (e, elementOpenedOn) => {
+                    const cell = elementOpenedOn;
+                    const node_id = cell.getAttribute("node_id");
+                    const register_name = cell.getAttribute("register_name");
+                    const avatar = yukon_state.current_avatars.find((a) => a.node_id == node_id);
+                    let register_value = avatar.registers_values[register_name];
+                    copyTextToClipboard(register_value);
+                }
+            }
+        },
+        {
+            content: `${copyIcon}Copy value`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
@@ -310,11 +302,12 @@ export function make_context_menus(yukon_state) {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
                     const register_name = cell.getAttribute("data-register_name");
-                    actuallySelectRow(register_name, yukon_state);
+                    selectRow(register_name, yukon_state);
                     e.stopPropagation();
                 }
             },
         },
+        importFromSelectedConfigurationMenuElement
     ];
     const table_row_header_context_menu = new ContextMenu({
         target: "left-side-table-header",

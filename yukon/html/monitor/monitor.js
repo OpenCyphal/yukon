@@ -62,12 +62,14 @@ import { openFile } from "./yaml.configurations.module.js"
                                         {
                                             type: 'component',
                                             componentName: 'monitorComponent',
-                                            componentState: { label: 'C' }
+                                            isClosable: false,
+                                            title: 'Monitor',
                                         },
                                         {
                                             type: 'component',
                                             componentName: 'registersComponent',
-                                            componentState: { label: 'C' }
+                                            isClosable: false,
+                                            title: 'Registers',
                                         },
                                     ]
                                 },
@@ -75,7 +77,8 @@ import { openFile } from "./yaml.configurations.module.js"
                                     type: 'component',
                                     height: 15,
                                     componentName: 'statusComponent',
-                                    componentState: { label: 'A' }
+                                    isClosable: false,
+                                    title: 'Status',
                                 }
                             ]
                         },
@@ -84,11 +87,12 @@ import { openFile } from "./yaml.configurations.module.js"
                             width: 30,
                             content:[
                                 {
-                                type: 'component',
-                                componentName: 'messagesComponent',
-                                componentState: { label: 'B' }
-                            }
-                        ]   
+                                    type: 'component',
+                                    componentName: 'messagesComponent',
+                                    isClosable: false,
+                                    title: 'Messages',
+                                }
+                            ]   
                         }
                     ]
                 }
@@ -156,8 +160,8 @@ import { openFile } from "./yaml.configurations.module.js"
         yukon_state.jsyaml = jsyaml;
         // Make a callback on the page load event
         console.log("monitor ready");
-        const iRegistersFilter = document.getElementById('iRegistersFilter');
-        const cbSimplifyRegisters = document.getElementById('cbSimplifyRegisters');
+        const iRegistersFilter = await waitForElm('#iRegistersFilter');
+        const cbSimplifyRegisters = await waitForElm('#cbSimplifyRegisters');
         const divAllRegistersButtons = await waitForElm('#divAllRegistersButtons');
         divAllRegistersButtons.style.display = 'none';
         var selected_registers = yukon_state.selections.selected_registers;
