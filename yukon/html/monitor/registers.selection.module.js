@@ -134,70 +134,72 @@ export function make_select_column(node_id, is_mouse_over, yukon_state) {
 
     }
 }
-
-export function make_select_row(register_name, is_mouse_over, yukon_state) {
-    return function (event) {
-        // If left mouse button is pressed
-        if (is_mouse_over) {
-            if (!event.buttons == 1) {
-                return;
+export function actuallySelectRow(register_name, yukon_state) {
+    if (yukon_state.settings.is_selection_mode_complicated) {
+        if (!yukon_state.selections.selected_rows[register_name]) {
+            yukon_state.selections.selected_rows[register_name] = true;
+        } else {
+            yukon_state.selections.selected_rows[register_name] = false;
+        }
+    } else {
+        // See if any register of this node_id is selected
+        let any_register_selected = false;
+        // For every register in the avatar with the node_id
+        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+            const current_avatar = yukon_state.current_avatars[i];
+            const node_id = current_avatar.node_id;
+            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                const register_name2 = yukon_state.current_avatars[i].registers[j];
+                if (register_name2 == register_name) {
+                    if (yukon_state.selections.selected_registers[[node_id, register_name]]) {
+                        any_register_selected = true;
+                        break;
+                    }
+                }
             }
         }
-
-        // I want to make sure that the user is not selecting text, that's not when we activate this.
-        // if (window.getSelection().toString() !== "") {
-        //     return;
-        // }
-        if (yukon_state.settings.is_selection_mode_complicated) {
-            if (!yukon_state.selections.selected_rows[register_name]) {
-                yukon_state.selections.selected_rows[register_name] = true;
-            } else {
-                yukon_state.selections.selected_rows[register_name] = false;
-            }
-        } else {
-            // See if any register of this node_id is selected
-            let any_register_selected = false;
-            // For every register in the avatar with the node_id
+        if (any_register_selected) {
+            // Deselect all registers with this register_name
             for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                const current_avatar = yukon_state.current_avatars[i];
+                const current_avatar = yukon_state.current_avatars[i]
                 const node_id = current_avatar.node_id;
                 for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
                     const register_name2 = yukon_state.current_avatars[i].registers[j];
                     if (register_name2 == register_name) {
-                        if (yukon_state.selections.selected_registers[[node_id, register_name]]) {
-                            any_register_selected = true;
-                            break;
-                        }
+                        yukon_state.selections.selected_registers[[node_id, register_name]] = false;
                     }
                 }
             }
-            if (any_register_selected) {
-                // Deselect all registers with this register_name
-                for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                    const current_avatar = yukon_state.current_avatars[i]
-                    const node_id = current_avatar.node_id;
-                    for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
-                        const register_name2 = yukon_state.current_avatars[i].registers[j];
-                        if (register_name2 == register_name) {
-                            yukon_state.selections.selected_registers[[node_id, register_name]] = false;
-                        }
-                    }
-                }
-            } else {
-                // Select all registers with this register_name
-                for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                    const current_avatar = yukon_state.current_avatars[i]
-                    const node_id = current_avatar.node_id;
-                    for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
-                        const register_name2 = yukon_state.current_avatars[i].registers[j];
-                        if (register_name2 == register_name) {
-                            yukon_state.selections.selected_registers[[node_id, register_name]] = true;
-                        }
+        } else {
+            // Select all registers with this register_name
+            for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+                const current_avatar = yukon_state.current_avatars[i]
+                const node_id = current_avatar.node_id;
+                for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                    const register_name2 = yukon_state.current_avatars[i].registers[j];
+                    if (register_name2 == register_name) {
+                        yukon_state.selections.selected_registers[[node_id, register_name]] = true;
                     }
                 }
             }
         }
-        updateRegistersTableColors(yukon_state);
+    }
+    updateRegistersTableColors(yukon_state);
+}
+export function make_select_row(register_name, is_mouse_over, yukon_state) {
+    return function (event) {
+        // If left mouse button is pressed
+        // if (is_mouse_over) {
+        // Check if the left mouse button isn't down or if the right mouse button is down, then return
+        if (!event.buttons == 1 || event.buttons == 2) {
+            return;
+        }
+        // }
+        // I want to make sure that the user is not selecting text, that's not when we activate this.
+        // if (window.getSelection().toString() !== "") {
+        //     return;
+        // }
+        actuallySelectRow(register_name, yukon_state);
         event.stopPropagation();
     }
 }

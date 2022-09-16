@@ -1,5 +1,5 @@
 import { export_all_selected_registers, update_available_configurations_list, applyConfiguration, openFile, actionApplyConfiguration } from "./yaml.configurations.module.js";
-import { getAllEntireColumnsThatAreSelected, get_all_selected_pairs, make_select_row, unselectAll } from "./registers.selection.module.js";
+import { actuallySelectRow, getAllEntireColumnsThatAreSelected, get_all_selected_pairs, make_select_row, unselectAll } from "./registers.selection.module.js";
 import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./registers.module.js";
 import { rereadPairs } from "./registers.data.module.js";
 import { downloadIcon, copyIcon, pasteIcon } from "./icons.module.js";
@@ -310,7 +310,8 @@ export function make_context_menus(yukon_state) {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
                     const register_name = cell.getAttribute("data-register_name");
-                    make_select_row(register_name, false, yukon_state)(e);
+                    actuallySelectRow(register_name, yukon_state);
+                    e.stopPropagation();
                 }
             },
         },
