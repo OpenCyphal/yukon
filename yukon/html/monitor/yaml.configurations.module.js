@@ -100,9 +100,12 @@ async function saveString(string, yukon_state) {
         return await yukon_state.zubax_api.save_yaml(string);
     }
 }
+function parseYamlStringsToNumbers(string) {
+    return string.replace(/['"](\d+)['"]/g, "$1");
+}
 async function saveYaml(string, yukon_state) {
     // Use regex ['\"](\d+)['\"] and replace with $1
-    string = string.replace(/['"](\d+)['"]/g, "$1");
+    string = parseYamlStringsToNumbers(string);
     saveString(string, yukon_state);
 }
 export async function openFile(yukon_state) {
@@ -131,23 +134,24 @@ export async function openFile(yukon_state) {
         yukon_state.addLocalMessage("Error opening file: " + e);
     }
 }
-export async function return_all_selected_registers_as_yaml(only_of_avatar_of_node_id, get_everything, yukon_state, to_clipboard) {
+export async function return_all_selected_registers_as_yaml(pairs, yukon_state) {
     let zubax_api = yukon_state.zubax_api;
     // A pair is the register_name and the node_id
-    let pairs_object = get_all_selected_pairs({ "only_of_avatar_of_node_id": only_of_avatar_of_node_id, "get_everything": get_everything, "only_of_register_name": null }, yukon_state);
+    let pairs_object = pairs;
     let json_string = JSON.stringify(pairs_object);
     var yaml_string = jsyaml.dump(pairs_object, { flowLevel: 2 });
     if (yukon_state.settings.simplifyRegisters) {
         const simplified_json_string = await zubax_api.simplify_configuration(json_string)
         const intermediary_structure = JSON.parse(simplified_json_string);
         const simplified_yaml_string = jsyaml.dump(intermediary_structure);//, { flowLevel: 2 });
-        return simplified_yaml_string;
+        return parseYamlStringsToNumbers(simplified_yaml_string);
     } else {
-        return yaml_string;
+        return parseYamlStringsToNumbers(yaml_string);
     }
 }
 export async function export_all_selected_registers(only_of_avatar_of_node_id, get_everything, yukon_state) {
-     await saveYaml(await return_all_selected_registers_as_yaml(only_of_avatar_of_node_id, get_everything, yukon_state), yukon_state);
+    let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": only_of_avatar_of_node_id, "get_everything": get_everything, "only_of_register_name": null }, yukon_state);
+    await saveYaml(await return_all_selected_registers_as_yaml(pairs, yukon_state), yukon_state);
 }
 export async function update_available_configurations_list(yukon_state) {
     let zubax_api = yukon_state.zubax_api;
