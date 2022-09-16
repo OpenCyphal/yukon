@@ -99,6 +99,8 @@ jobs:
       - uses: actions/setup-node@v3
       - name: Installing dependencies
         run: |
+          python3 -m venv venv
+          venv\Scripts\activate.bat
           pip install wheel yakut
           yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
           pip install nox
@@ -106,12 +108,15 @@ jobs:
           pip install -r requirements.txt -r dev-requirements.txt
       - name: Testing GUI
         run: |
+          venv\Scripts\activate.bat
           $Env:PYTHONPATH = ".:.."
           nox -s mypy
           nox -s black
           nox -s pylint
       - name: Building release
-        run: python3 build_exe.py
+        run: |
+          venv\Scripts\activate.bat
+          python3 build_exe.py
       - name: Configure OpenSSH parameters
         if: ${{ success() }}
         uses: LuisEnMarroquin/setup-ssh-action@v2.0.0

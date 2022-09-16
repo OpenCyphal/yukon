@@ -72,7 +72,9 @@ td>div.input {
   text-align: left;
   padding: 0.5em;
   /* padding-top: 1px; */
-  padding-top: 0.5em;
+  padding-top: 1px;
+  padding-left: 0.9em;
+  padding-bottom: 0.6em;
   outline: none;
   -webkit-touch-callout: none;
   user-select: none;
@@ -80,13 +82,13 @@ td>div.input {
   -ms-user-select: none;
   -khtml-user-select: none;
 }
-th, td {
+#registers_table th, #registers_table td {
   min-width: 400px !important;
   max-width: 400px !important;
 }
 th.left-side-table-header {
   position: sticky;
-  z-index: 99;
+  z-index: 4;
   left: 0px;
   /* border: 1px solid black; */
 }

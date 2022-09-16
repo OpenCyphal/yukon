@@ -9,7 +9,37 @@ import {get_all_selected_pairs, unselectAll, selectAll} from './registers.select
 import { rereadPairs } from "./registers.data.module.js"
 import { openFile } from "./yaml.configurations.module.js"
 
-(function () {
+(async function () {
+    function waitForElm(selector, timeOutMilliSeconds) {
+        return new Promise(resolve => {
+            let timeOutTimeout
+            if(timeOutMilliSeconds) {
+                timeOutTimeout = setTimeout(() => {
+                    console.error("Timeout waiting for element: " + selector);
+                    resolve(null);
+                }, timeOutMilliSeconds);
+            }
+            if (document.querySelector(selector)) {
+                return resolve(document.querySelector(selector));
+            }
+    
+            const observer = new MutationObserver(mutations => {
+                if (document.querySelector(selector)) {
+                    if(timeOutTimeout) {
+                        clearTimeout(timeOutTimeout);
+                    }
+                    resolve(document.querySelector(selector));
+                    observer.disconnect();
+                }
+            });
+    
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+            
+        });
+    }
     yukon_state.addLocalMessage = function (message) {
         zubax_api.add_local_message(message)
     }
@@ -17,17 +47,124 @@ import { openFile } from "./yaml.configurations.module.js"
     yukon_state.document = document;
     yukon_state.window = window;
     const addLocalMessage = yukon_state.addLocalMessage;
-    function doStuffWhenReady() {
+    async function doStuffWhenReady() {
+        var config = {
+            content: [
+                {
+                    type: 'row',
+                    content: [
+                        {
+                            type: "column",
+                            content: [
+                                {
+                                    type: 'stack',
+                                    content:[
+                                        {
+                                            type: 'component',
+                                            componentName: 'monitorComponent',
+                                            isClosable: false,
+                                            title: 'Monitor',
+                                        },
+                                        {
+                                            type: 'component',
+                                            componentName: 'registersComponent',
+                                            isClosable: false,
+                                            title: 'Registers',
+                                        },
+                                    ]
+                                },
+                                {
+                                    type: 'component',
+                                    height: 15,
+                                    componentName: 'statusComponent',
+                                    isClosable: false,
+                                    title: 'Status',
+                                }
+                            ]
+                        },
+                        {
+                            type: 'column',
+                            width: 30,
+                            content:[
+                                {
+                                    type: 'component',
+                                    componentName: 'messagesComponent',
+                                    isClosable: false,
+                                    title: 'Messages',
+                                }
+                            ]   
+                        }
+                    ]
+                }
+            ]
+        };
+        var myLayout = new GoldenLayout( config );
+        myLayout.registerComponent('registersComponent', function( container, componentState ){
+            const xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4) {
+                    if (this.status == 200) {
+                        container.getElement().html(this.responseText);
+                    }
+                    if (this.status == 404) {container.getElement().html("Page not found.");}
+                }
+            }
+            xhttp.open("GET", "../registers.panel.html", true);
+            xhttp.send();
+        });
+        myLayout.registerComponent('statusComponent', function( container, componentState ){
+            const xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4) {
+                    if (this.status == 200) {
+                        container.getElement().html(this.responseText);
+                    }
+                    if (this.status == 404) {container.getElement().html("Page not found.");}
+                }
+            }
+            xhttp.open("GET", "../status.panel.html", true);
+            xhttp.send();
+        });
+        myLayout.registerComponent('monitorComponent', function( container, componentState ){
+            const xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4) {
+                    if (this.status == 200) {
+                        container.getElement().html(this.responseText);
+                        setTimeout(function()
+                        {
+                            yukon_state.my_graph = create_directed_graph(yukon_state);
+                        }, 100);
+                    }
+                    if (this.status == 404) {container.getElement().html("Page not found.");}
+                }
+            }
+            xhttp.open("GET", "monitor-window.html", true);
+            xhttp.send();
+        });
+        myLayout.registerComponent('messagesComponent', function( container, componentState ){
+            const xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4) {
+                    if (this.status == 200) {
+                        container.getElement().html(this.responseText);
+                    }
+                    if (this.status == 404) {container.getElement().html("Page not found.");}
+                }
+            }
+            xhttp.open("GET", "../messages.panel.html", true);
+            xhttp.send();
+        });
+        myLayout.init();
         yukon_state.zubax_api = zubax_api;
         yukon_state.jsyaml = jsyaml;
         // Make a callback on the page load event
         console.log("monitor ready");
-        const iRegistersFilter = document.getElementById('iRegistersFilter');
-        const cbSimplifyRegisters = document.getElementById('cbSimplifyRegisters');
-        const divAllRegistersButtons = document.getElementById('divAllRegistersButtons');
+        const iRegistersFilter = await waitForElm('#iRegistersFilter');
+        const cbSimplifyRegisters = await waitForElm('#cbSimplifyRegisters');
+        const divAllRegistersButtons = await waitForElm('#divAllRegistersButtons');
         divAllRegistersButtons.style.display = 'none';
         var selected_registers = yukon_state.selections.selected_registers;
-        var recently_reread_registers = {};
         let lastInternalMessageIndex = -1;
         yukon_state.selectingTableCellsIsDisabledStyle = document.createElement('style');
         yukon_state.selectingTableCellsIsDisabledStyle.innerHTML = `
@@ -232,6 +369,8 @@ import { openFile } from "./yaml.configurations.module.js"
             return JSON.stringify(configuration);
         }
         function update_directed_graph() {
+            let my_graph = yukon_state.my_graph;
+            if(typeof my_graph == "undefined") {return;}
             if (!areThereAnyNewOrMissingHashes("monitor_view_hash", yukon_state)) {
                 updateLastHashes("monitor_view_hash", yukon_state);
                 return;
@@ -292,7 +431,6 @@ import { openFile } from "./yaml.configurations.module.js"
         }
 
         setInterval(get_and_display_avatars, 1000);
-        var my_graph = create_directed_graph(yukon_state);
         update_directed_graph();
 
         //        var btnFetch = document.getElementById('btnFetch');
@@ -301,9 +439,10 @@ import { openFile } from "./yaml.configurations.module.js"
         //        });
         var btnRefreshGraphLayout = document.getElementById('btnRefreshGraphLayout');
         btnRefreshGraphLayout.addEventListener('click', function () {
-            refresh_graph_layout(my_graph)
+            refresh_graph_layout(yukon_state.my_graph)
         });
         var messagesList = document.querySelector("#messages-list");
+        var cbShowTimestamp = await waitForElm('#cbShowTimestamp');
         cbShowTimestamp.addEventListener('change', function () {
             if (cbShowTimestamp.checked) {
                 // For every message, add a timestamp to the message, use a for each loop
@@ -331,13 +470,13 @@ import { openFile } from "./yaml.configurations.module.js"
         // This is actually one of the tabs in the tabbed interface but it also acts as a refresh layout button
         const btnMonitorTab = document.getElementById('btnMonitorTab');
         btnMonitorTab.addEventListener('click', function () {
-            refresh_graph_layout(my_graph);
+            refresh_graph_layout(yukon_state.my_graph);
         });
         const btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
         btnAddAnotherTransport.addEventListener('click', function () {
             zubax_api.open_add_transport_window();
         });
-        const btnImportRegistersConfig = document.getElementById('btnImportRegistersConfig');
+        const btnImportRegistersConfig = await waitForElm('#btnImportRegistersConfig');
         btnImportRegistersConfig.addEventListener('click', async function () {
             loadConfigurationFromOpenDialog(false, yukon_state)
         });
@@ -425,10 +564,10 @@ import { openFile } from "./yaml.configurations.module.js"
     }
     try {
         if (zubax_api_ready) {
-            doStuffWhenReady();
+            await doStuffWhenReady();
         } else {
-            window.addEventListener('zubax_api_ready', function () {
-                doStuffWhenReady();
+            window.addEventListener('zubax_api_ready', async function () {
+                await doStuffWhenReady();
             });
         }
     } catch (e) {

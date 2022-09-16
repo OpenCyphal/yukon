@@ -97,10 +97,11 @@ class ContextMenu {
       }
     });
     document.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
       if (e.target.classList.contains(this.target)) {
         this.closeMenu(this.renderedMenu)
         this.renderedMenu = this.renderMenu();
-        e.preventDefault();
+        
         this.elementOpenedOn = e.target;
         this.isOpened = true;
 
@@ -127,7 +128,6 @@ class ContextMenu {
         }, 100);
       } else {
         // The original browser context menu is not shown
-        e.preventDefault();
         this.closeMenu(this.renderedMenu);
       }
     });

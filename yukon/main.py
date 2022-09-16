@@ -31,7 +31,7 @@ def run_electron() -> None:
     sleep(1)
     exe_path = get_electron_path()
     # Use subprocess to run the exe
-    os.spawnl(os.P_NOWAIT, str(exe_path), str(exe_path), "http://localhost:5000")
+    os.spawnl(os.P_NOWAIT, str(exe_path), str(exe_path), "http://localhost:5000/add_transport/add_transport.html")
 
 
 def run_server() -> None:
@@ -55,7 +55,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     cyphal_worker_thread.start()
 
     def open_webbrowser() -> None:
-        webbrowser.open("http://localhost:5000/")
+        webbrowser.open("http://localhost:5000/add_transport/add_transport.html")
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False

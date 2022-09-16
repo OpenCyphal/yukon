@@ -1,7 +1,7 @@
 import typing
+from can.interfaces.socketcan import utils as socketcan_utils
 from serial.tools.list_ports_common import ListPortInfo
 from serial.tools import list_ports
-from can.interfaces.socketcan import utils as socketcan_utils
 
 
 def ListPortInfo_to_dict(list_port_info: ListPortInfo) -> typing.Any:

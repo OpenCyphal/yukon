@@ -76,6 +76,7 @@ export function addContentForRegisterName(register_name, filter_keyword_inclusiv
         let table_header_cell = document.createElement('th');
         // REGISTER NAME HERE
         table_header_cell.innerHTML = register_name;
+        table_header_cell.setAttribute("data-register_name", register_name);
         // Make table_header_cell have sticky position
         // Add class left-side-table-header
         table_header_cell.classList.add('left-side-table-header');
