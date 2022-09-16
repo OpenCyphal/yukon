@@ -165,7 +165,6 @@ import { openFile } from "./yaml.configurations.module.js"
         const divAllRegistersButtons = await waitForElm('#divAllRegistersButtons');
         divAllRegistersButtons.style.display = 'none';
         var selected_registers = yukon_state.selections.selected_registers;
-        var recently_reread_registers = {};
         let lastInternalMessageIndex = -1;
         yukon_state.selectingTableCellsIsDisabledStyle = document.createElement('style');
         yukon_state.selectingTableCellsIsDisabledStyle.innerHTML = `
