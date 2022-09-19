@@ -31,7 +31,22 @@ def run_electron() -> None:
     sleep(1)
     exe_path = get_electron_path()
     # Use subprocess to run the exe
-    os.spawnl(os.P_NOWAIT, str(exe_path), str(exe_path), "http://localhost:5000/add_transport/add_transport.html")
+    try:
+        exit_code = os.spawnl(os.P_WAIT, str(exe_path), str(exe_path),
+                              "http://localhost:5000/add_transport/add_transport.html")
+    except FileNotFoundError as e:
+        logging.error(f"Could not find electron executable at {exe_path}")
+        logging.error(e)
+        exit_code = 1
+
+    if exit_code != 0:
+        logging.warning("Electron wasn't found or encountered an error, falling back to browser")
+        os.environ["IS_BROWSER_BASED"] = "1"
+        open_webbrowser()
+
+
+def open_webbrowser() -> None:
+    webbrowser.open("http://localhost:5000/add_transport/add_transport.html")
 
 
 def run_server() -> None:
@@ -53,9 +68,6 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
 
     cyphal_worker_thread = threading.Thread(target=cyphal_worker, args=[state])
     cyphal_worker_thread.start()
-
-    def open_webbrowser() -> None:
-        webbrowser.open("http://localhost:5000/add_transport/add_transport.html")
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
