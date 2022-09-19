@@ -252,7 +252,7 @@ export function make_select_cell(avatar, register_name, is_mouse_over, yukon_sta
             }
             // If control is pressed
             if (yukon_state.pressedKeys[17]) {
-                showCellValue(avatar.node_id, register_name);
+                showCellValue(avatar.node_id, register_name, yukon_state);
                 return;
             }
             selectCell();
