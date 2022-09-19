@@ -32,8 +32,9 @@ def run_electron() -> None:
     exe_path = get_electron_path()
     # Use subprocess to run the exe
     try:
-        exit_code = os.spawnl(os.P_WAIT, str(exe_path), str(exe_path),
-                              "http://localhost:5000/add_transport/add_transport.html")
+        exit_code = os.spawnl(
+            os.P_WAIT, str(exe_path), str(exe_path), "http://localhost:5000/add_transport/add_transport.html"
+        )
     except FileNotFoundError as e:
         logging.error(f"Could not find electron executable at {exe_path}")
         logging.error(e)
