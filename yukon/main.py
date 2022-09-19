@@ -6,6 +6,7 @@ import sys
 import asyncio
 import logging
 from time import sleep
+import subprocess
 
 import sentry_sdk
 
@@ -31,7 +32,39 @@ def run_electron() -> None:
     sleep(1)
     exe_path = get_electron_path()
     # Use subprocess to run the exe
-    os.spawnl(os.P_NOWAIT, str(exe_path), str(exe_path), "http://localhost:5000/add_transport/add_transport.html")
+    try:
+        # Keeping reading the stdout and stderr, look for the string electron: symbol lookup error
+        with subprocess.Popen(
+            [exe_path, "http://localhost:5000/add_transport/add_transport.html"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        ) as p:
+            while p.poll() is None:
+                line1 = p.stdout.readline()  # type: ignore
+                line2 = p.stderr.readline()  # type: ignore
+                if (
+                    (line1 and "electron: symbol lookup error" in line1)
+                    or line2
+                    and ("electron: symbol lookup error" in line2)
+                ):
+                    logger.error("There was an error while trying to run the electron app")
+                    exit_code = 1
+                    break
+
+    except FileNotFoundError as e:
+        logging.error(f"Could not find electron executable at {exe_path}")
+        logging.error(e)
+        exit_code = 1
+
+    if exit_code != 0:
+        logging.warning("Electron wasn't found or encountered an error, falling back to browser")
+        os.environ["IS_BROWSER_BASED"] = "1"
+        open_webbrowser()
+
+
+def open_webbrowser() -> None:
+    webbrowser.open("http://localhost:5000/add_transport/add_transport.html")
 
 
 def run_server() -> None:
@@ -53,9 +86,6 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
 
     cyphal_worker_thread = threading.Thread(target=cyphal_worker, args=[state])
     cyphal_worker_thread.start()
-
-    def open_webbrowser() -> None:
-        webbrowser.open("http://localhost:5000/add_transport/add_transport.html")
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
