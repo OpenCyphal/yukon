@@ -51,6 +51,8 @@ def run_electron() -> None:
                     logger.error("There was an error while trying to run the electron app")
                     exit_code = 1
                     break
+            if p.returncode is not None:
+                exit_code = p.returncode
 
     except FileNotFoundError as e:
         logging.error(f"Could not find electron executable at {exe_path}")
