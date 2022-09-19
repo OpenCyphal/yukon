@@ -281,7 +281,7 @@ export function create_registers_table(_filter_keyword_inclusive, yukon_state) {
 
     add_node_id_headers(table_header_row, yukon_state);
     if (yukon_state.current_avatars.length >= yukon_state.settings.showDoubleRowHeadersFromCount) {
-        make_empty_table_header_row_cell()
+        make_empty_table_header_row_cell(table_header_row, yukon_state);
     }
     registers_table_header.appendChild(table_header_row);
     // Combine all register names from avatar.registers into an array
