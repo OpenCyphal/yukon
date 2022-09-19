@@ -105,26 +105,26 @@ export function make_context_menus(yukon_state) {
             },
             shouldBeDisplayed: moreThanOneSelectedConstraint
         },
-        {
-            content: `Make text unselectable`,
-            events: {
-                click: (e, elementOpenedOn) => {
-                    yukon_state.settings.isTableCellTextSelectable = false;
-                    document.body.appendChild(yukon_state.selectingTableCellsIsDisabledStyle);
-                }
-            },
-            shouldBeDisplayed: () => yukon_state.settings.isTableCellTextSelectable
-        },
-        {
-            content: `Make text selectable`,
-            events: {
-                click: (e, elementOpenedOn) => {
-                    yukon_state.settings.isTableCellTextSelectable = true;
-                    document.body.removeChild(yukon_state.selectingTableCellsIsDisabledStyle);
-                }
-            },
-            shouldBeDisplayed: () => !yukon_state.settings.isTableCellTextSelectable
-        },
+        // {
+        //     content: `Make text unselectable`,
+        //     events: {
+        //         click: (e, elementOpenedOn) => {
+        //             yukon_state.settings.isTableCellTextSelectable = false;
+        //             document.body.appendChild(yukon_state.selectingTableCellsIsDisabledStyle);
+        //         }
+        //     },
+        //     shouldBeDisplayed: () => yukon_state.settings.isTableCellTextSelectable
+        // },
+        // {
+        //     content: `Make text selectable`,
+        //     events: {
+        //         click: (e, elementOpenedOn) => {
+        //             yukon_state.settings.isTableCellTextSelectable = true;
+        //             document.body.removeChild(yukon_state.selectingTableCellsIsDisabledStyle);
+        //         }
+        //     },
+        //     shouldBeDisplayed: () => !yukon_state.settings.isTableCellTextSelectable
+        // },
         {
             content: `${downloadIcon}Export selected registers`,
             events: {
@@ -309,6 +309,17 @@ export function make_context_menus(yukon_state) {
                     const cell = elementOpenedOn;
                     const register_name = cell.getAttribute("data-register_name");
                     selectRow(register_name, yukon_state);
+                    e.stopPropagation();
+                }
+            },
+        },
+        {
+            content: `Copy register name`,
+            events: {
+                click: (e, elementOpenedOn) => {
+                    const cell = elementOpenedOn;
+                    const register_name = cell.getAttribute("data-register_name");
+                    copyTextToClipboard(register_name);
                     e.stopPropagation();
                 }
             },
