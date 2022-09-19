@@ -325,7 +325,7 @@ class Api:
     def show_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = False
 
-    def reread_registers(self, request_contents: str) -> None:
+    def reread_registers(self, request_contents: dict) -> None:
         request = RereadRegistersRequest(request_contents)
         self.state.queues.reread_registers.put(request)
 
