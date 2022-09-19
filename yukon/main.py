@@ -6,6 +6,7 @@ import sys
 import asyncio
 import logging
 from time import sleep
+import subprocess
 
 import sentry_sdk
 
@@ -32,9 +33,25 @@ def run_electron() -> None:
     exe_path = get_electron_path()
     # Use subprocess to run the exe
     try:
-        exit_code = os.spawnl(
-            os.P_WAIT, str(exe_path), str(exe_path), "http://localhost:5000/add_transport/add_transport.html"
-        )
+        # Keeping reading the stdout and stderr, look for the string electron: symbol lookup error
+        with subprocess.Popen(
+            [exe_path, "http://localhost:5000/add_transport/add_transport.html"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        ) as p:
+            while p.poll() is None:
+                line1 = p.stdout.readline()  # type: ignore
+                line2 = p.stderr.readline()  # type: ignore
+                if (
+                    (line1 and "electron: symbol lookup error" in line1)
+                    or line2
+                    and ("electron: symbol lookup error" in line2)
+                ):
+                    logger.error("There was an error while trying to run the electron app")
+                    exit_code = 1
+                    break
+
     except FileNotFoundError as e:
         logging.error(f"Could not find electron executable at {exe_path}")
         logging.error(e)
