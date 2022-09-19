@@ -49,22 +49,7 @@ class QueuesState:
 class GuiState:
     """A class that holds all GUI references used by the god state."""
 
-    dpg: Any = field(default_factory=none_factory)
-    event_loop: Any = field(default_factory=none_factory)
-    interfaces: list[Interface] = field(default_factory=list)
-    transports_of_windows: typing.Dict[UID, pycyphal.transport.Transport] = field(default_factory=dict)
-    requested_monitor_image_size: typing.Tuple[int, int] = (600, 600)
-    pixel_in_inches: float = 0.0
     gui_running: bool = True
-    is_local_node_launched: bool = False
-    save_dialog_open: bool = False
-    display_errors_callback: typing.Optional[typing.Callable[[str], None]] = field(default_factory=none_factory)
-    main_screen_table_uid: Optional[UID] = field(default_factory=none_factory)
-    second_row: Optional[UID] = field(default_factory=none_factory)
-    default_font: Optional[UID] = field(default_factory=none_factory)
-    theme: Optional[UID] = field(default_factory=none_factory)
-    allocations_window: Optional[UID] = field(default_factory=none_factory)
-    is_close_dialog_enabled: bool = False
 
 
 @dataclass
