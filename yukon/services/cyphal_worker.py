@@ -186,5 +186,12 @@ def cyphal_worker(state: GodState) -> None:
         except Exception as e:
             logger.exception(e)
             raise e
+        except RuntimeError as e:
+            import multiprocessing
+
+            for process in multiprocessing.active_children():
+                process.terminate()
+            raise e
 
     asyncio.run(_internal_method())
+    exit(1)

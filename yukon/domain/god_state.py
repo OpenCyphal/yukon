@@ -88,3 +88,4 @@ class GodState:
         self.avatar = AvatarState()
         self.allocation = AllocationState()
         self.api = None
+        self.failed_sanity_test = False

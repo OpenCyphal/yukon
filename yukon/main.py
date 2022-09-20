@@ -124,8 +124,19 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         sleep(1)
         if not state.gui.gui_running:
             break
+        else:
+            print("GUI is still running")
+    import multiprocessing
+
+    for process in multiprocessing.active_children():
+        process.terminate()
     exit_handler(None, None)
     state.gui.gui_running = False
+    print("Trying to close the server")
+    if state.failed_sanity_test:
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
 
 def get_stop_after_value() -> Optional[str]:

@@ -370,3 +370,12 @@ class Api:
             webbrowser.open_new_tab(url)
         else:
             os.spawnl(os.P_NOWAIT, exe_path, exe_path, url)
+
+    def fail_sanity_test(self, error: str, url: str, line: str) -> None:
+        logger.error(f"Sanity test failed: {error} at {url}:{line}")
+        self.state.gui.gui_running = False
+        self.state.failed_sanity_test = True
+        import multiprocessing
+
+        for process in multiprocessing.active_children():
+            process.terminate()

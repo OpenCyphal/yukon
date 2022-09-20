@@ -24,5 +24,6 @@ var yukon_state = {
         "isSelectionModeComplicated": false,
         "simplifyRegisters": true,
         "preferSmallerFileSelectionDialog": false,
-    }
+    },
+    isSanityTest: false,
 };

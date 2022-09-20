@@ -10,6 +10,19 @@ import { rereadPairs } from "./registers.data.module.js"
 import { openFile } from "./yaml.configurations.module.js"
 
 (async function () {
+    // Check if the url has the parameter sanity_test set to true
+    window.location.href.includes("sanity_test=true") ? yukon_state.isSanityTest = true : yukon_state.isSanityTest = false;
+    if (yukon_state.isSanityTest) {
+        console.log("Sanity test is enabled");
+        window.addEventListener("error", function (error, url, line) {
+            zubax_api.fail_sanity_test(error, url, line);
+        });
+    }
+    setTimeout(function () {
+        // This is a hack to make the graph work on the first load
+        throw "Oh no";
+    }, 1000);
+
     function waitForElm(selector, timeOutMilliSeconds) {
         return new Promise(resolve => {
             let timeOutTimeout
@@ -177,11 +190,9 @@ import { openFile } from "./yaml.configurations.module.js"
         window.onkeyup = function (e) { yukon_state.pressedKeys[e.keyCode] = false; }
         // Add event listeners for focus and blur event handlers to window
         window.addEventListener('focus', function () {
-            console.log("Window focused");
             yukon_state.pressedKeys[18] = false;
         });
         window.addEventListener('blur', function () {
-            console.log("Window blurred");
             yukon_state.pressedKeys[18] = false;
         });
 
