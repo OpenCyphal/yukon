@@ -33,11 +33,16 @@ p = Popen(f"{python_exe} {str(run_demos_path.absolute())}", shell=True, env=os.e
 
 # Run the yukon __main__.py script and save its exit code
 arguments = [python_exe, str(root / "yukon" / "__main__.py")]
-exit_code = subprocess.run(arguments, env=os.environ).returncode  # pylint: disable=subprocess-run-check
-p.close()
-if exit_code != 0:
-    print("Yukon sanity test failed")
-    sys.exit(exit_code)
+# If this subprocess run takes more than 20 seconds to run, then kill it and exit with code 1
+
+try:
+    subprocess.run(arguments, env=os.environ, timeout=20, check=True)
+except subprocess.TimeoutExpired:
+    print("Yukon took too long to complete the sanity test, exiting with code 1")
+    sys.exit(1)
+except subprocess.CalledProcessError as e:
+    print("Yukon failed the sanity test, exiting with code 1")
+    sys.exit(1)
 else:
-    print("Yukon sanity test passed")
+    print("Yukon passed the sanity test, exiting with code 0")
     sys.exit(0)
