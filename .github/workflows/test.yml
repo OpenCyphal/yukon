@@ -26,7 +26,13 @@ jobs:
           PYTHONPATH="." nox -s mypy
           PYTHONPATH="." nox -s black
           PYTHONPATH="." nox -s pylint
-          python3 tests/src/sanity_test.py
+      - name: Compile sirius_cyber_corp
+        run: |
+          source venv/bin/activate
+          yakut compile -O.compiled demos/sirius_cyber_corp
+      - uses: browser-actions/setup-chrome@latest
+      - name: Testing frontend for errors, sanity test
+        run: python3 tests/src/sanity_test.py
   build-release-linux:
     name: Yukon Linux Build
     runs-on: ubuntu-20.04
