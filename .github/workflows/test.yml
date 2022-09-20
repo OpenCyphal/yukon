@@ -16,13 +16,17 @@ jobs:
           sudo apt-get install coreutils # for timeout
           pip install yakut
           yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
+          python3.10 -m venv venv
+          source venv/bin/activate
           pip install nox
           pip install -r requirements.txt -r dev-requirements.txt
       - name: Testing GUI
         run: |
+          source venv/bin/activate
           PYTHONPATH="." nox -s mypy
           PYTHONPATH="." nox -s black
           PYTHONPATH="." nox -s pylint
+          python3 tests/src/sanity_test.py
   build-release-linux:
     name: Yukon Linux Build
     runs-on: ubuntu-20.04
