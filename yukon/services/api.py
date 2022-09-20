@@ -354,7 +354,10 @@ class Api:
     def open_monitor_window(self) -> None:
         # If env contains IS_BROWSER_BASED
         exe_path = get_electron_path()
-        url = "http://localhost:5000/monitor/monitor.html"
+        parameters = ""
+        if os.environ.get("IS_SANITY_TEST"):
+            parameters = "?sanity_test=true"
+        url = "http://localhost:5000/monitor/monitor.html" + parameters
         if "IS_BROWSER_BASED" in os.environ:
             webbrowser.open_new_tab(url)
         else:

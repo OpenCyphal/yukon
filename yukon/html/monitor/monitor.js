@@ -5,7 +5,7 @@ import { add_node_id_headers, make_empty_table_header_row_cell, addContentForReg
 import { applyConfiguration, export_all_selected_registers, update_available_configurations_list, loadConfigurationFromOpenDialog } from './yaml.configurations.module.js';
 import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
 import { create_registers_table, update_tables } from './registers.module.js';
-import {get_all_selected_pairs, unselectAll, selectAll} from './registers.selection.module.js';
+import { get_all_selected_pairs, unselectAll, selectAll } from './registers.selection.module.js';
 import { rereadPairs } from "./registers.data.module.js"
 import { openFile } from "./yaml.configurations.module.js"
 
@@ -13,7 +13,7 @@ import { openFile } from "./yaml.configurations.module.js"
     function waitForElm(selector, timeOutMilliSeconds) {
         return new Promise(resolve => {
             let timeOutTimeout
-            if(timeOutMilliSeconds) {
+            if (timeOutMilliSeconds) {
                 timeOutTimeout = setTimeout(() => {
                     console.error("Timeout waiting for element: " + selector);
                     resolve(null);
@@ -22,22 +22,22 @@ import { openFile } from "./yaml.configurations.module.js"
             if (document.querySelector(selector)) {
                 return resolve(document.querySelector(selector));
             }
-    
+
             const observer = new MutationObserver(mutations => {
                 if (document.querySelector(selector)) {
-                    if(timeOutTimeout) {
+                    if (timeOutTimeout) {
                         clearTimeout(timeOutTimeout);
                     }
                     resolve(document.querySelector(selector));
                     observer.disconnect();
                 }
             });
-    
+
             observer.observe(document.body, {
                 childList: true,
                 subtree: true
             });
-            
+
         });
     }
     yukon_state.addLocalMessage = function (message) {
@@ -58,7 +58,7 @@ import { openFile } from "./yaml.configurations.module.js"
                             content: [
                                 {
                                     type: 'stack',
-                                    content:[
+                                    content: [
                                         {
                                             type: 'component',
                                             componentName: 'monitorComponent',
@@ -85,71 +85,70 @@ import { openFile } from "./yaml.configurations.module.js"
                         {
                             type: 'column',
                             width: 30,
-                            content:[
+                            content: [
                                 {
                                     type: 'component',
                                     componentName: 'messagesComponent',
                                     isClosable: false,
                                     title: 'Messages',
                                 }
-                            ]   
+                            ]
                         }
                     ]
                 }
             ]
         };
-        var myLayout = new GoldenLayout( config );
-        myLayout.registerComponent('registersComponent', function( container, componentState ){
+        var myLayout = new GoldenLayout(config);
+        myLayout.registerComponent('registersComponent', function (container, componentState) {
             const xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
+            xhttp.onreadystatechange = function () {
                 if (this.readyState == 4) {
                     if (this.status == 200) {
                         container.getElement().html(this.responseText);
                     }
-                    if (this.status == 404) {container.getElement().html("Page not found.");}
+                    if (this.status == 404) { container.getElement().html("Page not found."); }
                 }
             }
             xhttp.open("GET", "../registers.panel.html", true);
             xhttp.send();
         });
-        myLayout.registerComponent('statusComponent', function( container, componentState ){
+        myLayout.registerComponent('statusComponent', function (container, componentState) {
             const xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
+            xhttp.onreadystatechange = function () {
                 if (this.readyState == 4) {
                     if (this.status == 200) {
                         container.getElement().html(this.responseText);
                     }
-                    if (this.status == 404) {container.getElement().html("Page not found.");}
+                    if (this.status == 404) { container.getElement().html("Page not found."); }
                 }
             }
             xhttp.open("GET", "../status.panel.html", true);
             xhttp.send();
         });
-        myLayout.registerComponent('monitorComponent', function( container, componentState ){
+        myLayout.registerComponent('monitorComponent', function (container, componentState) {
             const xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
+            xhttp.onreadystatechange = function () {
                 if (this.readyState == 4) {
                     if (this.status == 200) {
                         container.getElement().html(this.responseText);
-                        setTimeout(function()
-                        {
+                        setTimeout(function () {
                             yukon_state.my_graph = create_directed_graph(yukon_state);
                         }, 100);
                     }
-                    if (this.status == 404) {container.getElement().html("Page not found.");}
+                    if (this.status == 404) { container.getElement().html("Page not found."); }
                 }
             }
             xhttp.open("GET", "monitor-window.html", true);
             xhttp.send();
         });
-        myLayout.registerComponent('messagesComponent', function( container, componentState ){
+        myLayout.registerComponent('messagesComponent', function (container, componentState) {
             const xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
+            xhttp.onreadystatechange = function () {
                 if (this.readyState == 4) {
                     if (this.status == 200) {
                         container.getElement().html(this.responseText);
                     }
-                    if (this.status == 404) {container.getElement().html("Page not found.");}
+                    if (this.status == 404) { container.getElement().html("Page not found."); }
                 }
             }
             xhttp.open("GET", "../messages.panel.html", true);
@@ -288,12 +287,19 @@ import { openFile } from "./yaml.configurations.module.js"
         setInterval(fetchAndHandleInternalMessages, 1000);
         let isRefreshTextOutAllowed = true;
         async function updateTextOut(refresh_anyway = false) {
-            if(!isRefreshTextOutAllowed && !refresh_anyway) {return;}
+            if (!isRefreshTextOutAllowed && !refresh_anyway) { return; }
             zubax_api.get_avatars().then(
                 function (avatars) {
                     const textOut = document.querySelector("#textOut");
-                    const DTO = JSON.parse(avatars);
-                    if (DTO.hash != yukon_state.lastHash || refresh_anyway) {
+                    let DTO = null;
+                    try {
+                        DTO = JSON.parse(avatars);
+                    } catch (e) {
+                        // Download the avatars string
+                        const blob = new Blob([avatars], { type: "text/plain;charset=utf-8" });
+                        saveAs(blob, "avatars.json");
+                    }
+                    if (DTO && DTO.hash != yukon_state.lastHash || refresh_anyway) {
                         yukon_state.lastHash = DTO.hash;
                         textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
                     }
@@ -304,7 +310,7 @@ import { openFile } from "./yaml.configurations.module.js"
         setInterval(updateTextOut, 1000);
         const cbStopTextOutRefresh = document.querySelector("#cbStopTextOutRefresh");
         cbStopTextOutRefresh.addEventListener("change", () => {
-            if(cbStopTextOutRefresh.checked) {
+            if (cbStopTextOutRefresh.checked) {
                 isRefreshTextOutAllowed = false;
             } else {
                 isRefreshTextOutAllowed = true;
@@ -370,7 +376,7 @@ import { openFile } from "./yaml.configurations.module.js"
         }
         function update_directed_graph() {
             let my_graph = yukon_state.my_graph;
-            if(typeof my_graph == "undefined") {return;}
+            if (typeof my_graph == "undefined") { return; }
             if (!areThereAnyNewOrMissingHashes("monitor_view_hash", yukon_state)) {
                 updateLastHashes("monitor_view_hash", yukon_state);
                 return;
@@ -423,9 +429,18 @@ import { openFile } from "./yaml.configurations.module.js"
         function get_and_display_avatars() {
             zubax_api.get_avatars().then(
                 function (avatars) {
-                    var DTO = JSON.parse(avatars);
-                    yukon_state.current_avatars = DTO.avatars;
-                    update_directed_graph();
+                    let DTO = null;
+                    try {
+                        DTO = JSON.parse(avatars);
+                    } catch (e) {
+                        // Download the avatars string
+                        const blob = new Blob([avatars], { type: "text/plain;charset=utf-8" });
+                        saveAs(blob, "avatars.json");
+                    }
+                    if (DTO) {
+                        yukon_state.current_avatars = DTO.avatars;
+                        update_directed_graph();
+                    }
                 }
             );
         }

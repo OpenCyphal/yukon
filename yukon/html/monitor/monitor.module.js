@@ -66,7 +66,6 @@ export function create_directed_graph(yukon_state) {
 
     my_graph.on('mouseover', 'node', function (evt) {
         var node = evt.target;
-        console.log("Mouseover on node " + node.id());
         // Find the avatar for the node
         var avatar = yukon_state.current_avatars.find(function (avatar) {
             return avatar.node_id == node.id();
@@ -112,7 +111,9 @@ function createMonitorPopup(text, yukon_state) {
     label.style.pointerEvents = 'none';
     // Remove the label after 3 seconds
     setTimeout(function () {
-        label.parentNode.removeChild(label);
+        if (label && label.parentNode) {
+            label.parentNode.removeChild(label);
+        }
     }, 3000);
 }
 function getDrawingAspectRatio() {
@@ -122,7 +123,7 @@ function getDrawingAspectRatio() {
     return cy_width / cy_height;
 }
 export function refresh_graph_layout(my_graph) {
-    if(typeof my_graph == "undefined") {
+    if (typeof my_graph == "undefined") {
         return;
     }
     var layout = my_graph.layout(

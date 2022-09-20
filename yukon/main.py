@@ -27,6 +27,14 @@ logger = logging.getLogger()
 logger.setLevel("INFO")
 
 
+def get_add_transport_url():
+    parameters = ""
+    # Check if os.environ contains "IS_SANITY_TEST"
+    if os.environ.get("IS_SANITY_TEST"):
+        parameters = "?sanity_test=true"
+    return "http://localhost:5000/add_transport/add_transport.html" + parameters
+
+
 def run_electron() -> None:
     # Make the thread sleep for 1 second waiting for the server to start
     sleep(1)
@@ -35,7 +43,7 @@ def run_electron() -> None:
     try:
         # Keeping reading the stdout and stderr, look for the string electron: symbol lookup error
         with subprocess.Popen(
-            [exe_path, "http://localhost:5000/add_transport/add_transport.html"],
+            [exe_path, get_add_transport_url()],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
@@ -66,7 +74,7 @@ def run_electron() -> None:
 
 
 def open_webbrowser() -> None:
-    webbrowser.open("http://localhost:5000/add_transport/add_transport.html")
+    webbrowser.open(get_add_transport_url())
 
 
 def run_server() -> None:
