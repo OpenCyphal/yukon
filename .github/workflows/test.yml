@@ -34,6 +34,8 @@ jobs:
       - run: chrome --version
       - name: Testing frontend for errors, sanity test
         run: python3 tests/src/sanity_test.py $(which chrome)
+        env:
+          BROWSER_PATH: $(which chrome)
   build-release-linux:
     name: Yukon Linux Build
     runs-on: ubuntu-20.04

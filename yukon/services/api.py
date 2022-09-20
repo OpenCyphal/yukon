@@ -359,7 +359,10 @@ class Api:
             parameters = "?sanity_test=true"
         url = "http://localhost:5000/monitor/monitor.html" + parameters
         if "IS_BROWSER_BASED" in os.environ:
-            webbrowser.open_new_tab(url)
+            if os.environ.get("BROWSER_PATH"):
+                webbrowser.get("custom_browser").open_new_tab(url)
+            else:
+                webbrowser.open(url)
         else:
             os.spawnl(os.P_NOWAIT, exe_path, exe_path, "http://localhost:5000/monitor/monitor.html")
 
@@ -367,7 +370,10 @@ class Api:
         exe_path = get_electron_path()
         url = "http://localhost:5000/add_transport/add_transport.html"
         if "IS_BROWSER_BASED" in os.environ:
-            webbrowser.open_new_tab(url)
+            if os.environ.get("BROWSER_PATH"):
+                webbrowser.get("custom_browser").open_new_tab(url)
+            else:
+                webbrowser.open(url)
         else:
             os.spawnl(os.P_NOWAIT, exe_path, exe_path, url)
 
