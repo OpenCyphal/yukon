@@ -192,6 +192,8 @@ def cyphal_worker(state: GodState) -> None:
             for process in multiprocessing.active_children():
                 process.terminate()
             raise e
+        finally:
+            state.cyphal.local_node.close()
 
     asyncio.run(_internal_method())
     exit(1)

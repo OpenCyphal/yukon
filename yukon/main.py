@@ -110,7 +110,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         pass
 
     asyncio.get_event_loop().create_task(sendAMessage())
-    start_server_thread = threading.Thread(target=run_server)
+    start_server_thread = threading.Thread(target=run_server, daemon=True)
     start_server_thread.start()
     # if environment variable IS_BROWSER_BASED is set, open the webbrowser
     if os.environ.get("IS_BROWSER_BASED"):
@@ -130,7 +130,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
 
     for process in multiprocessing.active_children():
         process.terminate()
-    exit_handler(None, None)
+
     state.gui.gui_running = False
     print("Trying to close the server")
     if state.failed_sanity_test:

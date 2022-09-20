@@ -8,11 +8,15 @@ os.environ["UAVCAN__DIAGNOSTIC__SEVERITY"] = "2"
 os.environ["UAVCAN__NODE__ID"] = "42"
 os.environ["UAVCAN__UDP__IFACE"] = "127.0.0.1"
 from subprocess import Popen
+from pathlib import Path
 
+current_directory = Path(__file__).parent.absolute()
+demo_app_path = current_directory / "demo_app.py"
+os.chdir(current_directory)
 how_many = 6
 commands = []
 for i in range(how_many):
-    commands.append("python demo_app.py")
+    commands.append(f"python {demo_app_path.absolute()}")
 procs = []
 for i, command in enumerate(commands):
     os.environ["UAVCAN__NODE__ID"] = str(42 + i)
