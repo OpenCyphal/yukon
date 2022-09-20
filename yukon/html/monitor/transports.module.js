@@ -9,7 +9,7 @@ export function initTransports(yukon_state) {
             SLCAN: "SLCAN",
             SOCKETCAN: "SOCKETCAN",
             CANDUMP: "CANDUMP",
-            PICAN: "P-CAN"
+            "P-CAN": "P-CAN"
         },
     });
     var currentSelectedTransportType = [transports.CAN, transports.CAN.MANUAL];
@@ -163,8 +163,8 @@ export function initTransports(yukon_state) {
                 divNodeId.style.display = "none";
                 divCandump.style.display = "block";
                 break;
-            case transports.CAN.PICAN:
-                h1TransportType.innerHTML = "PICAN";
+            case transports.CAN["P-CAN"]:
+                h1TransportType.innerHTML = "P-CAN";
                 divTypeTransport.style.display = "none";
                 break;
         }
@@ -217,64 +217,83 @@ export function initTransports(yukon_state) {
         };
     }
     const getChildTopAndLeftPosition = (element) => [getCoords(element).top, getCoords(element).left];
-    function setCurrentTransport(tabRow, index, isTopMost) {
+    function setCurrentTransport(tabRow, isTopMost) {
         if (isTopMost) {
-            currentSelectedTransportType = [tabRow, tabRow.tabNames[0]];
+            currentSelectedTransportType = [tabRow, tabRow.tabNames[tabRow.selectedTabIndex]];
         }
         else {
-            currentSelectedTransportType = [tabRow.parentTabName, tabRow.tabNames[index]];
+            currentSelectedTransportType = [tabRow.parentTabName, tabRow.tabNames[tabRow.selectedTabIndex]];
         }
     }
-    function moveTab(tabRow, index, isTopMost) {
-        const labelChildren = tabRow.getLabelChildren();
-        setCurrentTransport(tabRow, index, isTopMost);
-        const child = labelChildren[index];
-        const targetWidth = child.getBoundingClientRect().width
-        var [topValue, leftValue] = getChildTopAndLeftPosition(child);
-        var t = new Tween(tabRow.slider.style, 'left', Tween.regularEaseOut, parseInt(tabRow.slider.style.left), leftValue, 0.3, 'px');
+    function moveSlider(targetTab, tabRow) {
+        const slider = tabRow.slider;
+        const targetWidth = targetTab.getBoundingClientRect().width
+        if (targetWidth == 0) {
+            console.log("Target width is 0, not moving slider");
+            return false;
+        }
+        var [topValue, leftValue] = getChildTopAndLeftPosition(targetTab);
+        var t = new Tween(slider.style, 'left', Tween.regularEaseOut, parseInt(slider.style.left), leftValue, 0.3, 'px');
         t.start();
-        var t = new Tween(tabRow.slider.style, 'top', Tween.regularEaseOut, parseInt(tabRow.slider.style.top), topValue, 0.3, 'px');
+        var t = new Tween(slider.style, 'top', Tween.regularEaseOut, parseInt(slider.style.top), topValue, 0.3, 'px');
         t.start();
-        var t2 = new Tween(tabRow.slider.style, 'width', Tween.regularEaseOut, parseInt(tabRow.slider.style.width), targetWidth, 0.3, 'px');
+        var t2 = new Tween(slider.style, 'width', Tween.regularEaseOut, parseInt(slider.style.width), targetWidth, 0.3, 'px');
         t2.start();
         setTimeout(function () {
-            tabRow.slider.style.width = targetWidth + "px";
-            tabRow.slider.style.left = leftValue + "px";
-            tabRow.slider.style.top = topValue + "px";
+            slider.style.width = targetWidth + "px";
+            slider.style.left = leftValue + "px";
+            slider.style.top = topValue + "px";
         }, 0.3)
-        tabRow.slider.style.height = tabRow.div.getBoundingClientRect().height + 4 + 'px';
+        slider.style.height = tabRow.div.getBoundingClientRect().height + 4 + 'px';
+        return true;
+    }
+    function moveTab(tabRow, index, isTopMost, wasClicked) {
+        if (tabRow.selectedTabIndex == index) {
+            return;
+        }
+        const labelChildren = tabRow.getLabelChildren();
+        tabRow.selectedTabIndex = index;
+        setCurrentTransport(tabRow, index, isTopMost);
+        const child = labelChildren[index];
+        if (!moveSlider(child, tabRow)) {
+            // If it fails then it's because it is not visible and will be retried until succeeds
+            if (!wasClicked) {
+                const interval_id = setInterval(() => {
+                    if (tabRow.isDestroyed || moveSlider(child, tabRow)) {
+                        clearInterval(interval_id);
+                    }
+                }, 500);
+            }
+        }
         if (isTopMost) {
             const selectedTabName = Object.keys(transports)[index];
-            addChildTabRow(tabRow, selectedTabName);
+            addChildTabRow(tabRow, selectedTabName, true, false);
         }
 
         doTheTabSwitching();
+        child.classList.add("selected-tab");
         for (const child2 of labelChildren) {
             if (child2 != child) {
-                child2.style.backgroundColor = '#e0e0e0';
-                child2.style.color = '#000';
-                child2.style["z-index"] = "0";
-            } else {
-                child2.style.backgroundColor = 'transparent';
-                child2.style.color = '#fff';
-                child2.style["z-index"] = "1";
+                child2.classList.remove("selected-tab");
             }
         }
     }
     const maybe_tabs = document.querySelector('#maybe-tabs');
-    function addChildTabRow(ParentTabRow, selectedTabName) {
+    function addChildTabRow(ParentTabRow, selectedTabName, wasClicked) {
         ParentTabRow.removeCurrentChildTabRow();
         const arrayOfTabNames = Object.values(transports[selectedTabName]);
-        const tabRow = addOneTabRow(arrayOfTabNames, false);
+        const tabRow = addOneTabRow(arrayOfTabNames, false, wasClicked);
         tabRow.parent = ParentTabRow;
         tabRow.parentTabName = selectedTabName;
         ParentTabRow.childTabRow = tabRow;
         maybe_tabs.appendChild(tabRow.div);
     }
-    function addOneTabRow(tabNameArray, isTopMost) {
+    function addOneTabRow(tabNameArray, isTopMost, wasClicked) {
         let tabRow = {};
         tabRow.div = document.createElement("div");
         tabRow.div.classList.add("tab-row");
+        tabRow.isDestroyed = false;
+        tabRow.selectedTabIndex = -1;
         tabRow.tabNames = tabNameArray;
         tabRow.slider = document.createElement("span");
         tabRow.slider.classList.add("tab-slider");
@@ -285,20 +304,21 @@ export function initTransports(yukon_state) {
                 tabRow.childTabRow.div.remove();
                 tabRow.childTabRow.slider.remove();
                 tabRow.childTabRow.removeCurrentChildTabRow();
+                tabRow.childTabRow.isDestroyed = true;
                 tabRow.childTabRow = null;
             }
         };
         tabRow.div.appendChild(tabRow.slider);
         let current_child_index = 0;
-        for (var tabName of tabNameArray) {
-            let thisChildIndex = current_child_index + 0;
-            var new_radio = document.createElement('input');
+        for (const tabName of tabNameArray) {
+            const thisChildIndex = current_child_index + 0;
+            const new_radio = document.createElement('input');
             new_radio.setAttribute('type', 'radio');
             new_radio.setAttribute('name', 'transport');
             new_radio.setAttribute('id', "transport" + tabName);
             new_radio.setAttribute('value', tabName);
             // A label for new_radio
-            var new_label = document.createElement('label');
+            const new_label = document.createElement('label');
             new_label.setAttribute('for', "transport" + tabName);
             new_label.innerHTML = tabName;
             new_label.classList.add('tab_label');
@@ -307,43 +327,35 @@ export function initTransports(yukon_state) {
             tabRow.div.appendChild(new_label);
             new_radio.addEventListener('change', function () {
                 if (this.checked) {
-                    moveTab(tabRow, thisChildIndex, isTopMost);
+                    moveTab(tabRow, thisChildIndex, isTopMost, true);
                 }
             });
             current_child_index++;
         }
-        setTimeout(() => moveTab(tabRow, 0, isTopMost), 30);
+        const interval_id = setInterval(() => {
+            // See if the tabRow div has width
+            if (tabRow.div.getBoundingClientRect().width > 0) {
+                moveTab(tabRow, 0, isTopMost, false);
+                clearInterval(interval_id);
+            }
+        }, 30);
         return tabRow;
     }
     function InitTabStuff() {
-
-
-        const firstMainRow = addOneTabRow(Object.keys(transports), true)
+        const firstMainRow = addOneTabRow(Object.keys(transports), true, false)
         maybe_tabs.appendChild(firstMainRow.div);
-        for (const child in transports) {
-            if (currentSelectedTransportType[0] == transports[child]) {
-                addChildTabRow(firstMainRow, child);
+        for (const selectedTabName in transports) {
+            if (currentSelectedTransportType[0] == transports[selectedTabName]) {
+                addChildTabRow(firstMainRow, selectedTabName, false);
             }
         }
-
-        // // Iterate over each property of transport_types and add it to maybe-tabs
-
-        // I was here
-
-        // for (row of [firstRow, secondRow]) {
-        //     const width_of_first_child = getLabelChildren(row)[0].getBoundingClientRect().width;
-        //     const [topPos, leftPos] = getChildTopAndLeftPosition(getLabelChildren(row)[0]);
-        //     getLabelChildren(row)[0].style.backgroundColor = 'transparent';
-        //     getLabelChildren(row)[0].style.backgroundColor = 'transparent';
-        //     slider.style.width = width_of_first_child + 'px';
-        //     slider.style.height = row.getBoundingClientRect().height + 'px';
-        //     slider.style.top = topPos + 'px';
-        //     slider.style.left = leftPos + 'px';
-        //     slider.style["z-index"] = "0";
-        //     moveTab(row, 0);
-        // }
-        // currentSelectedTransportType = transport_types.MANUAL;
-        // doTheTabSwitching();
+        // Call moveSlider(firstMainRow.getLabelChildren()[0], firstMainRow) every 0.5 seconds until it returns true
+        // This is because when the tab is not shown, the width of the label is 0, so it doesn't move the slider
+        // const interval_id = setInterval(() => {
+        //     if (moveSlider(firstMainRow.getLabelChildren()[0], firstMainRow)) {
+        //         clearInterval(interval_id);
+        //     }
+        // }, 500);
     }
     function verifyInputs() {
         const iTransport = document.getElementById("iTransport");

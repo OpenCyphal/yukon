@@ -208,6 +208,7 @@ import { initTransports } from "./transports.module.js"
                             content: [
                                 {
                                     type: 'stack',
+                                    activeItemIndex: 0,
                                     content: [
                                         {
                                             type: 'component',
