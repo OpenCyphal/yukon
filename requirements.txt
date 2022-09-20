@@ -2,15 +2,12 @@ libpcap==1.10.0b15
 pycyphal[transport-can-pythoncan,transport-serial,transport-udp]
 sentry-sdk==1.*
 pytest
-pyserial
 setuptools
 numpy
-pydsdl
 importlib_resources; python_version < "3.7"
 proxy_tools
 Flask==2.2.*
 python-can==4.*
-beautifulsoup4==4.11.*
 requests
 websockets==10.*
 PyYAML==6.*
