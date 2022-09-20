@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 
 if __name__ == "__main__":
     from yukon.main import main

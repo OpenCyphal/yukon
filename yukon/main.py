@@ -63,7 +63,7 @@ def run_electron() -> None:
                 exit_code = p.returncode
 
     except FileNotFoundError as e:
-        logging.error(f"Could not find electron executable at {exe_path}")
+        logging.error("Could not find electron executable at %s", str(exe_path))
         logging.error(e)
         exit_code = 1
 
@@ -124,8 +124,8 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         sleep(1)
         if not state.gui.gui_running:
             break
-        else:
-            print("GUI is still running")
+
+        print("GUI is still running")
     import multiprocessing
 
     for process in multiprocessing.active_children():
