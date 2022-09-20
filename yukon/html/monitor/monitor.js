@@ -14,11 +14,18 @@ import { openFile } from "./yaml.configurations.module.js"
     window.location.href.includes("sanity_test=true") ? yukon_state.isSanityTest = true : yukon_state.isSanityTest = false;
     if (yukon_state.isSanityTest) {
         console.log("Sanity test is enabled");
-        window.addEventListener("error", function (error, url, line) {
-            zubax_api.fail_sanity_test(error, url, line);
+        window.addEventListener("error", async function (error, url, line) {
+            await zubax_api.fail_sanity_test(error, url, line);
+            // Close the browser tab after 0.5 seconds
+            setTimeout(function () {
+                window.close();
+            }, 500);
         });
-        setTimeout(function () {
-            zubax_api.succeed_sanity_test();
+        setTimeout(async function () {
+            await zubax_api.succeed_sanity_test();
+            setTimeout(function () {
+                window.close();
+            }, 500);
         }, 6000);
     }
     // setTimeout(function () {

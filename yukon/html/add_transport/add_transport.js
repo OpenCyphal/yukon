@@ -10,6 +10,9 @@
             console.log("Sanity test on transport is moving to monitor");
             await zubax_api.attach_udp_transport("127.0.0.0", 1200, 1);
             await zubax_api.open_monitor_window();
+            setTimeout(function () {
+                window.close();
+            }, 500);
         }, 2500);
     }
     var lastMessageIndex = -1;

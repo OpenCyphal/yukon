@@ -375,16 +375,10 @@ class Api:
         logger.error(f"Sanity test failed: {error} at {url}:{line}")
         self.state.gui.gui_running = False
         self.state.failed_sanity_test = True
-        import multiprocessing
-
-        for process in multiprocessing.active_children():
-            process.terminate()
+        return "Now you can close too"
 
     def succeed_sanity_test(self) -> None:
         logger.info("Sanity test succeeded")
         self.state.gui.gui_running = False
         self.state.failed_sanity_test = False
-        import multiprocessing
-
-        for process in multiprocessing.active_children():
-            process.terminate()
+        return "Now you can close too"
