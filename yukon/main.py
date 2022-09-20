@@ -80,7 +80,7 @@ def open_webbrowser() -> None:
         webbrowser.register(
             "custom_browser",
             None,
-            webbrowser.BackgroundBrowser(os.environ.get("BROWSER_PATH")),
+            webbrowser.BackgroundBrowser(os.environ.get("BROWSER_PATH")),  # type: ignore
         )
         webbrowser.get("custom_browser").open(get_add_transport_url())
     else:
