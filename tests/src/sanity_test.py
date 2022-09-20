@@ -5,7 +5,6 @@ import subprocess
 from subprocess import Popen
 import os
 import sys
-from tokenize import Pointfloat
 
 root = Path(__file__).parent.parent.parent
 
@@ -35,7 +34,7 @@ Popen(f"{python_exe} {str(run_demos_path.absolute())}", shell=True, env=os.envir
 
 # Run the yukon __main__.py script and save its exit code
 
-exit_code = subprocess.run([python_exe, str(root / "yukon" / "__main__.py")], env=os.environ, shell=True).returncode
+exit_code = subprocess.run([python_exe, str(root / "yukon" / "__main__.py")], env=os.environ).returncode
 if exit_code != 0:
     print("Yukon sanity test failed")
     exit(exit_code)

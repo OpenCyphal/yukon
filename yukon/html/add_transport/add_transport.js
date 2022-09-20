@@ -1,5 +1,17 @@
 // document load event
-(function () {
+(async function () {
+    const isSanityTest = window.location.href.includes("sanity_test=true");
+    if (isSanityTest) {
+        console.log("Sanity test is enabled");
+        window.addEventListener("error", function (error, url, line) {
+            zubax_api.fail_sanity_test(error, url, line);
+        });
+        setTimeout(async function () {
+            console.log("Sanity test on transport is moving to monitor");
+            await zubax_api.attach_udp_transport("127.0.0.0", 1200, 1);
+            await zubax_api.open_monitor_window();
+        }, 2500);
+    }
     var lastMessageIndex = -1;
     const transports = Object.freeze({
         UDP: {
@@ -243,17 +255,17 @@
             t.start();
             var t2 = new Tween(tabRow.slider.style, 'width', Tween.regularEaseOut, parseInt(tabRow.slider.style.width), targetWidth, 0.3, 'px');
             t2.start();
-            setTimeout(function() {
+            setTimeout(function () {
                 tabRow.slider.style.width = targetWidth + "px";
                 tabRow.slider.style.left = leftValue + "px";
                 tabRow.slider.style.top = topValue + "px";
             }, 0.3)
             tabRow.slider.style.height = tabRow.div.getBoundingClientRect().height + 4 + 'px';
-            if(isTopMost) {
+            if (isTopMost) {
                 const selectedTabName = Object.keys(transports)[index];
                 addChildTabRow(tabRow, selectedTabName);
             }
-            
+
             doTheTabSwitching();
             for (const child2 of labelChildren) {
                 if (child2 != child) {
@@ -322,20 +334,20 @@
             return tabRow;
         }
         function InitTabStuff() {
-            
-            
+
+
             const firstMainRow = addOneTabRow(Object.keys(transports), true)
             maybe_tabs.appendChild(firstMainRow.div);
-            for(const child in transports) {
-                if(currentSelectedTransportType[0] == transports[child]) {
+            for (const child in transports) {
+                if (currentSelectedTransportType[0] == transports[child]) {
                     addChildTabRow(firstMainRow, child);
                 }
             }
-            
+
             // // Iterate over each property of transport_types and add it to maybe-tabs
-            
+
             // I was here
-            
+
             // for (row of [firstRow, secondRow]) {
             //     const width_of_first_child = getLabelChildren(row)[0].getBoundingClientRect().width;
             //     const [topPos, leftPos] = getChildTopAndLeftPosition(getLabelChildren(row)[0]);
