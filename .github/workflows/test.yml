@@ -31,8 +31,9 @@ jobs:
           source venv/bin/activate
           yakut compile -O.compiled demos/sirius_cyber_corp
       - uses: browser-actions/setup-chrome@latest
+      - run: chrome --version
       - name: Testing frontend for errors, sanity test
-        run: python3 tests/src/sanity_test.py
+        run: python3 tests/src/sanity_test.py $(which chrome)
   build-release-linux:
     name: Yukon Linux Build
     runs-on: ubuntu-20.04

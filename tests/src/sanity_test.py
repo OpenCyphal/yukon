@@ -20,7 +20,9 @@ os.environ["PYTHONPATH"] = (
 )
 os.environ["IS_BROWSER_BASED"] = "1"
 os.environ["IS_SANITY_TEST"] = "1"
-
+# The first argument to the script is the path to the browser that will be used, it doesn't have to be provided however
+if len(sys.argv) > 1:
+    os.environ["BROWSER_PATH"] = sys.argv[1]
 run_demos_path = root / "demos" / "run_demos.py"
 print(run_demos_path.absolute())
 # Run the python script at run_demos_path in the background

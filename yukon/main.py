@@ -74,7 +74,17 @@ def run_electron() -> None:
 
 
 def open_webbrowser() -> None:
-    webbrowser.open(get_add_transport_url())
+    # if the environment variable BROWSER_PATH is set, use that browser
+    if os.environ.get("BROWSER_PATH"):
+        print("Using the browser path from environment variable")
+        webbrowser.register(
+            "custom_browser",
+            None,
+            webbrowser.BackgroundBrowser(os.environ.get("BROWSER_PATH")),
+        )
+        webbrowser.get("custom_browser").open(get_add_transport_url())
+    else:
+        webbrowser.open(get_add_transport_url())
 
 
 def run_server() -> None:
@@ -125,7 +135,6 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         if not state.gui.gui_running:
             break
 
-        print("GUI is still running")
     import multiprocessing
 
     for process in multiprocessing.active_children():
