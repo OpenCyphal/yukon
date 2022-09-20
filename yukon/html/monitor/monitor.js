@@ -17,11 +17,14 @@ import { openFile } from "./yaml.configurations.module.js"
         window.addEventListener("error", function (error, url, line) {
             zubax_api.fail_sanity_test(error, url, line);
         });
+        setTimeout(function () {
+            zubax_api.succeed_sanity_test();
+        }, 6000);
     }
-    setTimeout(function () {
-        // This is a hack to make the graph work on the first load
-        throw "Oh no";
-    }, 1000);
+    // setTimeout(function () {
+    //     // This is a hack to make the graph work on the first load
+    //     throw "Oh no";
+    // }, 1000);
 
     function waitForElm(selector, timeOutMilliSeconds) {
         return new Promise(resolve => {
