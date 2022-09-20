@@ -1,4 +1,5 @@
 import { secondsToString } from "./utilities.module.js";
+import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
 export function create_directed_graph(yukon_state) {
     cytoscape.use(cytoscapeKlay);
     let my_graph = cytoscape({
@@ -122,7 +123,7 @@ function getDrawingAspectRatio() {
     return cy_width / cy_height;
 }
 export function refresh_graph_layout(my_graph) {
-    if(typeof my_graph == "undefined") {
+    if (typeof my_graph == "undefined") {
         return;
     }
     var layout = my_graph.layout(
@@ -175,4 +176,48 @@ export function refresh_graph_layout(my_graph) {
         }
     );
     layout.run();
+}
+export function update_directed_graph(yukon_state) {
+    let my_graph = yukon_state.my_graph;
+    if (typeof my_graph == "undefined") { return; }
+    if (!areThereAnyNewOrMissingHashes("monitor_view_hash", yukon_state)) {
+        updateLastHashes("monitor_view_hash", yukon_state);
+        return;
+    }
+    updateLastHashes("monitor_view_hash", yukon_state);
+    my_graph.elements().remove();
+    let available_publishers = {};
+    let available_servers = {};
+    for (const avatar of yukon_state.current_avatars) {
+        console.log(avatar);
+        my_graph.add([{ data: { id: avatar.node_id, label: avatar.node_id + "\n" + avatar.name } }]);
+        if (!avatar.ports) { continue; }
+        // Add a node for each pub and connect, then connect avatar to every pub node
+        for (const pub of avatar.ports.pub) {
+            my_graph.add([{ data: { id: pub, "publish_subject": true, label: pub + "\nsubject" } }])
+            available_publishers[pub] = true;
+            my_graph.add([{ data: { source: avatar.node_id, target: pub, "publish_edge": true } }]);
+        }
+        // clients should point to servers
+        // client node --> [port] --> server node
+        // publisher node --> [port] --> subscriber node
+        for (const srv of avatar.ports.srv) {
+            my_graph.add([{ data: { id: srv, serve_subject: true, label: srv + "\nservice" } }])
+            my_graph.add([{ data: { source: srv, target: avatar.node_id, label: "A nice label", "serve_edge": true } }])
+        }
+
+    }
+    for (const avatar of yukon_state.current_avatars) {
+        for (const sub of avatar.ports.sub) {
+            if (available_publishers[sub]) {
+                my_graph.add([{ data: { source: sub, target: avatar.node_id, label: "A nice label" } }]);
+            }
+        }
+        for (const cln of avatar.ports.cln) {
+            if (available_servers[cln]) {
+                my_graph.add([{ data: { source: avatar.node_id, target: cln, label: "A nice label" } }]);
+            }
+        }
+    }
+    refresh_graph_layout(my_graph);
 }

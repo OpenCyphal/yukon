@@ -66,7 +66,7 @@ def run_electron() -> None:
 
 
 def open_webbrowser() -> None:
-    webbrowser.open("http://localhost:5000/add_transport/add_transport.html")
+    webbrowser.open("http://localhost:5000/monitor/monitor.html")
 
 
 def run_server() -> None:

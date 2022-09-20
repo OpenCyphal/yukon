@@ -1,11 +1,11 @@
 import { make_context_menus } from './context-menu.module.js';
-import { create_directed_graph, refresh_graph_layout } from './monitor.module.js';
+import { create_directed_graph, refresh_graph_layout, update_directed_graph } from './monitor.module.js';
 import { secondsToString } from "./utilities.module.js";
 import { add_node_id_headers, make_empty_table_header_row_cell, addContentForRegisterName, updateRegistersTableColors } from './registers.module.js';
 import { applyConfiguration, export_all_selected_registers, update_available_configurations_list, loadConfigurationFromOpenDialog } from './yaml.configurations.module.js';
 import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
 import { create_registers_table, update_tables } from './registers.module.js';
-import {get_all_selected_pairs, unselectAll, selectAll} from './registers.selection.module.js';
+import { get_all_selected_pairs, unselectAll, selectAll } from './registers.selection.module.js';
 import { rereadPairs } from "./registers.data.module.js"
 import { openFile } from "./yaml.configurations.module.js"
 
@@ -13,7 +13,7 @@ import { openFile } from "./yaml.configurations.module.js"
     function waitForElm(selector, timeOutMilliSeconds) {
         return new Promise(resolve => {
             let timeOutTimeout
-            if(timeOutMilliSeconds) {
+            if (timeOutMilliSeconds) {
                 timeOutTimeout = setTimeout(() => {
                     console.error("Timeout waiting for element: " + selector);
                     resolve(null);
@@ -22,22 +22,140 @@ import { openFile } from "./yaml.configurations.module.js"
             if (document.querySelector(selector)) {
                 return resolve(document.querySelector(selector));
             }
-    
+
             const observer = new MutationObserver(mutations => {
                 if (document.querySelector(selector)) {
-                    if(timeOutTimeout) {
+                    if (timeOutTimeout) {
                         clearTimeout(timeOutTimeout);
                     }
                     resolve(document.querySelector(selector));
                     observer.disconnect();
                 }
             });
-    
+
             observer.observe(document.body, {
                 childList: true,
                 subtree: true
             });
-            
+
+        });
+    }
+    function setUpMonitorComponent() {
+        // This is actually one of the tabs in the tabbed interface but it also acts as a refresh layout button
+        const btnMonitorTab = document.getElementById('btnMonitorTab');
+        btnMonitorTab.addEventListener('click', function () {
+            refresh_graph_layout(yukon_state.my_graph);
+        });
+        yukon_state.my_graph = create_directed_graph(yukon_state);
+        function get_and_display_avatars() {
+            zubax_api.get_avatars().then(
+                function (avatars) {
+                    var DTO = JSON.parse(avatars);
+                    yukon_state.current_avatars = DTO.avatars;
+                    update_directed_graph(yukon_state);
+                }
+            );
+        }
+
+        setInterval(get_and_display_avatars, 1000);
+        update_directed_graph(yukon_state);
+        var btnRefreshGraphLayout = document.getElementById('btnRefreshGraphLayout');
+        btnRefreshGraphLayout.addEventListener('click', function () {
+            refresh_graph_layout(yukon_state.my_graph)
+        });
+    }
+    function setUpStatusComponent() {
+        function update_avatars_table() {
+            var table_body = document.querySelector('#avatars_table tbody');
+            table_body.innerHTML = "";
+            // Take every avatar from yukon_state.current_avatars and make a row in the table
+            for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+                const row = table_body.insertRow(i);
+                const node_id = row.insertCell(0);
+                node_id.innerHTML = yukon_state.current_avatars[i].node_id;
+                const name = row.insertCell(1);
+                name.innerHTML = yukon_state.current_avatars[i].name || "No name";
+                // Insert cells for pub, sub, cln and srv
+                const sub_cell = row.insertCell(2);
+                const pub_cell = row.insertCell(3);
+                const cln_cell = row.insertCell(4);
+                const srv_cell = row.insertCell(5);
+                const health_cell = row.insertCell(6);
+                const software_version_cell = row.insertCell(7);
+                const hardware_version_cell = row.insertCell(8);
+                const uptime_cell = row.insertCell(9);
+                if (!yukon_state.current_avatars[i].ports) { continue; }
+                pub_cell.innerHTML = yukon_state.current_avatars[i].ports.pub.toString();
+                if (yukon_state.current_avatars[i].ports.sub.length == 8192) {
+                    sub_cell.innerHTML = "All";
+                } else {
+                    sub_cell.innerHTML = yukon_state.current_avatars[i].ports.sub.toString();
+                }
+                cln_cell.innerHTML = yukon_state.current_avatars[i].ports.cln.toString();
+                srv_cell.innerHTML = yukon_state.current_avatars[i].ports.srv.toString();
+                health_cell.innerHTML = yukon_state.current_avatars[i].last_heartbeat.health_text;
+                software_version_cell.innerHTML = yukon_state.current_avatars[i].versions.software_version;
+                hardware_version_cell.innerHTML = yukon_state.current_avatars[i].versions.hardware_version;
+                uptime_cell.innerHTML = secondsToString(yukon_state.current_avatars[i].last_heartbeat.uptime);
+            }
+        }
+        setInterval(update_avatars_table, 1000);
+    }
+    async function setUpRegistersComponent() {
+
+        setInterval(update_tables, 1000)
+    }
+    function setUpDebugTextOutComponent() {
+        let isRefreshTextOutAllowed = true;
+        async function updateTextOut(refresh_anyway = false) {
+            if (!isRefreshTextOutAllowed && !refresh_anyway) { return; }
+            zubax_api.get_avatars().then(
+                function (avatars) {
+                    const textOut = document.querySelector("#textOut");
+                    const DTO = JSON.parse(avatars);
+                    if (DTO.hash != yukon_state.lastHash || refresh_anyway) {
+                        yukon_state.lastHash = DTO.hash;
+                        textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
+                    }
+                    // Parse avatars as json
+                }
+            );
+        }
+        setInterval(updateTextOut, 1000);
+        const cbStopTextOutRefresh = document.querySelector("#cbStopTextOutRefresh");
+        cbStopTextOutRefresh.addEventListener("change", () => {
+            if (cbStopTextOutRefresh.checked) {
+                isRefreshTextOutAllowed = false;
+            } else {
+                isRefreshTextOutAllowed = true;
+            }
+        });
+        const btnRefreshTextOut = document.querySelector("#btnRefreshTextOut");
+        btnRefreshTextOut.addEventListener("click", async () => {
+            await updateTextOut(true);
+        });
+    }
+    async function setUpMessagesComponent() {
+        var messagesList = document.querySelector("#messages-list");
+        var cbShowTimestamp = await waitForElm('#cbShowTimestamp');
+        cbShowTimestamp.addEventListener('change', function () {
+            if (cbShowTimestamp.checked) {
+                // For every message, add a timestamp to the message, use a for each loop
+                for (message of messagesList.children) {
+                    message.setAttribute("title", message.getAttribute("timeStampReadable"));
+                }
+            } else {
+                // Remove the timestamp from every message
+                for (message of messagesList.children) {
+                    message.removeAttribute("title");
+                }
+            }
+        });
+    }
+    function setUpTransportsComponent() {
+        const btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
+        btnAddAnotherTransport.addEventListener('click', function () {
+            zubax_api.open_add_transport_window();
         });
     }
     yukon_state.addLocalMessage = function (message) {
@@ -58,7 +176,7 @@ import { openFile } from "./yaml.configurations.module.js"
                             content: [
                                 {
                                     type: 'stack',
-                                    content:[
+                                    content: [
                                         {
                                             type: 'component',
                                             componentName: 'monitorComponent',
@@ -85,86 +203,60 @@ import { openFile } from "./yaml.configurations.module.js"
                         {
                             type: 'column',
                             width: 30,
-                            content:[
+                            content: [
                                 {
                                     type: 'component',
                                     componentName: 'messagesComponent',
                                     isClosable: false,
                                     title: 'Messages',
                                 }
-                            ]   
+                            ]
                         }
                     ]
                 }
             ]
         };
-        var myLayout = new GoldenLayout( config );
-        myLayout.registerComponent('registersComponent', function( container, componentState ){
-            const xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
+        function dynamicallyLoadHTML(path, container, callback, callback_delay) {
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function () {
                 if (this.readyState == 4) {
                     if (this.status == 200) {
                         container.getElement().html(this.responseText);
+                        if (callback_delay) {
+                            setTimeout(callback, callback_delay);
+                        } else {
+                            callback();
+                        }
+                    } else if (this.status == 404) {
+                        container.getElement().html("Page not found.");
+                    } else {
+                        container.getElement().html("Error: " + this.status);
                     }
-                    if (this.status == 404) {container.getElement().html("Page not found.");}
                 }
             }
-            xhttp.open("GET", "../registers.panel.html", true);
-            xhttp.send();
+            xhr.open("GET", path, true);
+            xhr.send();
+        }
+        var myLayout = new GoldenLayout(config);
+        myLayout.registerComponent('registersComponent', function (container, componentState) {
+            dynamicallyLoadHTML("../registers.panel.html", container, setUpRegistersComponent, 100);
         });
-        myLayout.registerComponent('statusComponent', function( container, componentState ){
-            const xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
-                if (this.readyState == 4) {
-                    if (this.status == 200) {
-                        container.getElement().html(this.responseText);
-                    }
-                    if (this.status == 404) {container.getElement().html("Page not found.");}
-                }
-            }
-            xhttp.open("GET", "../status.panel.html", true);
-            xhttp.send();
+        myLayout.registerComponent('statusComponent', function (container, componentState) {
+            dynamicallyLoadHTML("../status.panel.html", container, setUpStatusComponent, 100);
         });
-        myLayout.registerComponent('monitorComponent', function( container, componentState ){
-            const xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
-                if (this.readyState == 4) {
-                    if (this.status == 200) {
-                        container.getElement().html(this.responseText);
-                        setTimeout(function()
-                        {
-                            yukon_state.my_graph = create_directed_graph(yukon_state);
-                        }, 100);
-                    }
-                    if (this.status == 404) {container.getElement().html("Page not found.");}
-                }
-            }
-            xhttp.open("GET", "monitor-window.html", true);
-            xhttp.send();
+        myLayout.registerComponent('monitorComponent', function (container, componentState) {
+            dynamicallyLoadHTML("../monitor.panel.html", container, setUpMonitorComponent, 100);
         });
-        myLayout.registerComponent('messagesComponent', function( container, componentState ){
-            const xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
-                if (this.readyState == 4) {
-                    if (this.status == 200) {
-                        container.getElement().html(this.responseText);
-                    }
-                    if (this.status == 404) {container.getElement().html("Page not found.");}
-                }
-            }
-            xhttp.open("GET", "../messages.panel.html", true);
-            xhttp.send();
+        myLayout.registerComponent('messagesComponent', function (container, componentState) {
+            dynamicallyLoadHTML("../messages.panel.html", container, setUpMessagesComponent, 100);
         });
         myLayout.init();
         yukon_state.zubax_api = zubax_api;
         yukon_state.jsyaml = jsyaml;
         // Make a callback on the page load event
         console.log("monitor ready");
-        const iRegistersFilter = await waitForElm('#iRegistersFilter');
-        const cbSimplifyRegisters = await waitForElm('#cbSimplifyRegisters');
         const divAllRegistersButtons = await waitForElm('#divAllRegistersButtons');
         divAllRegistersButtons.style.display = 'none';
-        var selected_registers = yukon_state.selections.selected_registers;
         let lastInternalMessageIndex = -1;
         yukon_state.selectingTableCellsIsDisabledStyle = document.createElement('style');
         yukon_state.selectingTableCellsIsDisabledStyle.innerHTML = `
@@ -286,37 +378,6 @@ import { openFile } from "./yaml.configurations.module.js"
             );
         }
         setInterval(fetchAndHandleInternalMessages, 1000);
-        let isRefreshTextOutAllowed = true;
-        async function updateTextOut(refresh_anyway = false) {
-            if(!isRefreshTextOutAllowed && !refresh_anyway) {return;}
-            zubax_api.get_avatars().then(
-                function (avatars) {
-                    const textOut = document.querySelector("#textOut");
-                    const DTO = JSON.parse(avatars);
-                    if (DTO.hash != yukon_state.lastHash || refresh_anyway) {
-                        yukon_state.lastHash = DTO.hash;
-                        textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
-                    }
-                    // Parse avatars as json
-                }
-            );
-        }
-        setInterval(updateTextOut, 1000);
-        const cbStopTextOutRefresh = document.querySelector("#cbStopTextOutRefresh");
-        cbStopTextOutRefresh.addEventListener("change", () => {
-            if(cbStopTextOutRefresh.checked) {
-                isRefreshTextOutAllowed = false;
-            } else {
-                isRefreshTextOutAllowed = true;
-            }
-        });
-        const btnRefreshTextOut = document.querySelector("#btnRefreshTextOut");
-        btnRefreshTextOut.addEventListener("click", async () => {
-            await updateTextOut(true);
-        });
-
-        setInterval(update_tables, 1000)
-        setInterval(update_avatars_table, 1000);
 
         function setTableCellSelectability(selectable) {
             for (var i = 1; i < registers_table.rows.length; i++) {
@@ -327,40 +388,6 @@ import { openFile } from "./yaml.configurations.module.js"
             }
         }
 
-        function update_avatars_table() {
-            var table_body = document.querySelector('#avatars_table tbody');
-            table_body.innerHTML = "";
-            // Take every avatar from yukon_state.current_avatars and make a row in the table
-            for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                const row = table_body.insertRow(i);
-                const node_id = row.insertCell(0);
-                node_id.innerHTML = yukon_state.current_avatars[i].node_id;
-                const name = row.insertCell(1);
-                name.innerHTML = yukon_state.current_avatars[i].name || "No name";
-                // Insert cells for pub, sub, cln and srv
-                const sub_cell = row.insertCell(2);
-                const pub_cell = row.insertCell(3);
-                const cln_cell = row.insertCell(4);
-                const srv_cell = row.insertCell(5);
-                const health_cell = row.insertCell(6);
-                const software_version_cell = row.insertCell(7);
-                const hardware_version_cell = row.insertCell(8);
-                const uptime_cell = row.insertCell(9);
-                if (!yukon_state.current_avatars[i].ports) { continue; }
-                pub_cell.innerHTML = yukon_state.current_avatars[i].ports.pub.toString();
-                if (yukon_state.current_avatars[i].ports.sub.length == 8192) {
-                    sub_cell.innerHTML = "All";
-                } else {
-                    sub_cell.innerHTML = yukon_state.current_avatars[i].ports.sub.toString();
-                }
-                cln_cell.innerHTML = yukon_state.current_avatars[i].ports.cln.toString();
-                srv_cell.innerHTML = yukon_state.current_avatars[i].ports.srv.toString();
-                health_cell.innerHTML = yukon_state.current_avatars[i].last_heartbeat.health_text;
-                software_version_cell.innerHTML = yukon_state.current_avatars[i].versions.software_version;
-                hardware_version_cell.innerHTML = yukon_state.current_avatars[i].versions.hardware_version;
-                uptime_cell.innerHTML = secondsToString(yukon_state.current_avatars[i].last_heartbeat.uptime);
-            }
-        }
         function serialize_configuration_of_all_avatars() {
             var configuration = {};
             yukon_state.current_avatars.forEach(function (avatar) {
@@ -368,94 +395,12 @@ import { openFile } from "./yaml.configurations.module.js"
             });
             return JSON.stringify(configuration);
         }
-        function update_directed_graph() {
-            let my_graph = yukon_state.my_graph;
-            if(typeof my_graph == "undefined") {return;}
-            if (!areThereAnyNewOrMissingHashes("monitor_view_hash", yukon_state)) {
-                updateLastHashes("monitor_view_hash", yukon_state);
-                return;
-            }
-            updateLastHashes("monitor_view_hash", yukon_state);
-            my_graph.elements().remove();
-            let available_publishers = {};
-            let available_servers = {};
-            for (const avatar of yukon_state.current_avatars) {
-                console.log(avatar);
-                my_graph.add([{ data: { id: avatar.node_id, label: avatar.node_id + "\n" + avatar.name } }]);
-                if (!avatar.ports) { continue; }
-                // Add a node for each pub and connect, then connect avatar to every pub node
-                for (const pub of avatar.ports.pub) {
-                    my_graph.add([{ data: { id: pub, "publish_subject": true, label: pub + "\nsubject" } }])
-                    available_publishers[pub] = true;
-                    my_graph.add([{ data: { source: avatar.node_id, target: pub, "publish_edge": true } }]);
-                }
-                // clients should point to servers
-                // client node --> [port] --> server node
-                // publisher node --> [port] --> subscriber node
-                for (const srv of avatar.ports.srv) {
-                    my_graph.add([{ data: { id: srv, serve_subject: true, label: srv + "\nservice" } }])
-                    my_graph.add([{ data: { source: srv, target: avatar.node_id, label: "A nice label", "serve_edge": true } }])
-                }
-
-            }
-            for (const avatar of yukon_state.current_avatars) {
-                for (const sub of avatar.ports.sub) {
-                    if (available_publishers[sub]) {
-                        my_graph.add([{ data: { source: sub, target: avatar.node_id, label: "A nice label" } }]);
-                    }
-                }
-                for (const cln of avatar.ports.cln) {
-                    if (available_servers[cln]) {
-                        my_graph.add([{ data: { source: avatar.node_id, target: cln, label: "A nice label" } }]);
-                    }
-                }
-            }
-            refresh_graph_layout(my_graph);
-        }
-        function update_plot() {
-            // Plotly.newPlot("plot_placeholder", /* JSON object */ {
-            //     "data": [{ "y": [1, 2, 3] }],
-            //     "layout": { "width": 600, "height": 400 }
-            // })
-        }
-
-
-        function get_and_display_avatars() {
-            zubax_api.get_avatars().then(
-                function (avatars) {
-                    var DTO = JSON.parse(avatars);
-                    yukon_state.current_avatars = DTO.avatars;
-                    update_directed_graph();
-                }
-            );
-        }
-
-        setInterval(get_and_display_avatars, 1000);
-        update_directed_graph();
 
         //        var btnFetch = document.getElementById('btnFetch');
         //        btnFetch.addEventListener('click', function () {
         //            update_messages()
         //        });
-        var btnRefreshGraphLayout = document.getElementById('btnRefreshGraphLayout');
-        btnRefreshGraphLayout.addEventListener('click', function () {
-            refresh_graph_layout(yukon_state.my_graph)
-        });
-        var messagesList = document.querySelector("#messages-list");
-        var cbShowTimestamp = await waitForElm('#cbShowTimestamp');
-        cbShowTimestamp.addEventListener('change', function () {
-            if (cbShowTimestamp.checked) {
-                // For every message, add a timestamp to the message, use a for each loop
-                for (message of messagesList.children) {
-                    message.setAttribute("title", message.getAttribute("timeStampReadable"));
-                }
-            } else {
-                // Remove the timestamp from every message
-                for (message of messagesList.children) {
-                    message.removeAttribute("title");
-                }
-            }
-        });
+
         // if hide-yakut is checked then send a message to the server to hide the yakut
         var hideYakut = document.getElementById('hide-yakut');
         hideYakut.addEventListener('change', async function () {
@@ -466,100 +411,6 @@ import { openFile } from "./yaml.configurations.module.js"
                 await zubax_api.show_yakut()
                 await updateTextOut(true);
             }
-        });
-        // This is actually one of the tabs in the tabbed interface but it also acts as a refresh layout button
-        const btnMonitorTab = document.getElementById('btnMonitorTab');
-        btnMonitorTab.addEventListener('click', function () {
-            refresh_graph_layout(yukon_state.my_graph);
-        });
-        const btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
-        btnAddAnotherTransport.addEventListener('click', function () {
-            zubax_api.open_add_transport_window();
-        });
-        const btnImportRegistersConfig = await waitForElm('#btnImportRegistersConfig');
-        btnImportRegistersConfig.addEventListener('click', async function () {
-            loadConfigurationFromOpenDialog(false, yukon_state)
-        });
-        const btnSelectedSetFromPrompt = document.getElementById('btnSelectedSetFromPrompt');
-        btnSelectedSetFromPrompt.addEventListener('click', function () {
-            new_value = prompt("Enter the new value of selected registers", "")
-            if (new_value == null) { addLocalMessage("No value was provided in the prompt."); return; }
-            addLocalMessage("Setting selected registers to " + new_value);
-            for (const key of Object.keys(selected_registers)) {
-                if (selected_registers[key] == false) {
-                    continue;
-                }
-                const [node_id, register_name] = key.split(",");
-                if (node_id && register_name) {
-                    update_register_value(register_name, new_value, node_id, yukon_state);
-                }
-            }
-            // Run update_tables every second, do that only for the next 4 seconds
-            let interval1 = setInterval(() => update_tables(true), 1000);
-            setTimeout(() => clearInterval(interval1), 4000);
-        });
-        const btnSelectedUnsetValues = document.getElementById('btnSelectedUnsetValues');
-        btnSelectedUnsetValues.addEventListener('click', function () {
-            addLocalMessage("Unsetting selected registers");
-            for (const key of Object.keys(selected_registers)) {
-                if (selected_registers[key] == false) {
-                    continue;
-                }
-                const [node_id, register_name] = key.split(",");
-                if (node_id && register_name) {
-                    update_register_value(register_name, "65535", node_id, yukon_state);
-                }
-            }
-            // Run update_tables every second, do that only for the next 4 seconds
-            let interval1 = setInterval(() => update_tables(true), 1000);
-            setTimeout(() => clearInterval(interval1), 4000);
-        });
-        const btnUnselectAll = document.getElementById('btnUnselectAll');
-        btnUnselectAll.addEventListener('click', function () {
-
-        });
-        const btnExportAllSelectedRegisters = document.getElementById('btnExportAllSelectedRegisters');
-        btnExportAllSelectedRegisters.addEventListener('click', async function (event) {
-            await export_all_selected_registers(null, null, yukon_state);
-            event.stopPropagation();
-        });
-
-        var timer = null;
-        iRegistersFilter.addEventListener("input", function () {
-            if (timer) {
-                clearTimeout(timer);
-            }
-            timer = setTimeout(function () {
-                create_registers_table(null, yukon_state)
-            }, 500);
-        });
-        const btnRereadAllRegisters = document.getElementById('btnRereadAllRegisters');
-        btnRereadAllRegisters.addEventListener('click', function () {
-            const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": null });
-            let pairs = [];
-            // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
-            for (const node_id of Object.keys(data)) {
-                const value = data[node_id];
-                pairs[node_id] = {};
-                for (const register_name of Object.keys(value)) {
-                    pairs[node_id][register_name] = true;
-                }
-            }
-            rereadPairs(pairs, yukon_state);
-        });
-        const btnRereadSelectedRegisters = document.getElementById('btnRereadSelectedRegisters');
-        btnRereadSelectedRegisters.addEventListener('click', function () {
-            const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null });
-            let pairs = {};
-            // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
-            for (const node_id of Object.keys(data)) {
-                const value = data[node_id];
-                pairs[node_id] = {};
-                for (const register_name of Object.keys(value)) {
-                    pairs[node_id][register_name] = true;
-                }
-            }
-            rereadPairs(data, yukon_state);
         });
     }
     try {

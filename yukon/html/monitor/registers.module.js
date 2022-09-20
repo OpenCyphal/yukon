@@ -267,6 +267,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
 }
 export function create_registers_table(_filter_keyword_inclusive, yukon_state) {
     // Clear the table
+    const iRegistersFilter = document.querySelector('#iRegistersFilter');
     const filter_keyword_inclusive = _filter_keyword_inclusive || iRegistersFilter.value;
     var registers_table = document.querySelector('#registers_table')
     registers_table.innerHTML = '';
@@ -309,7 +310,7 @@ export function update_tables(override) {
 }
 
 export function updateRegistersTableColors(yukon_state, repeat_times, repeat_delay) {
-    if(repeat_times && repeat_times > 0) {
+    if (repeat_times && repeat_times > 0) {
         setTimeout(() => updateRegistersTableColors(yukon_state, repeat_times - 1, repeat_delay), repeat_delay)
     }
     console.log("Updating register colors");
