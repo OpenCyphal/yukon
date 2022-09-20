@@ -8,6 +8,7 @@ import { create_registers_table, update_tables } from './registers.module.js';
 import { get_all_selected_pairs, unselectAll, selectAll } from './registers.selection.module.js';
 import { rereadPairs } from "./registers.data.module.js"
 import { openFile } from "./yaml.configurations.module.js"
+import { initTransports } from "./transports.module.js"
 
 (async function () {
     function waitForElm(selector, timeOutMilliSeconds) {
@@ -153,6 +154,7 @@ import { openFile } from "./yaml.configurations.module.js"
         });
     }
     function setUpTransportsComponent() {
+        initTransports(yukon_state);
         const btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
         btnAddAnotherTransport.addEventListener('click', function () {
             zubax_api.open_add_transport_window();
@@ -205,11 +207,23 @@ import { openFile } from "./yaml.configurations.module.js"
                             width: 30,
                             content: [
                                 {
-                                    type: 'component',
-                                    componentName: 'messagesComponent',
-                                    isClosable: false,
-                                    title: 'Messages',
+                                    type: 'stack',
+                                    content: [
+                                        {
+                                            type: 'component',
+                                            componentName: 'messagesComponent',
+                                            isClosable: false,
+                                            title: 'Messages',
+                                        },
+                                        {
+                                            type: "component",
+                                            componentName: "transportsComponent",
+                                            isClosable: false,
+                                            title: "Transports",
+                                        }
+                                    ]
                                 }
+
                             ]
                         }
                     ]
@@ -249,6 +263,9 @@ import { openFile } from "./yaml.configurations.module.js"
         });
         myLayout.registerComponent('messagesComponent', function (container, componentState) {
             dynamicallyLoadHTML("../messages.panel.html", container, setUpMessagesComponent, 100);
+        });
+        myLayout.registerComponent('transportsComponent', function (container, componentState) {
+            dynamicallyLoadHTML("../add_transport.panel.html", container, setUpTransportsComponent, 100);
         });
         myLayout.init();
         yukon_state.zubax_api = zubax_api;
