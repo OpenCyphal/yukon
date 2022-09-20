@@ -371,13 +371,13 @@ class Api:
         else:
             os.spawnl(os.P_NOWAIT, exe_path, exe_path, url)
 
-    def fail_sanity_test(self, error: str, url: str, line: str) -> None:
+    def fail_sanity_test(self, error: str, url: str, line: str) -> str:
         logger.error(f"Sanity test failed: {error} at {url}:{line}")
         self.state.gui.gui_running = False
         self.state.failed_sanity_test = True
         return "Now you can close too"
 
-    def succeed_sanity_test(self) -> None:
+    def succeed_sanity_test(self) -> str:
         logger.info("Sanity test succeeded")
         self.state.gui.gui_running = False
         self.state.failed_sanity_test = False

@@ -27,7 +27,7 @@ logger = logging.getLogger()
 logger.setLevel("INFO")
 
 
-def get_add_transport_url():
+def get_add_transport_url() -> str:
     parameters = ""
     # Check if os.environ contains "IS_SANITY_TEST"
     if os.environ.get("IS_SANITY_TEST"):
