@@ -128,6 +128,7 @@ textarea#textOut {
     justify-content: space-between;
     align-items: flex-start;
 }
+
 .block-display * {
     margin-top: 0.5em;
 }
@@ -135,11 +136,12 @@ textarea#textOut {
 .white-text {
     color: #fff !important;
 }
+
 .white-text * {
     color: #fff !important;
 }
 
-.white-text ~ * {
+.white-text~* {
     color: #fff !important;
 }
 
@@ -151,6 +153,7 @@ textarea#textOut {
     margin-top: 0.5em;
     padding: 0.25em 2px;
 }
+
 .pair-div.incompatible {
     background-color: rgba(255, 0, 0, 0.165);
     color: #fff;
@@ -164,7 +167,114 @@ textarea#textOut {
     top: 0;
     left: 0;
 }
+
 #no-refresh-option input {
     width: 3em;
     height: 3em;
+}
+
+#registers-header {
+    position: sticky;
+    left: 0px;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#layout {
+    display: block;
+    flex-grow: 4;
+}
+
+#toolbar {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    height: 3em;
+    background-color: rgb(203, 203, 203);
+    border-bottom: 1px solid #000;
+    position: relative;
+}
+
+#toolbar button {
+    border: 1px solid #000;
+    border-radius: 0.25em;
+    background-color: rgb(135, 135, 135);
+    color: #fff;
+    font-size: 1.5em;
+    padding: 0.25em 0.5em;
+    margin: 0.25em;
+}
+
+#toolbar button:hover {
+    background-color: #000;
+    color: #fff;
+    cursor: pointer;
+}
+
+#toolbar button:active {
+    background-color: #000;
+    color: #fff;
+    box-shadow: 0 0 0.25em #000 inset;
+    animation: fadeout 0.5s ease-in-out;
+}
+
+@keyframes fadeout {
+    0% {
+        background-color: #000;
+        color: #fff;
+    }
+
+    50% {
+        background-color: rgb(135, 135, 135);
+        color: #fff;
+    }
+
+    100% {
+        background-color: #000;
+        color: #fff;
+    }
+}
+
+#toolbar button:disabled {
+    background-color: #000;
+    color: #fff;
+    box-shadow: 0 0 0.25em #000 inset;
+}
+
+#toolbar button:disabled:hover {
+    background-color: #000;
+    color: #fff;
+    box-shadow: 0 0 0.25em #000 inset;
+}
+
+#toolbar button:disabled:active {
+    background-color: #000;
+    color: #fff;
+    box-shadow: 0 0 0.25em #000 inset;
+}
+
+#toolbar button:disabled:focus {
+    background-color: #000;
+    color: #fff;
+    box-shadow: 0 0 0.25em #000 inset;
+}
+
+button#btnShowHideToolbar {
+    position: absolute;
+    top: 0.5em;
+    right: 0.5em;
+    border: 1px solid #000;
+    border-radius: 0.25em;
+    background-color: rgb(135, 135, 135);
+    color: #fff;
+    font-size: 1.5em;
+    padding: 0.25em 0.5em;
 }

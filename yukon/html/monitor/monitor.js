@@ -447,7 +447,19 @@ import { initTransports } from "./transports.module.js"
             xhr.send();
         }
         const outsideContext = this;
-        var myLayout = new GoldenLayout(config);
+        var myLayout = new GoldenLayout(config, document.querySelector("#layout"));
+        const btnShowHideToolbar = document.getElementById('btnShowHideToolbar');
+        btnShowHideToolbar.addEventListener('click', function () {
+            var toolbar = document.getElementById('toolbar');
+            if (toolbar.style.display == "none") {
+                toolbar.style.display = "block";
+            } else {
+                toolbar.style.display = "none";
+            }
+            setTimeout(function () {
+                myLayout.updateSize();
+            }, 50);
+        });
         myLayout.registerComponent('registersComponent', function (container, componentState) {
             let isDestroyed = true;
             dynamicallyLoadHTML("../registers.panel.html", container, () => {
@@ -505,18 +517,29 @@ import { initTransports } from "./transports.module.js"
             });
         });
         myLayout.registerComponent('messagesComponent', function (container, componentState) {
-            let hasLoaded = false;
+            let isDestroyed = true;
             dynamicallyLoadHTML("../messages.panel.html", container, () => {
-                setUpMessagesComponent.bind(outsideContext)();
+                if (isDestroyed) {
+                    setUpMessagesComponent.bind(outsideContext)();
+                    isDestroyed = false;
+                }
             }, 100);
             container.on("open", function () {
                 console.log("Messages panel opened");
-                if (hasLoaded) {
-                    setUpMessagesComponent.bind(outsideContext)();
-                }
                 container.on("show", function () {
                     console.log("Messages panel shown");
+                    if (isDestroyed) {
+                        console.log("Messages panel is destroyed, setting up");
+                        setTimeout(() => {
+                            setUpMessagesComponent.bind(outsideContext)();
+                            isDestroyed = false;
+                        }, 100);
+                    }
                 });
+            });
+            container.on("destroy", function () {
+                console.log("Messages panel destroyed");
+                isDestroyed = true;
             });
         });
         myLayout.registerComponent('transportsComponent', function (container, componentState) {

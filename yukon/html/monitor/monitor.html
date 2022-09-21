@@ -39,68 +39,13 @@
 </head>
 
 <body>
-    <div id="tabs" class="c-tabs no-js" style="display: none">
-        <div class="c-tabs-nav">
-            <a href="#" class="c-tabs-nav__link is-active" ondragstart="return false;" ondrop="return false;"
-                id="btnMonitorTab">Monitor</a>
-            <a href="#" class="c-tabs-nav__link" ondragstart="return false;" ondrop="return false;"
-                id="btnMessagesTab">Messages</a>
-            <a href="#" class="c-tabs-nav__link" ondragstart="return false;" ondrop="return false;">Settings</a>
-            <a href="#" class="c-tabs-nav__link" ondragstart="return false;" ondrop="return false;"
-                id="btnTextOutput">Debug view (JSON)</a>
-            <a href="#" class="c-tabs-nav__link" ondragstart="return false;" ondrop="return false;">Port lists table</a>
-            <a href="#" class="c-tabs-nav__link" ondragstart="return false;" ondrop="return false;">Registers view</a>
-            <a href="#" class="c-tabs-nav__link" ondragstart="return false;" ondrop="return false;"
-                id="btnAddAnotherTransport">Add another transport</a>
-        </div>
-        <div class="c-tab is-active">
-            <div class="c-tab__content">
-                <div class="graph-control">
-                    <button id="btnRefreshGraphLayout">Refresh layout</button>
-                </div>
-            </div>
-        </div>
-        <div class="c-tab">
-        </div>
-        <div class="c-tab">
-            <h1>Settings</h1>
-            <div class="settings">
-                <div class="option" title="This detects and filters out Yakut as a node from all the tabs.">
-                    <label for="hide-yakut">Hide Yakut</label>
-                    <input type="checkbox" id="hide-yakut">
-                </div>
-            </div>
-        </div>
-        <div class="c-tab" id="tabTextOut">
-            <div id="no-refresh-option">
-                <label for="cbStopTextOutRefresh">Stop refreshing text output</label>
-                <input id="cbStopTextOutRefresh" type="checkbox">
-            </div>
-            <div id="manual-textout-refresh">
-                <button id="btnRefreshTextOut">Refresh</button>
-            </div>
-
-            <textarea id="textOut" spellcheck="false"></textarea>
-        </div>
-        <div class="c-tab">
-
-        </div>
-        <div class="c-tab registers-tab">
-
-        </div>
+    <div id="toolbar">
+        <button>Hello</button>
+        <button>Another one</button>
+        <button id="btnShowHideToolbar">^</button>
     </div>
-
-
-    <div id="plot_placeholder"></div>
-
-    <script>
-        var myTabs = tabs({
-            el: '#tabs',
-            tabNavigationLinks: '.c-tabs-nav__link',
-            tabContentContainers: '.c-tab'
-        });
-        myTabs.init();
-    </script>
+    <div id="layout">
+    </div>
 </body>
 
 </html>
