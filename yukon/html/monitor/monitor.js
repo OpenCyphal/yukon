@@ -45,11 +45,6 @@ import { initTransports } from "./transports.module.js"
         yukon_state.current_avatars = JSON.parse(await zubax_api.get_avatars()).avatars;
     }
     function setUpMonitorComponent() {
-        // This is actually one of the tabs in the tabbed interface but it also acts as a refresh layout button
-        const btnMonitorTab = document.getElementById('btnMonitorTab');
-        btnMonitorTab.addEventListener('click', function () {
-            refresh_graph_layout(yukon_state.my_graph);
-        });
         yukon_state.my_graph = create_directed_graph(yukon_state);
         async function get_and_display_avatars() {
             await update_avatars_dto();
@@ -272,8 +267,6 @@ import { initTransports } from "./transports.module.js"
         myLayout.init();
         yukon_state.zubax_api = zubax_api;
         yukon_state.jsyaml = jsyaml;
-        // Make a callback on the page load event
-        console.log("monitor ready");
         let lastInternalMessageIndex = -1;
         yukon_state.selectingTableCellsIsDisabledStyle = document.createElement('style');
         yukon_state.selectingTableCellsIsDisabledStyle.innerHTML = `
