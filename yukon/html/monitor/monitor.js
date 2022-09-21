@@ -452,9 +452,27 @@ import { initTransports } from "./transports.module.js"
         btnShowHideToolbar.addEventListener('click', function () {
             var toolbar = document.getElementById('toolbar');
             if (toolbar.style.display == "none") {
-                toolbar.style.display = "block";
+                toolbar.style.display = "flex";
+                btnShowHideToolbar.parentElement.removeChild(btnShowHideToolbar);
+                btnShowHideToolbar.style.right = "0.5em";
+                toolbar.appendChild(btnShowHideToolbar);
+                // // A hack
+                // document.body.style.overflow = "scroll";
+                // setTimeout(function () {
+                //     document.body.style.overflow = "hidden";
+                // }, 100);
+                btnShowHideToolbar.innerHTML = "∧";
             } else {
+                // Set the parent of btnShowHideToolbar to the body so that it is not removed when the toolbar is hidden
+                // Also set it to position top right
+                btnShowHideToolbar.style.top = "-0.5em";
+                btnShowHideToolbar.style.right = "2em";
+                btnShowHideToolbar.style.bottom = "auto";
+                btnShowHideToolbar.parentElement.removeChild(btnShowHideToolbar);
+                document.body.appendChild(btnShowHideToolbar);
                 toolbar.style.display = "none";
+                btnShowHideToolbar.style.zIndex = "1000";
+                btnShowHideToolbar.innerHTML = "∨";
             }
             setTimeout(function () {
                 myLayout.updateSize();

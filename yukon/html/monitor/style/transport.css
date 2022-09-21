@@ -156,6 +156,6 @@ form#transport-selection-form>#maybe-tabs input {
 }
 
 form#transport-selection-form>#maybe-tabs .tab-slider {
-    position: fixed;
+    position: absolute;
     background-color: #ee0000;
 }

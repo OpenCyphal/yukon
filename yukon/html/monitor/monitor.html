@@ -15,9 +15,7 @@
     <script src="messages/messages.js"></script>
     <script src="../js-yaml.js"></script>
     <script src="../cool-custom-context-menu/ContextMenu.js"></script>
-    <script type="module" src="monitor.module.js"></script>
     <script type="module" src="monitor.js"></script>
-    <script type="module" src="context-menu.module.js"></script>
     <script src="klay/klay.js"></script>
     <script src="klay/klay-layout.js"></script>
     <script src="tabs.js"></script>
@@ -28,8 +26,6 @@
     <link rel="stylesheet" href="style/style.css">
     <link rel="stylesheet" href="style/split.css">
     <link rel="stylesheet" href="style/table_style.css">
-    <link rel="stylesheet" href="style/tabs.css">
-    <link rel="stylesheet" href="../global.css">
     <link rel="stylesheet" href="../cool-custom-context-menu/ContextMenu.css" />
     <link rel="stylesheet" href="../golden-layout/goldenlayout-base.css">
     <link rel="stylesheet" href="../golden-layout/goldenlayout-light-theme.css">
@@ -39,12 +35,12 @@
 </head>
 
 <body>
-    <div id="toolbar">
-        <button>Hello</button>
-        <button>Another one</button>
-        <button id="btnShowHideToolbar">^</button>
-    </div>
-    <div id="layout">
+    <div id="mainContainer">
+        <div id="toolbar">
+            <button id="btnShowHideToolbar">∧</button>
+        </div>
+        <div id="layout">
+        </div>
     </div>
 </body>
 

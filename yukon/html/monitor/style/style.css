@@ -178,18 +178,21 @@ textarea#textOut {
     left: 0px;
 }
 
+html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
 body {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: stretch;
     height: 100vh;
-    overflow: hidden;
 }
 
 #layout {
     display: block;
     flex-grow: 4;
+    flex-shrink: 1;
 }
 
 #toolbar {
@@ -197,6 +200,7 @@ body {
     flex-direction: row;
     justify-content: flex-start;
     align-items: center;
+    min-height: 3em;
     height: 3em;
     background-color: rgb(203, 203, 203);
     border-bottom: 1px solid #000;
@@ -243,30 +247,6 @@ body {
     }
 }
 
-#toolbar button:disabled {
-    background-color: #000;
-    color: #fff;
-    box-shadow: 0 0 0.25em #000 inset;
-}
-
-#toolbar button:disabled:hover {
-    background-color: #000;
-    color: #fff;
-    box-shadow: 0 0 0.25em #000 inset;
-}
-
-#toolbar button:disabled:active {
-    background-color: #000;
-    color: #fff;
-    box-shadow: 0 0 0.25em #000 inset;
-}
-
-#toolbar button:disabled:focus {
-    background-color: #000;
-    color: #fff;
-    box-shadow: 0 0 0.25em #000 inset;
-}
-
 button#btnShowHideToolbar {
     position: absolute;
     top: 0.5em;
@@ -277,4 +257,28 @@ button#btnShowHideToolbar {
     color: #fff;
     font-size: 1.5em;
     padding: 0.25em 0.5em;
+}
+
+button#btnShowHideToolbar:hover {
+    background-color: #000;
+    color: #fff;
+    cursor: pointer;
+}
+
+button#btnShowHideToolbar:active {
+    background-color: #000;
+    color: #fff;
+    box-shadow: 0 0 0.25em #000 inset;
+    animation: fadeout 0.5s ease-in-out;
+}
+
+#mainContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
 }
