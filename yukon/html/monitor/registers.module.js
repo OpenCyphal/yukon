@@ -313,7 +313,6 @@ export function updateRegistersTableColors(yukon_state, repeat_times, repeat_del
     if (repeat_times && repeat_times > 0) {
         setTimeout(() => updateRegistersTableColors(yukon_state, repeat_times - 1, repeat_delay), repeat_delay)
     }
-    console.log("Updating register colors");
     var registers_table = document.querySelector('#registers_table')
     // For all table cells in registers_table, if the cell has the attribute node_id set to node_id then color it red if the node is selected or white if not
     let needsRefresh = false;

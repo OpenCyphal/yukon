@@ -41,6 +41,9 @@ import { initTransports } from "./transports.module.js"
 
         });
     }
+    async function update_avatars_dto() {
+        yukon_state.current_avatars = JSON.parse(await zubax_api.get_avatars()).avatars;
+    }
     function setUpMonitorComponent() {
         // This is actually one of the tabs in the tabbed interface but it also acts as a refresh layout button
         const btnMonitorTab = document.getElementById('btnMonitorTab');
@@ -48,14 +51,9 @@ import { initTransports } from "./transports.module.js"
             refresh_graph_layout(yukon_state.my_graph);
         });
         yukon_state.my_graph = create_directed_graph(yukon_state);
-        function get_and_display_avatars() {
-            zubax_api.get_avatars().then(
-                function (avatars) {
-                    var DTO = JSON.parse(avatars);
-                    yukon_state.current_avatars = DTO.avatars;
-                    update_directed_graph(yukon_state);
-                }
-            );
+        async function get_and_display_avatars() {
+            await update_avatars_dto();
+            update_directed_graph(yukon_state);
         }
 
         setInterval(get_and_display_avatars, 1000);
@@ -66,7 +64,8 @@ import { initTransports } from "./transports.module.js"
         });
     }
     function setUpStatusComponent() {
-        function update_avatars_table() {
+        async function update_avatars_table() {
+            await update_avatars_dto();
             var table_body = document.querySelector('#avatars_table tbody');
             table_body.innerHTML = "";
             // Take every avatar from yukon_state.current_avatars and make a row in the table
@@ -103,8 +102,10 @@ import { initTransports } from "./transports.module.js"
         setInterval(update_avatars_table, 1000);
     }
     async function setUpRegistersComponent() {
-
-        setInterval(update_tables, 1000)
+        setInterval(async () => {
+            await update_avatars_dto();
+            update_tables();
+        }, 1000)
     }
     function setUpDebugTextOutComponent() {
         let isRefreshTextOutAllowed = true;
@@ -208,7 +209,7 @@ import { initTransports } from "./transports.module.js"
                             content: [
                                 {
                                     type: 'stack',
-                                    activeItemIndex: 0,
+                                    activeItemIndex: 1,
                                     content: [
                                         {
                                             type: 'component',
@@ -273,8 +274,6 @@ import { initTransports } from "./transports.module.js"
         yukon_state.jsyaml = jsyaml;
         // Make a callback on the page load event
         console.log("monitor ready");
-        const divAllRegistersButtons = await waitForElm('#divAllRegistersButtons');
-        divAllRegistersButtons.style.display = 'none';
         let lastInternalMessageIndex = -1;
         yukon_state.selectingTableCellsIsDisabledStyle = document.createElement('style');
         yukon_state.selectingTableCellsIsDisabledStyle.innerHTML = `

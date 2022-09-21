@@ -8,8 +8,8 @@ export function initTransports(yukon_state) {
             MANUAL: "MANUAL",
             SLCAN: "SLCAN",
             SOCKETCAN: "SOCKETCAN",
-            CANDUMP: "CANDUMP",
-            "P-CAN": "P-CAN"
+            // CANDUMP: "CANDUMP",
+            // "P-CAN": "P-CAN"
         },
     });
     var currentSelectedTransportType = [transports.CAN, transports.CAN.MANUAL];
@@ -437,7 +437,7 @@ export function initTransports(yukon_state) {
 
     btnStart.addEventListener('click', async function () {
         if (!verifyInputs()) { console.error("Invalid input values."); return; }
-
+        let result = null;
         if (currentSelectedTransportType[1] == transports.UDP.UDP) {
             console.log("UDP");
             const udp_iface = document.getElementById('iUdpIface').value;
@@ -466,14 +466,11 @@ export function initTransports(yukon_state) {
         }
 
 
-
         addLocalMessage("Going to attach now!")
 
         var resultObject = JSON.parse(result);
         if (resultObject.success) {
             addLocalMessage("Now attached: " + resultObject.message);
-            //zubax_api.hide_transport_window();
-            zubax_api.open_monitor_window();
         } else {
             console.error("Error: " + resultObject.message);
             addLocalMessage("Error: " + resultObject.message);

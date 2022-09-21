@@ -182,7 +182,10 @@ export function update_directed_graph(yukon_state) {
     if (typeof my_graph == "undefined") { return; }
     if (!areThereAnyNewOrMissingHashes("monitor_view_hash", yukon_state)) {
         updateLastHashes("monitor_view_hash", yukon_state);
-        return;
+        // If there are any elements in my_graph.elements() then we can return, otherwise we need to make a graph (below)
+        if (my_graph.elements().length > 0) {
+            return;
+        }
     }
     updateLastHashes("monitor_view_hash", yukon_state);
     my_graph.elements().remove();
