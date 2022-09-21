@@ -113,7 +113,9 @@ function createMonitorPopup(text, yukon_state) {
     label.style.pointerEvents = 'none';
     // Remove the label after 3 seconds
     setTimeout(function () {
-        label.parentNode.removeChild(label);
+        if (label && label.parentNode) {
+            label.parentNode.removeChild(label);
+        }
     }, 3000);
 }
 function getDrawingAspectRatio() {

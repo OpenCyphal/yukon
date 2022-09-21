@@ -42,7 +42,9 @@ import { initTransports } from "./transports.module.js"
         });
     }
     async function update_avatars_dto() {
-        yukon_state.current_avatars = JSON.parse(await zubax_api.get_avatars()).avatars;
+        const text_result = await zubax_api.get_avatars();
+        const obj_result = JSON.parse(text_result);
+        yukon_state.current_avatars = obj_result.avatars;
     }
     function setUpMonitorComponent() {
         yukon_state.my_graph = create_directed_graph(yukon_state);
@@ -53,10 +55,6 @@ import { initTransports } from "./transports.module.js"
 
         setInterval(get_and_display_avatars, 1000);
         update_directed_graph(yukon_state);
-        var btnRefreshGraphLayout = document.getElementById('btnRefreshGraphLayout');
-        btnRefreshGraphLayout.addEventListener('click', function () {
-            refresh_graph_layout(yukon_state.my_graph)
-        });
     }
     function setUpStatusComponent() {
         async function update_avatars_table() {
@@ -96,7 +94,11 @@ import { initTransports } from "./transports.module.js"
         }
         setInterval(update_avatars_table, 1000);
     }
-    async function setUpRegistersComponent() {
+    async function setUpRegistersComponent(immediateCreateTable) {
+        if (immediateCreateTable) {
+            await update_avatars_dto();
+            update_tables(true);
+        }
         setInterval(async () => {
             await update_avatars_dto();
             update_tables();
@@ -248,21 +250,93 @@ import { initTransports } from "./transports.module.js"
             xhr.open("GET", path, true);
             xhr.send();
         }
+        const outsideContext = this;
         var myLayout = new GoldenLayout(config);
         myLayout.registerComponent('registersComponent', function (container, componentState) {
-            dynamicallyLoadHTML("../registers.panel.html", container, setUpRegistersComponent, 100);
+            let isDestroyed = true;
+            dynamicallyLoadHTML("../registers.panel.html", container, () => {
+                if (isDestroyed) {
+                    setUpRegistersComponent.bind(outsideContext)(true);
+                    isDestroyed = false;
+                }
+            }, 100);
+            container.on("open", function () {
+                console.log("Register panel opened");
+                container.on("show", function () {
+                    console.log("Register panel shown");
+                    if (isDestroyed) {
+                        console.log("Register panel is destroyed, setting up");
+                        setTimeout(() => {
+                            setUpRegistersComponent.bind(outsideContext)(true);
+                            isDestroyed = false;
+                        }, 100);
+                    }
+                });
+            });
+            container.on("destroy", function () {
+                console.log("Register panel destroyed");
+                isDestroyed = true;
+            });
         });
         myLayout.registerComponent('statusComponent', function (container, componentState) {
-            dynamicallyLoadHTML("../status.panel.html", container, setUpStatusComponent, 100);
+            let hasLoaded = false;
+            dynamicallyLoadHTML("../status.panel.html", container, () => {
+                setUpStatusComponent.bind(outsideContext)();
+            }, 100);
+            container.on("open", function () {
+                console.log("Status panel opened");
+                if (hasLoaded) {
+                    setUpStatusComponent.bind(outsideContext)();
+                }
+                container.on("show", function () {
+                    console.log("Status panel shown");
+                });
+            });
         });
         myLayout.registerComponent('monitorComponent', function (container, componentState) {
-            dynamicallyLoadHTML("../monitor.panel.html", container, setUpMonitorComponent, 100);
+            let hasLoaded = false;
+            dynamicallyLoadHTML("../monitor.panel.html", container, () => {
+                setUpMonitorComponent.bind(outsideContext)();
+            }, 100);
+            container.on("open", function () {
+                console.log("Monitor panel opened");
+                if (hasLoaded) {
+                    setUpMonitorComponent.bind(outsideContext)();
+                }
+                container.on("show", function () {
+                    console.log("Monitor panel shown");
+                });
+            });
         });
         myLayout.registerComponent('messagesComponent', function (container, componentState) {
-            dynamicallyLoadHTML("../messages.panel.html", container, setUpMessagesComponent, 100);
+            let hasLoaded = false;
+            dynamicallyLoadHTML("../messages.panel.html", container, () => {
+                setUpMessagesComponent.bind(outsideContext)();
+            }, 100);
+            container.on("open", function () {
+                console.log("Messages panel opened");
+                if (hasLoaded) {
+                    setUpMessagesComponent.bind(outsideContext)();
+                }
+                container.on("show", function () {
+                    console.log("Messages panel shown");
+                });
+            });
         });
         myLayout.registerComponent('transportsComponent', function (container, componentState) {
-            dynamicallyLoadHTML("../add_transport.panel.html", container, setUpTransportsComponent, 100);
+            let hasLoaded = false;
+            dynamicallyLoadHTML("../add_transport.panel.html", container, () => {
+                setUpTransportsComponent.bind(outsideContext)();
+            }, 100);
+            container.on("open", function () {
+                console.log("Transports panel opened");
+                if (hasLoaded) {
+                    setUpTransportsComponent.bind(outsideContext)();
+                }
+                container.on("show", function () {
+                    console.log("Transports panel shown");
+                });
+            });
         });
         myLayout.init();
         yukon_state.zubax_api = zubax_api;
