@@ -11,6 +11,7 @@ import { openFile } from "./yaml.configurations.module.js"
 import { initTransports } from "./transports.module.js"
 
 (async function () {
+    yukon_state.zubax_api = zubax_api;
     function waitForElm(selector, timeOutMilliSeconds) {
         return new Promise(resolve => {
             let timeOutTimeout

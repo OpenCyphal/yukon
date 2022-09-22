@@ -167,7 +167,7 @@ export async function update_available_configurations_list(yukon_state) {
     let zubax_api = yukon_state.zubax_api;
     var available_configurations_radios = document.querySelector("#available_configurations_radios");
     available_configurations_radios.innerHTML = "";
-    let number_input_for_configuration = {};
+    let number_input_for_configuration = yukon_state.number_input_for_configuration;
     let simplified_configurations_flags = {};
     for (const [file_name, configuration_string] of Object.entries(yukon_state.available_configurations)) {
         // Fill in the available_configurations_radios with radio buttons

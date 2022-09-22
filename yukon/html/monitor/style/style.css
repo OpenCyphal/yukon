@@ -333,5 +333,10 @@ button#btnAddAnotherTransport:active {
 }
 
 .transport_interface p {
+    word-wrap: break-word;
     flex-grow: 3;
+}
+
+* {
+    font: 1em ubuntu-mono, monospace;
 }

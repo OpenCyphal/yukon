@@ -237,9 +237,9 @@ export function make_context_menus(yukon_state) {
     table_cell_context_menu.init();
 
     const table_header_context_menu_items = [
-        { content: `${pasteIcon}Select column` },
+        { content: `${pasteIcon}Select node registers` },
         {
-            content: `${downloadIcon}Apply a config from a file`,
+            content: `${downloadIcon}Apply config from file`,
             events: {
                 click: async (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
@@ -284,7 +284,7 @@ export function make_context_menus(yukon_state) {
             }
         },
         {
-            content: `${copyIcon}Copy column as yaml`,
+            content: `${copyIcon}Copy node registers as YAML`,
             events: {
                 click: async (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
@@ -296,7 +296,7 @@ export function make_context_menus(yukon_state) {
             },
         },
         {
-            content: `${downloadIcon}Reread column`,
+            content: `${downloadIcon}Reread node`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
