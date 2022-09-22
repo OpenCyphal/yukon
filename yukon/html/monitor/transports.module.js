@@ -1,4 +1,5 @@
-export function initTransports(yukon_state) {
+export function initTransports(container, yukon_state) {
+    const containerElem = container.getElement()[0];
     const transports = Object.freeze({
         UDP: {
             UDP: "UDP",
@@ -13,12 +14,12 @@ export function initTransports(yukon_state) {
     });
     var currentSelectedTransportType = [transports.CAN, transports.CAN.MANUAL];
     console.log("zubax_api_ready in add_transport.js");
-    const cbShowTransportCombobox = document.getElementById('cbShowTransportCombobox');
+    const cbShowTransportCombobox = containerElem.querySelector('#cbShowTransportCombobox');
     function fillSelectionWithSlcan() {
         zubax_api.get_slcan_ports().then(function (ports) {
             ports = JSON.parse(ports);
             console.log(ports);
-            var sTransport = document.getElementById("sTransport");
+            var sTransport = containerElem.querySelector("#sTransport");
             sTransport.innerHTML = "";
             if (ports.length == 0) {
                 var option = document.createElement("option");
@@ -39,7 +40,7 @@ export function initTransports(yukon_state) {
         zubax_api.get_socketcan_ports().then(function (ports) {
             ports = JSON.parse(ports);
             console.log(ports);
-            var sTransport = document.getElementById("sTransport");
+            var sTransport = containerElem.querySelector("#sTransport");
             sTransport.innerHTML = "";
             // Fill sTransport with ports
             if (ports.length == 0) {
@@ -61,21 +62,21 @@ export function initTransports(yukon_state) {
         zubax_api.add_local_message(message)
     }
     function doTheTabSwitching() {
-        const h1TransportType = document.querySelector("h1#TransportType");
-        const iTransport = document.getElementById("iTransport");
-        const sTransport = document.getElementById("sTransport");
-        const iMtu = document.getElementById("iMtu");
-        const divMtu = document.getElementById("divMtu");
-        const divArbRate = document.getElementById("divArbRate");
-        const divDataRate = document.getElementById("divDataRate");
-        const divNodeId = document.getElementById("divNodeId");
-        const divCandump = document.getElementById("divCandump");
-        const divTypeTransport = document.getElementById("divTypeTransport");
-        const divSelectTransport = document.getElementById("divSelectTransport");
-        const divUdpIface = document.getElementById("divUdpIface");
-        const divServiceTransferMultiplier = document.getElementById("divServiceTransferMultiplier");
-        const divUdpMtu = document.getElementById("divUdpMtu");
-        const UDPLinuxWarning = document.getElementById("UDPLinuxWarning");
+        const h1TransportType = containerElem.querySelector("h1#TransportType");
+        const iTransport = containerElem.querySelector("#iTransport");
+        const sTransport = containerElem.querySelector("#sTransport");
+        const iMtu = containerElem.querySelector("#iMtu");
+        const divMtu = containerElem.querySelector("#divMtu");
+        const divArbRate = containerElem.querySelector("#divArbRate");
+        const divDataRate = containerElem.querySelector("#divDataRate");
+        const divNodeId = containerElem.querySelector("#divNodeId");
+        const divCandump = containerElem.querySelector("#divCandump");
+        const divTypeTransport = containerElem.querySelector("#divTypeTransport");
+        const divSelectTransport = containerElem.querySelector("#divSelectTransport");
+        const divUdpIface = containerElem.querySelector("#divUdpIface");
+        const divServiceTransferMultiplier = containerElem.querySelector("#divServiceTransferMultiplier");
+        const divUdpMtu = containerElem.querySelector("#divUdpMtu");
+        const UDPLinuxWarning = containerElem.querySelector("#UDPLinuxWarning");
         divTypeTransport.style.display = "block";
         divSelectTransport.style.display = "block";
         divMtu.style.display = "block";
@@ -87,9 +88,9 @@ export function initTransports(yukon_state) {
         divCandump.style.display = "none";
         divUdpMtu.style.display = "none";
         UDPLinuxWarning.style.display = "none";
-        const iArbRate = document.getElementById("iArbRate");
-        const iDataRate = document.getElementById("iDataRate");
-        const iNodeId = document.getElementById("iNodeId");
+        const iArbRate = containerElem.querySelector("#iArbRate");
+        const iDataRate = containerElem.querySelector("#iDataRate");
+        const iNodeId = containerElem.querySelector("#iNodeId");
 
         // Making sure that no inputs are no longer colored red if there was an error with these inputs
         iTransport.classList.remove("is-danger");
@@ -148,16 +149,16 @@ export function initTransports(yukon_state) {
     }
     // Disable all inputs contained in these divs that are not visible
     function disableAllInputs() {
-        const divTypeTransport = document.getElementById("divTypeTransport");
-        const divSelectTransport = document.getElementById("divSelectTransport");
-        const divMtu = document.getElementById("divMtu");
-        const divArbRate = document.getElementById("divArbRate");
-        const divDataRate = document.getElementById("divDataRate");
-        const divNodeId = document.getElementById("divNodeId");
-        const divCandump = document.getElementById("divCandump");
-        const divUdpIface = document.getElementById("divUdpIface");
-        const divServiceTransferMultiplier = document.getElementById("divServiceTransferMultiplier");
-        const divUdpMtu = document.getElementById("divUdpMtu");
+        const divTypeTransport = containerElem.querySelector("#divTypeTransport");
+        const divSelectTransport = containerElem.querySelector("#divSelectTransport");
+        const divMtu = containerElem.querySelector("#divMtu");
+        const divArbRate = containerElem.querySelector("#divArbRate");
+        const divDataRate = containerElem.querySelector("#divDataRate");
+        const divNodeId = containerElem.querySelector("#divNodeId");
+        const divCandump = containerElem.querySelector("#divCandump");
+        const divUdpIface = containerElem.querySelector("#divUdpIface");
+        const divServiceTransferMultiplier = containerElem.querySelector("#divServiceTransferMultiplier");
+        const divUdpMtu = containerElem.querySelector("#divUdpMtu");
         const divs = [divTypeTransport, divSelectTransport, divMtu, divArbRate, divDataRate, divNodeId, divCandump, divUdpIface, divServiceTransferMultiplier, divUdpMtu];
         for (const div of divs) {
             if (div.style.display == "none") {
@@ -246,7 +247,7 @@ export function initTransports(yukon_state) {
             }
         }
     }
-    const maybe_tabs = document.querySelector('#maybe-tabs');
+    const maybe_tabs = containerElem.querySelector('#maybe-tabs');
     function addChildTabRow(ParentTabRow, selectedTabName, wasClicked) {
         ParentTabRow.removeCurrentChildTabRow();
         const arrayOfTabNames = Object.values(transports[selectedTabName]);
@@ -326,14 +327,14 @@ export function initTransports(yukon_state) {
         // }, 500);
     }
     function verifyInputs() {
-        const iTransport = document.getElementById("iTransport");
-        const sTransport = document.getElementById("sTransport");
-        const iMtu = document.getElementById("iMtu");
-        const iArbRate = document.getElementById("iArbRate");
-        const iDataRate = document.getElementById("iDataRate");
-        const iNodeId = document.getElementById("iNodeId");
-        const iUdpMtu = document.getElementById("iUdpMtu");
-        const iUdpIface = document.getElementById("iUdpIface");
+        const iTransport = containerElem.querySelector("#iTransport");
+        const sTransport = containerElem.querySelector("#sTransport");
+        const iMtu = containerElem.querySelector("#iMtu");
+        const iArbRate = containerElem.querySelector("#iArbRate");
+        const iDataRate = containerElem.querySelector("#iDataRate");
+        const iNodeId = containerElem.querySelector("#iNodeId");
+        const iUdpMtu = containerElem.querySelector("#iUdpMtu");
+        const iUdpIface = containerElem.querySelector("#iUdpIface");
         // Remove is-danger from every input
         iTransport.classList.remove("is-danger");
         sTransport.classList.remove("is-danger");
@@ -402,15 +403,15 @@ export function initTransports(yukon_state) {
 
         return isFormCorrect;
     }
-
+    const btnStart = containerElem.querySelector("#btnStart");
     btnStart.addEventListener('click', async function () {
         if (!verifyInputs()) { console.error("Invalid input values."); return; }
         let result = null;
         if (currentSelectedTransportType[1] == transports.UDP.UDP) {
             console.log("UDP");
-            const udp_iface = document.getElementById('iUdpIface').value;
-            const udp_mtu = document.getElementById('iUdpMtu').value;
-            const node_id = document.getElementById('iNodeId').value;
+            const udp_iface = containerElem.querySelector('#iUdpIface').value;
+            const udp_mtu = containerElem.querySelector('#iUdpMtu').value;
+            const node_id = containerElem.querySelector('#iNodeId').value;
             result = await zubax_api.attach_udp_transport(udp_iface, udp_mtu, node_id);
         } else {
             console.log("CAN");
@@ -426,10 +427,10 @@ export function initTransports(yukon_state) {
             } else {
                 port = iTransport.value;
             }
-            const data_rate = document.getElementById('iDataRate').value;
-            const arb_rate = document.getElementById('iArbRate').value;
-            const node_id = document.getElementById('iNodeId').value;
-            const mtu = document.getElementById('iMtu').value;
+            const data_rate = containerElem.querySelector('#iDataRate').value;
+            const arb_rate = containerElem.querySelector('#iArbRate').value;
+            const node_id = containerElem.querySelector('#iNodeId').value;
+            const mtu = containerElem.querySelector('#iMtu').value;
             result = await zubax_api.attach_transport(port, data_rate, arb_rate, node_id, mtu)
         }
 
@@ -445,17 +446,13 @@ export function initTransports(yukon_state) {
         }
     });
     // Toggle between showing divTypeTransport and divSelectTransport by clicking on the respective buttons
-    const divTypeTransport = document.getElementById('divTypeTransport');
-    const divSelectTransport = document.getElementById('divSelectTransport');
-    const btnOpenCandumpFile = document.getElementById('btnOpenCandumpFile');
+    const divTypeTransport = containerElem.querySelector('#divTypeTransport');
+    const divSelectTransport = containerElem.querySelector('#divSelectTransport');
+    const btnOpenCandumpFile = containerElem.querySelector('#btnOpenCandumpFile');
 
 
     InitTabStuff();
 
     divTypeTransport.style.display = "block";
     divSelectTransport.style.display = "none";
-
-    btnAddTransport.addEventListener('click', function () {
-        zubax_api.open_add_transport_window();
-    });
 }

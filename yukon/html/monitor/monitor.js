@@ -465,17 +465,23 @@ import { initTransports } from "./transports.module.js"
             xhr.open("GET", path, true);
             xhr.send();
         }
-        function setUpTransportsComponent() {
-            initTransports(yukon_state);
-            const btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
-            btnAddAnotherTransport.addEventListener('click', function () {
-                zubax_api.open_add_transport_window();
-            });
+        function setUpTransportsComponent(container) {
+            initTransports(container, yukon_state);
         }
+        const btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
+        btnAddAnotherTransport.addEventListener('click', function () {
+            myLayout.root.contentItems[0].contentItems[0].addChild({
+                type: 'component',
+                componentName: "transportsComponent",
+                isClosable: true,
+                title: "Transports",
+            });
+        });
         const outsideContext = this;
         function addRestoreButton(buttonText, buttonComponentName) {
             const toolbar = document.querySelector("#toolbar");
             const btnRestore = document.createElement("button");
+            btnRestore.classList.add("restore-btn");
             btnRestore.innerHTML = buttonText;
             btnRestore.addEventListener('click', function () {
                 myLayout.root.contentItems[0].contentItems[0].addChild({
@@ -489,16 +495,6 @@ import { initTransports } from "./transports.module.js"
             toolbar.appendChild(btnRestore);
         }
         var myLayout = new GoldenLayout(config, document.querySelector("#layout"));
-        myLayout.on("componentCreated", function (component) {
-            console.log("componentCreated ", component);
-            const reactingFunction = function () {
-                console.log("destroyed component: " + component.config.componentName + " " + component.config.title);
-                addRestoreButton(component.config.title, component.config.componentName);
-            }
-            component.on("destroy", reactingFunction);
-            component.on("close", reactingFunction);
-            component.on("hide", reactingFunction);
-        });
         const btnShowHideToolbar = document.getElementById('btnShowHideToolbar');
         btnShowHideToolbar.addEventListener('click', function () {
             var toolbar = document.getElementById('toolbar');
@@ -548,7 +544,7 @@ import { initTransports } from "./transports.module.js"
                 });
             });
             container.on("destroy", function () {
-                addRestoreButton(container.title, componentName);
+                addRestoreButton(container._config.title, componentName);
                 isDestroyed = true;
             });
         }
@@ -574,7 +570,7 @@ import { initTransports } from "./transports.module.js"
         });
         myLayout.registerComponent('transportsComponent', function (container, componentState) {
             registerComponentAction("../add_transport.panel.html", "transportsComponent", container, () => {
-                setUpTransportsComponent.bind(outsideContext)();
+                setUpTransportsComponent.bind(outsideContext)(container);
             });
         });
         myLayout.init();

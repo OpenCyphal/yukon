@@ -33,7 +33,7 @@ export function make_context_menus(yukon_state) {
                             "only_of_register_name": null
                         }, yukon_state);
                     }
-                    
+
                 } else if (cell.tagName == "TD" || cell.tagName == "INPUT") {
                     // Get the node_id and register_name from the cell
                     const node_id = cell.getAttribute("node_id");
@@ -212,8 +212,24 @@ export function make_context_menus(yukon_state) {
         unselectAllMenuElement,
         importFromSelectedConfigurationMenuElement
     ];
+    const restoreBtnContextMenu = new ContextMenu({
+        target: ".restore-btn",
+        menuItems: [
+            {
+                content: `Remove restore button`,
+                events: {
+                    click: async (e, elementOpenedOn) => {
+                        elementOpenedOn.parentElement.removeChild(elementOpenedOn);
+                    }
+                },
+            },
+        ],
+        mode: "dark",
+        context: this
+    });
+    restoreBtnContextMenu.init();
     const table_cell_context_menu = new ContextMenu({
-        target: "table-cell",
+        target: ".table-cell",
         menuItems: table_cell_context_menu_items,
         mode: "dark",
         context: this
@@ -295,7 +311,7 @@ export function make_context_menus(yukon_state) {
     ];
 
     const table_header_context_menu = new ContextMenu({
-        target: "node_id_header",
+        target: ".node_id_header",
         mode: "dark",
         menuItems: table_header_context_menu_items,
         context: this
@@ -339,7 +355,7 @@ export function make_context_menus(yukon_state) {
         },
     ];
     const table_row_header_context_menu = new ContextMenu({
-        target: "left-side-table-header",
+        target: ".left-side-table-header",
         mode: "dark",
         menuItems: table_row_header_context_menu_items,
         context: this
