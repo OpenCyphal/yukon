@@ -94,6 +94,9 @@ import { initTransports } from "./transports.module.js"
         }
         setInterval(update_avatars_table, 1000);
     }
+    function setUpTransportsListComponent() {
+
+    }
     async function setUpRegistersComponent(immediateCreateTable) {
         if (immediateCreateTable) {
             await update_avatars_dto();
@@ -434,6 +437,12 @@ import { initTransports } from "./transports.module.js"
                                             componentName: "transportsComponent",
                                             isClosable: true,
                                             title: "Transports",
+                                        },
+                                        {
+                                            type: "component",
+                                            componentName: "transportsListComponent",
+                                            isClosable: true,
+                                            title: "Transports list",
                                         }
                                     ]
                                 }
@@ -571,6 +580,11 @@ import { initTransports } from "./transports.module.js"
         myLayout.registerComponent('transportsComponent', function (container, componentState) {
             registerComponentAction("../add_transport.panel.html", "transportsComponent", container, () => {
                 setUpTransportsComponent.bind(outsideContext)(container);
+            });
+        });
+        myLayout.registerComponent("transportsListComponent", function (container, componentState) {
+            registerComponentAction("../transports_list.panel.html", "transportsListComponent", container, () => {
+                setUpTransportsListComponent.bind(outsideContext)();
             });
         });
         myLayout.init();

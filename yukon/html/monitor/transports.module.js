@@ -201,19 +201,6 @@ export function initTransports(container, yukon_state) {
             console.log("Target width is 0, not moving slider");
             return false;
         }
-        var [topValue, leftValue] = getChildTopAndLeftPosition(targetTab);
-        var t = new Tween(slider.style, 'left', Tween.regularEaseOut, parseInt(slider.style.left), leftValue, 0.3, 'px');
-        t.start();
-        var t = new Tween(slider.style, 'top', Tween.regularEaseOut, parseInt(slider.style.top), topValue, 0.3, 'px');
-        t.start();
-        var t2 = new Tween(slider.style, 'width', Tween.regularEaseOut, parseInt(slider.style.width), targetWidth, 0.3, 'px');
-        t2.start();
-        setTimeout(function () {
-            slider.style.width = targetWidth + "px";
-            slider.style.left = leftValue + "px";
-            slider.style.top = topValue + "px";
-        }, 0.3)
-        slider.style.height = tabRow.div.getBoundingClientRect().height + 4 + 'px';
         return true;
     }
     function moveTab(tabRow, index, isTopMost, wasClicked) {
