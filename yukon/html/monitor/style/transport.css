@@ -142,7 +142,8 @@ form#transport-selection-form>#maybe-tabs label {
 }
 
 form#transport-selection-form>#maybe-tabs label.selected-tab {
-    background-color: transparent;
+    background-color: #ee0000;
+    border-bottom: 5px solid #ee0000;
     color: #fff;
     z-index: 1;
 }

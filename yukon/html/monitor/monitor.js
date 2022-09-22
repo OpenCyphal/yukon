@@ -164,6 +164,31 @@ import { initTransports } from "./transports.module.js"
                 }
             }
         });
+        var messagesList = document.querySelector("#messages-list");
+        let messagesListWidth = messagesList.getBoundingClientRect().width
+        var lastMessageIndex = -1;
+        function displayOneMessage(message) {
+            var messageItem = document.createElement("textarea");
+            messageItem.classList.add("message-item");
+            messageItem.classList.add("is-active");
+            messageItem.setAttribute("spellcheck", "false");
+            messageItem.innerHTML = message;
+            messagesList.appendChild(messageItem);
+            autosize(messageItem);
+        }
+        function fetchAndDisplayMessages() {
+            zubax_api.get_messages(lastMessageIndex + 1).then(function (messages) {
+                var messagesObject = JSON.parse(messages);
+                for (const message of messagesObject) {
+                    displayOneMessage(message.message);
+                    // For the last message
+                    if (message == messagesObject[messagesObject.length - 1]) {
+                        lastMessageIndex = message.index;
+                    }
+                }
+            });
+        }
+        setInterval(fetchAndDisplayMessages, 1000);
         console.log("Messages javascript is ready");
         var lastIndex = -1;
         var messagesList = await waitForElm("#messages-list");
@@ -287,17 +312,17 @@ import { initTransports } from "./transports.module.js"
 
         // Call update_messages every second
         setInterval(update_messages, 1000);
-        btnTextOutput.addEventListener('click', function () {
-            var textOut = document.querySelector("#textOut");
-            autosize.update(textOut);
-        });
-        var tabTextOut = document.querySelector("#tabTextOut");
-        window.addEventListener('mouseup', function () {
-            if (tabTextOut.classList.contains("is-active")) {
-                var textOut = document.querySelector("#textOut");
-                autosize.update(textOut);
-            }
-        });
+        // btnTextOutput.addEventListener('click', function () {
+        //     var textOut = document.querySelector("#textOut");
+        //     autosize.update(textOut);
+        // });
+        // var tabTextOut = document.querySelector("#tabTextOut");
+        // window.addEventListener('mouseup', function () {
+        //     if (tabTextOut.classList.contains("is-active")) {
+        //         var textOut = document.querySelector("#textOut");
+        //         autosize.update(textOut);
+        //     }
+        // });
 
         // Run applyTextFilterToMessages() when there is a change in the filter text after the input has
         // stopped for 0.5 seconds
@@ -333,7 +358,7 @@ import { initTransports } from "./transports.module.js"
         // On resize event
         addLocalMessage("Found messageList")
         // at interval of 3 seconds
-        let messagesListWidth = messagesList.getBoundingClientRect().width
+        messagesListWidth = messagesList.getBoundingClientRect().width
 
         setInterval(function () {
             var messagesList = document.querySelector("#messages-list");
@@ -346,13 +371,6 @@ import { initTransports } from "./transports.module.js"
                 }
             }
         }, 500);
-    }
-    function setUpTransportsComponent() {
-        initTransports(yukon_state);
-        const btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
-        btnAddAnotherTransport.addEventListener('click', function () {
-            zubax_api.open_add_transport_window();
-        });
     }
     yukon_state.addLocalMessage = function (message) {
         zubax_api.add_local_message(message)
@@ -376,13 +394,13 @@ import { initTransports } from "./transports.module.js"
                                         {
                                             type: 'component',
                                             componentName: 'monitorComponent',
-                                            isClosable: false,
+                                            isClosable: true,
                                             title: 'Monitor',
                                         },
                                         {
                                             type: 'component',
                                             componentName: 'registersComponent',
-                                            isClosable: false,
+                                            isClosable: true,
                                             title: 'Registers',
                                         },
                                     ]
@@ -391,7 +409,7 @@ import { initTransports } from "./transports.module.js"
                                     type: 'component',
                                     height: 15,
                                     componentName: 'statusComponent',
-                                    isClosable: false,
+                                    isClosable: true,
                                     title: 'Status',
                                 }
                             ]
@@ -399,6 +417,7 @@ import { initTransports } from "./transports.module.js"
                         {
                             type: 'column',
                             width: 30,
+                            isClosable: false,
                             content: [
                                 {
                                     type: 'stack',
@@ -407,13 +426,13 @@ import { initTransports } from "./transports.module.js"
                                         {
                                             type: 'component',
                                             componentName: 'messagesComponent',
-                                            isClosable: false,
+                                            isClosable: true,
                                             title: 'Messages',
                                         },
                                         {
                                             type: "component",
                                             componentName: "transportsComponent",
-                                            isClosable: false,
+                                            isClosable: true,
                                             title: "Transports",
                                         }
                                     ]
@@ -446,8 +465,40 @@ import { initTransports } from "./transports.module.js"
             xhr.open("GET", path, true);
             xhr.send();
         }
+        function setUpTransportsComponent() {
+            initTransports(yukon_state);
+            const btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
+            btnAddAnotherTransport.addEventListener('click', function () {
+                zubax_api.open_add_transport_window();
+            });
+        }
         const outsideContext = this;
+        function addRestoreButton(buttonText, buttonComponentName) {
+            const toolbar = document.querySelector("#toolbar");
+            const btnRestore = document.createElement("button");
+            btnRestore.innerHTML = buttonText;
+            btnRestore.addEventListener('click', function () {
+                myLayout.root.contentItems[0].contentItems[0].addChild({
+                    type: 'component',
+                    componentName: buttonComponentName,
+                    isClosable: true,
+                    title: buttonText,
+                });
+                btnRestore.parentElement.removeChild(btnRestore);
+            });
+            toolbar.appendChild(btnRestore);
+        }
         var myLayout = new GoldenLayout(config, document.querySelector("#layout"));
+        myLayout.on("componentCreated", function (component) {
+            console.log("componentCreated ", component);
+            const reactingFunction = function () {
+                console.log("destroyed component: " + component.config.componentName + " " + component.config.title);
+                addRestoreButton(component.config.title, component.config.componentName);
+            }
+            component.on("destroy", reactingFunction);
+            component.on("close", reactingFunction);
+            component.on("hide", reactingFunction);
+        });
         const btnShowHideToolbar = document.getElementById('btnShowHideToolbar');
         btnShowHideToolbar.addEventListener('click', function () {
             var toolbar = document.getElementById('toolbar');
@@ -466,7 +517,7 @@ import { initTransports } from "./transports.module.js"
                 // Set the parent of btnShowHideToolbar to the body so that it is not removed when the toolbar is hidden
                 // Also set it to position top right
                 btnShowHideToolbar.style.top = "-0.5em";
-                btnShowHideToolbar.style.right = "2em";
+                btnShowHideToolbar.style.right = "3em";
                 btnShowHideToolbar.style.bottom = "auto";
                 btnShowHideToolbar.parentElement.removeChild(btnShowHideToolbar);
                 document.body.appendChild(btnShowHideToolbar);
@@ -478,101 +529,52 @@ import { initTransports } from "./transports.module.js"
                 myLayout.updateSize();
             }, 50);
         });
-        myLayout.registerComponent('registersComponent', function (container, componentState) {
+        function registerComponentAction(uri, componentName, container, actionWhenCreating) {
             let isDestroyed = true;
-            dynamicallyLoadHTML("../registers.panel.html", container, () => {
+            dynamicallyLoadHTML(uri, container, () => {
                 if (isDestroyed) {
-                    setUpRegistersComponent.bind(outsideContext)(true);
+                    actionWhenCreating();
                     isDestroyed = false;
                 }
             }, 100);
             container.on("open", function () {
-                console.log("Register panel opened");
                 container.on("show", function () {
-                    console.log("Register panel shown");
                     if (isDestroyed) {
-                        console.log("Register panel is destroyed, setting up");
                         setTimeout(() => {
-                            setUpRegistersComponent.bind(outsideContext)(true);
+                            actionWhenCreating();
                             isDestroyed = false;
                         }, 100);
                     }
                 });
             });
             container.on("destroy", function () {
-                console.log("Register panel destroyed");
+                addRestoreButton(container.title, componentName);
                 isDestroyed = true;
+            });
+        }
+        myLayout.registerComponent('registersComponent', function (container, componentState) {
+            registerComponentAction("../registers.panel.html", "registersComponent", container, () => {
+                setUpRegistersComponent.bind(outsideContext)(true);
             });
         });
         myLayout.registerComponent('statusComponent', function (container, componentState) {
-            let hasLoaded = false;
-            dynamicallyLoadHTML("../status.panel.html", container, () => {
+            registerComponentAction("../status.panel.html", "statusComponent", container, () => {
                 setUpStatusComponent.bind(outsideContext)();
-            }, 100);
-            container.on("open", function () {
-                console.log("Status panel opened");
-                if (hasLoaded) {
-                    setUpStatusComponent.bind(outsideContext)();
-                }
-                container.on("show", function () {
-                    console.log("Status panel shown");
-                });
             });
         });
         myLayout.registerComponent('monitorComponent', function (container, componentState) {
-            let hasLoaded = false;
-            dynamicallyLoadHTML("../monitor.panel.html", container, () => {
+            registerComponentAction("../monitor.panel.html", "monitorComponent", container, () => {
                 setUpMonitorComponent.bind(outsideContext)();
-            }, 100);
-            container.on("open", function () {
-                console.log("Monitor panel opened");
-                if (hasLoaded) {
-                    setUpMonitorComponent.bind(outsideContext)();
-                }
-                container.on("show", function () {
-                    console.log("Monitor panel shown");
-                });
             });
         });
         myLayout.registerComponent('messagesComponent', function (container, componentState) {
-            let isDestroyed = true;
-            dynamicallyLoadHTML("../messages.panel.html", container, () => {
-                if (isDestroyed) {
-                    setUpMessagesComponent.bind(outsideContext)();
-                    isDestroyed = false;
-                }
-            }, 100);
-            container.on("open", function () {
-                console.log("Messages panel opened");
-                container.on("show", function () {
-                    console.log("Messages panel shown");
-                    if (isDestroyed) {
-                        console.log("Messages panel is destroyed, setting up");
-                        setTimeout(() => {
-                            setUpMessagesComponent.bind(outsideContext)();
-                            isDestroyed = false;
-                        }, 100);
-                    }
-                });
-            });
-            container.on("destroy", function () {
-                console.log("Messages panel destroyed");
-                isDestroyed = true;
+            registerComponentAction("../messages.panel.html", "messagesComponent", container, () => {
+                setUpMessagesComponent.bind(outsideContext)();
             });
         });
         myLayout.registerComponent('transportsComponent', function (container, componentState) {
-            let hasLoaded = false;
-            dynamicallyLoadHTML("../add_transport.panel.html", container, () => {
+            registerComponentAction("../add_transport.panel.html", "transportsComponent", container, () => {
                 setUpTransportsComponent.bind(outsideContext)();
-            }, 100);
-            container.on("open", function () {
-                console.log("Transports panel opened");
-                if (hasLoaded) {
-                    setUpTransportsComponent.bind(outsideContext)();
-                }
-                container.on("show", function () {
-                    console.log("Transports panel shown");
-                });
             });
         });
         myLayout.init();
@@ -723,16 +725,16 @@ import { initTransports } from "./transports.module.js"
         //        });
 
         // if hide-yakut is checked then send a message to the server to hide the yakut
-        var hideYakut = document.getElementById('hide-yakut');
-        hideYakut.addEventListener('change', async function () {
-            if (hideYakut.checked) {
-                await zubax_api.hide_yakut()
-                await updateTextOut(true);
-            } else {
-                await zubax_api.show_yakut()
-                await updateTextOut(true);
-            }
-        });
+        // var hideYakut = document.getElementById('hide-yakut');
+        // hideYakut.addEventListener('change', async function () {
+        //     if (hideYakut.checked) {
+        //         await zubax_api.hide_yakut()
+        //         await updateTextOut(true);
+        //     } else {
+        //         await zubax_api.show_yakut()
+        //         await updateTextOut(true);
+        //     }
+        // });
     }
     try {
         if (zubax_api_ready) {

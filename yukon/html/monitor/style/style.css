@@ -187,6 +187,7 @@ html {
 
 body {
     height: 100vh;
+    position: relative;
 }
 
 #layout {
@@ -266,6 +267,32 @@ button#btnShowHideToolbar:hover {
 }
 
 button#btnShowHideToolbar:active {
+    background-color: #000;
+    color: #fff;
+    box-shadow: 0 0 0.25em #000 inset;
+    animation: fadeout 0.5s ease-in-out;
+}
+
+button#btnAddAnotherTransport {
+    position: absolute;
+    top: 0.5em;
+    right: 5em;
+    border: 1px solid #000;
+    border-radius: 0.25em;
+    background-color: rgb(135, 135, 135);
+    color: #fff;
+    font-size: 1.5em;
+    padding: 0.25em 0.5em;
+    z-index: 1;
+}
+
+button#btnAddAnotherTransport:hover {
+    background-color: #000;
+    color: #fff;
+    cursor: pointer;
+}
+
+button#btnAddAnotherTransport:active {
     background-color: #000;
     color: #fff;
     box-shadow: 0 0 0.25em #000 inset;

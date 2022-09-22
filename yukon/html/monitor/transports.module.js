@@ -1,5 +1,4 @@
 export function initTransports(yukon_state) {
-    var lastMessageIndex = -1;
     const transports = Object.freeze({
         UDP: {
             UDP: "UDP",
@@ -15,17 +14,6 @@ export function initTransports(yukon_state) {
     var currentSelectedTransportType = [transports.CAN, transports.CAN.MANUAL];
     console.log("zubax_api_ready in add_transport.js");
     const cbShowTransportCombobox = document.getElementById('cbShowTransportCombobox');
-    var messagesList = document.querySelector("#messages-list");
-    let messagesListWidth = messagesList.getBoundingClientRect().width
-    function displayOneMessage(message) {
-        var messageItem = document.createElement("textarea");
-        messageItem.classList.add("message-item");
-        messageItem.classList.add("is-active");
-        messageItem.setAttribute("spellcheck", "false");
-        messageItem.innerHTML = message;
-        messagesList.appendChild(messageItem);
-        autosize(messageItem);
-    }
     function fillSelectionWithSlcan() {
         zubax_api.get_slcan_ports().then(function (ports) {
             ports = JSON.parse(ports);
@@ -68,18 +56,7 @@ export function initTransports(yukon_state) {
             }
         });
     }
-    function fetchAndDisplayMessages() {
-        zubax_api.get_messages(lastMessageIndex + 1).then(function (messages) {
-            var messagesObject = JSON.parse(messages);
-            for (const message of messagesObject) {
-                displayOneMessage(message.message);
-                // For the last message
-                if (message == messagesObject[messagesObject.length - 1]) {
-                    lastMessageIndex = message.index;
-                }
-            }
-        });
-    }
+
     function addLocalMessage(message) {
         zubax_api.add_local_message(message)
     }
@@ -197,15 +174,6 @@ export function initTransports(yukon_state) {
         }
     }
     disableAllInputs();
-    setInterval(function () {
-        let currentWidth = messagesList.getBoundingClientRect().width
-        if (currentWidth != messagesListWidth) {
-            messagesListWidth = currentWidth
-            for (child of messagesList.children) {
-                autosize.update(child);
-            }
-        }
-    }, 500);
     function getCoords(elem) {
         let box = elem.getBoundingClientRect();
 
@@ -480,8 +448,6 @@ export function initTransports(yukon_state) {
     const divTypeTransport = document.getElementById('divTypeTransport');
     const divSelectTransport = document.getElementById('divSelectTransport');
     const btnOpenCandumpFile = document.getElementById('btnOpenCandumpFile');
-
-    setInterval(fetchAndDisplayMessages, 1000);
 
 
     InitTabStuff();
