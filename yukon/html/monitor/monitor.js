@@ -94,8 +94,38 @@ import { initTransports } from "./transports.module.js"
         }
         setInterval(update_avatars_table, 1000);
     }
-    function setUpTransportsListComponent() {
 
+    function setUpTransportsListComponent() {
+        let lastTransportsListHash = 0;
+        async function syncList() {
+            const transportsList = document.querySelector('#transports_list');
+            const received_transport_interfaces_string = await zubax_api.get_connected_transport_interfaces();
+            const received_transport_interfaces_object = JSON.parse(received_transport_interfaces_string);
+            if (received_transport_interfaces_object.hash == lastTransportsListHash) {
+                return;
+            }
+            transportsList.innerHTML = "";
+            lastTransportsListHash = received_transport_interfaces_object.hash;
+            const received_transport_interfaces = received_transport_interfaces_object.interfaces;
+            for (const _interface of received_transport_interfaces) {
+                const transport_interface = document.createElement('div');
+                transport_interface.classList.add('transport_interface');
+                // Add a div for the name of the interface
+                const name = document.createElement('P');
+                name.innerHTML = JSON.stringify(_interface);
+                transport_interface.appendChild(name);
+                // Add a button to remove the interface
+                const remove_button = document.createElement('button');
+                remove_button.innerHTML = "Remove";
+                remove_button.addEventListener('click', async () => {
+                    await zubax_api.detach_transport(_interface.hash);
+                    await syncList();
+                });
+                transport_interface.appendChild(remove_button);
+                transportsList.appendChild(transport_interface);
+            }
+        }
+        setInterval(syncList, 1000);
     }
     async function setUpRegistersComponent(immediateCreateTable) {
         if (immediateCreateTable) {
@@ -530,6 +560,11 @@ import { initTransports } from "./transports.module.js"
                 btnShowHideToolbar.style.zIndex = "1000";
                 btnShowHideToolbar.innerHTML = "∨";
             }
+            setTimeout(function () {
+                myLayout.updateSize();
+            }, 50);
+        });
+        document.querySelector("#layout").addEventListener("resize", () => {
             setTimeout(function () {
                 myLayout.updateSize();
             }, 50);

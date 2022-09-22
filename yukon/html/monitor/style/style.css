@@ -194,6 +194,7 @@ body {
     display: block;
     flex-grow: 4;
     flex-shrink: 1;
+    width: 100%;
 }
 
 #toolbar {
@@ -308,4 +309,29 @@ button#btnAddAnotherTransport:active {
     width: 100%;
     overflow: hidden;
     position: relative;
+}
+
+.transports_list {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.transport_interface {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    border: 1px solid #000;
+    padding: 0.5em;
+    margin: 0.5em;
+}
+
+.transport_interface p {
+    flex-grow: 3;
 }

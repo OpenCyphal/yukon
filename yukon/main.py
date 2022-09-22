@@ -35,7 +35,7 @@ def run_electron() -> None:
     try:
         # Keeping reading the stdout and stderr, look for the string electron: symbol lookup error
         with subprocess.Popen(
-            [exe_path, "http://localhost:5000/add_transport/add_transport.html"],
+            [exe_path, "http://localhost:5000/monitor/monitor.html"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,

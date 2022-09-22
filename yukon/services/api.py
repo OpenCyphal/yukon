@@ -321,6 +321,16 @@ class Api:
                 break
         return json.dumps(self.state.queues.attach_transport_response.get(), cls=EnhancedJSONEncoder)
 
+    def detach_transport(self, hash: str) -> str:
+        logger.info(f"Detaching transport {hash}")
+        self.state.queues.detach_transport.put(hash)
+        while True:
+            if self.state.queues.detach_transport_response.empty():
+                sleep(0.1)
+            else:
+                break
+        return self.state.queues.detach_transport_response.get()
+
     # def save_registers_of_node(self, node_id: int, registers: typing.Dict["str"]) -> None:
     def show_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = False
@@ -359,3 +369,10 @@ class Api:
             webbrowser.open_new_tab(url)
         else:
             os.spawnl(os.P_NOWAIT, exe_path, exe_path, "http://localhost:5000/monitor/monitor.html")
+
+    def get_connected_transport_interfaces(self) -> str:
+        composed_list = [x.to_builtin() for x in self.state.cyphal.transports_list]
+        return json.dumps({
+            "interfaces": composed_list,
+            "hash": hash(json.dumps(composed_list, sort_keys=True))
+        })

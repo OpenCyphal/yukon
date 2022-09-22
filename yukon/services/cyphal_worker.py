@@ -45,8 +45,10 @@ def cyphal_worker(state: GodState) -> None:
                     try:
                         atr: AttachTransportRequest = state.queues.attach_transport.get_nowait()
                         new_transport = make_transport(atr.get_registry())
+                        state.cyphal.inferior_transports_by_interface_hashes[str(hash(atr.requested_interface))] = new_transport
                         state.cyphal.pseudo_transport.attach_inferior(new_transport)
                         attach_transport_response = AttachTransportResponse(True, atr.requested_interface.iface)
+                        state.cyphal.transports_list.append(atr.requested_interface)
                         state.queues.attach_transport_response.put(attach_transport_response)
                         print("Added a new interface")
                     except PermissionError as pe:
@@ -77,8 +79,14 @@ def cyphal_worker(state: GodState) -> None:
                         state.queues.attach_transport_response.put(attach_transport_response)
                 await asyncio.sleep(0.02)
                 if not state.queues.detach_transport.empty():
-                    transport = state.queues.detach_transport.get_nowait()
-                    state.cyphal.pseudo_transport.detach_inferior(transport)
+                    interface_hash = state.queues.detach_transport.get_nowait()
+                    transport_about_to_be_detached = state.cyphal.inferior_transports_by_interface_hashes[interface_hash]
+                    state.cyphal.pseudo_transport.detach_inferior(transport_about_to_be_detached)
+                    # find the interface in state.cyphal.transports_list which has the hash matching to interface_hash and remove it
+                    for interface in state.cyphal.transports_list:
+                        if str(hash(interface)) == interface_hash:
+                            state.cyphal.transports_list.remove(interface)
+                            break
                 await asyncio.sleep(0.02)
                 if not state.queues.update_registers.empty():
                     register_update = state.queues.update_registers.get_nowait()
