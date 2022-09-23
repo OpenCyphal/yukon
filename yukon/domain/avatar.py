@@ -205,7 +205,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             else:
                 assert False
 
-    def is_node_online(ts: float) -> bool:
+    def is_node_online(self, ts: float) -> typing.Any:
         from uavcan.node import Heartbeat_1_0 as Heartbeat
 
         return (ts - max(self._ts_heartbeat, self._ts_activity)) <= Heartbeat.OFFLINE_TIMEOUT
