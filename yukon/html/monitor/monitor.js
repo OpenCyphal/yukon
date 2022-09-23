@@ -550,7 +550,8 @@ import { initTransports } from "./transports.module.js"
                 myLayout.updateSize();
             }, 50);
         });
-        document.body.addEventListener("resize", () => {
+        window.addEventListener("resize", () => {
+            console.log("resize event");
             setTimeout(function () {
                 myLayout.updateSize();
             }, 50);
