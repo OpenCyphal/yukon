@@ -321,7 +321,7 @@ class Api:
                 break
         return json.dumps(self.state.queues.attach_transport_response.get(), cls=EnhancedJSONEncoder)
 
-    def detach_transport(self, hash: str) -> str:
+    def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
         self.state.queues.detach_transport.put(hash)
         while True:
@@ -372,7 +372,4 @@ class Api:
 
     def get_connected_transport_interfaces(self) -> str:
         composed_list = [x.to_builtin() for x in self.state.cyphal.transports_list]
-        return json.dumps({
-            "interfaces": composed_list,
-            "hash": hash(json.dumps(composed_list, sort_keys=True))
-        })
+        return json.dumps({"interfaces": composed_list, "hash": hash(json.dumps(composed_list, sort_keys=True))})

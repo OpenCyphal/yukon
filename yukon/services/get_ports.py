@@ -21,7 +21,7 @@ def get_socketcan_ports() -> typing.List[str]:
     # If is Linux then
     if platform.system() == "Linux":
         from can.interfaces.socketcan import utils as socketcan_utils
+
         return list(socketcan_utils.find_available_interfaces())
     else:
         return []
-    
