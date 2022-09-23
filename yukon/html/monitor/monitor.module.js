@@ -78,6 +78,21 @@ export function create_directed_graph(yukon_state) {
             createMonitorPopup(assembled_text, yukon_state);
         }
     });
+    my_graph.on('mouseout', 'node', function (evt) {
+        var node = evt.target;
+        console.log("Mouseout on node " + node.id());
+        // Remove the current monitor popup
+        var cy = document.getElementById('cy');
+        // Remove all label elements in the div cy
+        var labels = cy.getElementsByTagName('div');
+        for (var i = 0; i < labels.length; i++) {
+            // Check if className of the element is 'label'
+            if (labels[i].className == 'label') {
+                // Remove the element
+                labels[i].parentNode.removeChild(labels[i]);
+            }
+        }
+    });
     return my_graph
 }
 function createMonitorPopup(text, yukon_state) {
@@ -99,16 +114,17 @@ function createMonitorPopup(text, yukon_state) {
     // Make the label stick to the top of the cy
     label.style.position = 'absolute';
     label.style.top = '0px';
-    label.style.left = '0px';
-    label.style.width = '380px';
+    label.style.left = '30%';
     label.style.minHeight = '90px';
     label.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
     label.style.color = 'white';
-    label.style.textAlign = 'center';
+    label.style.textAlign = 'left';
     label.style.fontSize = '20px';
     label.style.fontWeight = 'bold';
     label.style.paddingTop = '20px';
     label.style.paddingBottom = '20px';
+    label.style.paddingLeft = '20px';
+    label.style.paddingRight = '20px';
     label.style.zIndex = '1';
     label.style.pointerEvents = 'none';
     // Remove the label after 3 seconds

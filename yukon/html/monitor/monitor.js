@@ -451,7 +451,6 @@ import { initTransports } from "./transports.module.js"
                         {
                             type: 'column',
                             width: 30,
-                            isClosable: false,
                             content: [
                                 {
                                     type: 'stack',

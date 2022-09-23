@@ -88,6 +88,7 @@ def cyphal_worker(state: GodState) -> None:
                     transport_about_to_be_detached = state.cyphal.inferior_transports_by_interface_hashes[
                         interface_hash
                     ]
+                    transport_about_to_be_detached.close()
                     state.cyphal.pseudo_transport.detach_inferior(transport_about_to_be_detached)
                     # find the interface in state.cyphal.transports_list which has the hash matching to interface_hash and remove it
                     for interface in state.cyphal.transports_list:
