@@ -158,6 +158,31 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             inputFieldReference.style.backgroundColor = '#ee0e0e !important';
             inputFieldReference.innerHTML = "Unhandled: " + value;
         }
+        // jQuery.fn.hasOverflown = function () {
+        //     var res;
+        //     console.log(this.text());
+        //     var cont = $('<div>' + this.text() + '</div>').css("display", "table")
+        //         .css("z-index", "-1").css("position", "absolute")
+        //         .css("font-family", this.css("font-family"))
+        //         .css("font-size", this.css("font-size"))
+        //         .css("font-weight", this.css("font-weight")).appendTo('body');
+        //     res = (cont.width() > this.width());
+        //     cont.remove();
+        //     return res;
+        // };
+        // setTimeout(function () {
+        //     if ($(inputFieldReference).hasOverflown()) {
+        //         table_cell.title = inputFieldReference.innerHTML;
+        //         inputFieldReference.title = inputFieldReference.innerHTML;
+        //         // Make a button to show the full value and align the button right in the cell
+        //         let btnShowFullValue = document.createElement('button');
+        //         inputFieldReference.position = "relative";
+        //         // Add an ellipse image to the button
+        //         btnShowFullValue.innerHTML = '...';
+        //         btnShowFullValue.classList.add('btn-show-full-value');
+        //         inputFieldReference.appendChild(btnShowFullValue);
+        //     }
+        // }, 900);
         table_cell.appendChild(inputFieldReference);
         function styleLabel(label) {
             label.style.height = '0px';

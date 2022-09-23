@@ -508,15 +508,6 @@ import { initTransports } from "./transports.module.js"
         function setUpTransportsComponent(container) {
             initTransports(container, yukon_state);
         }
-        const btnAddAnotherTransport = document.getElementById('btnAddAnotherTransport');
-        btnAddAnotherTransport.addEventListener('click', function () {
-            myLayout.root.contentItems[0].contentItems[0].addChild({
-                type: 'component',
-                componentName: "transportsComponent",
-                isClosable: true,
-                title: "Transports",
-            });
-        });
         const outsideContext = this;
         function addRestoreButton(buttonText, buttonComponentName) {
             const toolbar = document.querySelector("#toolbar");
@@ -555,6 +546,11 @@ import { initTransports } from "./transports.module.js"
                 btnShowHideToolbar.classList.add("top-right");
                 btnShowHideToolbar.classList.remove("bottom-right");
             }
+            setTimeout(function () {
+                myLayout.updateSize();
+            }, 50);
+        });
+        document.body.addEventListener("resize", () => {
             setTimeout(function () {
                 myLayout.updateSize();
             }, 50);

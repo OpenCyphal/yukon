@@ -56,6 +56,11 @@ form#interface-selection-form {
     display: block;
 }
 
+#cy.with-background {
+    background: url(../../images/Cyphal.svg) no-repeat center center;
+    background-size: 50%;
+}
+
 #split-right {
     min-width: 205px;
     width: 30%;
@@ -257,70 +262,41 @@ button#btnShowHideToolbar {
     position: absolute;
     top: -0.5em;
     right: 5em;
+    width: 1em;
+    height: 1em;
     border: 1px solid #000;
     border-radius: 0.25em;
-    background-color: rgb(135, 135, 135);
-    color: #fff;
     font-size: 1.5em;
     padding: 0.25em 0.5em;
     z-index: 3;
-}
-
-button#btnShowHideToolbar.top-right::before {
-    content: "∨";
-}
-
-button#btnShowHideToolbar.bottom-right::before {
-    content: "∧";
+    background-size: 60% 60%;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #e1e1e1;
 }
 
 button#btnShowHideToolbar.top-right {
+    background-image: url(../../images/caret-down.svg);
     right: 5rem;
-    top: -0.5em;
+    top: -0.3em;
     bottom: auto;
 }
 
 button#btnShowHideToolbar.bottom-right {
+    background-image: url(../../images/caret-up.svg);
     right: 5rem;
     top: -0.5em;
     bottom: auto;
 }
 
 button#btnShowHideToolbar:hover {
-    background-color: #000;
+    background-color: rgb(171, 171, 171);
     color: #fff;
     cursor: pointer;
 }
 
 button#btnShowHideToolbar:active {
-    background-color: #000;
-    color: #fff;
-    box-shadow: 0 0 0.25em #000 inset;
-    animation: fadeout 0.5s ease-in-out;
-}
-
-button#btnAddAnotherTransport {
-    display: none;
-    position: absolute;
-    top: -0.5em;
-    right: 5em;
-    border: 1px solid #000;
-    border-radius: 0.25em;
-    background-color: rgb(135, 135, 135);
-    color: #fff;
-    font-size: 1.5em;
-    padding: 0.25em 0.5em;
-    z-index: 1;
-}
-
-button#btnAddAnotherTransport:hover {
-    background-color: #000;
-    color: #fff;
-    cursor: pointer;
-}
-
-button#btnAddAnotherTransport:active {
-    background-color: #000;
+    background-color: rgb(171, 171, 171);
     color: #fff;
     box-shadow: 0 0 0.25em #000 inset;
     animation: fadeout 0.5s ease-in-out;

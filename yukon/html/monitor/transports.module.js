@@ -405,6 +405,7 @@ export function initTransports(container, yukon_state) {
             let port = "";
             const useSocketCan = currentSelectedTransportType[1] == transports.CAN.SOCKETCAN;
             if (currentSelectedTransportType[1] != transports.CAN.MANUAL) {
+                let port_type = "";
                 if (useSocketCan) {
                     port_type = "socketcan";
                 } else {

@@ -83,7 +83,7 @@ export function make_context_menus(yukon_state) {
     // For table cells
     const table_cell_context_menu_items = [
         {
-            content: `${downloadIcon}Set value`,
+            content: `${downloadIcon}Edit value`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
@@ -95,7 +95,7 @@ export function make_context_menus(yukon_state) {
             shouldBeDisplayed: oneSelectedConstraint
         },
         {
-            content: `${downloadIcon}Set values`,
+            content: `${downloadIcon}Edit values`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
@@ -361,4 +361,20 @@ export function make_context_menus(yukon_state) {
         context: this
     });
     table_row_header_context_menu.init();
+    const cy_context_menu = new ContextMenu({
+        target: "#cy",
+        mode: "dark",
+        menuItems: [
+            {
+                content: `Toggle background image`,
+                events: {
+                    click: async (e, elementOpenedOn) => {
+                        elementOpenedOn.classList.toggle("with-background");
+                    }
+                },
+            }
+        ],
+
+    })
+    cy_context_menu.init();
 }
