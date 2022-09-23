@@ -9,12 +9,18 @@ body {
 }
 
 .noselect * {
-  -webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-     -khtml-user-select: none; /* Konqueror HTML */
-       -moz-user-select: none; /* Old versions of Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
+    -webkit-touch-callout: none;
+    /* iOS Safari */
+    -webkit-user-select: none;
+    /* Safari */
+    -khtml-user-select: none;
+    /* Konqueror HTML */
+    -moz-user-select: none;
+    /* Old versions of Firefox */
+    -ms-user-select: none;
+    /* Internet Explorer/Edge */
+    user-select: none;
+    /* Non-prefixed version, currently
                                   supported by Chrome, Edge, Opera and Firefox */
 }
 
@@ -67,7 +73,6 @@ input[type=text] {
 
 #messages {
     flex-grow: 10;
-    display: none;
 }
 
 #messages-list {
@@ -116,7 +121,7 @@ input[type=text] {
     display: inline-block !important;
 }
 
-form#transport-selection-form > #maybe-tabs > div.tab-row {
+form#transport-selection-form>#maybe-tabs>div.tab-row {
     overflow: hidden;
     position: relative;
     /* Making it an anchor point for tab-slider */
@@ -132,7 +137,14 @@ form#transport-selection-form>#maybe-tabs label {
     height: 100%;
     flex-grow: 3;
     padding: 0.5em;
-    background-color: #e0e0e0;
+    background-color: #cfcfcf;
+}
+
+form#transport-selection-form>#maybe-tabs label.selected-tab {
+    background-color: #ee0000;
+    border-bottom: 5px solid #ee0000;
+    color: #fff;
+    z-index: 1;
 }
 
 form#transport-selection-form>#maybe-tabs input {
@@ -144,7 +156,6 @@ form#transport-selection-form>#maybe-tabs input {
 }
 
 form#transport-selection-form>#maybe-tabs .tab-slider {
-    position: fixed;
+    position: absolute;
     background-color: #ee0000;
-    z-index: -1;
 }

@@ -1,5 +1,5 @@
-import { get_all_selected_pairs, select_configuration } from "./registers.selection.module.js";
-import { update_tables } from "./registers.module.js";
+import { get_all_selected_pairs, select_configuration, getAllEntireColumnsThatAreSelected } from "./registers.selection.module.js";
+import { update_tables, updateRegistersTableColors } from "./registers.module.js";
 import { copyObject } from "./utilities.module.js";
 export async function applyConfiguration(configuration, set_node_id, applyPairs, yukon_state) {
     let zubax_api = yukon_state.zubax_api;
@@ -138,15 +138,25 @@ export async function return_all_selected_registers_as_yaml(pairs, yukon_state) 
     let zubax_api = yukon_state.zubax_api;
     // A pair is the register_name and the node_id
     let pairs_object = pairs;
+    // Determine, whether the configuration is a network configuration or a single node configuration
+    let is_networked = Object.keys(pairs_object).length > 1;
     let json_string = JSON.stringify(pairs_object);
     var yaml_string = jsyaml.dump(pairs_object, { flowLevel: 2 });
     if (yukon_state.settings.simplifyRegisters) {
         const simplified_json_string = await zubax_api.simplify_configuration(json_string)
-        const intermediary_structure = JSON.parse(simplified_json_string);
+        let intermediary_structure = JSON.parse(simplified_json_string);
+        if (!is_networked && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
+            intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
+        }
         const simplified_yaml_string = jsyaml.dump(intermediary_structure);//, { flowLevel: 2 });
         return parseYamlStringsToNumbers(simplified_yaml_string);
     } else {
-        return parseYamlStringsToNumbers(yaml_string);
+        let intermediary_structure = JSON.parse(yaml_string);
+        if (!is_networked && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
+            intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
+        }
+        const yaml_string_modified = jsyaml.dump(intermediary_structure);
+        return parseYamlStringsToNumbers(yaml_string_modified);
     }
 }
 export async function export_all_selected_registers(only_of_avatar_of_node_id, get_everything, yukon_state) {
@@ -157,7 +167,7 @@ export async function update_available_configurations_list(yukon_state) {
     let zubax_api = yukon_state.zubax_api;
     var available_configurations_radios = document.querySelector("#available_configurations_radios");
     available_configurations_radios.innerHTML = "";
-    let number_input_for_configuration = {};
+    let number_input_for_configuration = yukon_state.number_input_for_configuration;
     let simplified_configurations_flags = {};
     for (const [file_name, configuration_string] of Object.entries(yukon_state.available_configurations)) {
         // Fill in the available_configurations_radios with radio buttons
@@ -214,7 +224,7 @@ export async function update_available_configurations_list(yukon_state) {
             text.innerHTML = key;
             label.appendChild(text);
         }
-        if (!is_network_configuration && is_simplified) {
+        if (!is_network_configuration && is_configuration_simplified) {
             var number_input = document.createElement("input");
             number_input.type = "number";
             number_input.placeholder = "Node id needed";
@@ -225,10 +235,9 @@ export async function update_available_configurations_list(yukon_state) {
         available_configurations_radios.appendChild(label);
     }
 }
-export async function loadConfigurationFromOpenDialog(selectImmediately, yukon_state)
-{
+export async function loadConfigurationFromOpenDialog(selectImmediately, yukon_state, click_event) {
     const result_dto = await openFile(yukon_state);
-    if(!result_dto || result_dto.text == "") {
+    if (!result_dto || result_dto.text == "") {
         return null;
     }
     yukon_state.addLocalMessage("Configuration imported");
@@ -237,13 +246,14 @@ export async function loadConfigurationFromOpenDialog(selectImmediately, yukon_s
     }
     yukon_state.available_configurations[result_dto.name] = result_dto.text;
     await update_available_configurations_list(yukon_state);
+    return result_dto;
 }
-export async function actionApplyConfiguration(selectImmediately, applyToAll, avatar, onlyApplySelected, yukon_state) {
-    let result_dto = await loadConfigurationFromOpenDialog(selectImmediately, yukon_state);
+export async function actionApplyConfiguration(selectImmediately, applyToAll, avatar, onlyApplySelected, yukon_state, click_event) {
+    let result_dto = await loadConfigurationFromOpenDialog(selectImmediately, yukon_state, click_event);
     let pairs = null;
-    if(result_dto) {
+    if (result_dto) {
         const current_config = yukon_state.available_configurations[yukon_state.selections.selected_config];
-        if(onlyApplySelected) {
+        if (onlyApplySelected) {
             pairs = get_all_selected_pairs({
                 "only_of_avatar_of_node_id": false,
                 "get_everything": false,
@@ -251,7 +261,7 @@ export async function actionApplyConfiguration(selectImmediately, applyToAll, av
             }, yukon_state);
         }
         if (current_config) {
-            if(avatar && !applyToAll) {
+            if (avatar && !applyToAll) {
                 const node_id = avatar.node_id;
                 const selections = getAllEntireColumnsThatAreSelected(yukon_state);
 
@@ -278,12 +288,12 @@ export async function actionApplyConfiguration(selectImmediately, applyToAll, av
         } else {
             console.log("No configuration selected");
         }
-        if (!yukon_state.recently_reread_registers[node_id]) {
-            yukon_state.recently_reread_registers[node_id] = {};
+        if (!yukon_state.recently_reread_registers[avatar.node_id]) {
+            yukon_state.recently_reread_registers[avatar.node_id] = {};
         }
         for (let i = 0; i < avatar.registers.length; i++) {
             const register_name = avatar.registers[i];
-            yukon_state.recently_reread_registers[node_id][register_name] = true;
+            yukon_state.recently_reread_registers[avatar.node_id][register_name] = true;
         }
 
         updateRegistersTableColors(yukon_state, 4, 1000);

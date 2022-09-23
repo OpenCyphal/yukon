@@ -158,6 +158,31 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             inputFieldReference.style.backgroundColor = '#ee0e0e !important';
             inputFieldReference.innerHTML = "Unhandled: " + value;
         }
+        // jQuery.fn.hasOverflown = function () {
+        //     var res;
+        //     console.log(this.text());
+        //     var cont = $('<div>' + this.text() + '</div>').css("display", "table")
+        //         .css("z-index", "-1").css("position", "absolute")
+        //         .css("font-family", this.css("font-family"))
+        //         .css("font-size", this.css("font-size"))
+        //         .css("font-weight", this.css("font-weight")).appendTo('body');
+        //     res = (cont.width() > this.width());
+        //     cont.remove();
+        //     return res;
+        // };
+        // setTimeout(function () {
+        //     if ($(inputFieldReference).hasOverflown()) {
+        //         table_cell.title = inputFieldReference.innerHTML;
+        //         inputFieldReference.title = inputFieldReference.innerHTML;
+        //         // Make a button to show the full value and align the button right in the cell
+        //         let btnShowFullValue = document.createElement('button');
+        //         inputFieldReference.position = "relative";
+        //         // Add an ellipse image to the button
+        //         btnShowFullValue.innerHTML = '...';
+        //         btnShowFullValue.classList.add('btn-show-full-value');
+        //         inputFieldReference.appendChild(btnShowFullValue);
+        //     }
+        // }, 900);
         table_cell.appendChild(inputFieldReference);
         function styleLabel(label) {
             label.style.height = '0px';
@@ -233,6 +258,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
         // inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
         var lastClick = null;
         table_cell.addEventListener('mousedown', function (event) {
+            console.log("Mouse down");
             // Check if the mouse button was left click
             if (event.button !== 0) {
                 return;
@@ -267,6 +293,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
 }
 export function create_registers_table(_filter_keyword_inclusive, yukon_state) {
     // Clear the table
+    const iRegistersFilter = document.querySelector('#iRegistersFilter');
     const filter_keyword_inclusive = _filter_keyword_inclusive || iRegistersFilter.value;
     var registers_table = document.querySelector('#registers_table')
     registers_table.innerHTML = '';
@@ -309,10 +336,9 @@ export function update_tables(override) {
 }
 
 export function updateRegistersTableColors(yukon_state, repeat_times, repeat_delay) {
-    if(repeat_times && repeat_times > 0) {
+    if (repeat_times && repeat_times > 0) {
         setTimeout(() => updateRegistersTableColors(yukon_state, repeat_times - 1, repeat_delay), repeat_delay)
     }
-    console.log("Updating register colors");
     var registers_table = document.querySelector('#registers_table')
     // For all table cells in registers_table, if the cell has the attribute node_id set to node_id then color it red if the node is selected or white if not
     let needsRefresh = false;

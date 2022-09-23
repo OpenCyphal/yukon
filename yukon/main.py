@@ -35,7 +35,7 @@ def run_electron() -> None:
     try:
         # Keeping reading the stdout and stderr, look for the string electron: symbol lookup error
         with subprocess.Popen(
-            [exe_path, "http://localhost:5000/add_transport/add_transport.html"],
+            [exe_path, "http://localhost:5000/monitor/monitor.html"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
@@ -55,8 +55,9 @@ def run_electron() -> None:
                 exit_code = p.returncode
 
     except FileNotFoundError as e:
-        logging.error(f"Could not find electron executable at {exe_path}")
-        logging.error(e)
+        # Log the same but using lazy logging
+        logging.error(f"Could not find electron executable at %s", exe_path)
+        logging.exception(e)
         exit_code = 1
 
     if exit_code != 0:
@@ -66,7 +67,7 @@ def run_electron() -> None:
 
 
 def open_webbrowser() -> None:
-    webbrowser.open("http://localhost:5000/add_transport/add_transport.html")
+    webbrowser.open("http://localhost:5000/monitor/monitor.html")
 
 
 def run_server() -> None:

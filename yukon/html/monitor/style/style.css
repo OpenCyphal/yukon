@@ -56,6 +56,11 @@ form#interface-selection-form {
     display: block;
 }
 
+#cy.with-background {
+    background: url(../../images/Cyphal.svg) no-repeat center center;
+    background-size: 50%;
+}
+
 #split-right {
     min-width: 205px;
     width: 30%;
@@ -128,6 +133,7 @@ textarea#textOut {
     justify-content: space-between;
     align-items: flex-start;
 }
+
 .block-display * {
     margin-top: 0.5em;
 }
@@ -135,11 +141,12 @@ textarea#textOut {
 .white-text {
     color: #fff !important;
 }
+
 .white-text * {
     color: #fff !important;
 }
 
-.white-text ~ * {
+.white-text~* {
     color: #fff !important;
 }
 
@@ -151,6 +158,7 @@ textarea#textOut {
     margin-top: 0.5em;
     padding: 0.25em 2px;
 }
+
 .pair-div.incompatible {
     background-color: rgba(255, 0, 0, 0.165);
     color: #fff;
@@ -164,7 +172,173 @@ textarea#textOut {
     top: 0;
     left: 0;
 }
+
 #no-refresh-option input {
     width: 3em;
     height: 3em;
+}
+
+#registers-header {
+    position: sticky;
+    left: 0px;
+}
+
+html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    height: 100vh;
+    position: relative;
+}
+
+#layout {
+    display: block;
+    flex-grow: 4;
+    flex-shrink: 1;
+    width: 100%;
+}
+
+#toolbar {
+    display: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 3em;
+    height: 3em;
+    background-color: rgb(203, 203, 203);
+    border-bottom: 1px solid #000;
+    position: relative;
+}
+
+#toolbar.shown {
+    display: flex;
+}
+
+#toolbar button {
+    border: 1px solid #000;
+    border-radius: 0.25em;
+    background-color: rgb(135, 135, 135);
+    color: #fff;
+    font-size: 1.5em;
+    padding: 0.25em 0.5em;
+    margin: 0.25em;
+}
+
+#toolbar button:hover {
+    background-color: #000;
+    color: #fff;
+    cursor: pointer;
+}
+
+#toolbar button:active {
+    background-color: #000;
+    color: #fff;
+    box-shadow: 0 0 0.25em #000 inset;
+    animation: fadeout 0.5s ease-in-out;
+}
+
+@keyframes fadeout {
+    0% {
+        background-color: #000;
+        color: #fff;
+    }
+
+    50% {
+        background-color: rgb(135, 135, 135);
+        color: #fff;
+    }
+
+    100% {
+        background-color: #000;
+        color: #fff;
+    }
+}
+
+button#btnShowHideToolbar {
+    position: absolute;
+    top: -0.5em;
+    right: 5em;
+    width: 1em;
+    height: 1em;
+    border: 1px solid #000;
+    border-radius: 0.25em;
+    font-size: 1.5em;
+    padding: 0.25em 0.5em;
+    z-index: 3;
+    background-size: 60% 60%;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #e1e1e1;
+}
+
+button#btnShowHideToolbar.top-right {
+    background-image: url(../../images/caret-down.svg);
+    right: 5rem;
+    top: -0.3em;
+    bottom: auto;
+}
+
+button#btnShowHideToolbar.bottom-right {
+    background-image: url(../../images/caret-up.svg);
+    right: 5rem;
+    top: -0.5em;
+    bottom: auto;
+}
+
+button#btnShowHideToolbar:hover {
+    background-color: rgb(171, 171, 171);
+    color: #fff;
+    cursor: pointer;
+}
+
+button#btnShowHideToolbar:active {
+    background-color: rgb(171, 171, 171);
+    color: #fff;
+    box-shadow: 0 0 0.25em #000 inset;
+    animation: fadeout 0.5s ease-in-out;
+}
+
+#mainContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.transports_list {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.transport_interface {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    border: 1px solid #000;
+    padding: 0.5em;
+    margin: 0.5em;
+}
+
+.transport_interface p {
+    word-wrap: break-word;
+    flex-grow: 3;
+}
+
+* {
+    font: 1em ubuntu-mono, monospace;
 }

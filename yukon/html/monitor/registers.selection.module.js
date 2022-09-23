@@ -1,5 +1,5 @@
 import { updateRegistersTableColors, showCellValue } from "./registers.module.js";
-import {rereadPairs} from "./registers.data.module.js";
+import { rereadPairs } from "./registers.data.module.js";
 // A pair is a pair of nodeid and register name
 export function get_all_selected_pairs(options, yukon_state) {
     if (!options) {
@@ -89,49 +89,50 @@ export function make_select_column(node_id, is_mouse_over, yukon_state) {
                 yukon_state.addLocalMessage("Column " + node_id + " selected");
             }
         } else {
-            // See if any register of this node_id is selected
-            let any_register_selected = false;
-            // For every register in the avatar with the node_id
-            for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                const current_avatar = yukon_state.current_avatars[i]
-                if (current_avatar.node_id == node_id) {
-                    for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
-                        const register_name = yukon_state.current_avatars[i].registers[j];
-                        if (yukon_state.selections.selected_registers[[node_id, register_name]]) {
-                            any_register_selected = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (any_register_selected) {
-                // Deselect all registers of this node_id
-                for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                    const current_avatar = yukon_state.current_avatars[i]
-                    if (current_avatar.node_id == node_id) {
-                        for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
-                            const register_name = yukon_state.current_avatars[i].registers[j];
-                            yukon_state.selections.selected_registers[[node_id, register_name]] = false;
-                        }
-                    }
-                }
-                yukon_state.addLocalMessage("Column " + node_id + " deselected");
-            } else {
-                // Select all registers of this node_id
-                for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                    const current_avatar = yukon_state.current_avatars[i]
-                    if (current_avatar.node_id == node_id) {
-                        for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
-                            const register_name = yukon_state.current_avatars[i].registers[j];
-                            yukon_state.selections.selected_registers[[node_id, register_name]] = true;
-                        }
-                    }
-                }
-                yukon_state.addLocalMessage("Column " + node_id + " selected");
-            }
+            selectColumn(node_id, yukon_state);
         }
         updateRegistersTableColors(yukon_state);
 
+    }
+}
+export function selectColumn(node_id, yukon_state) {
+    // See if any register of this node_id is selected
+    let any_register_selected = false;
+    // For every register in the avatar with the node_id
+    for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+        const current_avatar = yukon_state.current_avatars[i]
+        if (current_avatar.node_id == node_id) {
+            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                const register_name = yukon_state.current_avatars[i].registers[j];
+                if (yukon_state.selections.selected_registers[[node_id, register_name]]) {
+                    any_register_selected = true;
+                    break;
+                }
+            }
+        }
+    }
+    if (any_register_selected) {
+        // Deselect all registers of this node_id
+        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+            const current_avatar = yukon_state.current_avatars[i]
+            if (current_avatar.node_id == node_id) {
+                for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                    const register_name = yukon_state.current_avatars[i].registers[j];
+                    yukon_state.selections.selected_registers[[node_id, register_name]] = false;
+                }
+            }
+        }
+    } else {
+        // Select all registers of this node_id
+        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+            const current_avatar = yukon_state.current_avatars[i]
+            if (current_avatar.node_id == node_id) {
+                for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                    const register_name = yukon_state.current_avatars[i].registers[j];
+                    yukon_state.selections.selected_registers[[node_id, register_name]] = true;
+                }
+            }
+        }
     }
 }
 export function selectRow(register_name, yukon_state) {

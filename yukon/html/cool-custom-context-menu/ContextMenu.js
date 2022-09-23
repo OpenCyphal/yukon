@@ -21,7 +21,7 @@ class ContextMenu {
     this.menuItems.forEach((data, index) => {
       const element = this.createElementMarkup(data);
       this.dataOfMenuElements.set(element, data);
-      if(!data.shouldBeDisplayed) {
+      if (!data.shouldBeDisplayed) {
         data.shouldBeDisplayed = () => true;
       }
       element.firstChild.setAttribute(
@@ -67,7 +67,7 @@ class ContextMenu {
 
     this.menuElementsArray.forEach((item) => {
       if (this.dataOfMenuElements.get(item).shouldBeDisplayed()) {
-        if(this.dataOfMenuElements.get(item).nameChangeNeeded) {
+        if (this.dataOfMenuElements.get(item).nameChangeNeeded) {
           this.dataOfMenuElements.get(item).nameChangeNeeded();
         }
         menuContainer.appendChild(item)
@@ -86,7 +86,7 @@ class ContextMenu {
   }
 
   init() {
-    document.addEventListener("click", () => { 
+    document.addEventListener("click", () => {
       this.closeMenu(this.renderedMenu)
     });
     window.addEventListener("blur", () => this.closeMenu(this.renderedMenu));
@@ -98,10 +98,13 @@ class ContextMenu {
     });
     document.addEventListener("contextmenu", (e) => {
       e.preventDefault();
-      if (e.target.classList.contains(this.target)) {
+      // If e.target starts with a . then check if the classList contains the target, if e.target starts with a # then check if the id is the target
+      const isId = this.target[0] === "#";
+      const isClass = this.target[0] === ".";
+      if ((isClass && e.target.classList.contains(this.target.substring(1))) || (isId && e.target.id === this.target.substring(1))) {
         this.closeMenu(this.renderedMenu)
         this.renderedMenu = this.renderMenu();
-        
+
         this.elementOpenedOn = e.target;
         this.isOpened = true;
 

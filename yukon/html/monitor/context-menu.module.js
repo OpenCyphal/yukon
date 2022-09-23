@@ -1,5 +1,5 @@
 import { export_all_selected_registers, return_all_selected_registers_as_yaml, update_available_configurations_list, applyConfiguration, openFile, actionApplyConfiguration } from "./yaml.configurations.module.js";
-import { selectRow, getAllEntireColumnsThatAreSelected, get_all_selected_pairs, make_select_row, unselectAll } from "./registers.selection.module.js";
+import { selectColumn, selectRow, getAllEntireColumnsThatAreSelected, get_all_selected_pairs, make_select_row, unselectAll, make_select_column } from "./registers.selection.module.js";
 import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./registers.module.js";
 import { rereadPairs } from "./registers.data.module.js";
 import { downloadIcon, copyIcon, pasteIcon } from "./icons.module.js";
@@ -33,7 +33,7 @@ export function make_context_menus(yukon_state) {
                             "only_of_register_name": null
                         }, yukon_state);
                     }
-                    
+
                 } else if (cell.tagName == "TD" || cell.tagName == "INPUT") {
                     // Get the node_id and register_name from the cell
                     const node_id = cell.getAttribute("node_id");
@@ -83,7 +83,7 @@ export function make_context_menus(yukon_state) {
     // For table cells
     const table_cell_context_menu_items = [
         {
-            content: `${downloadIcon}Set value`,
+            content: `${downloadIcon}Edit value`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
@@ -95,7 +95,7 @@ export function make_context_menus(yukon_state) {
             shouldBeDisplayed: oneSelectedConstraint
         },
         {
-            content: `${downloadIcon}Set values`,
+            content: `${downloadIcon}Edit values`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
@@ -212,8 +212,24 @@ export function make_context_menus(yukon_state) {
         unselectAllMenuElement,
         importFromSelectedConfigurationMenuElement
     ];
+    const restoreBtnContextMenu = new ContextMenu({
+        target: ".restore-btn",
+        menuItems: [
+            {
+                content: `Remove restore button`,
+                events: {
+                    click: async (e, elementOpenedOn) => {
+                        elementOpenedOn.parentElement.removeChild(elementOpenedOn);
+                    }
+                },
+            },
+        ],
+        mode: "dark",
+        context: this
+    });
+    restoreBtnContextMenu.init();
     const table_cell_context_menu = new ContextMenu({
-        target: "table-cell",
+        target: ".table-cell",
         menuItems: table_cell_context_menu_items,
         mode: "dark",
         context: this
@@ -221,15 +237,25 @@ export function make_context_menus(yukon_state) {
     table_cell_context_menu.init();
 
     const table_header_context_menu_items = [
-        { content: `${pasteIcon}Select column` },
         {
-            content: `${downloadIcon}Apply a config from a file`,
+            content: `${pasteIcon}Select node registers`,
+            events: {
+                click: async (e, elementOpenedOn) => {
+                    const headerCell = elementOpenedOn;
+                    const node_id = headerCell.getAttribute("data-node_id");
+                    selectColumn(parseInt(node_id), yukon_state);
+                    updateRegistersTableColors(yukon_state);
+                }
+            },
+        },
+        {
+            content: `${downloadIcon}Apply config from file`,
             events: {
                 click: async (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
                     const node_id = headerCell.getAttribute("data-node_id");
                     const avatar = Object.values(yukon_state.current_avatars).find((e) => e.node_id == parseInt(node_id));
-                    actionApplyConfiguration(true, false, avatar, false, yukon_state);
+                    actionApplyConfiguration(true, false, avatar, false, yukon_state, e);
                 }
             },
             divider: "top"
@@ -268,7 +294,7 @@ export function make_context_menus(yukon_state) {
             }
         },
         {
-            content: `${copyIcon}Copy column as yaml`,
+            content: `${copyIcon}Copy node registers as YAML`,
             events: {
                 click: async (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
@@ -280,7 +306,7 @@ export function make_context_menus(yukon_state) {
             },
         },
         {
-            content: `${downloadIcon}Reread column`,
+            content: `${downloadIcon}Reread node`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
@@ -295,7 +321,7 @@ export function make_context_menus(yukon_state) {
     ];
 
     const table_header_context_menu = new ContextMenu({
-        target: "node_id_header",
+        target: ".node_id_header",
         mode: "dark",
         menuItems: table_header_context_menu_items,
         context: this
@@ -339,10 +365,26 @@ export function make_context_menus(yukon_state) {
         },
     ];
     const table_row_header_context_menu = new ContextMenu({
-        target: "left-side-table-header",
+        target: ".left-side-table-header",
         mode: "dark",
         menuItems: table_row_header_context_menu_items,
         context: this
     });
     table_row_header_context_menu.init();
+    const cy_context_menu = new ContextMenu({
+        target: "#cy",
+        mode: "dark",
+        menuItems: [
+            {
+                content: `Toggle background image`,
+                events: {
+                    click: async (e, elementOpenedOn) => {
+                        elementOpenedOn.classList.toggle("with-background");
+                    }
+                },
+            }
+        ],
+
+    })
+    cy_context_menu.init();
 }

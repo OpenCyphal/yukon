@@ -1,8 +1,8 @@
 table {
   border-collapse: collapse;
   border: 1px solid gray;
-  overflow-x:scroll;
-  width:100%;
+  overflow-x: scroll;
+  width: 100%;
   table-layout: fixed;
   width: auto;
   border-spacing: 0px;
@@ -23,6 +23,7 @@ thead {
   text-transform: uppercase;
   letter-spacing: 2%;
 }
+
 thead th {
   padding-top: 4px;
 }
@@ -77,41 +78,56 @@ td>div.input {
   padding-left: 0.9em;
   padding-bottom: 0.6em;
   outline: none;
+  text-overflow: ellipsis;
+  overflow: hidden;
   -webkit-touch-callout: none;
   user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   -khtml-user-select: none;
 }
-#registers_table th, #registers_table td {
+
+#registers_table th,
+#registers_table td {
   min-width: 400px !important;
   max-width: 400px !important;
+  overflow: hidden;
+  height: 14px;
+  white-space: nowrap;
 }
+
 th.left-side-table-header {
   position: sticky;
   z-index: 4;
   left: 0px;
   /* border: 1px solid black; */
 }
+
 .no-value {
   background-color: #007E87;
 }
+
 /* // Add a hover effect for tr */
-tbody>tr:hover,tbody>tr:hover .no-value {
+tbody>tr:hover,
+tbody>tr:hover .no-value {
   background-color: #ccc;
 }
+
 td.selected-cell {
   background-color: #0003EE;
   color: white;
 }
+
 td.selected-cell label {
   background-color: transparent;
   color: white;
 }
+
 td.recently_reread_register {
   background-color: #B00036;
   color: white;
 }
+
 tr {
   border: none;
 }
