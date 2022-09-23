@@ -1,5 +1,5 @@
-import { get_all_selected_pairs, select_configuration } from "./registers.selection.module.js";
-import { update_tables } from "./registers.module.js";
+import { get_all_selected_pairs, select_configuration, getAllEntireColumnsThatAreSelected } from "./registers.selection.module.js";
+import { update_tables, updateRegistersTableColors } from "./registers.module.js";
 import { copyObject } from "./utilities.module.js";
 export async function applyConfiguration(configuration, set_node_id, applyPairs, yukon_state) {
     let zubax_api = yukon_state.zubax_api;
@@ -224,7 +224,7 @@ export async function update_available_configurations_list(yukon_state) {
             text.innerHTML = key;
             label.appendChild(text);
         }
-        if (!is_network_configuration && is_simplified) {
+        if (!is_network_configuration && is_configuration_simplified) {
             var number_input = document.createElement("input");
             number_input.type = "number";
             number_input.placeholder = "Node id needed";
@@ -235,7 +235,7 @@ export async function update_available_configurations_list(yukon_state) {
         available_configurations_radios.appendChild(label);
     }
 }
-export async function loadConfigurationFromOpenDialog(selectImmediately, yukon_state) {
+export async function loadConfigurationFromOpenDialog(selectImmediately, yukon_state, click_event) {
     const result_dto = await openFile(yukon_state);
     if (!result_dto || result_dto.text == "") {
         return null;
@@ -246,9 +246,10 @@ export async function loadConfigurationFromOpenDialog(selectImmediately, yukon_s
     }
     yukon_state.available_configurations[result_dto.name] = result_dto.text;
     await update_available_configurations_list(yukon_state);
+    return result_dto;
 }
-export async function actionApplyConfiguration(selectImmediately, applyToAll, avatar, onlyApplySelected, yukon_state) {
-    let result_dto = await loadConfigurationFromOpenDialog(selectImmediately, yukon_state);
+export async function actionApplyConfiguration(selectImmediately, applyToAll, avatar, onlyApplySelected, yukon_state, click_event) {
+    let result_dto = await loadConfigurationFromOpenDialog(selectImmediately, yukon_state, click_event);
     let pairs = null;
     if (result_dto) {
         const current_config = yukon_state.available_configurations[yukon_state.selections.selected_config];
@@ -287,12 +288,12 @@ export async function actionApplyConfiguration(selectImmediately, applyToAll, av
         } else {
             console.log("No configuration selected");
         }
-        if (!yukon_state.recently_reread_registers[node_id]) {
-            yukon_state.recently_reread_registers[node_id] = {};
+        if (!yukon_state.recently_reread_registers[avatar.node_id]) {
+            yukon_state.recently_reread_registers[avatar.node_id] = {};
         }
         for (let i = 0; i < avatar.registers.length; i++) {
             const register_name = avatar.registers[i];
-            yukon_state.recently_reread_registers[node_id][register_name] = true;
+            yukon_state.recently_reread_registers[avatar.node_id][register_name] = true;
         }
 
         updateRegistersTableColors(yukon_state, 4, 1000);

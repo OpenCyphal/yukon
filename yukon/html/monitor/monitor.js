@@ -148,8 +148,8 @@ import { initTransports } from "./transports.module.js"
             }, 500);
         });
         const btnImportRegistersConfig = document.getElementById('btnImportRegistersConfig');
-        btnImportRegistersConfig.addEventListener('click', async function () {
-            loadConfigurationFromOpenDialog(false, yukon_state)
+        btnImportRegistersConfig.addEventListener('click', async function (click_event) {
+            loadConfigurationFromOpenDialog(false, yukon_state, click_event)
         });
     }
     function setUpDebugTextOutComponent() {

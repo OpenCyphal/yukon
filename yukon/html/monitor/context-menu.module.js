@@ -255,7 +255,7 @@ export function make_context_menus(yukon_state) {
                     const headerCell = elementOpenedOn;
                     const node_id = headerCell.getAttribute("data-node_id");
                     const avatar = Object.values(yukon_state.current_avatars).find((e) => e.node_id == parseInt(node_id));
-                    actionApplyConfiguration(true, false, avatar, false, yukon_state);
+                    actionApplyConfiguration(true, false, avatar, false, yukon_state, e);
                 }
             },
             divider: "top"
