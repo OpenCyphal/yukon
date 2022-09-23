@@ -198,7 +198,7 @@ body {
 }
 
 #toolbar {
-    display: flex;
+    display: none;
     flex-direction: row;
     justify-content: flex-start;
     align-items: center;
@@ -207,6 +207,10 @@ body {
     background-color: rgb(203, 203, 203);
     border-bottom: 1px solid #000;
     position: relative;
+}
+
+#toolbar.shown {
+    display: flex;
 }
 
 #toolbar button {
@@ -251,14 +255,35 @@ body {
 
 button#btnShowHideToolbar {
     position: absolute;
-    top: 0.5em;
-    right: 0.5em;
+    top: -0.5em;
+    right: 5em;
     border: 1px solid #000;
     border-radius: 0.25em;
     background-color: rgb(135, 135, 135);
     color: #fff;
     font-size: 1.5em;
     padding: 0.25em 0.5em;
+    z-index: 3;
+}
+
+button#btnShowHideToolbar.top-right::before {
+    content: "∨";
+}
+
+button#btnShowHideToolbar.bottom-right::before {
+    content: "∧";
+}
+
+button#btnShowHideToolbar.top-right {
+    right: 5rem;
+    top: -0.5em;
+    bottom: auto;
+}
+
+button#btnShowHideToolbar.bottom-right {
+    right: 5rem;
+    top: -0.5em;
+    bottom: auto;
 }
 
 button#btnShowHideToolbar:hover {
@@ -275,6 +300,7 @@ button#btnShowHideToolbar:active {
 }
 
 button#btnAddAnotherTransport {
+    display: none;
     position: absolute;
     top: -0.5em;
     right: 5em;

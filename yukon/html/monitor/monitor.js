@@ -537,29 +537,23 @@ import { initTransports } from "./transports.module.js"
         var myLayout = new GoldenLayout(config, document.querySelector("#layout"));
         const btnShowHideToolbar = document.getElementById('btnShowHideToolbar');
         btnShowHideToolbar.addEventListener('click', function () {
-            var toolbar = document.getElementById('toolbar');
-            if (toolbar.style.display == "none") {
-                toolbar.style.display = "flex";
+            const toolbar = document.getElementById('toolbar');
+            const compStyles = window.getComputedStyle(toolbar);
+            const displayStyle = compStyles.getPropertyValue('display');
+            if (displayStyle === "none") {
+                toolbar.classList.add("shown");
+                btnShowHideToolbar.classList.add("bottom-right");
+                btnShowHideToolbar.classList.remove("top-right");
                 btnShowHideToolbar.parentElement.removeChild(btnShowHideToolbar);
-                btnShowHideToolbar.style.right = "0.5em";
                 toolbar.appendChild(btnShowHideToolbar);
-                // // A hack
-                // document.body.style.overflow = "scroll";
-                // setTimeout(function () {
-                //     document.body.style.overflow = "hidden";
-                // }, 100);
-                btnShowHideToolbar.innerHTML = "∧";
             } else {
                 // Set the parent of btnShowHideToolbar to the body so that it is not removed when the toolbar is hidden
                 // Also set it to position top right
-                btnShowHideToolbar.style.top = "-0.5em";
-                btnShowHideToolbar.style.right = "3em";
-                btnShowHideToolbar.style.bottom = "auto";
                 btnShowHideToolbar.parentElement.removeChild(btnShowHideToolbar);
                 document.body.appendChild(btnShowHideToolbar);
-                toolbar.style.display = "none";
-                btnShowHideToolbar.style.zIndex = "1000";
-                btnShowHideToolbar.innerHTML = "∨";
+                toolbar.classList.remove("shown");
+                btnShowHideToolbar.classList.add("top-right");
+                btnShowHideToolbar.classList.remove("bottom-right");
             }
             setTimeout(function () {
                 myLayout.updateSize();

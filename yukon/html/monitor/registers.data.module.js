@@ -1,4 +1,4 @@
-import {updateRegistersTableColors} from "./registers.module.js";
+import { updateRegistersTableColors } from "./registers.module.js";
 import { copyObject } from "./utilities.module.js";
 export function update_register_value(register_name, register_value, node_id, yukon_state) {
     const zubax_api = yukon_state.zubax_api;
