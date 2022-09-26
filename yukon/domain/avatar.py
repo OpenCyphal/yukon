@@ -107,6 +107,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         #     self.register_values[register_name] = hex_string
         #     return
         assert register_name is not None
+        if register_name is None:
+            logger.error("No register name for transfer ID %d", transfer_id)
         exploded_value = explode_value(obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent})
         self.register_exploded_values[register_name] = exploded_value
         self.register_values[register_name] = str(explode_value(obj.value, simplify=True))
