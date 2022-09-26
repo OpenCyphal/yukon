@@ -1,3 +1,4 @@
+from atexit import register
 import json
 import logging
 import math
@@ -105,6 +106,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         #     hex_string = array.hex(":")
         #     self.register_values[register_name] = hex_string
         #     return
+        assert register_name is not None
         exploded_value = explode_value(obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent})
         self.register_exploded_values[register_name] = exploded_value
         self.register_values[register_name] = str(explode_value(obj.value, simplify=True))
