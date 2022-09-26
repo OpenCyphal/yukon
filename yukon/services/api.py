@@ -359,7 +359,9 @@ class Api:
                     avatar_list.remove(avatar)
                 elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
                     avatar_list.remove(avatar)
-        return json.dumps(avatar_dto)
+        return_string = json.dumps(avatar_dto)
+        # Replace -Inf in the JSON with -Infinity, because -Inf is not valid JSON
+        return
 
     def open_monitor_window(self) -> None:
         # If env contains IS_BROWSER_BASED

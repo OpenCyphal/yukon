@@ -44,7 +44,7 @@ import { initTransports } from "./transports.module.js"
     }
     async function update_avatars_dto() {
         const text_result = await zubax_api.get_avatars();
-        const obj_result = JSON.parse(text_result);
+        const obj_result = JSON.parse(text_result, function (k, v) { return v === Infinity ? "Infinity" : v; });
         yukon_state.current_avatars = obj_result.avatars;
     }
     function setUpMonitorComponent() {
@@ -156,17 +156,14 @@ import { initTransports } from "./transports.module.js"
         let isRefreshTextOutAllowed = true;
         async function updateTextOut(refresh_anyway = false) {
             if (!isRefreshTextOutAllowed && !refresh_anyway) { return; }
-            zubax_api.get_avatars().then(
-                function (avatars) {
-                    const textOut = document.querySelector("#textOut");
-                    const DTO = JSON.parse(avatars);
-                    if (DTO.hash != yukon_state.lastHash || refresh_anyway) {
-                        yukon_state.lastHash = DTO.hash;
-                        textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
-                    }
-                    // Parse avatars as json
-                }
-            );
+            const avatars = await zubax_api.get_avatars()
+            const textOut = document.querySelector("#textOut");
+            const DTO = JSON.parse(avatars, function (k, v) { return v === Infinity ? "Infinity" : v; });
+            if (DTO.hash != yukon_state.lastHash || refresh_anyway) {
+                yukon_state.lastHash = DTO.hash;
+                textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
+            }
+            // Parse avatars as json
         }
         setInterval(updateTextOut, 1000);
         const cbStopTextOutRefresh = document.querySelector("#cbStopTextOutRefresh");
