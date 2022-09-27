@@ -6,6 +6,10 @@
     source venv/bin/activate
     pip install -r requirements.txt -r dev-requirements.txt
     ```
+* Additional step when using systems where Tk is missing by default (like ArchLinux)
+    ```bash
+    sudo pacman -S tk
+    ```
 * Make a venv and install the requirements on Windows
     ```bat
     python -m venv venv
