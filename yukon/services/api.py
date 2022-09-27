@@ -361,6 +361,7 @@ class Api:
                 elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
                     avatar_list.remove(avatar)
         return_string = json.dumps(avatar_dto)
+        return_string = return_string.replace("Infinity", "0")
         return return_string
 
     def open_monitor_window(self) -> None:

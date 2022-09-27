@@ -557,6 +557,7 @@ import { initTransports } from "./transports.module.js"
                 myLayout.updateSize();
             }, 50);
         });
+        let last_time_when_a_window_was_opened = null;
         function registerComponentAction(uri, componentName, container, actionWhenCreating) {
             let isDestroyed = true;
             dynamicallyLoadHTML(uri, container, () => {
@@ -576,8 +577,19 @@ import { initTransports } from "./transports.module.js"
                 });
             });
             container.on("destroy", function () {
-                addRestoreButton(container._config.title, componentName);
-                isDestroyed = true;
+                const lastOpenPopoutsLength = myLayout.openPopouts.length;
+                setTimeout(() => {
+                        // The popout event is not fired, I believe it is a bug in GoldenLayout
+//                    if(last_time_when_a_window_was_opened != null && Date.now() - last_time_when_a_window_was_opened < 100) {
+//                        return;
+//                    }
+                    if (lastOpenPopoutsLength < myLayout.openPopouts.length) {
+                        console.log("Not making a restore button because a popout was opened");
+                        return;
+                    }
+                    addRestoreButton(container._config.title, componentName);
+                    isDestroyed = true;
+                }, 1000);
             });
         }
         myLayout.registerComponent('registersComponent', function (container, componentState) {

@@ -116,7 +116,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     while True:
         sleep(1)
         time_since_last_poll = monotonic() - state.gui.last_poll_received
-        if time_since_last_poll > 3:
+        if time_since_last_poll > 3 and not os.environ.get("IS_DEBUG"):
             logging.debug("No poll received in 3 seconds, shutting down")
             state.gui.gui_running = False
         if not state.gui.gui_running:
