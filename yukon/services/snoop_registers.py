@@ -20,7 +20,7 @@ from uavcan.register import List_1
 
 
 async def get_register_value(state: GodState, node_id: int, register_name: str) -> typing.Any:
-    while True:
+    while not state.avatar.disappeared_nodes.get(node_id):
         service_client = state.cyphal.local_node.make_client(uavcan.register.Access_1_0, node_id)
         # service_client.response_timeout = 0.5
         msg = uavcan.register.Access_1_0.Request()
@@ -32,13 +32,15 @@ async def get_register_value(state: GodState, node_id: int, register_name: str) 
         else:
             print("Failed response to register value for " + register_name)
             continue
+    if state.avatar.disappeared_nodes.get(node_id):
+        logger.debug("Node disappeared %d before register values could be retrieved", node_id)
 
 
 async def get_register_names(state: GodState, node_id: int, new_avatar: Avatar) -> None:
     register_values: typing.Any = {}
     counter = 0
     list_client = state.cyphal.local_node.make_client(List_1, node_id)
-    while True:
+    while not state.avatar.disappeared_nodes.get(node_id):
         msg = uavcan.register.List_1_0.Request(counter)
         result: uavcan.register.List_1_0.Response = (await list_client.call(msg))[0]
         # I am not using the result here because it gets snooped by the avatar
@@ -51,6 +53,8 @@ async def get_register_names(state: GodState, node_id: int, new_avatar: Avatar) 
                 register_values[register_name] = str(_simplify_value(obj.value))
         else:
             break
+    if state.avatar.disappeared_nodes.get(node_id):
+        logger.debug("Node %d disappeared before register names could be retrieved", node_id)
     new_avatar.register_values = register_values
 
 
@@ -66,11 +70,13 @@ def make_handler_for_node_detected(
         elif next_entry and next_entry.info is not None:
             logger.debug("A getinfo response was received")
         if previous_entry is None and next_entry is not None:
-            logger.debug(f"Node with id {node_id} became visible.")
+            logger.info(f"Node with id {node_id} became visible.")
             new_avatar = Avatar(iface, node_id=node_id, info=next_entry.info)
             state.avatar.avatars_by_node_id[node_id] = new_avatar
+            state.avatar.disappeared_nodes[node_id] = False
         elif previous_entry is not None and next_entry is None:
-            logger.debug(f"Node with id {node_id} disappeared.")
+            logger.info(f"Node with id {node_id} disappeared.")
+            state.avatar.disappeared_nodes[node_id] = True
             del state.avatar.avatars_by_node_id[node_id]
         is_new_or_updated_entry = next_entry is not None
         if is_new_or_updated_entry:

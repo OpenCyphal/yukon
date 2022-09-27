@@ -83,6 +83,7 @@ class AvatarState:
     avatars_by_hw_id: Dict[int, Avatar] = field(default_factory=dict)
     avatars_lock: threading.RLock = field(default_factory=threading.RLock)
     current_graph_lock: threading.RLock = field(default_factory=threading.RLock)
+    disappeared_nodes: Dict[int, bool] = field(default_factory=dict)
 
 
 class GodState:
