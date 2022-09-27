@@ -35,7 +35,7 @@
     </div>
     <div class="" id="divNodeId">
         <label for="iNodeId">Node ID</label>
-        <input type="number" id="iNodeId" value="1" min="1" max="255" class="form-control">
+        <input type="number" id="iNodeId" value="127" min="1" max="255" class="form-control">
     </div>
     <div id="divServiceTransferMultiplier">
         <label for="iServiceTransferMultiplier">Service transfer multiplier</label>
@@ -46,7 +46,5 @@
         <pre>sudo setcap cap_net_raw+eip "$(readlink -f PATH_TO_YOUR_PYTHON_OR_YUKON_EXECUTABLE)"</pre>
     </div>
     <button type="button" id="btnStart" class="btn btn-lg btn-primary btn-block">Start this transport</button>
-    <button type="button" id="btnAddTransport" class="btn btn-lg btn-primary btn-block">Configure another
-        transport</button>
     <div class="feedback-message">Hello here, you should've done a few things differently</div>
 </form>
