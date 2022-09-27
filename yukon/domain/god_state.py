@@ -72,6 +72,7 @@ class CyphalState:
     allocation_subscriber: Optional[pycyphal.presentation.Subscriber] = field(default_factory=none_factory)
     transports_list: typing.List[Interface] = field(default_factory=list)
     inferior_transports_by_interface_hashes: Dict[int, Interface] = field(default_factory=dict)
+    already_used_transport_interfaces: Dict[str, int] = field(default_factory=dict)
 
 
 @dataclass
