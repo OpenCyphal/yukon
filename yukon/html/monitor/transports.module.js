@@ -423,7 +423,7 @@ export function initTransports(container, yukon_state) {
         }
 
 
-        addLocalMessage("Going to attach now!")
+        addLocalMessage("Going to try to attach.")
 
         var resultObject = JSON.parse(result);
         if (resultObject.success) {

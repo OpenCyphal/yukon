@@ -114,6 +114,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
         table_cell.setAttribute("node_id", avatar.node_id);
         table_cell.title = "Register name: " + register_name;
         let register_value = avatar.registers_exploded_values[register_name];
+        let register_value_simplified = avatar.registers_values[register_name];
         // Here we check if the register value is a byte string and then we convert it to hex
         let inputFieldReference = null;
         if (register_value == null) {
@@ -121,6 +122,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             table_cell.classList.add("no-value");
             // table_cell.style.backgroundColor = colors["no_value"];
             table_cell.title = "This register doesn't exist for this node";
+            table_cell.innerHTML = "Not available";
             return;
         }
         let type_string = Object.keys(register_value)[0];
