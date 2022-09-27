@@ -42,10 +42,10 @@ async def get_register_names(state: GodState, node_id: int, new_avatar: Avatar) 
     list_client = state.cyphal.local_node.make_client(List_1, node_id)
     while not state.avatar.disappeared_nodes.get(node_id):
         msg = uavcan.register.List_1_0.Request(counter)
-        response = await list_client.call(msg);
+        response = await list_client.call(msg)
         if response is None:
             continue
-        result : uavcan.register.List_1_0.Response = response[0];
+        result: uavcan.register.List_1_0.Response = response[0]
         # I am not using the result here because it gets snooped by the avatar
         register_name = result.name.name.tobytes().decode()
         if register_name != "" and len(register_name) > 0:
