@@ -141,21 +141,21 @@ export async function return_all_selected_registers_as_yaml(pairs, yukon_state) 
     // Determine, whether the configuration is a network configuration or a single node configuration
     let is_networked = Object.keys(pairs_object).length > 1;
     let json_string = JSON.stringify(pairs_object);
-    var yaml_string = jsyaml.dump(pairs_object, { flowLevel: 2 });
+    var yaml_string = jsyaml.dump(pairs_object, { flowLevel: yukon_state.settings.yamlFlowLevel });
     if (yukon_state.settings.simplifyRegisters) {
         const simplified_json_string = await zubax_api.simplify_configuration(json_string)
         let intermediary_structure = JSON.parse(simplified_json_string);
         if (!is_networked && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
             intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
         }
-        const simplified_yaml_string = jsyaml.dump(intermediary_structure);//, { flowLevel: 2 });
+        const simplified_yaml_string = jsyaml.dump(intermediary_structure, { flowLevel: yukon_state.settings.yamlFlowLevel });
         return parseYamlStringsToNumbers(simplified_yaml_string);
     } else {
         let intermediary_structure = JSON.parse(yaml_string);
         if (!is_networked && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
             intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
         }
-        const yaml_string_modified = jsyaml.dump(intermediary_structure);
+        const yaml_string_modified = jsyaml.dump(intermediary_structure, { flowLevel: yukon_state.settings.yamlFlowLevel });
         return parseYamlStringsToNumbers(yaml_string_modified);
     }
 }
