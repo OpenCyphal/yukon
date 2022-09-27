@@ -84,11 +84,11 @@ def cyphal_worker(state: GodState) -> None:
                                 )
                                 ws.withdraw()
                                 ws.destroy()
-                        attach_transport_response = AttachTransportResponse(False, tb)
+                        attach_transport_response = AttachTransportResponse(False, tb, str(pe))
                         state.queues.attach_transport_response.put(attach_transport_response)
                     except Exception as e:
                         tb = traceback.format_exc()
-                        attach_transport_response = AttachTransportResponse(False, tb)
+                        attach_transport_response = AttachTransportResponse(False, tb, str(e))
                         state.queues.attach_transport_response.put(attach_transport_response)
                     else:
                         tb = "Attached transport"

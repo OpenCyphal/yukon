@@ -439,7 +439,7 @@ export function initTransports(container, yukon_state) {
             console.error("Error: " + resultObject.message);
             addLocalMessage("Error: " + resultObject.message);
             feedbackMessageDiv.style.display = "block";
-            feedbackMessageDiv.innerHTML = resultObject.message;
+            feedbackMessageDiv.innerHTML = resultObject.message_short;
         }
     });
     // Toggle between showing divTypeTransport and divSelectTransport by clicking on the respective buttons
