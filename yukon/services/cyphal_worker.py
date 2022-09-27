@@ -45,7 +45,9 @@ def cyphal_worker(state: GodState) -> None:
                     try:
                         atr: AttachTransportRequest = state.queues.attach_transport.get_nowait()
                         if atr.requested_interface.is_udp:
-                            if not state.cyphal.already_used_transport_interfaces.get(atr.requested_interface.udp_iface):
+                            if not state.cyphal.already_used_transport_interfaces.get(
+                                atr.requested_interface.udp_iface
+                            ):
                                 state.cyphal.already_used_transport_interfaces[atr.requested_interface.udp_iface] = True
                             else:
                                 raise Exception("Interface already in use")

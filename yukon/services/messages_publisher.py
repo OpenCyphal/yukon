@@ -7,7 +7,7 @@ from yukon.domain.message import Message
 from yukon.domain.god_state import GodState
 
 
-def get_level_no(level_name):
+def get_level_no(level_name: str) -> int:
     if level_name == "CRITICAL":
         return 50
     elif level_name == "FATAL":
