@@ -313,6 +313,11 @@ export function initTransports(container, yukon_state) {
         //     }
         // }, 500);
     }
+    function displayErrorMessage(message) {
+        const feedbackMessageDiv = containerElem.querySelector(".feedback-message");
+        feedbackMessageDiv.style.display = "block";
+        feedbackMessageDiv.innerHTML = message;
+    }
     function verifyInputs() {
         const iTransport = containerElem.querySelector("#iTransport");
         const sTransport = containerElem.querySelector("#sTransport");
@@ -333,7 +338,7 @@ export function initTransports(container, yukon_state) {
         if (currentSelectedTransportType[1] == transports.CAN.MANUAL) {
             if (iTransport.value == "" || !iTransport.value.includes(":")) {
                 iTransport.classList.add("is-danger");
-                displayOneMessage("Transport shouldn't be empty and should be in the format <slcan|socketcan>:<port>");
+                displayErrorMessage("Transport shouldn't be empty and should be in the format <slcan|socketcan>:<port>");
                 isFormCorrect = false;
             }
             const transportMustContain = ["socketcan", "slcan"];
@@ -344,7 +349,7 @@ export function initTransports(container, yukon_state) {
                 }
             }
             if (!containsAtLeastOne) {
-                displayOneMessage("Transport type should be either slcan or socketcan");
+                displayErrorMessage("Transport type should be either slcan or socketcan");
                 iTransport.classList.add("is-danger");
                 isFormCorrect = false;
             }
@@ -352,7 +357,7 @@ export function initTransports(container, yukon_state) {
             // Check if value of iUdpMtu is a number in range 1200 to 9000 inclusive and value of iUdpIface is a string separated by whitespace
             if (isNaN(parseInt(iUdpMtu.value)) || parseInt(iUdpMtu.value) < 1200 || parseInt(iUdpMtu.value) > 9000) {
                 iUdpMtu.classList.add("is-danger");
-                displayOneMessage("MTU should be a number in range 1200 to 9000");
+                displayErrorMessage("MTU should be a number in range 1200 to 9000");
                 isFormCorrect = false;
             }
             if (iUdpIface.value == "") {
@@ -361,27 +366,27 @@ export function initTransports(container, yukon_state) {
             }
         } else if (sTransport.value == "") {
             sTransport.classList.add("is-danger");
-            displayOneMessage("Transport shouldn't be empty");
+            displayErrorMessage("Transport shouldn't be empty");
             isFormCorrect = false;
         } else {
             // This is a temporary CAN specific section
             if (iMtu.value == "" || isNaN(iMtu.value)) {
-                displayOneMessage("MTU should be a number");
+                displayErrorMessage("MTU should be a number");
                 iMtu.classList.add("is-danger");
                 isFormCorrect = false;
             }
             if (iArbRate.value == "" || isNaN(iArbRate.value)) {
-                displayOneMessage("Arbitration rate should be a number");
+                displayErrorMessage("Arbitration rate should be a number");
                 iArbRate.classList.add("is-danger");
                 isFormCorrect = false;
             }
             if (iDataRate.value == "" || isNaN(iDataRate.value)) {
-                displayOneMessage("Data rate should be a number");
+                displayErrorMessage("Data rate should be a number");
                 iDataRate.classList.add("is-danger");
                 isFormCorrect = false;
             }
             if (iNodeId.value == "" || isNaN(iNodeId.value) || iNodeId.value < 0 || iNodeId.value > 128) {
-                displayOneMessage("Node ID should be a number between 0 and 128");
+                displayErrorMessage("Node ID should be a number between 0 and 128");
                 iNodeId.classList.add("is-danger");
                 isFormCorrect = false;
             }
@@ -393,6 +398,9 @@ export function initTransports(container, yukon_state) {
     const btnStart = containerElem.querySelector("#btnStart");
     btnStart.addEventListener('click', async function () {
         if (!verifyInputs()) { console.error("Invalid input values."); return; }
+        const feedbackMessageDiv = containerElem.querySelector(".feedback-message");
+        feedbackMessageDiv.style.display = "none";
+        feedbackMessageDiv.innerHTML = "";
         let result = null;
         if (currentSelectedTransportType[1] == transports.UDP.UDP) {
             console.log("UDP");
@@ -422,7 +430,6 @@ export function initTransports(container, yukon_state) {
             result = await zubax_api.attach_transport(port, data_rate, arb_rate, node_id, mtu)
         }
 
-
         addLocalMessage("Going to try to attach.")
 
         var resultObject = JSON.parse(result);
@@ -431,6 +438,8 @@ export function initTransports(container, yukon_state) {
         } else {
             console.error("Error: " + resultObject.message);
             addLocalMessage("Error: " + resultObject.message);
+            feedbackMessageDiv.style.display = "block";
+            feedbackMessageDiv.innerHTML = resultObject.message;
         }
     });
     // Toggle between showing divTypeTransport and divSelectTransport by clicking on the respective buttons
