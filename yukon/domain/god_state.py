@@ -51,6 +51,7 @@ class GuiState:
     """A class that holds all GUI references used by the god state."""
 
     gui_running: bool = True
+    last_poll_received: float = 0.0
 
 
 @dataclass

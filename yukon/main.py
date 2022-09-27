@@ -5,7 +5,7 @@ import os
 import sys
 import asyncio
 import logging
-from time import sleep
+from time import sleep, monotonic
 import subprocess
 
 import sentry_sdk
@@ -103,18 +103,22 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         pass
 
     asyncio.get_event_loop().create_task(sendAMessage())
-    start_server_thread = threading.Thread(target=run_server)
+    start_server_thread = threading.Thread(target=run_server, daemon=True)
     start_server_thread.start()
     # if environment variable IS_BROWSER_BASED is set, open the webbrowser
     if os.environ.get("IS_BROWSER_BASED"):
         # Make a thread and call open_webbrowser() in it
-        thread = threading.Thread(target=open_webbrowser)
+        thread = threading.Thread(target=open_webbrowser, daemon=True)
         thread.start()
     else:
-        start_electron_thread = threading.Thread(target=run_electron)
+        start_electron_thread = threading.Thread(target=run_electron, daemon=True)
         start_electron_thread.start()
     while True:
         sleep(1)
+        time_since_last_poll = monotonic() - state.gui.last_poll_received
+        if time_since_last_poll > 3:
+            logging.debug("No poll received in 3 seconds, shutting down")
+            state.gui.gui_running = False
         if not state.gui.gui_running:
             break
     exit_handler(None, None)

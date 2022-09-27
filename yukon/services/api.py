@@ -4,7 +4,7 @@ import re
 import typing
 import webbrowser
 from pathlib import Path
-from time import sleep
+from time import sleep, monotonic
 import logging
 import yaml
 
@@ -350,6 +350,7 @@ class Api:
         return messages_serialized
 
     def get_avatars(self) -> str:
+        self.state.gui.last_poll_received = monotonic()
         avatar_list = [avatar.to_builtin() for avatar in list(self.state.avatar.avatars_by_node_id.values())]
         avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
         if self.state.avatar.hide_yakut_avatar:
