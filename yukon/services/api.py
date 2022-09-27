@@ -364,6 +364,9 @@ class Api:
         return_string = return_string.replace("Infinity", "0")
         return return_string
 
+    def set_log_level(self, severity: str) -> None:
+        self.state.gui.message_severity = severity
+
     def open_monitor_window(self) -> None:
         # If env contains IS_BROWSER_BASED
         exe_path = get_electron_path()

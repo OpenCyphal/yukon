@@ -182,6 +182,10 @@ import { initTransports } from "./transports.module.js"
     async function setUpMessagesComponent() {
         var messagesList = document.querySelector("#messages-list");
         var cbShowTimestamp = await waitForElm('#cbShowTimestamp');
+        const sLogLevel = document.querySelector("#sLogLevel");
+        sLogLevel.addEventListener("change", async () => {
+            await zubax_api.set_log_level(sLogLevel.value);
+        });
         cbShowTimestamp.addEventListener('change', function () {
             if (cbShowTimestamp.checked) {
                 // For every message, add a timestamp to the message, use a for each loop

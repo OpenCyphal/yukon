@@ -20,7 +20,18 @@
     </div>
     <div class="excluded-keywords" title="Messages that don't include these keywords will be shown.">
         <label for="taExcludedKeywords">Excluded keywords (one per line)</label>
-        <textarea name="exclusions" id="taExcludedKeywords" cols="60" rows="10" spellcheck="false"></textarea>
+        <textarea name="exclusions" id="taExcludedKeywords" cols="30" rows="10" spellcheck="false"></textarea>
+    </div>
+    <div class="log-level" title="Only messages with this log level or higher will be shown.">
+        <label for="sLogLevel" style="display: block">Log level</label>
+        <select id="sLogLevel">
+            <option value="NOTSET">NOTSET</option>
+            <option value="INFO">INFO</option>
+            <option value="DEBUG">DEBUG</option>
+            <option value="WARNING">WARNING</option>
+            <option value="ERROR">ERROR</option>
+            <option value="CRITICAL">CRITICAL</option>
+        </select>
     </div>
 </div>
 

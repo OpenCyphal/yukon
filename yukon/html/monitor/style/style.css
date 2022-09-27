@@ -73,8 +73,12 @@ textarea#textOut {
 .options-panel {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: flex-start;
+}
+
+.options-panel div {
+    margin-right: 1em;
 }
 
 .option {
