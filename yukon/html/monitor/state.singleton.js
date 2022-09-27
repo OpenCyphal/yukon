@@ -25,6 +25,6 @@ var yukon_state = {
         "simplifyRegisters": true,
         "preferSmallerFileSelectionDialog": false,
         "alwaysSaveAsNetoworkConfig": false,
-        "yamlFlowLevel": 0,
+        "yamlFlowLevel": -1,
     }
 };
