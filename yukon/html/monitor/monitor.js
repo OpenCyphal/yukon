@@ -508,6 +508,20 @@ import { initTransports } from "./transports.module.js"
         function setUpTransportsComponent(container) {
             initTransports(container, yukon_state);
         }
+        function addComponentToLayout(componentName, componentText) {
+            const addedComponent = {
+                type: 'component',
+                componentName: componentName,
+                isClosable: true,
+                title: componentText,
+            };
+            try {
+                myLayout.root.contentItems[0].addChild(addedComponent);
+            } catch (e) {
+                console.log(e);
+                myLayout.root.addChild(addedComponent);
+            }
+        }
         const outsideContext = this;
         function addRestoreButton(buttonText, buttonComponentName) {
             const toolbar = document.querySelector("#toolbar");
@@ -515,12 +529,7 @@ import { initTransports } from "./transports.module.js"
             btnRestore.classList.add("restore-btn");
             btnRestore.innerHTML = buttonText;
             btnRestore.addEventListener('click', function () {
-                myLayout.root.contentItems[0].contentItems[0].addChild({
-                    type: 'component',
-                    componentName: buttonComponentName,
-                    isClosable: true,
-                    title: buttonText,
-                });
+                addComponentToLayout(buttonComponentName, buttonText);
                 btnRestore.parentElement.removeChild(btnRestore);
             });
             toolbar.appendChild(btnRestore);
@@ -583,10 +592,10 @@ import { initTransports } from "./transports.module.js"
             container.on("destroy", function () {
                 const lastOpenPopoutsLength = myLayout.openPopouts.length;
                 setTimeout(() => {
-                        // The popout event is not fired, I believe it is a bug in GoldenLayout
-//                    if(last_time_when_a_window_was_opened != null && Date.now() - last_time_when_a_window_was_opened < 100) {
-//                        return;
-//                    }
+                    // The popout event is not fired, I believe it is a bug in GoldenLayout
+                    //                    if(last_time_when_a_window_was_opened != null && Date.now() - last_time_when_a_window_was_opened < 100) {
+                    //                        return;
+                    //                    }
                     if (lastOpenPopoutsLength < myLayout.openPopouts.length) {
                         console.log("Not making a restore button because a popout was opened");
                         return;
