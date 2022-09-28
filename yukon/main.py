@@ -20,6 +20,12 @@ from yukon.server import server, make_landing_and_bridge
 from yukon.services.api import Api, SendingApi
 from yukon.services.get_electron_path import get_electron_path
 
+import mimetypes
+
+mimetypes.add_type("text/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("text/html", ".html")
+
 setup_sentry(sentry_sdk)
 paths = sys.path
 
