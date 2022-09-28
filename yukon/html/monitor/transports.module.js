@@ -343,7 +343,7 @@ export function initTransports(container, yukon_state) {
             }
             const transportMustContain = ["socketcan", "slcan"];
             let containsAtLeastOne = false;
-            for (transportType of transportMustContain) {
+            for (const transportType of transportMustContain) {
                 if (iTransport.value.includes(transportType)) {
                     containsAtLeastOne = true;
                 }
