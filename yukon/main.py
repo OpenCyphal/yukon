@@ -131,16 +131,21 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
             interface.udp_mtu = int(os.environ.get("YUKON_UDP_MTU"))
             atr: AttachTransportRequest = AttachTransportRequest(interface, int(os.environ.get("YUKON_NODE_ID")))
             state.queues.attach_transport.put(atr)
-            response: AttachTransportResponse = state.queues.attach_transport_response.get(timeout=4)
+            required_queue_timeout = 4
+            if os.environ.get("IS_DEBUG"):
+                required_queue_timeout = None
+            response: AttachTransportResponse = state.queues.attach_transport_response.get(
+                timeout=required_queue_timeout
+            )
             if not response.success:
                 raise Exception("Failed to attach transport", response.message)
 
     while True:
         sleep(1)
         time_since_last_poll = monotonic() - state.gui.last_poll_received
-        if state.gui.last_poll_received != 0 and time_since_last_poll > 2 and not os.environ.get("IS_DEBUG"):
-            logging.debug("No poll received in 3 seconds, shutting down")
-            state.gui.gui_running = False
+        # if state.gui.last_poll_received != 0 and time_since_last_poll > 2 and not os.environ.get("IS_DEBUG"):
+        #     logging.debug("No poll received in 3 seconds, shutting down")
+        #     state.gui.gui_running = False
         if not state.gui.gui_running:
             break
     exit_handler(None, None)

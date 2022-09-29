@@ -22,7 +22,7 @@ os.environ["PYTHONPATH"] = (
 )
 os.environ["IS_HEADLESS"] = "1"
 os.environ["YUKON_UDP_IFACE"] = "127.0.0.127"
-os.environ["YUKON_NODE_ID"] = "0"
+os.environ["YUKON_NODE_ID"] = "1"
 os.environ["YUKON_UDP_MTU"] = "1200"
 # The first argument to the script is the path to the browser that will be used, it doesn't have to be provided however
 run_demos_path = root / "demos" / "run_demos.py"
@@ -51,7 +51,57 @@ def get_avatars():
     import json
 
     response = requests.post("http://localhost:5000/api/get_avatars")
-    return response.status_code == 200
+
+    if response.status_code != 200:
+        return False
+    try:
+        response_avatars = json.loads(response.text)
+    except json.decoder.JSONDecodeError:
+        return False
+    avatars_array = response_avatars.get("avatars")
+    if not avatars_array:
+        return False
+    required_registers_set = set(
+        [
+            "",
+            "uavcan.udp.iface",
+            "thermostat.error",
+            "uavcan.node.description",
+            "uavcan.serial.iface",
+            "uavcan.can.mtu",
+            "uavcan.can.iface",
+            "uavcan.loopback",
+            "uavcan.serial.baudrate",
+            "uavcan.serial.duplicate_service_transfers",
+            "uavcan.diagnostic.severity",
+            "uavcan.udp.duplicate_service_transfers",
+            "uavcan.srv.least_squares.type",
+            "uavcan.sub.temperature_measurement.id",
+            "uavcan.sub.temperature_setpoint.type",
+            "uavcan.diagnostic.timestamp",
+            "uavcan.node.unique_id",
+            "thermostat.setpoint",
+            "uavcan.srv.least_squares.id",
+            "thermostat.pid.gains",
+            "uavcan.udp.mtu",
+            "uavcan.pub.heater_voltage.type",
+            "uavcan.can.bitrate",
+            "uavcan.sub.temperature_measurement.type",
+            "uavcan.node.id",
+            "uavcan.sub.temperature_setpoint.id",
+            "uavcan.pub.heater_voltage.id",
+        ]
+    )
+    if len(avatars_array) > 0:
+        for avatar in avatars_array:
+            copy_of_required_registers = required_registers_set.copy()
+            for register in avatar["registers"]:
+                if register in copy_of_required_registers:
+                    copy_of_required_registers.remove(register)
+            if len(copy_of_required_registers) > 0:
+                return False
+        return True
+    return False
 
 
 try:
@@ -59,7 +109,7 @@ try:
     yukon_running_thread.start()
     success = False
     while yukon_running_thread.is_alive():
-        time.sleep(1)
+        time.sleep(5)
         if get_avatars():
             success = True
             break
