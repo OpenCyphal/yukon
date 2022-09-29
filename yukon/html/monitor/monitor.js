@@ -1,9 +1,7 @@
 import { make_context_menus } from './context-menu.module.js';
 import { create_directed_graph, refresh_graph_layout, update_directed_graph } from './monitor.module.js';
 import { secondsToString } from "./utilities.module.js";
-import { add_node_id_headers, make_empty_table_header_row_cell, addContentForRegisterName, updateRegistersTableColors } from './registers.module.js';
-import { applyConfiguration, export_all_selected_registers, update_available_configurations_list, loadConfigurationFromOpenDialog } from './yaml.configurations.module.js';
-import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
+import { loadConfigurationFromOpenDialog } from './yaml.configurations.module.js';
 import { create_registers_table, update_tables } from './registers.module.js';
 import { get_all_selected_pairs, unselectAll, selectAll } from './registers.selection.module.js';
 import { rereadPairs } from "./registers.data.module.js"
@@ -391,16 +389,16 @@ import { initTransports } from "./transports.module.js"
         autosize(textOut);
         var messagesList = document.querySelector("#messages-list");
         // On resize event
-        addLocalMessage("Found messageList")
+        addLocalMessage("Found messageList");
         // at interval of 3 seconds
-        messagesListWidth = messagesList.getBoundingClientRect().width
+        messagesListWidth = messagesList.getBoundingClientRect().width;
 
         setInterval(function () {
             var messagesList = document.querySelector("#messages-list");
             if (!messagesList) { return; }
-            let currentWidth = messagesList.getBoundingClientRect().width
+            let currentWidth = messagesList.getBoundingClientRect().width;
             if (currentWidth != messagesListWidth) {
-                messagesListWidth = currentWidth
+                messagesListWidth = currentWidth;
                 for (const child of messagesList.children) {
                     autosize.update(child);
                 }
@@ -408,7 +406,7 @@ import { initTransports } from "./transports.module.js"
         }, 500);
     }
     yukon_state.addLocalMessage = function (message) {
-        zubax_api.add_local_message(message)
+        zubax_api.add_local_message(message);
     }
     yukon_state.navigator = navigator;
     yukon_state.document = document;
@@ -441,11 +439,22 @@ import { initTransports } from "./transports.module.js"
                                     ]
                                 },
                                 {
-                                    type: 'component',
-                                    height: 15,
-                                    componentName: 'statusComponent',
-                                    isClosable: true,
-                                    title: 'Status',
+                                    type: "stack",
+                                    content: [
+                                        {
+                                            type: 'component',
+                                            componentName: 'messagesComponent',
+                                            isClosable: true,
+                                            title: 'Messages',
+                                        },
+                                        {
+                                            type: 'component',
+                                            height: 15,
+                                            componentName: 'statusComponent',
+                                            isClosable: true,
+                                            title: 'Status',
+                                        }
+                                    ]
                                 }
                             ]
                         },
@@ -457,12 +466,6 @@ import { initTransports } from "./transports.module.js"
                                     type: 'stack',
                                     activeItemIndex: 1,
                                     content: [
-                                        {
-                                            type: 'component',
-                                            componentName: 'messagesComponent',
-                                            isClosable: true,
-                                            title: 'Messages',
-                                        },
                                         {
                                             type: "component",
                                             componentName: "transportsComponent",
