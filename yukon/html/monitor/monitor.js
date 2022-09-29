@@ -1,9 +1,7 @@
 import { make_context_menus } from './context-menu.module.js';
 import { create_directed_graph, refresh_graph_layout, update_directed_graph } from './monitor.module.js';
 import { secondsToString } from "./utilities.module.js";
-import { add_node_id_headers, make_empty_table_header_row_cell, addContentForRegisterName, updateRegistersTableColors } from './registers.module.js';
-import { applyConfiguration, export_all_selected_registers, update_available_configurations_list, loadConfigurationFromOpenDialog } from './yaml.configurations.module.js';
-import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
+import { loadConfigurationFromOpenDialog } from './yaml.configurations.module.js';
 import { create_registers_table, update_tables } from './registers.module.js';
 import { get_all_selected_pairs, unselectAll, selectAll } from './registers.selection.module.js';
 import { rereadPairs } from "./registers.data.module.js"
@@ -44,7 +42,7 @@ import { initTransports } from "./transports.module.js"
     }
     async function update_avatars_dto() {
         const text_result = await zubax_api.get_avatars();
-        const obj_result = JSON.parse(text_result);
+        const obj_result = JSON.parse(text_result, function (k, v) { return v === Infinity ? "Infinity" : v; });
         yukon_state.current_avatars = obj_result.avatars;
     }
     function setUpMonitorComponent() {
@@ -156,17 +154,14 @@ import { initTransports } from "./transports.module.js"
         let isRefreshTextOutAllowed = true;
         async function updateTextOut(refresh_anyway = false) {
             if (!isRefreshTextOutAllowed && !refresh_anyway) { return; }
-            zubax_api.get_avatars().then(
-                function (avatars) {
-                    const textOut = document.querySelector("#textOut");
-                    const DTO = JSON.parse(avatars);
-                    if (DTO.hash != yukon_state.lastHash || refresh_anyway) {
-                        yukon_state.lastHash = DTO.hash;
-                        textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
-                    }
-                    // Parse avatars as json
-                }
-            );
+            const avatars = await zubax_api.get_avatars()
+            const textOut = document.querySelector("#textOut");
+            const DTO = JSON.parse(avatars, function (k, v) { return v === Infinity ? "Infinity" : v; });
+            if (DTO.hash != yukon_state.lastHash || refresh_anyway) {
+                yukon_state.lastHash = DTO.hash;
+                textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
+            }
+            // Parse avatars as json
         }
         setInterval(updateTextOut, 1000);
         const cbStopTextOutRefresh = document.querySelector("#cbStopTextOutRefresh");
@@ -185,6 +180,10 @@ import { initTransports } from "./transports.module.js"
     async function setUpMessagesComponent() {
         var messagesList = document.querySelector("#messages-list");
         var cbShowTimestamp = await waitForElm('#cbShowTimestamp');
+        const sLogLevel = document.querySelector("#sLogLevel");
+        sLogLevel.addEventListener("change", async () => {
+            await zubax_api.set_log_level(sLogLevel.value);
+        });
         cbShowTimestamp.addEventListener('change', function () {
             if (cbShowTimestamp.checked) {
                 // For every message, add a timestamp to the message, use a for each loop
@@ -390,16 +389,16 @@ import { initTransports } from "./transports.module.js"
         autosize(textOut);
         var messagesList = document.querySelector("#messages-list");
         // On resize event
-        addLocalMessage("Found messageList")
+        addLocalMessage("Found messageList");
         // at interval of 3 seconds
-        messagesListWidth = messagesList.getBoundingClientRect().width
+        messagesListWidth = messagesList.getBoundingClientRect().width;
 
         setInterval(function () {
             var messagesList = document.querySelector("#messages-list");
             if (!messagesList) { return; }
-            let currentWidth = messagesList.getBoundingClientRect().width
+            let currentWidth = messagesList.getBoundingClientRect().width;
             if (currentWidth != messagesListWidth) {
-                messagesListWidth = currentWidth
+                messagesListWidth = currentWidth;
                 for (const child of messagesList.children) {
                     autosize.update(child);
                 }
@@ -407,7 +406,7 @@ import { initTransports } from "./transports.module.js"
         }, 500);
     }
     yukon_state.addLocalMessage = function (message) {
-        zubax_api.add_local_message(message)
+        zubax_api.add_local_message(message);
     }
     yukon_state.navigator = navigator;
     yukon_state.document = document;
@@ -440,11 +439,22 @@ import { initTransports } from "./transports.module.js"
                                     ]
                                 },
                                 {
-                                    type: 'component',
-                                    height: 15,
-                                    componentName: 'statusComponent',
-                                    isClosable: true,
-                                    title: 'Status',
+                                    type: "stack",
+                                    content: [
+                                        {
+                                            type: 'component',
+                                            componentName: 'messagesComponent',
+                                            isClosable: true,
+                                            title: 'Messages',
+                                        },
+                                        {
+                                            type: 'component',
+                                            height: 15,
+                                            componentName: 'statusComponent',
+                                            isClosable: true,
+                                            title: 'Status',
+                                        }
+                                    ]
                                 }
                             ]
                         },
@@ -456,12 +466,6 @@ import { initTransports } from "./transports.module.js"
                                     type: 'stack',
                                     activeItemIndex: 1,
                                     content: [
-                                        {
-                                            type: 'component',
-                                            componentName: 'messagesComponent',
-                                            isClosable: true,
-                                            title: 'Messages',
-                                        },
                                         {
                                             type: "component",
                                             componentName: "transportsComponent",
@@ -507,6 +511,20 @@ import { initTransports } from "./transports.module.js"
         function setUpTransportsComponent(container) {
             initTransports(container, yukon_state);
         }
+        function addComponentToLayout(componentName, componentText) {
+            const addedComponent = {
+                type: 'component',
+                componentName: componentName,
+                isClosable: true,
+                title: componentText,
+            };
+            try {
+                myLayout.root.contentItems[0].addChild(addedComponent);
+            } catch (e) {
+                console.log(e);
+                myLayout.root.addChild(addedComponent);
+            }
+        }
         const outsideContext = this;
         function addRestoreButton(buttonText, buttonComponentName) {
             const toolbar = document.querySelector("#toolbar");
@@ -514,12 +532,7 @@ import { initTransports } from "./transports.module.js"
             btnRestore.classList.add("restore-btn");
             btnRestore.innerHTML = buttonText;
             btnRestore.addEventListener('click', function () {
-                myLayout.root.contentItems[0].contentItems[0].addChild({
-                    type: 'component',
-                    componentName: buttonComponentName,
-                    isClosable: true,
-                    title: buttonText,
-                });
+                addComponentToLayout(buttonComponentName, buttonText);
                 btnRestore.parentElement.removeChild(btnRestore);
             });
             toolbar.appendChild(btnRestore);
@@ -560,6 +573,7 @@ import { initTransports } from "./transports.module.js"
                 myLayout.updateSize();
             }, 50);
         });
+        let last_time_when_a_window_was_opened = null;
         function registerComponentAction(uri, componentName, container, actionWhenCreating) {
             let isDestroyed = true;
             dynamicallyLoadHTML(uri, container, () => {
@@ -579,8 +593,19 @@ import { initTransports } from "./transports.module.js"
                 });
             });
             container.on("destroy", function () {
-                addRestoreButton(container._config.title, componentName);
-                isDestroyed = true;
+                const lastOpenPopoutsLength = myLayout.openPopouts.length;
+                setTimeout(() => {
+                    // The popout event is not fired, I believe it is a bug in GoldenLayout
+                    //                    if(last_time_when_a_window_was_opened != null && Date.now() - last_time_when_a_window_was_opened < 100) {
+                    //                        return;
+                    //                    }
+                    if (lastOpenPopoutsLength < myLayout.openPopouts.length) {
+                        console.log("Not making a restore button because a popout was opened");
+                        return;
+                    }
+                    addRestoreButton(container._config.title, componentName);
+                    isDestroyed = true;
+                }, 1000);
             });
         }
         myLayout.registerComponent('registersComponent', function (container, componentState) {

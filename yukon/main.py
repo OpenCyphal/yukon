@@ -5,9 +5,9 @@ import os
 import sys
 import asyncio
 import logging
-from time import sleep
+from time import sleep, monotonic
 import subprocess
-
+import mimetypes
 import sentry_sdk
 
 from yukon.services.messages_publisher import MessagesPublisher
@@ -19,6 +19,11 @@ from yukon.sentry_setup import setup_sentry
 from yukon.server import server, make_landing_and_bridge
 from yukon.services.api import Api, SendingApi
 from yukon.services.get_electron_path import get_electron_path
+
+
+mimetypes.add_type("text/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("text/html", ".html")
 
 setup_sentry(sentry_sdk)
 paths = sys.path
@@ -57,7 +62,7 @@ def run_electron() -> None:
     except FileNotFoundError as e:
         # Log the same but using lazy logging
         logging.error(f"Could not find electron executable at %s", exe_path)
-        logging.exception(e)
+        logging.exception(str(e))
         exit_code = 1
 
     if exit_code != 0:
@@ -103,18 +108,22 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         pass
 
     asyncio.get_event_loop().create_task(sendAMessage())
-    start_server_thread = threading.Thread(target=run_server)
+    start_server_thread = threading.Thread(target=run_server, daemon=True)
     start_server_thread.start()
     # if environment variable IS_BROWSER_BASED is set, open the webbrowser
     if os.environ.get("IS_BROWSER_BASED"):
         # Make a thread and call open_webbrowser() in it
-        thread = threading.Thread(target=open_webbrowser)
+        thread = threading.Thread(target=open_webbrowser, daemon=True)
         thread.start()
     else:
-        start_electron_thread = threading.Thread(target=run_electron)
+        start_electron_thread = threading.Thread(target=run_electron, daemon=True)
         start_electron_thread.start()
     while True:
         sleep(1)
+        time_since_last_poll = monotonic() - state.gui.last_poll_received
+        if state.gui.last_poll_received != 0 and time_since_last_poll > 2 and not os.environ.get("IS_DEBUG"):
+            logging.debug("No poll received in 3 seconds, shutting down")
+            state.gui.gui_running = False
         if not state.gui.gui_running:
             break
     exit_handler(None, None)

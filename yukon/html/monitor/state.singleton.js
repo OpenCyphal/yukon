@@ -24,6 +24,7 @@ var yukon_state = {
         "isSelectionModeComplicated": false,
         "simplifyRegisters": true,
         "preferSmallerFileSelectionDialog": false,
-        "alwaysSaveAsNetoworkConfig": false
+        "alwaysSaveAsNetoworkConfig": false,
+        "yamlFlowLevel": -1,
     }
 };

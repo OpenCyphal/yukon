@@ -51,6 +51,8 @@ class GuiState:
     """A class that holds all GUI references used by the god state."""
 
     gui_running: bool = True
+    last_poll_received: float = 0.0
+    message_severity: str = "DEBUG"
 
 
 @dataclass
@@ -72,6 +74,7 @@ class CyphalState:
     allocation_subscriber: Optional[pycyphal.presentation.Subscriber] = field(default_factory=none_factory)
     transports_list: typing.List[Interface] = field(default_factory=list)
     inferior_transports_by_interface_hashes: Dict[int, Interface] = field(default_factory=dict)
+    already_used_transport_interfaces: Dict[str, int] = field(default_factory=dict)
 
 
 @dataclass
@@ -81,6 +84,7 @@ class AvatarState:
     avatars_by_hw_id: Dict[int, Avatar] = field(default_factory=dict)
     avatars_lock: threading.RLock = field(default_factory=threading.RLock)
     current_graph_lock: threading.RLock = field(default_factory=threading.RLock)
+    disappeared_nodes: Dict[int, bool] = field(default_factory=dict)
 
 
 class GodState:

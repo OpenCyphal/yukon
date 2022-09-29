@@ -44,6 +44,12 @@ def cyphal_worker(state: GodState) -> None:
                 if not state.queues.attach_transport.empty():
                     try:
                         atr: AttachTransportRequest = state.queues.attach_transport.get_nowait()
+                        if atr.requested_interface.is_udp:
+                            if state.cyphal.already_used_transport_interfaces.get(atr.requested_interface.udp_iface):
+                                raise Exception("Interface already in use")
+                        else:
+                            if state.cyphal.already_used_transport_interfaces.get(atr.requested_interface.iface):
+                                raise Exception("Interface already in use")
                         new_transport = make_transport(atr.get_registry())
                         state.cyphal.inferior_transports_by_interface_hashes[
                             str(hash(atr.requested_interface))
@@ -52,6 +58,10 @@ def cyphal_worker(state: GodState) -> None:
                         attach_transport_response = AttachTransportResponse(True, atr.requested_interface.iface)
                         state.cyphal.transports_list.append(atr.requested_interface)
                         state.queues.attach_transport_response.put(attach_transport_response)
+                        if atr.requested_interface.is_udp:
+                            state.cyphal.already_used_transport_interfaces[atr.requested_interface.udp_iface] = True
+                        else:
+                            state.cyphal.already_used_transport_interfaces[atr.requested_interface.iface] = True
                         print("Added a new interface")
                     except PermissionError as pe:
                         tb = traceback.format_exc()
@@ -72,11 +82,11 @@ def cyphal_worker(state: GodState) -> None:
                                 )
                                 ws.withdraw()
                                 ws.destroy()
-                        attach_transport_response = AttachTransportResponse(False, tb)
+                        attach_transport_response = AttachTransportResponse(False, tb, str(pe))
                         state.queues.attach_transport_response.put(attach_transport_response)
                     except Exception as e:
                         tb = traceback.format_exc()
-                        attach_transport_response = AttachTransportResponse(False, tb)
+                        attach_transport_response = AttachTransportResponse(False, tb, str(e))
                         state.queues.attach_transport_response.put(attach_transport_response)
                     else:
                         tb = "Attached transport"

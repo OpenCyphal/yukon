@@ -5,7 +5,7 @@ import typing
 
 from inspect import signature
 import sys
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, jsonify, request
 from flask.blueprints import T_after_request
 
 from yukon.domain.god_state import GodState
@@ -36,10 +36,6 @@ def add_header(response: T_after_request) -> T_after_request:
 
 
 def make_landing_and_bridge(state: GodState, api: Api) -> None:
-    @server.route("/<path:path>", methods=["GET"])
-    def any_file(path: str) -> typing.Any:
-        return render_template(path, token=our_token)
-
     @server.route("/api/<path:path>", methods=["GET", "POST"])
     def landing_and_bridge(path: str) -> typing.Any:
         _object: typing.Any = {"arguments": []}

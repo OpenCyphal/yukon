@@ -6,6 +6,10 @@
     source venv/bin/activate
     pip install -r requirements.txt -r dev-requirements.txt
     ```
+* Additional step when using systems where Tk is missing by default (like ArchLinux)
+    ```bash
+    sudo pacman -S tk
+    ```
 * Make a venv and install the requirements on Windows
     ```bat
     python -m venv venv
@@ -19,11 +23,12 @@
     ```
 * Run the application on GNU/Linux
     ```bash
-    PYTHONPATH=.:.compiled python3 yukon/__main__.py
+    IS_DEBUG=1 PYTHONPATH=.:.compiled python3 yukon/__main__.py
     ```
 * Run the application on Windows
     ```batch
     set PYTHONPATH=.;.compiled
+    set IS_DEBUG=1
     python yukon/__main__.py
     ```
 

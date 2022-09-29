@@ -73,8 +73,12 @@ textarea#textOut {
 .options-panel {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: flex-start;
+}
+
+.options-panel div {
+    margin-right: 1em;
 }
 
 .option {
@@ -207,8 +211,8 @@ body {
     flex-direction: row;
     justify-content: flex-start;
     align-items: center;
-    min-height: 3em;
-    height: 3em;
+    min-height: 1.8em;
+    height: 1.8em;
     background-color: rgb(203, 203, 203);
     border-bottom: 1px solid #000;
     position: relative;
@@ -226,10 +230,11 @@ body {
     font-size: 1.5em;
     padding: 0.25em 0.5em;
     margin: 0.25em;
+    font-family:Arial,sans-serif;font-size:12px;color:#888888;background:#fafafa;margin-right:2px;padding-bottom:4px;border:1px solid #cccccc;border-bottom:none
 }
 
 #toolbar button:hover {
-    background-color: #000;
+    background-color: rgb(145, 145, 145);
     color: #fff;
     cursor: pointer;
 }
