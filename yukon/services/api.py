@@ -293,6 +293,7 @@ class Api:
     def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> str:
         logger.info(f"Attaching UDP transport to {udp_iface}")
         interface = Interface()
+        interface.is_udp = True
         interface.udp_iface = udp_iface
         interface.udp_mtu = int(udp_mtu)
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))

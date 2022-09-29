@@ -9,6 +9,7 @@ from time import sleep, monotonic
 import subprocess
 import mimetypes
 import sentry_sdk
+from yukon.domain.interface import Interface
 
 from yukon.services.messages_publisher import MessagesPublisher
 from yukon.services.cyphal_worker import cyphal_worker
@@ -19,6 +20,9 @@ from yukon.sentry_setup import setup_sentry
 from yukon.server import server, make_landing_and_bridge
 from yukon.services.api import Api, SendingApi
 from yukon.services.get_electron_path import get_electron_path
+
+from yukon.domain.attach_transport_request import AttachTransportRequest
+from yukon.domain.attach_transport_response import AttachTransportResponse
 
 
 mimetypes.add_type("text/javascript", ".js")
@@ -111,13 +115,26 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     start_server_thread = threading.Thread(target=run_server, daemon=True)
     start_server_thread.start()
     # if environment variable IS_BROWSER_BASED is set, open the webbrowser
-    if os.environ.get("IS_BROWSER_BASED"):
-        # Make a thread and call open_webbrowser() in it
-        thread = threading.Thread(target=open_webbrowser, daemon=True)
-        thread.start()
-    else:
-        start_electron_thread = threading.Thread(target=run_electron, daemon=True)
-        start_electron_thread.start()
+    if not os.environ.get("IS_HEADLESS"):
+        if os.environ.get("IS_BROWSER_BASED"):
+            # Make a thread and call open_webbrowser() in it
+            thread = threading.Thread(target=open_webbrowser)
+            thread.start()
+        else:
+            start_electron_thread = threading.Thread(target=run_electron)
+            start_electron_thread.start()
+    if os.environ.get("IS_HEADLESS"):
+        if os.environ.get("YUKON_UDP_IFACE") and os.environ.get("YUKON_NODE_ID") and os.environ.get("YUKON_UDP_MTU"):
+            interface: Interface = Interface()
+            interface.is_udp = True
+            interface.udp_iface = os.environ.get("YUKON_UDP_IFACE")
+            interface.udp_mtu = int(os.environ.get("YUKON_UDP_MTU"))
+            atr: AttachTransportRequest = AttachTransportRequest(interface, int(os.environ.get("YUKON_NODE_ID")))
+            state.queues.attach_transport.put(atr)
+            response: AttachTransportResponse = state.queues.attach_transport_response.get(timeout=4)
+            if not response.success:
+                raise Exception("Failed to attach transport", response.message)
+
     while True:
         sleep(1)
         time_since_last_poll = monotonic() - state.gui.last_poll_received
