@@ -23,11 +23,12 @@
     ```
 * Run the application on GNU/Linux
     ```bash
-    PYTHONPATH=.:.compiled python3 yukon/__main__.py
+    IS_DEBUG=1 PYTHONPATH=.:.compiled python3 yukon/__main__.py
     ```
 * Run the application on Windows
     ```batch
     set PYTHONPATH=.;.compiled
+    set IS_DEBUG=1
     python yukon/__main__.py
     ```
 
