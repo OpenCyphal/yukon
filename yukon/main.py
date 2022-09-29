@@ -65,7 +65,7 @@ def run_electron() -> None:
 
     except FileNotFoundError as e:
         # Log the same but using lazy logging
-        logging.error(f"Could not find electron executable at %s", exe_path)
+        logging.error("Could not find electron executable at %s", exe_path)
         logging.exception(str(e))
         exit_code = 1
 
@@ -128,10 +128,12 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
             interface: Interface = Interface()
             interface.is_udp = True
             interface.udp_iface = os.environ.get("YUKON_UDP_IFACE")
-            interface.udp_mtu = int(os.environ.get("YUKON_UDP_MTU"))
-            atr: AttachTransportRequest = AttachTransportRequest(interface, int(os.environ.get("YUKON_NODE_ID")))
+            interface.udp_mtu = int(os.environ.get("YUKON_UDP_MTU"))  # type: ignore
+            atr: AttachTransportRequest = AttachTransportRequest(
+                interface, int(os.environ.get("YUKON_NODE_ID"))
+            )  # type: ignore
             state.queues.attach_transport.put(atr)
-            required_queue_timeout = 4
+            required_queue_timeout: Optional[int] = 4
             if os.environ.get("IS_DEBUG"):
                 required_queue_timeout = None
             response: AttachTransportResponse = state.queues.attach_transport_response.get(
@@ -143,9 +145,9 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     while True:
         sleep(1)
         time_since_last_poll = monotonic() - state.gui.last_poll_received
-        # if state.gui.last_poll_received != 0 and time_since_last_poll > 2 and not os.environ.get("IS_DEBUG"):
-        #     logging.debug("No poll received in 3 seconds, shutting down")
-        #     state.gui.gui_running = False
+        if state.gui.last_poll_received != 0 and time_since_last_poll > 2 and not os.environ.get("IS_DEBUG"):
+            logging.debug("No poll received in 3 seconds, shutting down")
+            state.gui.gui_running = False
         if not state.gui.gui_running:
             break
     exit_handler(None, None)
