@@ -7,7 +7,7 @@ import asyncio
 import logging
 from time import sleep, monotonic
 import subprocess
-
+import mimetypes
 import sentry_sdk
 
 from yukon.services.messages_publisher import MessagesPublisher
@@ -20,7 +20,6 @@ from yukon.server import server, make_landing_and_bridge
 from yukon.services.api import Api, SendingApi
 from yukon.services.get_electron_path import get_electron_path
 
-import mimetypes
 
 mimetypes.add_type("text/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
@@ -63,7 +62,7 @@ def run_electron() -> None:
     except FileNotFoundError as e:
         # Log the same but using lazy logging
         logging.error(f"Could not find electron executable at %s", exe_path)
-        logging.exception(e)
+        logging.exception(str(e))
         exit_code = 1
 
     if exit_code != 0:

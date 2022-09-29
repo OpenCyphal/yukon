@@ -5,7 +5,7 @@ import typing
 
 from inspect import signature
 import sys
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, jsonify, request
 from flask.blueprints import T_after_request
 
 from yukon.domain.god_state import GodState
