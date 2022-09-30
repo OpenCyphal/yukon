@@ -5,7 +5,7 @@ import subprocess
 import traceback
 
 import platform
-
+import os
 from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
@@ -19,6 +19,8 @@ from yukon.domain.god_state import GodState
 from yukon.services.snoop_registers import make_tracers_trackers
 from yukon.services.snoop_registers import get_register_value
 from yukon.services.messages_publisher import add_local_message
+from yukon.services.the_faulty_transport import FaultyTransport
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
@@ -51,6 +53,10 @@ def cyphal_worker(state: GodState) -> None:
                             if state.cyphal.already_used_transport_interfaces.get(atr.requested_interface.iface):
                                 raise Exception("Interface already in use")
                         new_transport = make_transport(atr.get_registry())
+                        if atr.requested_interface.is_udp and os.environ.get("YUKON_IS_UDP_FAULTY"):
+                            new_transport = FaultyTransport(new_transport)
+                            new_transport.faulty = True
+
                         state.cyphal.inferior_transports_by_interface_hashes[
                             str(hash(atr.requested_interface))
                         ] = new_transport

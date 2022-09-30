@@ -123,24 +123,24 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         else:
             start_electron_thread = threading.Thread(target=run_electron)
             start_electron_thread.start()
-    if os.environ.get("IS_HEADLESS"):
-        if os.environ.get("YUKON_UDP_IFACE") and os.environ.get("YUKON_NODE_ID") and os.environ.get("YUKON_UDP_MTU"):
-            interface: Interface = Interface()
-            interface.is_udp = True
-            interface.udp_iface = os.environ.get("YUKON_UDP_IFACE")
-            interface.udp_mtu = int(os.environ.get("YUKON_UDP_MTU"))  # type: ignore
-            atr: AttachTransportRequest = AttachTransportRequest(
-                interface, int(os.environ.get("YUKON_NODE_ID"))
-            )  # type: ignore
-            state.queues.attach_transport.put(atr)
-            required_queue_timeout: Optional[int] = 4
-            if os.environ.get("IS_DEBUG"):
-                required_queue_timeout = None
-            response: AttachTransportResponse = state.queues.attach_transport_response.get(
-                timeout=required_queue_timeout
-            )
-            if not response.success:
-                raise Exception("Failed to attach transport", response.message)
+    if (
+        os.environ.get("IS_HEADLESS")
+        and os.environ.get("YUKON_UDP_IFACE")
+        and os.environ.get("YUKON_NODE_ID")
+        and os.environ.get("YUKON_UDP_MTU")
+    ):
+        interface: Interface = Interface()
+        interface.is_udp = True
+        interface.udp_iface = os.environ.get("YUKON_UDP_IFACE")
+        interface.udp_mtu = int(os.environ.get("YUKON_UDP_MTU"))  # type: ignore
+        atr: AttachTransportRequest = AttachTransportRequest(interface, int(os.environ.get("YUKON_NODE_ID")))  # type: ignore
+        state.queues.attach_transport.put(atr)
+        required_queue_timeout: Optional[int] = 4
+        if os.environ.get("IS_DEBUG"):
+            required_queue_timeout = None
+        response: AttachTransportResponse = state.queues.attach_transport_response.get(timeout=required_queue_timeout)
+        if not response.success:
+            raise Exception("Failed to attach transport", response.message)
 
     while True:
         sleep(1)

@@ -21,6 +21,7 @@ os.environ["PYTHONPATH"] = (
     str(root / ".compiled") + path_separator + str(root / "yukon") + path_separator + str(root.absolute())
 )
 os.environ["IS_HEADLESS"] = "1"
+os.environ["YUKON_IS_UDP_FAULTY"] = "1"
 os.environ["YUKON_UDP_IFACE"] = "127.0.0.127"
 os.environ["YUKON_NODE_ID"] = "1"
 os.environ["YUKON_UDP_MTU"] = "1200"
