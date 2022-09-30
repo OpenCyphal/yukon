@@ -177,8 +177,28 @@ import { initTransports } from "./transports.module.js"
             await updateTextOut(true);
         });
     }
-    async function setUpMessagesComponent() {
+    async function setUpMessagesComponent(container) {
+        const containerElement = container.getElement()[0];
         var messagesList = document.querySelector("#messages-list");
+        const optionsPanel = await waitForElm(".options-panel");
+        const observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                if (mutation.type === "attributes") {
+                    if (mutation.attributeName === "data-isexpanded") {
+                        // Toggle visibility of options panel
+                        if (optionsPanel.style.display === "none") {
+                            optionsPanel.style.display = "block";
+                        } else {
+                            optionsPanel.style.display = "none";
+                        }
+                    }
+                }
+            });
+        });
+
+        observer.observe(containerElement, {
+            attributes: true //configure it to listen to attribute changes
+        });
         var cbShowTimestamp = await waitForElm('#cbShowTimestamp');
         const sLogLevel = document.querySelector("#sLogLevel");
         sLogLevel.addEventListener("change", async () => {
@@ -625,7 +645,7 @@ import { initTransports } from "./transports.module.js"
         });
         myLayout.registerComponent('messagesComponent', function (container, componentState) {
             registerComponentAction("../messages.panel.html", "messagesComponent", container, () => {
-                setUpMessagesComponent.bind(outsideContext)();
+                setUpMessagesComponent.bind(outsideContext)(container);
             });
         });
         myLayout.registerComponent('transportsComponent', function (container, componentState) {
@@ -654,7 +674,11 @@ import { initTransports } from "./transports.module.js"
                     e.stopPropagation();
                     const container = stack.getActiveContentItem().container.getElement()[0];
                     // Use the data-isExpanded attribute and toggle it
-                    container.setAttribute("data-isExpanded", null ? container.getAttribute("data-isExpanded") : "true");
+                    if (container.getAttribute("data-isExpanded") == "true") {
+                        container.removeAttribute("data-isExpanded");
+                    } else {
+                        container.setAttribute("data-isExpanded", "true");
+                    }
                     const isExpanded = container.getAttribute("data-isExpanded");
                     if (isExpanded) {
                         imageElement.setAttribute("src", "../images/caret-up.svg");
