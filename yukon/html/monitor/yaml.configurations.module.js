@@ -138,24 +138,34 @@ export async function return_all_selected_registers_as_yaml(pairs, yukon_state) 
     let zubax_api = yukon_state.zubax_api;
     // A pair is the register_name and the node_id
     let pairs_object = pairs;
+    // Check if all the keys in pairs_object are convertible to numbers
+    let all_keys_are_numbers = true;
+    for (let key in pairs_object) {
+        if (isNaN(key)) {
+            all_keys_are_numbers = false;
+            break;
+        }
+    }
     // Determine, whether the configuration is a network configuration or a single node configuration
-    let is_networked = Object.keys(pairs_object).length > 1;
+    let is_networked = all_keys_are_numbers;
+    const required_flow_level = is_networked ? 2 : 1;
+    let contains_single_node = is_networked && Object.keys(pairs_object).length == 1;
     let json_string = JSON.stringify(pairs_object);
-    var yaml_string = jsyaml.dump(pairs_object, { flowLevel: yukon_state.settings.yamlFlowLevel });
+    var yaml_string = jsyaml.dump(pairs_object, { flowLevel: required_flow_level });
     if (yukon_state.settings.simplifyRegisters) {
         const simplified_json_string = await zubax_api.simplify_configuration(json_string)
         let intermediary_structure = JSON.parse(simplified_json_string);
-        if (!is_networked && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
+        if (contains_single_node && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
             intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
         }
-        const simplified_yaml_string = jsyaml.dump(intermediary_structure, { flowLevel: yukon_state.settings.yamlFlowLevel });
+        const simplified_yaml_string = jsyaml.dump(intermediary_structure, { flowLevel: required_flow_level });
         return parseYamlStringsToNumbers(simplified_yaml_string);
     } else {
         let intermediary_structure = JSON.parse(yaml_string);
-        if (!is_networked && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
+        if (contains_single_node && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
             intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
         }
-        const yaml_string_modified = jsyaml.dump(intermediary_structure, { flowLevel: yukon_state.settings.yamlFlowLevel });
+        const yaml_string_modified = jsyaml.dump(intermediary_structure, { flowLevel: required_flow_level });
         return parseYamlStringsToNumbers(yaml_string_modified);
     }
 }
