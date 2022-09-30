@@ -30,7 +30,7 @@ class FaultyTransport(pycyphal.transport.Transport):
 
     def get_input_session(
         self, specifier: pycyphal.transport.InputSessionSpecifier, payload_metadata: pycyphal.transport.PayloadMetadata
-    ) -> UDPInputSession:
+    ) -> InputSession:
         if self.faulty:
             return FaultyInputSession(self._inner.get_input_session(specifier, payload_metadata))
         else:
@@ -38,7 +38,7 @@ class FaultyTransport(pycyphal.transport.Transport):
 
     def get_output_session(
         self, specifier: pycyphal.transport.OutputSessionSpecifier, payload_metadata: pycyphal.transport.PayloadMetadata
-    ) -> UDPOutputSession:
+    ) -> OutputSession:
         if self.faulty:
             return FaultyOutputSession(self._inner.get_output_session(specifier, payload_metadata))
         else:
