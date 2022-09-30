@@ -638,6 +638,45 @@ import { initTransports } from "./transports.module.js"
                 setUpTransportsListComponent.bind(outsideContext)();
             });
         });
+        myLayout.on('stackCreated', function (stack) {
+            //HTML for the colorDropdown is stored in a template tag
+            const btnPanelShowHideToggle = document.createElement("li");
+            btnPanelShowHideToggle.setAttribute("id", "btn-panel-show-hide-yakut");
+            const imageElement = document.createElement("img");
+            // Make sure it has 100% width and height
+            imageElement.setAttribute("width", "100%");
+            imageElement.setAttribute("height", "100%");
+            imageElement.setAttribute("src", "../images/caret-down.svg");
+            btnPanelShowHideToggle.appendChild(imageElement);
+            btnPanelShowHideToggle.addEventListener("click",
+                function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const container = stack.getActiveContentItem().container.getElement()[0];
+                    // Use the data-isExpanded attribute and toggle it
+                    container.setAttribute("data-isExpanded", null ? container.getAttribute("data-isExpanded") : "true");
+                    const isExpanded = container.getAttribute("data-isExpanded");
+                    if (isExpanded) {
+                        imageElement.setAttribute("src", "../images/caret-up.svg");
+                    } else {
+                        imageElement.setAttribute("src", "../images/caret-down.svg");
+                    }
+                }
+            );
+            // Add the btnPanelShowHideToggle to the header
+            stack.header.controlsContainer.prepend(btnPanelShowHideToggle);
+            stack.on('activeContentItemChanged', function (contentItem) {
+                const container = stack.getActiveContentItem().container.getElement()[0];
+                // If the key "isExpanded" is not contained in the state of the container
+
+                const isExpanded = container.getAttribute("data-isExpanded");
+                if (isExpanded) {
+                    imageElement.setAttribute("src", "../images/caret-up.svg");
+                } else {
+                    imageElement.setAttribute("src", "../images/caret-down.svg");
+                }
+            });
+        });
         myLayout.init();
         yukon_state.zubax_api = zubax_api;
         yukon_state.jsyaml = jsyaml;
