@@ -1,4 +1,3 @@
-from numpy import inner
 import pycyphal
 from pycyphal.transport import (
     ProtocolParameters,
