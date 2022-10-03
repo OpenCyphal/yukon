@@ -67,7 +67,6 @@ export function create_directed_graph(yukon_state) {
 
     my_graph.on('mouseover', 'node', function (evt) {
         var node = evt.target;
-        console.log("Mouseover on node " + node.id());
         // Find the avatar for the node
         var avatar = yukon_state.current_avatars.find(function (avatar) {
             return avatar.node_id == node.id();
@@ -80,7 +79,6 @@ export function create_directed_graph(yukon_state) {
     });
     my_graph.on('mouseout', 'node', function (evt) {
         var node = evt.target;
-        console.log("Mouseout on node " + node.id());
         // Remove the current monitor popup
         var cy = document.getElementById('cy');
         // Remove all label elements in the div cy

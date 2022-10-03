@@ -55,6 +55,73 @@ import { initTransports } from "./transports.module.js"
         setInterval(get_and_display_avatars, 1000);
         update_directed_graph(yukon_state);
     }
+    function setUpCommandsComponent(container) {
+        const containerElement = container.getElement()[0];
+        const iNodeId = containerElement.querySelector("#iNodeId");
+        const iCommandId = containerElement.querySelector("#iCommandId");
+        const sCommands = containerElement.querySelector("#sCommands");
+        const iCommandArgument = containerElement.querySelector("#iCommandArgument");
+        const btnSendCommand = containerElement.querySelector("#btnSendCommand");
+        const feedbackMessage = containerElement.querySelector(".feedback-message");
+        sCommands.addEventListener("change", function (event) {
+            // Get the selected option and take the attribute data-command-id from it
+            const selectedOptionValue = sCommands.value;
+            let selectedOptionElement = null;
+            // For every child of sCommands that is an OPTION element
+            for (let i = 0; i < sCommands.childNodes.length; i++) {
+                const element = sCommands.childNodes[i];
+                if (element.value == selectedOptionValue) {
+                    selectedOptionElement = element;
+                    break;
+                }
+            }
+            if (selectedOptionElement) {
+                if (selectedOptionElement.getAttribute("data-has-arguments") == "true") {
+                    iCommandArgument.removeAttribute("disabled")
+                } else {
+                    iCommandArgument.setAttribute("disabled", "")
+                }
+                iCommandId.value = selectedOptionElement.getAttribute("data-command-id");
+            } else {
+                console.error("Didn't find the element for " + selectedOptionValue);
+            }
+        });
+        // When the input text in iCommandId is changed, see if the id corresponds to any of the command-ids specified in data-command-ids of any of the options in sCommand
+        iCommandId.addEventListener("input", function (event) {
+            // For all children of sCommands that are options
+            const children = sCommands.children;
+            let matchedAny = false;
+            for (let i = 0; i < children.length; i++) {
+                const child = children[i];
+                // If the tag of the child element is option
+                if (child.tagName == "OPTION") {
+                    if (child.getAttribute("data-command-id") === iCommandId.value) {
+                        matchedAny = true;
+                        if (child.getAttribute("data-has-arguments") == "true") {
+                            iCommandArgument.removeAttribute("disabled")
+                        } else {
+                            iCommandArgument.setAttribute("disabled", "")
+                        }
+                        break;
+                    }
+                }
+            }
+            if (!matchedAny) {
+                iCommandArgument.removeAttribute("disabled");
+            }
+        });
+        btnSendCommand.addEventListener("click", async function (event) {
+            const result = await zubax_api.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
+            if (!result.success) {
+                feedbackMessage.style.display = "block";
+                feedbackMessage.innerHTML = result.message;
+            } else {
+                feedbackMessage.style.display = "none";
+                feedbackMessage.innerHTML = "";
+            }
+
+        });
+    }
     function setUpStatusComponent() {
         async function update_avatars_table() {
             await update_avatars_dto();
@@ -497,6 +564,12 @@ import { initTransports } from "./transports.module.js"
                                             componentName: "transportsListComponent",
                                             isClosable: true,
                                             title: "Transports list",
+                                        },
+                                        {
+                                            type: "component",
+                                            componentName: "commandsComponent",
+                                            isClosable: true,
+                                            title: "Commands",
                                         }
                                     ]
                                 }
@@ -656,6 +729,11 @@ import { initTransports } from "./transports.module.js"
         myLayout.registerComponent("transportsListComponent", function (container, componentState) {
             registerComponentAction("../transports_list.panel.html", "transportsListComponent", container, () => {
                 setUpTransportsListComponent.bind(outsideContext)();
+            });
+        });
+        myLayout.registerComponent("commandsComponent", function (container, componentState) {
+            registerComponentAction("../commands.panel.html", "transportsListComponent", container, () => {
+                setUpCommandsComponent.bind(outsideContext)(container);
             });
         });
         myLayout.on('stackCreated', function (stack) {
