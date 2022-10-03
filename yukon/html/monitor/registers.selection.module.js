@@ -337,7 +337,7 @@ export function unselectAll(yukon_state) {
 export function selectAll(yukon_state) {
     // Iterate through every avatar in current_avatars and register_name and add them to the selected_registers
     yukon_state.addLocalMessage("Selecting all registers");
-    if (isAllSelected()) {
+    if (isAllSelected(yukon_state)) {
         unselectAll(yukon_state);
         return;
     }
@@ -352,14 +352,14 @@ export function selectAll(yukon_state) {
     updateRegistersTableColors(yukon_state);
 }
 
-function isAllSelected() {
+function isAllSelected(yukon_state) {
     let allSelected = true;
     for (let avatar of yukon_state.current_avatars) {
         for (let register_name of avatar.registers) {
             if (!register_name) {
                 continue;
             }
-            if (selected_registers[[avatar.node_id, register_name]]) {
+            if (yukon_state.selections.selected_registers[[avatar.node_id, register_name]]) {
                 continue;
             } else {
                 allSelected = false;
