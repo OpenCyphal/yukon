@@ -2,10 +2,7 @@
     box-sizing: border-box;
 }
 
-#messages-list {
-    overflow-y: scroll;
-    height: calc(74vh);
-}
+#messages-list {}
 
 #messages-list textarea {
     display: block;
@@ -71,10 +68,7 @@ textarea#textOut {
 }
 
 .options-panel {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    align-items: flex-start;
+    display: block;
 }
 
 .options-panel div {
@@ -83,16 +77,12 @@ textarea#textOut {
 
 .option {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: fit-content(40%) fit-content(40%);
     grid-gap: 0.5em;
     margin-top: 0.5em;
-}
-
-.excluded-keywords {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: flex-start;
+    margin-bottom: 0.5em;
+    border: 1px solid #ccc;
+    padding: 0.5em;
 }
 
 #split-right {
@@ -230,7 +220,14 @@ body {
     font-size: 1.5em;
     padding: 0.25em 0.5em;
     margin: 0.25em;
-    font-family:Arial,sans-serif;font-size:12px;color:#888888;background:#fafafa;margin-right:2px;padding-bottom:4px;border:1px solid #cccccc;border-bottom:none
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #888888;
+    background: #fafafa;
+    margin-right: 2px;
+    padding-bottom: 4px;
+    border: 1px solid #cccccc;
+    border-bottom: none
 }
 
 #toolbar button:hover {
@@ -346,4 +343,22 @@ button#btnShowHideToolbar:active {
 
 * {
     font: 1em ubuntu-mono, monospace;
+}
+
+#CommandsDiv {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+#CommandsDiv label {
+    margin-top: 0.5em;
+}
+
+#CommandsDiv button {
+    margin-top: 1em;
+}
+
+.container {
+    padding: 0.5em;
 }

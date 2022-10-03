@@ -74,30 +74,6 @@ input[type=text] {
     flex-grow: 10;
 }
 
-#messages-list {
-    overflow-y: scroll;
-    height: calc(74vh);
-}
-
-#messages-list textarea {
-    display: block;
-    list-style: none;
-    height: auto;
-    width: 99%;
-    resize: none;
-    border: none;
-    height: content-box;
-    overflow-y: hidden;
-}
-
-#messages-list textarea:focus {
-    box-shadow: 0 0 5px #ccc;
-}
-
-#messages_title {
-    margin-top: 2em;
-}
-
 .is-danger {
     background-color: #C35404;
 }
@@ -164,6 +140,15 @@ form#transport-selection-form>#maybe-tabs .tab-slider {
     padding: 0.5em;
     border: 1px solid red;
     background-color: rgba(255, 0, 0, 0.165);
+    color: black;
+    display: none;
+}
+
+.feedback-message.success {
+    margin: 0.5em;
+    padding: 0.5em;
+    border: 1px solid rgb(0, 60, 255);
+    background-color: rgba(0, 60, 255, 0.165);
     color: black;
     display: none;
 }

@@ -9,6 +9,8 @@ import platform
 from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
+import uavcan.node.ExecuteCommand_1_1
+from yukon.domain.command_send_response import CommandSendResponse
 from yukon.services.api import is_configuration_simplified
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_request import UpdateRegisterRequest
@@ -106,6 +108,54 @@ def cyphal_worker(state: GodState) -> None:
                             state.cyphal.transports_list.remove(interface)
                             break
                 await asyncio.sleep(0.02)
+                if not state.queues.send_command.empty():
+                    was_command_success = False
+                    max_count = 3
+                    count = 0
+                    message = None
+                    while not was_command_success and count < max_count:
+                        count += 1
+                        try:
+                            send_command_request = state.queues.send_command.get_nowait()
+                            service_client = state.cyphal.local_node.make_client(
+                                uavcan.node.ExecuteCommand_1_1, send_command_request.node_id
+                            )
+                            msg = uavcan.node.ExecuteCommand_1_1.Request()
+                            msg.command = int(send_command_request.command_id)
+                            responseTuple = await service_client.call(msg)
+                            if responseTuple:
+                                response = responseTuple[0]
+                                if response.status == 1:
+                                    message = "Status: failure"
+                                elif response.status == 2:
+                                    message = "Status: not authorized"
+                                elif response.status == 3:
+                                    message = "Status: bad command"
+                                elif response.status == 4:
+                                    message = "Status: bad parameter"
+                                elif response.status == 5:
+                                    message = "Status: bad state"
+                                elif response.status == 6:
+                                    message = "Status: internal error"
+                                else:
+                                    message = repr(response)
+                                    if response.status == 0:
+                                        message = "✓ " + message
+                                        message += " (success)"
+                            was_command_success = response is not None and response.status == 0
+                        except:
+                            logger.exception(
+                                "Failed to send command %s",
+                                send_command_request,
+                            )
+                    if not was_command_success:
+                        if not message:
+                            message = "Failed"
+                        state.queues.command_response.put(CommandSendResponse(False, message))
+                    else:
+                        if not message:
+                            message = "Success"
+                        state.queues.command_response.put(CommandSendResponse(True, message))
                 if not state.queues.update_registers.empty():
                     register_update = state.queues.update_registers.get_nowait()
                     # make a uavcan.register.Access_1 request to the node

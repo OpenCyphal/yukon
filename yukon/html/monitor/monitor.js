@@ -7,6 +7,7 @@ import { get_all_selected_pairs, unselectAll, selectAll } from './registers.sele
 import { rereadPairs } from "./registers.data.module.js"
 import { openFile } from "./yaml.configurations.module.js"
 import { initTransports } from "./transports.module.js"
+import { JsonParseHelper } from "./utils.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
@@ -42,7 +43,7 @@ import { initTransports } from "./transports.module.js"
     }
     async function update_avatars_dto() {
         const text_result = await zubax_api.get_avatars();
-        const obj_result = JSON.parse(text_result, function (k, v) { return v === Infinity ? "Infinity" : v; });
+        const obj_result = JSON.parse(text_result, JsonParseHelper);
         yukon_state.current_avatars = obj_result.avatars;
     }
     function setUpMonitorComponent() {
@@ -54,6 +55,78 @@ import { initTransports } from "./transports.module.js"
 
         setInterval(get_and_display_avatars, 1000);
         update_directed_graph(yukon_state);
+    }
+    function setUpCommandsComponent(container) {
+        const containerElement = container.getElement()[0];
+        const iNodeId = containerElement.querySelector("#iNodeId");
+        const iCommandId = containerElement.querySelector("#iCommandId");
+        const sCommands = containerElement.querySelector("#sCommands");
+        const iCommandArgument = containerElement.querySelector("#iCommandArgument");
+        const btnSendCommand = containerElement.querySelector("#btnSendCommand");
+        const feedbackMessage = containerElement.querySelector(".feedback-message");
+        sCommands.addEventListener("change", function (event) {
+            // Get the selected option and take the attribute data-command-id from it
+            const selectedOptionValue = sCommands.value;
+            let selectedOptionElement = null;
+            // For every child of sCommands that is an OPTION element
+            for (let i = 0; i < sCommands.childNodes.length; i++) {
+                const element = sCommands.childNodes[i];
+                if (element.value == selectedOptionValue) {
+                    selectedOptionElement = element;
+                    break;
+                }
+            }
+            if (selectedOptionElement) {
+                if (selectedOptionElement.getAttribute("data-has-arguments") == "true") {
+                    iCommandArgument.removeAttribute("disabled")
+                } else {
+                    iCommandArgument.setAttribute("disabled", "")
+                }
+                iCommandId.value = selectedOptionElement.getAttribute("data-command-id");
+            } else {
+                console.error("Didn't find the element for " + selectedOptionValue);
+            }
+        });
+        function disableOrEnableArguments() {
+            const children = sCommands.children;
+            let matchedAny = false;
+            for (let i = 0; i < children.length; i++) {
+                const child = children[i];
+                // If the tag of the child element is option
+                if (child.tagName == "OPTION") {
+                    if (child.getAttribute("data-command-id") === iCommandId.value) {
+                        matchedAny = true;
+                        if (child.getAttribute("data-has-arguments") == "true") {
+                            iCommandArgument.removeAttribute("disabled")
+                        } else {
+                            iCommandArgument.setAttribute("disabled", "")
+                        }
+                        break;
+                    }
+                }
+            }
+            if (!matchedAny) {
+                iCommandArgument.removeAttribute("disabled");
+            }
+        }
+        // When the input text in iCommandId is changed, see if the id corresponds to any of the command-ids specified in data-command-ids of any of the options in sCommand
+        iCommandId.addEventListener("input", function (event) {
+            // For all children of sCommands that are options
+            disableOrEnableArguments();
+        });
+        btnSendCommand.addEventListener("click", async function (event) {
+            const result = await zubax_api.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
+            if (!result.success) {
+                feedbackMessage.classList.remove("success");
+                feedbackMessage.style.display = "block";
+                feedbackMessage.innerHTML = result.message;
+            } else {
+                feedbackMessage.classList.add("success");
+                feedbackMessage.style.display = "block";
+                feedbackMessage.innerHTML = result.message;
+            }
+
+        });
     }
     function setUpStatusComponent() {
         async function update_avatars_table() {
@@ -99,7 +172,7 @@ import { initTransports } from "./transports.module.js"
         async function syncList() {
             const transportsList = document.querySelector('#transports_list');
             const received_transport_interfaces_string = await zubax_api.get_connected_transport_interfaces();
-            const received_transport_interfaces_object = JSON.parse(received_transport_interfaces_string);
+            const received_transport_interfaces_object = JSON.parse(received_transport_interfaces_string, JsonParseHelper);
             if (received_transport_interfaces_object.hash == lastTransportsListHash) {
                 return;
             }
@@ -156,7 +229,7 @@ import { initTransports } from "./transports.module.js"
             if (!isRefreshTextOutAllowed && !refresh_anyway) { return; }
             const avatars = await zubax_api.get_avatars()
             const textOut = document.querySelector("#textOut");
-            const DTO = JSON.parse(avatars, function (k, v) { return v === Infinity ? "Infinity" : v; });
+            const DTO = JSON.parse(avatars, JsonParseHelper);
             if (DTO.hash != yukon_state.lastHash || refresh_anyway) {
                 yukon_state.lastHash = DTO.hash;
                 textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
@@ -177,8 +250,28 @@ import { initTransports } from "./transports.module.js"
             await updateTextOut(true);
         });
     }
-    async function setUpMessagesComponent() {
+    async function setUpMessagesComponent(container) {
+        const containerElement = container.getElement()[0];
         var messagesList = document.querySelector("#messages-list");
+        const optionsPanel = await waitForElm(".options-panel");
+        const observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                if (mutation.type === "attributes") {
+                    if (mutation.attributeName === "data-isexpanded") {
+                        // Toggle visibility of options panel
+                        if (optionsPanel.style.display === "none") {
+                            optionsPanel.style.display = "block";
+                        } else {
+                            optionsPanel.style.display = "none";
+                        }
+                    }
+                }
+            });
+        });
+
+        observer.observe(containerElement, {
+            attributes: true //configure it to listen to attribute changes
+        });
         var cbShowTimestamp = await waitForElm('#cbShowTimestamp');
         const sLogLevel = document.querySelector("#sLogLevel");
         sLogLevel.addEventListener("change", async () => {
@@ -211,7 +304,7 @@ import { initTransports } from "./transports.module.js"
         }
         function fetchAndDisplayMessages() {
             zubax_api.get_messages(lastMessageIndex + 1).then(function (messages) {
-                var messagesObject = JSON.parse(messages);
+                var messagesObject = JSON.parse(messages, JsonParseHelper);
                 for (const message of messagesObject) {
                     displayOneMessage(message.message);
                     // For the last message
@@ -464,7 +557,7 @@ import { initTransports } from "./transports.module.js"
                             content: [
                                 {
                                     type: 'stack',
-                                    activeItemIndex: 1,
+                                    activeItemIndex: 0,
                                     content: [
                                         {
                                             type: "component",
@@ -477,6 +570,12 @@ import { initTransports } from "./transports.module.js"
                                             componentName: "transportsListComponent",
                                             isClosable: true,
                                             title: "Transports list",
+                                        },
+                                        {
+                                            type: "component",
+                                            componentName: "commandsComponent",
+                                            isClosable: true,
+                                            title: "Commands",
                                         }
                                     ]
                                 }
@@ -625,7 +724,7 @@ import { initTransports } from "./transports.module.js"
         });
         myLayout.registerComponent('messagesComponent', function (container, componentState) {
             registerComponentAction("../messages.panel.html", "messagesComponent", container, () => {
-                setUpMessagesComponent.bind(outsideContext)();
+                setUpMessagesComponent.bind(outsideContext)(container);
             });
         });
         myLayout.registerComponent('transportsComponent', function (container, componentState) {
@@ -636,6 +735,75 @@ import { initTransports } from "./transports.module.js"
         myLayout.registerComponent("transportsListComponent", function (container, componentState) {
             registerComponentAction("../transports_list.panel.html", "transportsListComponent", container, () => {
                 setUpTransportsListComponent.bind(outsideContext)();
+            });
+        });
+        myLayout.registerComponent("commandsComponent", function (container, componentState) {
+            registerComponentAction("../commands.panel.html", "transportsListComponent", container, () => {
+                setUpCommandsComponent.bind(outsideContext)(container);
+            });
+        });
+        const useSVG = true;
+        let caretDownImgSrc = null;
+        let caretUpImgSrc = null;
+        if (useSVG) {
+            caretDownImgSrc = "../images/caret-down.svg";
+            caretUpImgSrc = "../images/caret-up.svg";
+        } else {
+            caretDownImgSrc = "../images/caret-down-18-18.png";
+            caretUpImgSrc = "../images/caret-up-18-18.png";
+        }
+
+        myLayout.on('stackCreated', function (stack) {
+            //HTML for the colorDropdown is stored in a template tag
+            const btnPanelShowHideToggle = document.createElement("li");
+            btnPanelShowHideToggle.setAttribute("id", "btn-panel-show-hide-yakut");
+            const caretDownImageElement = document.createElement("img");
+            // Make sure it has 100% width and height
+            caretDownImageElement.setAttribute("width", "100%");
+            caretDownImageElement.setAttribute("height", "100%");
+            caretDownImageElement.setAttribute("src", caretDownImgSrc);
+            btnPanelShowHideToggle.appendChild(caretDownImageElement);
+            const caretUpImageElement = document.createElement("img");
+            // Make sure it has 100% width and height
+            caretUpImageElement.setAttribute("width", "100%");
+            caretUpImageElement.setAttribute("height", "100%");
+            caretUpImageElement.setAttribute("src", caretUpImgSrc);
+            btnPanelShowHideToggle.appendChild(caretUpImageElement);
+            btnPanelShowHideToggle.addEventListener("click",
+                function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const container = stack.getActiveContentItem().container.getElement()[0];
+                    // Use the data-isExpanded attribute and toggle it
+                    if (container.getAttribute("data-isExpanded") == "true") {
+                        container.removeAttribute("data-isExpanded");
+                    } else {
+                        container.setAttribute("data-isExpanded", "true");
+                    }
+                    const isExpanded = container.getAttribute("data-isExpanded");
+                    if (isExpanded) {
+                        caretDownImageElement.style.display = "none";
+                        caretUpImageElement.style.display = "block";
+                    } else {
+                        caretDownImageElement.style.display = "block";
+                        caretUpImageElement.style.display = "none";
+                    }
+                }
+            );
+            // Add the btnPanelShowHideToggle to the header
+            stack.header.controlsContainer.prepend(btnPanelShowHideToggle);
+            stack.on('activeContentItemChanged', function (contentItem) {
+                const container = stack.getActiveContentItem().container.getElement()[0];
+                // If the key "isExpanded" is not contained in the state of the container
+
+                const isExpanded = container.getAttribute("data-isExpanded");
+                if (isExpanded) {
+                    caretDownImageElement.style.display = "none";
+                    caretUpImageElement.style.display = "block";
+                } else {
+                    caretDownImageElement.style.display = "block";
+                    caretUpImageElement.style.display = "none";
+                }
             });
         });
         myLayout.init();
@@ -738,7 +906,7 @@ import { initTransports } from "./transports.module.js"
         function fetchAndHandleInternalMessages() {
             zubax_api.get_messages(lastInternalMessageIndex + 1).then(
                 function (received_messages) {
-                    let deserialized_messages = JSON.parse(received_messages);
+                    let deserialized_messages = JSON.parse(received_messages, JsonParseHelper);
                     // if deserialized_messages is empty then return
                     if (deserialized_messages.length == 0) {
                         return;
