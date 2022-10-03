@@ -742,16 +742,33 @@ import { JsonParseHelper } from "./utils.module.js"
                 setUpCommandsComponent.bind(outsideContext)(container);
             });
         });
+        const useSVG = true;
+        let caretDownImgSrc = null;
+        let caretUpImgSrc = null;
+        if (useSVG) {
+            caretDownImgSrc = "../images/caret-down.svg";
+            caretUpImgSrc = "../images/caret-up.svg";
+        } else {
+            caretDownImgSrc = "../images/caret-down-18-18.png";
+            caretUpImgSrc = "../images/caret-up-18-18.png";
+        }
+
         myLayout.on('stackCreated', function (stack) {
             //HTML for the colorDropdown is stored in a template tag
             const btnPanelShowHideToggle = document.createElement("li");
             btnPanelShowHideToggle.setAttribute("id", "btn-panel-show-hide-yakut");
-            const imageElement = document.createElement("img");
+            const caretDownImageElement = document.createElement("img");
             // Make sure it has 100% width and height
-            imageElement.setAttribute("width", "100%");
-            imageElement.setAttribute("height", "100%");
-            imageElement.setAttribute("src", "../images/caret-down.svg");
-            btnPanelShowHideToggle.appendChild(imageElement);
+            caretDownImageElement.setAttribute("width", "100%");
+            caretDownImageElement.setAttribute("height", "100%");
+            caretDownImageElement.setAttribute("src", caretDownImgSrc);
+            btnPanelShowHideToggle.appendChild(caretDownImageElement);
+            const caretUpImageElement = document.createElement("img");
+            // Make sure it has 100% width and height
+            caretUpImageElement.setAttribute("width", "100%");
+            caretUpImageElement.setAttribute("height", "100%");
+            caretUpImageElement.setAttribute("src", caretUpImgSrc);
+            btnPanelShowHideToggle.appendChild(caretUpImageElement);
             btnPanelShowHideToggle.addEventListener("click",
                 function (e) {
                     e.preventDefault();
@@ -765,9 +782,11 @@ import { JsonParseHelper } from "./utils.module.js"
                     }
                     const isExpanded = container.getAttribute("data-isExpanded");
                     if (isExpanded) {
-                        imageElement.setAttribute("src", "../images/caret-up.svg");
+                        caretDownImageElement.style.display = "none";
+                        caretUpImageElement.style.display = "block";
                     } else {
-                        imageElement.setAttribute("src", "../images/caret-down.svg");
+                        caretDownImageElement.style.display = "block";
+                        caretUpImageElement.style.display = "none";
                     }
                 }
             );
@@ -779,9 +798,11 @@ import { JsonParseHelper } from "./utils.module.js"
 
                 const isExpanded = container.getAttribute("data-isExpanded");
                 if (isExpanded) {
-                    imageElement.setAttribute("src", "../images/caret-up.svg");
+                    caretDownImageElement.style.display = "none";
+                    caretUpImageElement.style.display = "block";
                 } else {
-                    imageElement.setAttribute("src", "../images/caret-down.svg");
+                    caretDownImageElement.style.display = "block";
+                    caretUpImageElement.style.display = "none";
                 }
             });
         });

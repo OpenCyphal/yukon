@@ -365,8 +365,8 @@ class Api:
         return_string = json.dumps(avatar_dto)
         return_string = return_string.replace("Infinity", '"Infinity"')
         return_string = return_string.replace("-Infinity", '"-Infinity"')
-        return_string = return_string.replace("NaN", '"Nan"')
-        return_string = return_string.replace("-NaN", '"-Nan"')
+        return_string = return_string.replace("NaN", '"NaN"')
+        return_string = return_string.replace("-NaN", '"-NaN"')
         return return_string
 
     def set_log_level(self, severity: str) -> None:
