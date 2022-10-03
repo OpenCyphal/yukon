@@ -7,6 +7,7 @@ import { get_all_selected_pairs, unselectAll, selectAll } from './registers.sele
 import { rereadPairs } from "./registers.data.module.js"
 import { openFile } from "./yaml.configurations.module.js"
 import { initTransports } from "./transports.module.js"
+import { JsonParseHelper } from "./utils.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
@@ -42,7 +43,7 @@ import { initTransports } from "./transports.module.js"
     }
     async function update_avatars_dto() {
         const text_result = await zubax_api.get_avatars();
-        const obj_result = JSON.parse(text_result, function (k, v) { return v === Infinity ? "Infinity" : v; });
+        const obj_result = JSON.parse(text_result, JsonParseHelper);
         yukon_state.current_avatars = obj_result.avatars;
     }
     function setUpMonitorComponent() {
@@ -168,7 +169,7 @@ import { initTransports } from "./transports.module.js"
         async function syncList() {
             const transportsList = document.querySelector('#transports_list');
             const received_transport_interfaces_string = await zubax_api.get_connected_transport_interfaces();
-            const received_transport_interfaces_object = JSON.parse(received_transport_interfaces_string);
+            const received_transport_interfaces_object = JSON.parse(received_transport_interfaces_string, JsonParseHelper);
             if (received_transport_interfaces_object.hash == lastTransportsListHash) {
                 return;
             }
@@ -225,7 +226,7 @@ import { initTransports } from "./transports.module.js"
             if (!isRefreshTextOutAllowed && !refresh_anyway) { return; }
             const avatars = await zubax_api.get_avatars()
             const textOut = document.querySelector("#textOut");
-            const DTO = JSON.parse(avatars, function (k, v) { return v === Infinity ? "Infinity" : v; });
+            const DTO = JSON.parse(avatars, JsonParseHelper);
             if (DTO.hash != yukon_state.lastHash || refresh_anyway) {
                 yukon_state.lastHash = DTO.hash;
                 textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
@@ -300,7 +301,7 @@ import { initTransports } from "./transports.module.js"
         }
         function fetchAndDisplayMessages() {
             zubax_api.get_messages(lastMessageIndex + 1).then(function (messages) {
-                var messagesObject = JSON.parse(messages);
+                var messagesObject = JSON.parse(messages, JsonParseHelper);
                 for (const message of messagesObject) {
                     displayOneMessage(message.message);
                     // For the last message
@@ -881,7 +882,7 @@ import { initTransports } from "./transports.module.js"
         function fetchAndHandleInternalMessages() {
             zubax_api.get_messages(lastInternalMessageIndex + 1).then(
                 function (received_messages) {
-                    let deserialized_messages = JSON.parse(received_messages);
+                    let deserialized_messages = JSON.parse(received_messages, JsonParseHelper);
                     // if deserialized_messages is empty then return
                     if (deserialized_messages.length == 0) {
                         return;

@@ -1,3 +1,4 @@
+import { JsonParseHelper } from "./utils.module.js";
 export function initTransports(container, yukon_state) {
     const containerElem = container.getElement()[0];
     const transports = Object.freeze({
@@ -17,7 +18,7 @@ export function initTransports(container, yukon_state) {
     const cbShowTransportCombobox = containerElem.querySelector('#cbShowTransportCombobox');
     function fillSelectionWithSlcan() {
         zubax_api.get_slcan_ports().then(function (ports) {
-            ports = JSON.parse(ports);
+            ports = JSON.parse(ports, JsonParseHelper);
             console.log(ports);
             var sTransport = containerElem.querySelector("#sTransport");
             sTransport.innerHTML = "";
@@ -38,7 +39,7 @@ export function initTransports(container, yukon_state) {
     }
     function fillSelectionWithSocketcan() {
         zubax_api.get_socketcan_ports().then(function (ports) {
-            ports = JSON.parse(ports);
+            ports = JSON.parse(ports, JsonParseHelper);
             console.log(ports);
             var sTransport = containerElem.querySelector("#sTransport");
             sTransport.innerHTML = "";
