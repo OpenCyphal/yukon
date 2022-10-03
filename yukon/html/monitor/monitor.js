@@ -87,9 +87,7 @@ import { JsonParseHelper } from "./utils.module.js"
                 console.error("Didn't find the element for " + selectedOptionValue);
             }
         });
-        // When the input text in iCommandId is changed, see if the id corresponds to any of the command-ids specified in data-command-ids of any of the options in sCommand
-        iCommandId.addEventListener("input", function (event) {
-            // For all children of sCommands that are options
+        function disableOrEnableArguments() {
             const children = sCommands.children;
             let matchedAny = false;
             for (let i = 0; i < children.length; i++) {
@@ -110,6 +108,11 @@ import { JsonParseHelper } from "./utils.module.js"
             if (!matchedAny) {
                 iCommandArgument.removeAttribute("disabled");
             }
+        }
+        // When the input text in iCommandId is changed, see if the id corresponds to any of the command-ids specified in data-command-ids of any of the options in sCommand
+        iCommandId.addEventListener("input", function (event) {
+            // For all children of sCommands that are options
+            disableOrEnableArguments();
         });
         btnSendCommand.addEventListener("click", async function (event) {
             const result = await zubax_api.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
@@ -554,7 +557,7 @@ import { JsonParseHelper } from "./utils.module.js"
                             content: [
                                 {
                                     type: 'stack',
-                                    activeItemIndex: 1,
+                                    activeItemIndex: 0,
                                     content: [
                                         {
                                             type: "component",

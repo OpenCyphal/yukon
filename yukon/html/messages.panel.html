@@ -1,44 +1,49 @@
-<div class="options-panel">
-    <div id="options">
-        <div class="option">
-            <label for="cbAutoscroll">Autoscroll</label>
-            <input type="checkbox" id="cbAutoscroll" checked>
-        </div>
-        <div class="option"
-            title="If filled with text then autoscroll will work when a message with the keyword is received.">
-            <label for="iAutoscrollFilter">Autoscroll filter</label>
-            <input type="text" id="iAutoscrollFilter">
-        </div>
-        <div class="option" title="Only messages containing this text will be shown.">
-            <label for="iTextFilter">Text filter</label>
-            <input type="text" id="iTextFilter">
-        </div>
-        <div class="option" title="Show message timestamp">
-            <label for="cbShowTimestamp">Show timestamp</label>
-            <input type="checkbox" id="cbShowTimestamp">
-        </div>
-    </div>
-    <div class="excluded-keywords" title="Messages that don't include these keywords will be shown.">
-        <label for="taExcludedKeywords">Excluded keywords (one per line)</label>
-        <textarea name="exclusions" id="taExcludedKeywords" cols="30" rows="10" spellcheck="false"></textarea>
-    </div>
-    <div class="log-level" title="Only messages with this log level or higher will be shown.">
-        <label for="sLogLevel" style="display: block">Log level</label>
-        <select id="sLogLevel">
-            <option value="DEBUG">DEBUG</option>
-            <option value="INFO">INFO</option>
-            <option value="WARNING">WARNING</option>
-            <option value="ERROR">ERROR</option>
-            <option value="CRITICAL">CRITICAL</option>
-        </select>
-    </div>
-    <p id="messages_title">Messages</p><span>
-        <label for="cDeleteOldMessages">Delete old messages</label>
-        <input type="checkbox" id="cDeleteOldMessages" value="">
-    </span>
-</div>
+<div class="container">
+    <div class="options-panel">
+        <div id="options">
+            <div class="option">
+                <input type="checkbox" id="cbAutoscroll" checked>
+                <label for="cbAutoscroll">Autoscroll</label>
+            </div>
+            <div class="option" title="Show message timestamp">
+                <input type="checkbox" id="cbShowTimestamp">
+                <label for="cbShowTimestamp">Show timestamp</label>
+            </div>
+            <div class="option">
+                <input type="checkbox" id="cDeleteOldMessages" value="">
+                <label for="cDeleteOldMessages">Delete old messages</label>
+            </div>
+            <div class="option"
+                title="If filled with text then autoscroll will work when a message with the keyword is received.">
+                <input type="text" id="iAutoscrollFilter">
+                <label for="iAutoscrollFilter">Autoscroll filter</label>
+            </div>
+            <div class="option" title="Only messages containing this text will be shown.">
+                <input type="text" id="iTextFilter">
+                <label for="iTextFilter">Text filter</label>
+            </div>
 
-<div id="messages">
-    <div id="messages-list">
+            <div class="option excluded-keywords" title="Messages that don't include these keywords will be shown.">
+                <textarea name="exclusions" id="taExcludedKeywords" cols="30" rows="4" spellcheck="false"></textarea>
+                <label for="taExcludedKeywords">Excluded keywords (one per line)</label>
+            </div>
+            <div class="option log-level" title="Only messages with this log level or higher will be shown.">
+                <select id="sLogLevel">
+                    <option value="DEBUG">DEBUG</option>
+                    <option value="INFO">INFO</option>
+                    <option value="WARNING">WARNING</option>
+                    <option value="ERROR">ERROR</option>
+                    <option value="CRITICAL">CRITICAL</option>
+                </select>
+                <label for="sLogLevel" style="display: block">Log level</label>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="messages">
+        <div id="messages-list">
+        </div>
     </div>
 </div>

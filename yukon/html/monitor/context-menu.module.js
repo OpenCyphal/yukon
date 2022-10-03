@@ -162,7 +162,6 @@ export function make_context_menus(yukon_state) {
                     copyTextToClipboard(datatype);
                 }
             },
-            shouldBeDisplayed: oneSelectedConstraint
         },
         {
             content: `${copyIcon}Copy value`,
