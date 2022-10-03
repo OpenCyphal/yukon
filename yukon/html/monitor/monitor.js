@@ -113,11 +113,13 @@ import { initTransports } from "./transports.module.js"
         btnSendCommand.addEventListener("click", async function (event) {
             const result = await zubax_api.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
             if (!result.success) {
+                feedbackMessage.classList.remove("success");
                 feedbackMessage.style.display = "block";
                 feedbackMessage.innerHTML = result.message;
             } else {
-                feedbackMessage.style.display = "none";
-                feedbackMessage.innerHTML = "";
+                feedbackMessage.classList.add("success");
+                feedbackMessage.style.display = "block";
+                feedbackMessage.innerHTML = result.message;
             }
 
         });

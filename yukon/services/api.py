@@ -382,7 +382,7 @@ class Api:
         composed_list = [x.to_builtin() for x in self.state.cyphal.transports_list]
         return json.dumps({"interfaces": composed_list, "hash": hash(json.dumps(composed_list, sort_keys=True))})
 
-    def send_command(self, node_id, command, text_argument):
+    def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
         send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)
         self.state.queues.send_command.put(send_command_request)
         while True:
