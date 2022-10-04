@@ -116,6 +116,9 @@ import { JsonParseHelper } from "./utils.module.js"
         });
         btnSendCommand.addEventListener("click", async function (event) {
             const result = await zubax_api.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
+            if (result.message == undefined) {
+                result.message = "No response.";
+            }
             if (!result.success) {
                 feedbackMessage.classList.remove("success");
                 feedbackMessage.style.display = "block";
