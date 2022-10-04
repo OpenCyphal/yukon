@@ -61,7 +61,7 @@ def run_electron() -> None:
 
     except FileNotFoundError as e:
         # Log the same but using lazy logging
-        logging.error(f"Could not find electron executable at %s", exe_path)
+        logging.error("Could not find electron executable at %s", exe_path)
         logging.exception(str(e))
         exit_code = 1
 
