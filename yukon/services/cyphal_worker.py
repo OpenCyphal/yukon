@@ -11,6 +11,7 @@ from pycyphal.application import make_node, NodeInfo, make_transport
 import uavcan
 import uavcan.node.ExecuteCommand_1_1
 from yukon.domain.command_send_response import CommandSendResponse
+from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 from yukon.services.api import is_configuration_simplified
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_request import UpdateRegisterRequest
@@ -19,7 +20,7 @@ from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.attach_transport_response import AttachTransportResponse
 from yukon.domain.god_state import GodState
 from yukon.services.snoop_registers import make_tracers_trackers
-from yukon.services.snoop_registers import get_register_value
+from yukon.services.snoop_registers import get_register_value, get_register_names
 from yukon.services.messages_publisher import add_local_message
 
 logger = logging.getLogger(__name__)
@@ -252,13 +253,27 @@ def cyphal_worker(state: GodState) -> None:
                         raise Exception("Didn't do anything with this configuration")
                 await asyncio.sleep(0.02)
                 if not state.queues.reread_registers.empty():
-                    request2: RereadRegistersRequest = state.queues.reread_registers.get_nowait()
-                    for pair in request2.pairs:
-                        if pair is None:
-                            continue
-                        node_id2 = int(pair)
-                        register_name2 = list(request2.pairs[pair].keys())[0]
-                        asyncio.create_task(get_register_value(state, node_id2, register_name2))
+                    try:
+                        request2: RereadRegistersRequest = state.queues.reread_registers.get_nowait()
+                        for pair in request2.pairs:
+                            if pair is None:
+                                continue
+                            node_id2 = int(pair)
+                            register_name2 = list(request2.pairs[pair].keys())[0]
+                            asyncio.create_task(get_register_value(state, node_id2, register_name2, True))
+                    except:
+                        logger.exception()
+                await asyncio.sleep(0.02)
+                if not state.queues.reread_register_names.empty():
+                    try:
+                        request: RereadRegisterNamesRequest = state.queues.reread_register_names.get_nowait()
+                        asyncio.create_task(
+                            get_register_names(
+                                state, request.node_id, state.avatar.avatars_by_node_id[request.node_id], True
+                            )
+                        )
+                    except:
+                        logger.exception()
         except Exception as e:
             logger.exception(e)
             raise e

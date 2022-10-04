@@ -26,6 +26,7 @@ from yukon.domain.god_state import GodState
 from yukon.services.get_electron_path import get_electron_path
 from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.command_send_response import CommandSendResponse
+from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
@@ -395,3 +396,8 @@ class Api:
                 break
         command_response = self.state.queues.command_response.get()
         return {"success": command_response.is_success, "message": command_response.message}
+
+    def reread_node(self, node_id: str):
+        node_id_as_int = int(node_id)
+        if node_id_as_int:
+            self.state.queues.reread_register_names.put(RereadRegisterNamesRequest(node_id_as_int))

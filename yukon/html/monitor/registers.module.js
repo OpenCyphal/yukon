@@ -557,7 +557,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
             }
             pair_div.appendChild(discard_button);
             let pair_submit = document.createElement("button");
-            pair_submit.innerHTML = "Update";
+            pair_submit.innerHTML = "Submit";
             if (is_pair_incompatible) {
                 pair_submit.disabled = true;
             }

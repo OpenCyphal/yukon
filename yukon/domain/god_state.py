@@ -25,6 +25,7 @@ from yukon.domain.note_state import NodeState
 from yukon.domain.update_register_request import UpdateRegisterRequest
 from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.command_send_response import CommandSendResponse
+from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ class QueuesState:
     update_registers: Queue[UpdateRegisterRequest] = field(default_factory=Queue)
     apply_configuration: Queue[ApplyConfigurationRequest] = field(default_factory=Queue)
     reread_registers: Queue[RereadRegistersRequest] = field(default_factory=Queue)
+    reread_register_names: Queue[RereadRegisterNamesRequest] = field(default_factory=Queue)
     detach_transport_response: Queue[str] = field(default_factory=Queue)
     send_command: Queue[CommandSendRequest] = field(default_factory=Queue)
     command_response: Queue[CommandSendResponse] = field(default_factory=Queue)

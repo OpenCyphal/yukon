@@ -43,3 +43,6 @@ export function rereadPairs(pairs, yukon_state) {
     }, 600);
     yukon_state.zubax_api.reread_registers(pairs);
 }
+export function rereadNode(integer_node_id) {
+    zubax_api.reread_node(integer_node_id)
+}

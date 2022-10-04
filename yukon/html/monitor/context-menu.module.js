@@ -1,7 +1,7 @@
 import { export_all_selected_registers, return_all_selected_registers_as_yaml, update_available_configurations_list, applyConfiguration, openFile, actionApplyConfiguration } from "./yaml.configurations.module.js";
 import { selectColumn, selectRow, getAllEntireColumnsThatAreSelected, get_all_selected_pairs, make_select_row, unselectAll, make_select_column } from "./registers.selection.module.js";
 import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./registers.module.js";
-import { rereadPairs } from "./registers.data.module.js";
+import { rereadNode, rereadPairs } from "./registers.data.module.js";
 import { downloadIcon, copyIcon, pasteIcon } from "./icons.module.js";
 import { copyObject } from "./utilities.module.js";
 import { copyTextToClipboard } from "./copy.module.js";
@@ -92,7 +92,6 @@ export function make_context_menus(yukon_state) {
                     showCellValue(node_id, register_name, yukon_state);
                 }
             },
-            shouldBeDisplayed: oneSelectedConstraint
         },
         {
             content: `${downloadIcon}Edit values`,
@@ -105,26 +104,6 @@ export function make_context_menus(yukon_state) {
             },
             shouldBeDisplayed: moreThanOneSelectedConstraint
         },
-        // {
-        //     content: `Make text unselectable`,
-        //     events: {
-        //         click: (e, elementOpenedOn) => {
-        //             yukon_state.settings.isTableCellTextSelectable = false;
-        //             document.body.appendChild(yukon_state.selectingTableCellsIsDisabledStyle);
-        //         }
-        //     },
-        //     shouldBeDisplayed: () => yukon_state.settings.isTableCellTextSelectable
-        // },
-        // {
-        //     content: `Make text selectable`,
-        //     events: {
-        //         click: (e, elementOpenedOn) => {
-        //             yukon_state.settings.isTableCellTextSelectable = true;
-        //             document.body.removeChild(yukon_state.selectingTableCellsIsDisabledStyle);
-        //         }
-        //     },
-        //     shouldBeDisplayed: () => !yukon_state.settings.isTableCellTextSelectable
-        // },
         {
             content: `${downloadIcon}Export selected registers`,
             events: {
@@ -309,8 +288,7 @@ export function make_context_menus(yukon_state) {
                 click: (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
                     const node_id = headerCell.getAttribute("data-node_id");
-                    const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": node_id, "get_everything": false, "only_of_register_name": null }, yukon_state);
-                    rereadPairs(data, yukon_state);
+                    rereadNode(parseInt(node_id))
                 }
             }
         },
