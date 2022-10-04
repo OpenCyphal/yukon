@@ -707,38 +707,53 @@ import { JsonParseHelper } from "./utils.module.js"
                 }, 1000);
             });
         }
+        let containerElementToContainerObjectMap = new WeakMap();
         myLayout.registerComponent('registersComponent', function (container, componentState) {
             registerComponentAction("../registers.panel.html", "registersComponent", container, () => {
+                const containerElement = container.getElement()[0];
+                containerElementToContainerObjectMap.set(containerElement, container);
                 setUpRegistersComponent.bind(outsideContext)(true);
             });
         });
         myLayout.registerComponent('statusComponent', function (container, componentState) {
             registerComponentAction("../status.panel.html", "statusComponent", container, () => {
+                const containerElement = container.getElement()[0];
+                containerElementToContainerObjectMap.set(containerElement, container);
                 setUpStatusComponent.bind(outsideContext)();
             });
         });
         myLayout.registerComponent('monitorComponent', function (container, componentState) {
             registerComponentAction("../monitor.panel.html", "monitorComponent", container, () => {
+                const containerElement = container.getElement()[0];
+                containerElementToContainerObjectMap.set(containerElement, container);
                 setUpMonitorComponent.bind(outsideContext)();
             });
         });
         myLayout.registerComponent('messagesComponent', function (container, componentState) {
             registerComponentAction("../messages.panel.html", "messagesComponent", container, () => {
+                const containerElement = container.getElement()[0];
+                containerElementToContainerObjectMap.set(containerElement, container);
                 setUpMessagesComponent.bind(outsideContext)(container);
             });
         });
         myLayout.registerComponent('transportsComponent', function (container, componentState) {
             registerComponentAction("../add_transport.panel.html", "transportsComponent", container, () => {
+                const containerElement = container.getElement()[0];
+                containerElementToContainerObjectMap.set(containerElement, container);
                 setUpTransportsComponent.bind(outsideContext)(container);
             });
         });
         myLayout.registerComponent("transportsListComponent", function (container, componentState) {
             registerComponentAction("../transports_list.panel.html", "transportsListComponent", container, () => {
+                const containerElement = container.getElement()[0];
+                containerElementToContainerObjectMap.set(containerElement, container);
                 setUpTransportsListComponent.bind(outsideContext)();
             });
         });
         myLayout.registerComponent("commandsComponent", function (container, componentState) {
             registerComponentAction("../commands.panel.html", "transportsListComponent", container, () => {
+                const containerElement = container.getElement()[0];
+                containerElementToContainerObjectMap.set(containerElement, container);
                 setUpCommandsComponent.bind(outsideContext)(container);
             });
         });
@@ -829,13 +844,68 @@ import { JsonParseHelper } from "./utils.module.js"
             console.log("Window blurred");
             yukon_state.pressedKeys[18] = false;
         });
+        var mousePos;
 
+        document.onmousemove = handleMouseMove;
+
+        function handleMouseMove(event) {
+            var dot, eventDoc, doc, body, pageX, pageY;
+
+            event = event || window.event; // IE-ism
+
+            // If pageX/Y aren't available and clientX/Y are,
+            // calculate pageX/Y - logic taken from jQuery.
+            // (This is to support old IE)
+            if (event.pageX == null && event.clientX != null) {
+                eventDoc = (event.target && event.target.ownerDocument) || document;
+                doc = eventDoc.documentElement;
+                body = eventDoc.body;
+
+                event.pageX = event.clientX +
+                    (doc && doc.scrollLeft || body && body.scrollLeft || 0) -
+                    (doc && doc.clientLeft || body && body.clientLeft || 0);
+                event.pageY = event.clientY +
+                    (doc && doc.scrollTop || body && body.scrollTop || 0) -
+                    (doc && doc.clientTop || body && body.clientTop || 0);
+            }
+
+            mousePos = {
+                x: event.pageX,
+                y: event.pageY
+            };
+        }
         window.onkeydown = function (e) {
             // If alt tab was pressed return
             yukon_state.pressedKeys[e.keyCode] = true;
             // If ctrl a was pressed, select all
             if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[65]) {
                 selectAll(yukon_state);
+                e.preventDefault();
+            }
+            // If ctrl space was pressed, toggle maximize-minimize of the currently hovered over ContentItem
+            if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[32]) {
+                const elementOn = document.elementFromPoint(mousePos.x, mousePos.y);
+                if (elementOn == null) {
+                    return;
+                }
+                // Start navigating up through parents (ancestors) of elementOn, until one of the parents has the class lm_content
+                let currentElement = elementOn
+                while (elementOn != document.body) {
+                    if (currentElement.parentElement == null) {
+                        return;
+                    }
+                    if (currentElement.classList.contains("lm_content")) {
+                        break;
+                    } else {
+                        currentElement = currentElement.parentElement;
+                    }
+                }
+                // Now we need every initialization of a panel to keep adding to a global dictionary where they have keys as the actual html element and the value is the golden-layout object
+                let containerObject = null;
+                if (containerElementToContainerObjectMap.has(currentElement)) {
+                    containerObject = containerElementToContainerObjectMap.get(currentElement);
+                }
+                containerObject.parent.parent.toggleMaximise();
                 e.preventDefault();
             }
             // If F5 is pressed, reread registers
