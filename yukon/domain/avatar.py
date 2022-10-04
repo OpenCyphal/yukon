@@ -289,7 +289,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             "registers": list(self._register_set),
             "registers_values": self.register_values,
             "registers_exploded_values": self.register_exploded_values,
-            "registers_hash": hash(frozenset(self.register_exploded_values)),
+            "registers_hash": hash(json.dumps(self.register_exploded_values, sort_keys=True)),
         }
         return json_object
 
