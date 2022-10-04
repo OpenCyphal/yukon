@@ -262,18 +262,21 @@ def cyphal_worker(state: GodState) -> None:
                             register_name2 = list(request2.pairs[pair].keys())[0]
                             asyncio.create_task(get_register_value(state, node_id2, register_name2, True))
                     except:
-                        logger.exception()
+                        logger.exception("Reread register values failed")
                 await asyncio.sleep(0.02)
                 if not state.queues.reread_register_names.empty():
                     try:
-                        request: RereadRegisterNamesRequest = state.queues.reread_register_names.get_nowait()
+                        names_request: RereadRegisterNamesRequest = state.queues.reread_register_names.get_nowait()
                         asyncio.create_task(
                             get_register_names(
-                                state, request.node_id, state.avatar.avatars_by_node_id[request.node_id], True
+                                state,
+                                names_request.node_id,
+                                state.avatar.avatars_by_node_id[names_request.node_id],
+                                True,
                             )
                         )
                     except:
-                        logger.exception()
+                        logger.exception("Reread register names failed")
         except Exception as e:
             logger.exception(e)
             raise e
