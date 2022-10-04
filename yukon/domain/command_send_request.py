@@ -5,11 +5,9 @@ class CommandSendRequest:
         self.text_argument = text_argument
 
     def __str__(self) -> str:
-        return (
-            "A command to "
-            + str(self.node_id)
-            + ", the command is "
-            + str(self.command_id)
-            + " and the argument is "
-            + self.text_argument
-        )
+        command_string = "Command: " + str(self.command_id) + " destination to: " + str(self.node_id)
+        if self.text_argument and self.text_argument != "":
+            command_string += " argument: " + self.text_argument
+        else:
+            command_string += " with no arguments"
+        return command_string

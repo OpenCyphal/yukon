@@ -116,6 +116,9 @@ import { JsonParseHelper } from "./utils.module.js"
         });
         btnSendCommand.addEventListener("click", async function (event) {
             const result = await zubax_api.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
+            if (result.message == undefined) {
+                result.message = "No response.";
+            }
             if (!result.success) {
                 feedbackMessage.classList.remove("success");
                 feedbackMessage.style.display = "block";
@@ -133,6 +136,10 @@ import { JsonParseHelper } from "./utils.module.js"
             await update_avatars_dto();
             var table_body = document.querySelector('#avatars_table tbody');
             table_body.innerHTML = "";
+            if (yukon_state.current_avatars.length == 0) {
+                table_body.innerHTML = "No data, connect a transport from the panel on the right side."
+                return;
+            }
             // Take every avatar from yukon_state.current_avatars and make a row in the table
             for (var i = 0; i < yukon_state.current_avatars.length; i++) {
                 const row = table_body.insertRow(i);
@@ -251,19 +258,24 @@ import { JsonParseHelper } from "./utils.module.js"
         });
     }
     async function setUpMessagesComponent(container) {
+
         const containerElement = container.getElement()[0];
         var messagesList = document.querySelector("#messages-list");
         const optionsPanel = await waitForElm(".options-panel");
+        function setDisplayState() {
+            if (containerElement.getAttribute("data-isexpanded")) {
+                optionsPanel.style.display = "block";
+            } else {
+                optionsPanel.style.display = "none";
+            }
+        }
+        setDisplayState();
         const observer = new MutationObserver(function (mutations) {
             mutations.forEach(function (mutation) {
                 if (mutation.type === "attributes") {
                     if (mutation.attributeName === "data-isexpanded") {
                         // Toggle visibility of options panel
-                        if (optionsPanel.style.display === "none") {
-                            optionsPanel.style.display = "block";
-                        } else {
-                            optionsPanel.style.display = "none";
-                        }
+                        setDisplayState();
                     }
                 }
             });

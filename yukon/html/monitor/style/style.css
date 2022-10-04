@@ -8,7 +8,7 @@
     display: block;
     list-style: none;
     height: auto;
-    width: 99%;
+    width: 100%;
     resize: none;
     border: none;
     height: content-box;
@@ -69,10 +69,6 @@ textarea#textOut {
 
 .options-panel {
     display: block;
-}
-
-.options-panel div {
-    margin-right: 1em;
 }
 
 .option {
