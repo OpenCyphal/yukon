@@ -1,5 +1,6 @@
 import { secondsToString } from "./utilities.module.js";
 import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
+import { meanings, getConfiguredSubjectServiceName } from "./meanings.module.js";
 export function create_directed_graph(yukon_state) {
     cytoscape.use(cytoscapeKlay);
     let my_graph = cytoscape({
@@ -75,6 +76,19 @@ export function create_directed_graph(yukon_state) {
             // Create a label with the avatar's name
             const assembled_text = avatar.name + " (" + avatar.node_id + ")" + "<br>" + secondsToString(avatar.last_heartbeat.uptime) + "<br>" + avatar.last_heartbeat.health_text + " (" + avatar.last_heartbeat.health + ")";
             createMonitorPopup(assembled_text, yukon_state);
+            return;
+        }
+        const possibleAvailableMeaning = meanings[parseInt(node.id())];
+        if (possibleAvailableMeaning) {
+            const assembled_text = possibleAvailableMeaning;
+            createMonitorPopup(assembled_text, yukon_state);
+            return;
+        }
+        const possibleAvailableConfiguredMeaning = getConfiguredSubjectServiceName(parseInt(node.id()), yukon_state);
+        if (possibleAvailableConfiguredMeaning) {
+            const assembled_text = possibleAvailableConfiguredMeaning;
+            createMonitorPopup(assembled_text, yukon_state);
+            return;
         }
     });
     my_graph.on('mouseout', 'node', function (evt) {
