@@ -3,6 +3,7 @@ import webbrowser
 from typing import Optional, Any
 import os
 import sys
+from pathlib import Path
 import asyncio
 import logging
 from time import sleep, monotonic
@@ -31,6 +32,12 @@ paths = sys.path
 logger = logging.getLogger()
 logger.setLevel("INFO")
 
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    root_path = sys._MEIPASS  # type: ignore # pylint: disable=protected-access
+else:
+    print("running in a normal Python process")
+    root_path = os.path.dirname(os.path.abspath(__file__))
+
 
 def run_electron() -> None:
     # Make the thread sleep for 1 second waiting for the server to start
@@ -39,8 +46,9 @@ def run_electron() -> None:
     # Use subprocess to run the exe
     try:
         # Keeping reading the stdout and stderr, look for the string electron: symbol lookup error
+        print(root_path)
         with subprocess.Popen(
-            [exe_path, "http://localhost:5000/monitor/monitor.html"],
+            [exe_path, Path(root_path) / "electron/main.js"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
