@@ -6,7 +6,7 @@ export async function applyConfiguration(configuration, set_node_id, applyPairs,
     // If configuration starts with a { then it is json
     let configuration_deserialized = null;
     if (configuration.startsWith("{")) {
-        configuration_deserialized = JSON.parse(configuration);
+        configuration_deserialized = JSON.parse(configuration, JsonParseHelper);
     } else {
         configuration_deserialized = yukon_state.jsyaml.load(configuration);
     }
@@ -128,7 +128,7 @@ export async function openFile(yukon_state) {
                 }
             }
         } else {
-            return await JSON.parse(yukon_state.zubax_api.open_file_dialog());
+            return await JSON.parse(yukon_state.zubax_api.open_file_dialog(), JsonParseHelper);
         }
     } catch (e) {
         yukon_state.addLocalMessage("Error opening file: " + e);
@@ -154,14 +154,14 @@ export async function return_all_selected_registers_as_yaml(pairs, yukon_state) 
     var yaml_string = jsyaml.dump(pairs_object, { flowLevel: required_flow_level });
     if (yukon_state.settings.simplifyRegisters) {
         const simplified_json_string = await zubax_api.simplify_configuration(json_string)
-        let intermediary_structure = JSON.parse(simplified_json_string);
+        let intermediary_structure = JSON.parse(simplified_json_string, JsonParseHelper);
         if (contains_single_node && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
             intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
         }
         const simplified_yaml_string = jsyaml.dump(intermediary_structure, { flowLevel: required_flow_level });
         return parseYamlStringsToNumbers(simplified_yaml_string);
     } else {
-        let intermediary_structure = JSON.parse(yaml_string);
+        let intermediary_structure = JSON.parse(yaml_string, JsonParseHelper);
         if (contains_single_node && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
             intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
         }

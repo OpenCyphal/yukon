@@ -1,0 +1,29 @@
+<div class="container" id="CommandsDiv">
+    <label for="iNodeId">Node id for the command to be executed on</label>
+    <input type="number" id="iNodeId">
+    <label for="iCommandId">Command id (Also possible to select below)</label>
+    <input type="command" id="iCommandId" placeholder="65535">
+    <label for="sCommands">Select command</label>
+    <select name="commands" id="sCommands">
+        <option value="COMMAND_RESTART" data-command-id="65535" data-has-arguments="false">COMMAND_RESTART</option>
+        <option value="COMMAND_POWER_OFF" data-command-id="65534" data-has-arguments="false">COMMAND_POWER_OFF</option>
+        <option value="COMMAND_BEGIN_SOFTWARE_UPDATE " data-command-id="65533" data-has-arguments="true">
+            COMMAND_BEGIN_SOFTWARE_UPDATE</option>
+        <option value="COMMAND_FACTORY_RESET" data-command-id="65532" data-has-arguments="false">COMMAND_FACTORY_RESET
+        </option>
+        <option value="COMMAND_EMERGENCY_STOP" data-command-id="65531" data-has-arguments="false">COMMAND_EMERGENCY_STOP
+        </option>
+        <option value="COMMAND_STORE_PERSISTENT_STATES" data-command-id="65530" data-has-arguments="false">
+            COMMAND_STORE_PERSISTENT_STATES</option>
+        <option disabled>–––TELEGA SPECIFIC–––</option>
+        <option value="CancelCommand" data-command-id="1" data-has-arguments="false">CancelCommand</option>
+        <option value="MotorIDCommand" data-command-id="2" data-has-arguments="false">MotorIDCommand</option>
+        <option value="SelfTestCommand" data-command-id="3" data-has-arguments="false">SelfTestCommand</option>
+        <option value="DriveCommand" data-command-id="4" data-has-arguments="true">DriveCommand</option>
+    </select>
+    <label for="iCommandArgument">A text argument for the command
+    </label>
+    <input type="text" id="iCommandArgument">
+    <button id="btnSendCommand">Send command</button>
+    <div id="feedback-message" class="feedback-message">Hello here, you should've done a few things differently</div>
+</div>

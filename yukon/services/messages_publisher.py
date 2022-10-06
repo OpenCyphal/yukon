@@ -38,7 +38,15 @@ class MessagesPublisher(logging.Handler):
         if self._state.gui.message_severity:
             if record.levelno < get_level_no(self._state.gui.message_severity):
                 return
-        new_message = Message(record.getMessage(), record.created, self._state.queues.message_queue_counter)
+        new_message = Message(
+            record.getMessage(),
+            record.created,
+            self._state.queues.message_queue_counter,
+            False,
+            [],
+            severity_number=record.levelno,
+            severity_text=record.levelname,
+        )
         self._state.queues.messages.put(new_message)
 
 

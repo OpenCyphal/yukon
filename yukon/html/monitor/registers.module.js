@@ -299,6 +299,10 @@ export function create_registers_table(_filter_keyword_inclusive, yukon_state) {
     const filter_keyword_inclusive = _filter_keyword_inclusive || iRegistersFilter.value;
     var registers_table = document.querySelector('#registers_table')
     registers_table.innerHTML = '';
+    if (yukon_state.current_avatars.length == 0) {
+        registers_table.innerHTML = "An empty table, no data, maybe connect a transport (interface) from the panel on the right side."
+        return;
+    }
     var registers_table_body = document.createElement('tbody');
     registers_table.appendChild(registers_table_body);
     var registers_table_header = document.createElement('thead');
@@ -553,7 +557,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
             }
             pair_div.appendChild(discard_button);
             let pair_submit = document.createElement("button");
-            pair_submit.innerHTML = "Update";
+            pair_submit.innerHTML = "Submit";
             if (is_pair_incompatible) {
                 pair_submit.disabled = true;
             }

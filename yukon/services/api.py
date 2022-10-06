@@ -24,6 +24,9 @@ from yukon.domain.avatar import Avatar
 from yukon.services.value_utils import unexplode_value, explode_value
 from yukon.domain.god_state import GodState
 from yukon.services.get_electron_path import get_electron_path
+from yukon.domain.command_send_request import CommandSendRequest
+from yukon.domain.command_send_response import CommandSendResponse
+from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
@@ -362,7 +365,10 @@ class Api:
                 elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
                     avatar_list.remove(avatar)
         return_string = json.dumps(avatar_dto)
-        return_string = return_string.replace("Infinity", "0")
+        return_string = return_string.replace("Infinity", '"Infinity"')
+        return_string = return_string.replace("-Infinity", '"-Infinity"')
+        return_string = return_string.replace("NaN", '"NaN"')
+        return_string = return_string.replace("-NaN", '"-NaN"')
         return return_string
 
     def set_log_level(self, severity: str) -> None:
@@ -380,3 +386,19 @@ class Api:
     def get_connected_transport_interfaces(self) -> str:
         composed_list = [x.to_builtin() for x in self.state.cyphal.transports_list]
         return json.dumps({"interfaces": composed_list, "hash": hash(json.dumps(composed_list, sort_keys=True))})
+
+    def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
+        send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)
+        self.state.queues.send_command.put(send_command_request)
+        while True:
+            if self.state.queues.command_response.empty():
+                sleep(0.1)
+            else:
+                break
+        command_response = self.state.queues.command_response.get()
+        return {"success": command_response.is_success, "message": command_response.message}
+
+    def reread_node(self, node_id: str) -> None:
+        node_id_as_int = int(node_id)
+        if node_id_as_int:
+            self.state.queues.reread_register_names.put(RereadRegisterNamesRequest(node_id_as_int))
