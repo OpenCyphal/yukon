@@ -21,7 +21,7 @@ class FaultyTransport(pycyphal.transport.Transport):
         self._faulty = False
 
     @property
-    def faulty(self) -> None:
+    def faulty(self) -> typing.Any:
         return self._faulty
 
     @faulty.setter
@@ -48,33 +48,33 @@ class FaultyTransport(pycyphal.transport.Transport):
         self.inner.close()
 
     @property
-    def inner(self) -> pycyphal.transport.Transport:
+    def inner(self) -> typing.Any:
         return self._inner
 
     @property
-    def protocol_parameters(self) -> ProtocolParameters:
+    def protocol_parameters(self) -> typing.Any:
         return self._inner.protocol_parameters
 
     @property
-    def local_node_id(self) -> Optional[int]:
+    def local_node_id(self) -> typing.Any:
         return self._inner.local_node_id
 
     @property
-    def input_sessions(self) -> Sequence[InputSession]:
+    def input_sessions(self) -> typing.Any:
         return self._inner.input_sessions
 
     @property
-    def output_sessions(self) -> Sequence[OutputSession]:
+    def output_sessions(self) -> typing.Any:
         return self._inner.output_sessions
 
     @property
-    def capture_active(self) -> bool:
+    def capture_active(self) -> typing.Any:
         return self._inner.capture_active
 
-    async def spoof(self, transfer: AlienTransfer, monotonic_deadline: float) -> bool:
+    async def spoof(self, transfer: AlienTransfer, monotonic_deadline: float) -> typing.Any:
         return await self._inner.spoof(transfer, monotonic_deadline)
 
-    def _get_repr_fields(self) -> typing.Tuple[typing.List[typing.Any], typing.Dict[str, typing.Any]]:
+    def _get_repr_fields(self) -> typing.Any:
         return self._inner._get_repr_fields()
 
     def begin_capture(self, handler: CaptureCallback) -> None:
@@ -92,7 +92,7 @@ import random
 
 
 class FaultySession:
-    def should_fail(self):
+    def should_fail(self) -> bool:
         return random.choice([True, False])
 
 
@@ -121,7 +121,7 @@ class FaultyInputSession(InputSession, FaultySession):
         return self._inner.payload_metadata
 
     @property
-    def transfer_id_timeout(self) -> float:
+    def transfer_id_timeout(self) -> typing.Any:
         return self._inner.transfer_id_timeout
 
 
@@ -137,7 +137,7 @@ class FaultyOutputSession(OutputSession, FaultySession):
     def sample_statistics(self) -> TransportStatistics:
         raise NotImplementedError
 
-    async def send(self, transfer: Transfer, monotonic_deadline: float) -> bool:
+    async def send(self, transfer: Transfer, monotonic_deadline: float) -> typing.Any:
         if self.should_fail():
             raise Exception("The transport is closed")
         return await self._inner.send(transfer, monotonic_deadline)
@@ -150,11 +150,11 @@ class FaultyOutputSession(OutputSession, FaultySession):
         return self._inner.payload_metadata
 
     @property
-    def transfer_id_timeout(self) -> float:
+    def transfer_id_timeout(self) -> typing.Any:
         return self._inner.transfer_id_timeout
 
-    def disable_feedback(self) -> None:
+    def disable_feedback(self) -> typing.Any:
         return self._inner.disable_feedback()
 
-    def enable_feedback(self) -> None:
+    def enable_feedback(self) -> typing.Any:
         return self._inner.enable_feedback()
