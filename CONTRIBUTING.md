@@ -32,6 +32,11 @@
     python yukon/__main__.py
     ```
 
+* Prepare the sirius_cyber_corp namespace for using demos and tests
+    ```batch
+    yakut compile -O.compiled demos/sirius_cyber_corp
+    ```
+
 # Contributing
 1. Fork the repository
 2. Make your changes

@@ -72,7 +72,7 @@ class FaultyTransport(pycyphal.transport.Transport):
         return self._inner.capture_active
 
     async def spoof(self, transfer: AlienTransfer, monotonic_deadline: float) -> bool:
-        return self._inner.spoof(transfer, monotonic_deadline)
+        return await self._inner.spoof(transfer, monotonic_deadline)
 
     def _get_repr_fields(self) -> typing.Tuple[typing.List[typing.Any], typing.Dict[str, typing.Any]]:
         return self._inner._get_repr_fields()
@@ -109,7 +109,7 @@ class FaultyInputSession(InputSession, FaultySession):
 
     def receive(self, deadline: float) -> pycyphal.transport.Transfer:
         if self.should_fail():
-            raise pycyphal.transport.ResourceClosedError("The transport is closed")
+            raise Exception("The transport is closed")
         else:
             return self._inner.receive(deadline)
 
@@ -122,7 +122,7 @@ class FaultyInputSession(InputSession, FaultySession):
 
     @property
     def transfer_id_timeout(self) -> float:
-        return self._inner.transfer_id_timeout()
+        return self._inner.transfer_id_timeout
 
 
 class FaultyOutputSession(OutputSession, FaultySession):
@@ -139,8 +139,8 @@ class FaultyOutputSession(OutputSession, FaultySession):
 
     async def send(self, transfer: Transfer, monotonic_deadline: float) -> bool:
         if self.should_fail():
-            raise pycyphal.transport.ResourceClosedError("The transport is closed")
-        return self._inner.send(transfer, monotonic_deadline)
+            raise Exception("The transport is closed")
+        return await self._inner.send(transfer, monotonic_deadline)
 
     def close(self) -> None:
         self._inner.close()
@@ -151,7 +151,7 @@ class FaultyOutputSession(OutputSession, FaultySession):
 
     @property
     def transfer_id_timeout(self) -> float:
-        return self._inner.transfer_id_timeout()
+        return self._inner.transfer_id_timeout
 
     def disable_feedback(self) -> None:
         return self._inner.disable_feedback()

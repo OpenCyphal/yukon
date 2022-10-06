@@ -63,7 +63,7 @@ class DemoApp:
         # Create an RPC-server. The service-ID is read from standard register "uavcan.srv.least_squares.id".
         # This service is optional: if the service-ID is not specified, we simply don't provide it.
         try:
-            srv_least_sq = self._node.get_server(sirius_cyber_corp.PerformLinearLeastSquaresFit_1, "least_squares")
+            srv_least_sq = self._node.get_server(sirius_cyber_corp.PerformLinearLeastSquaresFit_1_0, "least_squares")
             srv_least_sq.serve_in_background(self._serve_linear_least_squares)
         except pycyphal.application.register.MissingRegisterError:
             logging.info("The least squares service is disabled by configuration")
@@ -77,9 +77,9 @@ class DemoApp:
 
     @staticmethod
     async def _serve_linear_least_squares(
-        request: sirius_cyber_corp.PerformLinearLeastSquaresFit_1.Request,
+        request: sirius_cyber_corp.PerformLinearLeastSquaresFit_1_0.Request,
         metadata: pycyphal.presentation.ServiceRequestMetadata,
-    ) -> sirius_cyber_corp.PerformLinearLeastSquaresFit_1.Response:
+    ) -> sirius_cyber_corp.PerformLinearLeastSquaresFit_1_0.Response:
         logging.info("Least squares request %s from node %d", request, metadata.client_node_id)
         sum_x = sum(map(lambda p: p.x, request.points))  # type: ignore
         sum_y = sum(map(lambda p: p.y, request.points))  # type: ignore
@@ -91,7 +91,7 @@ class DemoApp:
         except ZeroDivisionError:
             slope = float("nan")
             y_intercept = float("nan")
-        return sirius_cyber_corp.PerformLinearLeastSquaresFit_1.Response(slope=slope, y_intercept=y_intercept)
+        return sirius_cyber_corp.PerformLinearLeastSquaresFit_1_0.Response(slope=slope, y_intercept=y_intercept)
 
     @staticmethod
     async def _serve_execute_command(
