@@ -364,16 +364,7 @@ class Api:
                     avatar_list.remove(avatar)
                 elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
                     avatar_list.remove(avatar)
-        return_string = json.dumps(avatar_dto)
-        return_string = return_string.replace(":-Infinity", ':"-Infinity"')
-        return_string = return_string.replace(": -Infinity", ': "-Infinity"')
-        return_string = return_string.replace(":Infinity", ':"Infinity"')
-        return_string = return_string.replace(": Infinity", ': "Infinity"')
-        return_string = return_string.replace(":-NaN", ':"-NaN"')
-        return_string = return_string.replace(": -NaN", ': "-NaN"')
-        return_string = return_string.replace(":NaN", ':"NaN"')
-        return_string = return_string.replace(": NaN", ': "NaN"')
-        
+        return_string = json.dumps(avatar_dto, cls=EnhancedJSONEncoder)
         return return_string
 
     def set_log_level(self, severity: str) -> None:
