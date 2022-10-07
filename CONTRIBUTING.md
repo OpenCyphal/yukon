@@ -31,7 +31,10 @@
     set IS_DEBUG=1
     python yukon/__main__.py
     ```
-
+* Build the application for your current OS and obtain ElectronJS (to run in ElectronJS)
+    ```
+    python build_exe.py
+    ```
 # Contributing
 1. Fork the repository
 2. Make your changes
