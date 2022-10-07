@@ -435,7 +435,7 @@ import { JsonParseHelper } from "./utils.module.js"
 
                             var iAutoscrollFilter = document.getElementById("iAutoscrollFilter");
                             if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
-                                messagesList.scrollTop = messagesList.scrollHeight;
+                                containerElement.scrollTop = containerElement.scrollHeight;
                             }
                             lastIndex = el.index;
                         }
