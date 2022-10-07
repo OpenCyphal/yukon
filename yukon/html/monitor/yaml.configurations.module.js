@@ -1,6 +1,7 @@
 import { get_all_selected_pairs, select_configuration, getAllEntireColumnsThatAreSelected } from "./registers.selection.module.js";
 import { update_tables, updateRegistersTableColors } from "./registers.module.js";
 import { copyObject } from "./utilities.module.js";
+import { JsonParseHelper } from "./utils.module.js";
 export async function applyConfiguration(configuration, set_node_id, applyPairs, yukon_state) {
     let zubax_api = yukon_state.zubax_api;
     // If configuration starts with a { then it is json

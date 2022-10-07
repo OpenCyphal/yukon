@@ -298,6 +298,7 @@ class Api:
         interface = Interface()
         interface.udp_iface = udp_iface
         interface.udp_mtu = int(udp_mtu)
+        interface.is_udp = True
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         self.state.queues.attach_transport.put(atr)
         while True:
