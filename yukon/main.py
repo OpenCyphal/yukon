@@ -43,7 +43,8 @@ else:
 
 def run_electron(state: GodState) -> None:
     # Make the thread sleep for 1 second waiting for the server to start
-    sleep(1)
+    while not state.gui.is_port_decided:
+        sleep(1)
     exe_path = get_electron_path()
     # Use subprocess to run the exe
     try:
@@ -87,6 +88,8 @@ def run_electron(state: GodState) -> None:
 
 
 def open_webbrowser(state: GodState) -> None:
+    while not state.gui.is_port_decided:
+        sleep(1)
     webbrowser.open(f"http://localhost:{state.gui.server_port}/main/main.html")
 
 
@@ -102,6 +105,7 @@ def run_server(state: GodState) -> None:
         if not is_port_available:
             state.gui.server_port += 1
             continue
+        state.gui.is_port_decided = True
         try:
             server.run(host="0.0.0.0", port=state.gui.server_port)
         except:

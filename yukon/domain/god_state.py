@@ -60,6 +60,7 @@ class GuiState:
     last_poll_received: float = 0.0
     message_severity: str = "DEBUG"
     server_port: int = 5000
+    is_port_decided: bool = False
 
 
 @dataclass
