@@ -1,0 +1,154 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+}
+
+.noselect * {
+    -webkit-touch-callout: none;
+    /* iOS Safari */
+    -webkit-user-select: none;
+    /* Safari */
+    -khtml-user-select: none;
+    /* Konqueror HTML */
+    -moz-user-select: none;
+    /* Old versions of Firefox */
+    -ms-user-select: none;
+    /* Internet Explorer/Edge */
+    user-select: none;
+    /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}
+
+form#transport-selection-form {
+    display: block;
+    max-width: 800px;
+    margin: 0.5em;
+    margin-right: 0.8em;
+    padding: 0.5em;
+    padding-right: 1em;
+}
+
+form#transport-selection-form>div {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+form#transport-selection-form>div>label {
+    display: block;
+    margin-bottom: 0.5em;
+}
+
+form#transport-selection-form>div>label.inline {
+    display: inline-block;
+    margin-bottom: 0.5em;
+}
+
+form#transport-selection-form>div>input[type=number],
+input[type=text] {
+    display: block;
+    width: 100%;
+    padding: 4px;
+}
+
+#sTransport {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.5em;
+    padding: 4px;
+}
+
+.left-right-panel {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+#messages {
+    flex-grow: 10;
+}
+
+.is-danger {
+    background-color: #C35404;
+}
+
+.is-danger::placeholder {
+    color: #ffffff;
+    opacity: 1;
+}
+
+.choice-inline-label {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.choice-inline-label>label.surrounding-label {
+    margin-right: 0.5em;
+    margin-left: 0.5em;
+    display: inline-block !important;
+}
+
+form#transport-selection-form>#maybe-tabs>div.tab-row {
+    overflow: hidden;
+    position: relative;
+    /* Making it an anchor point for tab-slider */
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    height: 33px;
+}
+
+form#transport-selection-form>#maybe-tabs label {
+    display: inline !important;
+    height: 100%;
+    flex-grow: 3;
+    padding: 0.5em;
+    background-color: #cfcfcf;
+}
+
+form#transport-selection-form>#maybe-tabs label.selected-tab {
+    background-color: #ee0000;
+    border-bottom: 5px solid #ee0000;
+    color: #fff;
+    z-index: 1;
+}
+
+form#transport-selection-form>#maybe-tabs input {
+    margin: 0;
+    padding: 0;
+    width: 0;
+    height: 0;
+    visibility: hidden;
+}
+
+form#transport-selection-form>#maybe-tabs .tab-slider {
+    position: absolute;
+    background-color: #ee0000;
+}
+
+.feedback-message {
+    margin: 0.5em;
+    padding: 0.5em;
+    border: 1px solid red;
+    background-color: rgba(255, 0, 0, 0.165);
+    color: black;
+    display: none;
+}
+
+.feedback-message.success {
+    margin: 0.5em;
+    padding: 0.5em;
+    border: 1px solid rgb(0, 60, 255);
+    background-color: rgba(0, 60, 255, 0.165);
+    color: black;
+    display: none;
+}

@@ -23,6 +23,9 @@ from yukon.domain.avatar import Avatar
 from yukon.domain.interface import Interface
 from yukon.domain.note_state import NodeState
 from yukon.domain.update_register_request import UpdateRegisterRequest
+from yukon.domain.command_send_request import CommandSendRequest
+from yukon.domain.command_send_response import CommandSendResponse
+from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +42,14 @@ class QueuesState:
     messages: Queue[Message] = field(default_factory=Queue)
     attach_transport_response: Queue[str] = field(default_factory=Queue)
     attach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
-    detach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
+    detach_transport: Queue[int] = field(default_factory=Queue)
     update_registers: Queue[UpdateRegisterRequest] = field(default_factory=Queue)
     apply_configuration: Queue[ApplyConfigurationRequest] = field(default_factory=Queue)
     reread_registers: Queue[RereadRegistersRequest] = field(default_factory=Queue)
+    reread_register_names: Queue[RereadRegisterNamesRequest] = field(default_factory=Queue)
+    detach_transport_response: Queue[str] = field(default_factory=Queue)
+    send_command: Queue[CommandSendRequest] = field(default_factory=Queue)
+    command_response: Queue[CommandSendResponse] = field(default_factory=Queue)
 
 
 @dataclass
@@ -50,6 +57,10 @@ class GuiState:
     """A class that holds all GUI references used by the god state."""
 
     gui_running: bool = True
+    last_poll_received: float = 0.0
+    message_severity: str = "DEBUG"
+    server_port: int = 5000
+    is_port_decided: bool = False
 
 
 @dataclass
@@ -69,6 +80,9 @@ class CyphalState:
     add_transport: Optional[Callable[[Interface], None]] = field(default_factory=none_factory)
     known_node_states: list[NodeState] = field(default_factory=list)
     allocation_subscriber: Optional[pycyphal.presentation.Subscriber] = field(default_factory=none_factory)
+    transports_list: typing.List[Interface] = field(default_factory=list)
+    inferior_transports_by_interface_hashes: Dict[int, Interface] = field(default_factory=dict)
+    already_used_transport_interfaces: Dict[str, int] = field(default_factory=dict)
 
 
 @dataclass
@@ -78,6 +92,7 @@ class AvatarState:
     avatars_by_hw_id: Dict[int, Avatar] = field(default_factory=dict)
     avatars_lock: threading.RLock = field(default_factory=threading.RLock)
     current_graph_lock: threading.RLock = field(default_factory=threading.RLock)
+    disappeared_nodes: Dict[int, bool] = field(default_factory=dict)
 
 
 class GodState:

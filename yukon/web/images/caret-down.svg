@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="130"
+   height="130"
+   viewBox="0 0 34.395835 34.395834"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   sodipodi:docname="carets.svg"
+   inkscape:export-filename="carets2.png"
+   inkscape:export-xdpi="94.523079"
+   inkscape:export-ydpi="94.523079"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="true"
+     inkscape:zoom="7.319248"
+     inkscape:cx="1.7761388"
+     inkscape:cy="76.920471"
+     inkscape:window-width="3840"
+     inkscape:window-height="2066"
+     inkscape:window-x="2869"
+     inkscape:window-y="-11"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid9"
+       originx="0"
+       originy="0"
+       spacingx="0.13229167"
+       spacingy="0.13229167" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="display:inline;fill:#000000;stroke-width:0.264583"
+       d="M 33.072916,7.9375018 17.197917,26.458332 1.3229166,7.9375018 4.6302084,7.9375002 17.197917,22.489583 29.765626,7.9375002 l 3.30729,1.6e-6"
+       id="path323"
+       sodipodi:nodetypes="ccccccc" />
+    <path
+       style="display:none;fill:#000000;stroke-width:0.264583"
+       d="M 33.072916,26.458333 17.197917,7.9375 1.3229166,26.458333 l 3.3072919,1e-6 12.5677085,-14.552084 12.567709,14.552084 3.30729,-1e-6"
+       id="path171"
+       sodipodi:nodetypes="ccccccc"
+       inkscape:label="path171" />
+  </g>
+</svg>

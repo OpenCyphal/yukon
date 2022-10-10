@@ -9,6 +9,9 @@ import platform
 from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
+import uavcan.node.ExecuteCommand_1_1
+from yukon.domain.command_send_response import CommandSendResponse
+from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 from yukon.services.api import is_configuration_simplified
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_request import UpdateRegisterRequest
@@ -17,7 +20,7 @@ from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.attach_transport_response import AttachTransportResponse
 from yukon.domain.god_state import GodState
 from yukon.services.snoop_registers import make_tracers_trackers
-from yukon.services.snoop_registers import get_register_value
+from yukon.services.snoop_registers import get_register_value, get_register_names
 from yukon.services.messages_publisher import add_local_message
 
 logger = logging.getLogger(__name__)
@@ -44,10 +47,24 @@ def cyphal_worker(state: GodState) -> None:
                 if not state.queues.attach_transport.empty():
                     try:
                         atr: AttachTransportRequest = state.queues.attach_transport.get_nowait()
+                        if atr.requested_interface.is_udp:
+                            if state.cyphal.already_used_transport_interfaces.get(atr.requested_interface.udp_iface):
+                                raise Exception("Interface already in use")
+                        else:
+                            if state.cyphal.already_used_transport_interfaces.get(atr.requested_interface.iface):
+                                raise Exception("Interface already in use")
                         new_transport = make_transport(atr.get_registry())
+                        state.cyphal.inferior_transports_by_interface_hashes[
+                            str(hash(atr.requested_interface))
+                        ] = new_transport
                         state.cyphal.pseudo_transport.attach_inferior(new_transport)
                         attach_transport_response = AttachTransportResponse(True, atr.requested_interface.iface)
+                        state.cyphal.transports_list.append(atr.requested_interface)
                         state.queues.attach_transport_response.put(attach_transport_response)
+                        if atr.requested_interface.is_udp:
+                            state.cyphal.already_used_transport_interfaces[atr.requested_interface.udp_iface] = True
+                        else:
+                            state.cyphal.already_used_transport_interfaces[atr.requested_interface.iface] = True
                         print("Added a new interface")
                     except PermissionError as pe:
                         tb = traceback.format_exc()
@@ -68,18 +85,83 @@ def cyphal_worker(state: GodState) -> None:
                                 )
                                 ws.withdraw()
                                 ws.destroy()
+                        attach_transport_response = AttachTransportResponse(False, tb, str(pe))
+                        state.queues.attach_transport_response.put(attach_transport_response)
                     except Exception as e:
                         tb = traceback.format_exc()
-                    else:
-                        tb = "Attached transport"
-                    finally:
-                        attach_transport_response = AttachTransportResponse(False, tb)
+                        attach_transport_response = AttachTransportResponse(False, tb, str(e))
                         state.queues.attach_transport_response.put(attach_transport_response)
+                    # else:
+                    #     tb = "Attached transport"
+                    #     attach_transport_response = AttachTransportResponse(True, tb)
+                    #     state.queues.attach_transport_response.put(attach_transport_response)
                 await asyncio.sleep(0.02)
                 if not state.queues.detach_transport.empty():
-                    transport = state.queues.detach_transport.get_nowait()
-                    state.cyphal.pseudo_transport.detach_inferior(transport)
+                    interface_hash = state.queues.detach_transport.get_nowait()
+                    transport_about_to_be_detached = state.cyphal.inferior_transports_by_interface_hashes[
+                        interface_hash
+                    ]
+                    transport_about_to_be_detached.close()
+                    state.cyphal.pseudo_transport.detach_inferior(transport_about_to_be_detached)
+
+                    # find the interface in state.cyphal.transports_list which has the hash matching to interface_hash and remove it
+                    for interface in state.cyphal.transports_list:
+                        if str(hash(interface)) == interface_hash:
+                            if interface.is_udp:
+                                del state.cyphal.already_used_transport_interfaces[interface.udp_iface]
+                            else:
+                                del state.cyphal.already_used_transport_interfaces[interface.iface]
+                            state.cyphal.transports_list.remove(interface)
+                            break
                 await asyncio.sleep(0.02)
+                if not state.queues.send_command.empty():
+                    was_command_success = False
+                    max_count = 3
+                    count = 0
+                    message = None
+                    while not was_command_success and count < max_count:
+                        count += 1
+                        try:
+                            send_command_request = state.queues.send_command.get_nowait()
+                            service_client = state.cyphal.local_node.make_client(
+                                uavcan.node.ExecuteCommand_1_1, send_command_request.node_id
+                            )
+                            msg = uavcan.node.ExecuteCommand_1_1.Request()
+                            msg.command = int(send_command_request.command_id)
+                            responseTuple = await service_client.call(msg)
+                            if responseTuple:
+                                response = responseTuple[0]
+                                if response.status == 1:
+                                    message = "Status: failure"
+                                elif response.status == 2:
+                                    message = "Status: not authorized"
+                                elif response.status == 3:
+                                    message = "Status: bad command"
+                                elif response.status == 4:
+                                    message = "Status: bad parameter"
+                                elif response.status == 5:
+                                    message = "Status: bad state"
+                                elif response.status == 6:
+                                    message = "Status: internal error"
+                                else:
+                                    message = repr(response)
+                                    if response.status == 0:
+                                        message = "✓ " + message
+                                        message += " (success)"
+                            was_command_success = response is not None and response.status == 0
+                        except:
+                            logger.exception(
+                                "Failed to send command %s",
+                                send_command_request,
+                            )
+                    if not was_command_success:
+                        if not message:
+                            message = "Failed"
+                        state.queues.command_response.put(CommandSendResponse(False, message))
+                    else:
+                        if not message:
+                            message = "Success"
+                        state.queues.command_response.put(CommandSendResponse(True, message))
                 if not state.queues.update_registers.empty():
                     register_update = state.queues.update_registers.get_nowait()
                     # make a uavcan.register.Access_1 request to the node
@@ -176,13 +258,30 @@ def cyphal_worker(state: GodState) -> None:
                         raise Exception("Didn't do anything with this configuration")
                 await asyncio.sleep(0.02)
                 if not state.queues.reread_registers.empty():
-                    request2: RereadRegistersRequest = state.queues.reread_registers.get_nowait()
-                    for pair in request2.pairs:
-                        if pair is None:
-                            continue
-                        node_id2 = int(pair)
-                        register_name2 = list(request2.pairs[pair].keys())[0]
-                        asyncio.create_task(get_register_value(state, node_id2, register_name2))
+                    try:
+                        request2: RereadRegistersRequest = state.queues.reread_registers.get_nowait()
+                        for pair in request2.pairs:
+                            if pair is None:
+                                continue
+                            node_id2 = int(pair)
+                            register_name2 = list(request2.pairs[pair].keys())[0]
+                            asyncio.create_task(get_register_value(state, node_id2, register_name2, True))
+                    except:
+                        logger.exception("Reread register values failed")
+                await asyncio.sleep(0.02)
+                if not state.queues.reread_register_names.empty():
+                    try:
+                        names_request: RereadRegisterNamesRequest = state.queues.reread_register_names.get_nowait()
+                        asyncio.create_task(
+                            get_register_names(
+                                state,
+                                names_request.node_id,
+                                state.avatar.avatars_by_node_id[names_request.node_id],
+                                True,
+                            )
+                        )
+                    except:
+                        logger.exception("Reread register names failed")
         except Exception as e:
             logger.exception(e)
             raise e

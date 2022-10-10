@@ -5,15 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Yukon",
+            "name": "Yukon: Launch",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/yukon/__main__.py",
+            "program": "yukon/__main__.py",
             "console": "integratedTerminal",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}/yukon${pathSeparator}${workspaceFolder}/.compiled${pathSeparator}${workspaceFolder}${pathSeparator}${env:PYTHONPATH}"
-            },
-            "justMyCode": true
-        }
+            "justMyCode": false
+        },
+        {
+            "name": "Pycyphal: Demo",
+            "type": "python",
+            "request": "launch",
+            "program": "demos/run_demos.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
     ]
 }

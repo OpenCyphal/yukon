@@ -1,3 +1,4 @@
+from atexit import register
 import json
 import logging
 import math
@@ -105,6 +106,9 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         #     hex_string = array.hex(":")
         #     self.register_values[register_name] = hex_string
         #     return
+        assert register_name is not None
+        if register_name is None:
+            logger.error("No register name for transfer ID %d", transfer_id)
         exploded_value = explode_value(obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent})
         self.register_exploded_values[register_name] = exploded_value
         self.register_values[register_name] = str(explode_value(obj.value, simplify=True))
@@ -205,6 +209,11 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             else:
                 assert False
 
+    def is_node_online(self, ts: float) -> typing.Any:
+        from uavcan.node import Heartbeat_1_0 as Heartbeat
+
+        return (ts - max(self._ts_heartbeat, self._ts_activity)) <= Heartbeat.OFFLINE_TIMEOUT
+
     def update(self, ts: float) -> NodeState:
         from uavcan.node import Heartbeat_1_0 as Heartbeat
         from uavcan.node.port import List_0_1 as PortList
@@ -213,11 +222,10 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             logger.info("%r: Much more recent activity than the last heartbeat, we've gone zombie", self)
             self._heartbeat = None
 
-        online = (ts - max(self._ts_heartbeat, self._ts_activity)) <= Heartbeat.OFFLINE_TIMEOUT
         port_introspection_valid = True  # (ts - self._ts_port_list) <= PortList.MAX_PUBLICATION_PERIOD * 2
 
         return NodeState(
-            online=online,
+            online=self.is_node_online(ts),
             heartbeat=self._heartbeat,
             info=self._info,
             ports=self._ports if port_introspection_valid else None,
@@ -281,7 +289,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             "registers": list(self._register_set),
             "registers_values": self.register_values,
             "registers_exploded_values": self.register_exploded_values,
-            "registers_hash": hash(frozenset(self.register_exploded_values)),
+            "registers_hash": hash(json.dumps(self.register_exploded_values, sort_keys=True)),
         }
         return json_object
 

@@ -1,13 +1,15 @@
+import socket
 import threading
 import webbrowser
 from typing import Optional, Any
 import os
 import sys
+from pathlib import Path
 import asyncio
 import logging
-from time import sleep
+from time import sleep, monotonic
 import subprocess
-
+import mimetypes
 import sentry_sdk
 
 from yukon.services.messages_publisher import MessagesPublisher
@@ -20,33 +22,49 @@ from yukon.server import server, make_landing_and_bridge
 from yukon.services.api import Api, SendingApi
 from yukon.services.get_electron_path import get_electron_path
 
+
+mimetypes.add_type("text/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("text/html", ".html")
+
 setup_sentry(sentry_sdk)
 paths = sys.path
 
 logger = logging.getLogger()
 logger.setLevel("INFO")
 
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    root_path = sys._MEIPASS  # type: ignore # pylint: disable=protected-access
+else:
+    print("running in a normal Python process")
+    root_path = os.path.dirname(os.path.abspath(__file__))
 
-def get_add_transport_url() -> str:
+
+def get_add_transport_url(state: GodState) -> str:
     parameters = ""
     # Check if os.environ contains "IS_SANITY_TEST"
     if os.environ.get("IS_SANITY_TEST"):
         parameters = "?sanity_test=true"
-    return "http://localhost:5000/add_transport/add_transport.html" + parameters
+    return f"http://localhost:{state.gui.server_port}/main/main.html" + parameters
 
 
-def run_electron() -> None:
+def run_electron(state: GodState) -> None:
     # Make the thread sleep for 1 second waiting for the server to start
-    sleep(1)
+    while not state.gui.is_port_decided:
+        sleep(1)
     exe_path = get_electron_path()
     # Use subprocess to run the exe
     try:
         # Keeping reading the stdout and stderr, look for the string electron: symbol lookup error
+        os.environ["YUKON_SERVER_PORT"] = str(state.gui.server_port)
+        logger.info("YUKON_SERVER_PORT=%s", os.environ["YUKON_SERVER_PORT"])
+        print(root_path)
         with subprocess.Popen(
-            [exe_path, get_add_transport_url()],
+            [exe_path, Path(root_path) / "electron/main.js"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
+            env=os.environ,
         ) as p:
             while p.poll() is None:
                 line1 = p.stdout.readline()  # type: ignore
@@ -59,21 +77,26 @@ def run_electron() -> None:
                     logger.error("There was an error while trying to run the electron app")
                     exit_code = 1
                     break
+                logger.debug(line1)
+                logger.error(line2)
             if p.returncode is not None:
                 exit_code = p.returncode
 
     except FileNotFoundError as e:
+        # Log the same but using lazy logging
         logging.error("Could not find electron executable at %s", str(exe_path))
-        logging.error(e)
+        logging.exception(str(e))
         exit_code = 1
 
     if exit_code != 0:
         logging.warning("Electron wasn't found or encountered an error, falling back to browser")
         os.environ["IS_BROWSER_BASED"] = "1"
-        open_webbrowser()
+        open_webbrowser(state)
 
 
-def open_webbrowser() -> None:
+def open_webbrowser(state: GodState) -> None:
+    while not state.gui.is_port_decided:
+        sleep(1)
     # if the environment variable BROWSER_PATH is set, use that browser
     if os.environ.get("BROWSER_PATH"):
         print("Using the browser path from environment variable")
@@ -82,13 +105,28 @@ def open_webbrowser() -> None:
             None,
             webbrowser.BackgroundBrowser(os.environ.get("BROWSER_PATH")),  # type: ignore
         )
-        webbrowser.get("custom_browser").open(get_add_transport_url())
+        webbrowser.get("custom_browser").open(get_add_transport_url(state))
     else:
-        webbrowser.open(get_add_transport_url())
+        webbrowser.open(get_add_transport_url(state))
 
 
-def run_server() -> None:
-    server.run(host="0.0.0.0", port=5000)
+def run_server(state: GodState) -> None:
+    # Check if the port state.gui.server_port is available, means that it can be used
+    # If it is not available, then increment the port number and check again
+    # If it is available, then use it
+    while True:
+        a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        location = ("127.0.0.1", state.gui.server_port)
+        is_port_available = a_socket.connect_ex(location) != 0
+        a_socket.close()
+        if not is_port_available:
+            state.gui.server_port += 1
+            continue
+        state.gui.is_port_decided = True
+        try:
+            server.run(host="0.0.0.0", port=state.gui.server_port)
+        except:
+            logger.exception("Server was unable to start or crashed.")
 
 
 def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
@@ -120,18 +158,22 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         pass
 
     asyncio.get_event_loop().create_task(sendAMessage())
-    start_server_thread = threading.Thread(target=run_server, daemon=True)
+    start_server_thread = threading.Thread(target=run_server, args=[state], daemon=True)
     start_server_thread.start()
     # if environment variable IS_BROWSER_BASED is set, open the webbrowser
     if os.environ.get("IS_BROWSER_BASED"):
         # Make a thread and call open_webbrowser() in it
-        thread = threading.Thread(target=open_webbrowser)
+        thread = threading.Thread(target=open_webbrowser, args=[state], daemon=True)
         thread.start()
     else:
-        start_electron_thread = threading.Thread(target=run_electron)
+        start_electron_thread = threading.Thread(target=run_electron, args=[state], daemon=True)
         start_electron_thread.start()
     while True:
         sleep(1)
+        time_since_last_poll = monotonic() - state.gui.last_poll_received
+        if state.gui.last_poll_received != 0 and time_since_last_poll > 3 and not os.environ.get("IS_DEBUG"):
+            logging.debug("No poll received in 3 seconds, shutting down")
+            state.gui.gui_running = False
         if not state.gui.gui_running:
             break
 

@@ -1,0 +1,360 @@
+* {
+    box-sizing: border-box;
+}
+
+#messages-list {}
+
+#messages-list textarea {
+    display: block;
+    list-style: none;
+    height: auto;
+    width: 100%;
+    resize: none;
+    border: none;
+    height: content-box;
+    overflow-y: hidden;
+}
+
+#messages-list textarea:focus {
+    box-shadow: 0 0 5px #ccc;
+}
+
+#divSelectInterface {
+    display: block;
+}
+
+#divSelectInterface label {
+    display: block;
+    margin-bottom: 0.5em;
+}
+
+#divSelectInterface select {
+    display: block;
+    width: 100%;
+}
+
+#divSelectInterface button {
+    display: block;
+    margin-bottom: 0.5em;
+}
+
+form#interface-selection-form {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+}
+
+#messages_title {
+    margin-top: 3px;
+}
+
+#cy {
+    width: 100%;
+    height: 99%;
+    display: block;
+}
+
+#cy.with-background {
+    background: url(../../images/Cyphal.svg) no-repeat center center;
+    background-size: 50%;
+}
+
+#split-right {
+    min-width: 205px;
+    width: 30%;
+}
+
+textarea#textOut {
+    width: 100%;
+}
+
+.options-panel {
+    display: block;
+}
+
+.option {
+    display: grid;
+    grid-template-columns: fit-content(40%) fit-content(40%);
+    grid-gap: 0.5em;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    border: 1px solid #ccc;
+    padding: 0.5em;
+}
+
+#split-right {
+    padding: 0.5em;
+}
+
+#taExcludedKeywords {
+    height: 100%;
+}
+
+#available_configurations_radios {
+    margin: 0.5em;
+    width: 30em;
+    display: grid;
+    grid-template-columns: 0.1fr auto;
+    grid-gap: 0.5em;
+}
+
+.noselect * {
+    -webkit-touch-callout: none;
+    /* iOS Safari */
+    -webkit-user-select: none;
+    /* Safari */
+    -khtml-user-select: none;
+    /* Konqueror HTML */
+    -moz-user-select: none;
+    /* Old versions of Firefox */
+    -ms-user-select: none;
+    /* Internet Explorer/Edge */
+    user-select: none;
+    /* Non-prefixed version, currently
+                                    supported by Chrome, Edge, Opera and Firefox */
+}
+
+.registers-tab div {
+    margin: 0.5em;
+}
+
+.block-display {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.block-display * {
+    margin-top: 0.5em;
+}
+
+.white-text {
+    color: #fff !important;
+}
+
+.white-text * {
+    color: #fff !important;
+}
+
+.white-text~* {
+    color: #fff !important;
+}
+
+.pair-div:hover {
+    background-color: #ccc;
+}
+
+.pair-div {
+    margin-top: 0.5em;
+    padding: 0.25em 2px;
+}
+
+.pair-div.incompatible {
+    background-color: rgba(255, 0, 0, 0.165);
+    color: #fff;
+}
+
+#no-refresh-option {
+    display: flex;
+    align-items: center;
+    font-size: 3em;
+    position: sticky;
+    top: 0;
+    left: 0;
+}
+
+#no-refresh-option input {
+    width: 3em;
+    height: 3em;
+}
+
+#registers-header {
+    position: sticky;
+    left: 0px;
+}
+
+html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    height: 100vh;
+    position: relative;
+}
+
+#layout {
+    display: block;
+    flex-grow: 4;
+    flex-shrink: 1;
+    width: 100%;
+}
+
+#toolbar {
+    display: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 1.8em;
+    height: 1.8em;
+    background-color: rgb(203, 203, 203);
+    border-bottom: 1px solid #000;
+    position: relative;
+}
+
+#toolbar.shown {
+    display: flex;
+}
+
+#toolbar button {
+    border: 1px solid #000;
+    border-radius: 0.25em;
+    background-color: rgb(135, 135, 135);
+    color: #fff;
+    font-size: 1.5em;
+    padding: 0.25em 0.5em;
+    margin: 0.25em;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #888888;
+    background: #fafafa;
+    margin-right: 2px;
+    padding-bottom: 4px;
+    border: 1px solid #cccccc;
+    border-bottom: none
+}
+
+#toolbar button:hover {
+    background-color: rgb(145, 145, 145);
+    color: #fff;
+    cursor: pointer;
+}
+
+#toolbar button:active {
+    background-color: #000;
+    color: #fff;
+    box-shadow: 0 0 0.25em #000 inset;
+    animation: fadeout 0.5s ease-in-out;
+}
+
+@keyframes fadeout {
+    0% {
+        background-color: #000;
+        color: #fff;
+    }
+
+    50% {
+        background-color: rgb(135, 135, 135);
+        color: #fff;
+    }
+
+    100% {
+        background-color: #000;
+        color: #fff;
+    }
+}
+
+button#btnShowHideToolbar {
+    position: absolute;
+    top: -0.5em;
+    right: 5em;
+    width: 1em;
+    height: 1em;
+    border: 1px solid #000;
+    border-radius: 0.25em;
+    font-size: 1.5em;
+    padding: 0.25em 0.5em;
+    z-index: 3;
+    background-size: 60% 60%;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #e1e1e1;
+}
+
+button#btnShowHideToolbar.top-right {
+    background-image: url(../../images/caret-down.svg);
+    right: 5rem;
+    top: -0.3em;
+    bottom: auto;
+}
+
+button#btnShowHideToolbar.bottom-right {
+    background-image: url(../../images/caret-up.svg);
+    right: 5rem;
+    top: -0.5em;
+    bottom: auto;
+}
+
+button#btnShowHideToolbar:hover {
+    background-color: rgb(171, 171, 171);
+    color: #fff;
+    cursor: pointer;
+}
+
+button#btnShowHideToolbar:active {
+    background-color: rgb(171, 171, 171);
+    color: #fff;
+    box-shadow: 0 0 0.25em #000 inset;
+    animation: fadeout 0.5s ease-in-out;
+}
+
+#mainContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.transports_list {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.transport_interface {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    border: 1px solid #000;
+    padding: 0.5em;
+    margin: 0.5em;
+}
+
+.transport_interface p {
+    word-wrap: break-word;
+    flex-grow: 3;
+}
+
+* {
+    font: 1em ubuntu-mono, monospace;
+}
+
+#CommandsDiv {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+#CommandsDiv label {
+    margin-top: 0.5em;
+}
+
+#CommandsDiv button {
+    margin-top: 1em;
+}
+
+.container {
+    padding: 0.5em;
+}

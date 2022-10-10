@@ -1,10 +1,11 @@
+from inspect import getsource
 import json
 import os
 import re
 import typing
 import webbrowser
 from pathlib import Path
-from time import sleep
+from time import sleep, monotonic
 import logging
 import yaml
 
@@ -24,6 +25,9 @@ from yukon.domain.avatar import Avatar
 from yukon.services.value_utils import unexplode_value, explode_value
 from yukon.domain.god_state import GodState
 from yukon.services.get_electron_path import get_electron_path
+from yukon.domain.command_send_request import CommandSendRequest
+from yukon.domain.command_send_response import CommandSendResponse
+from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
@@ -206,13 +210,21 @@ class Api:
         self.state = state
         self.last_avatars = []
 
-    def get_socketcan_ports(self) -> str:
+    def get_socketcan_ports(self) -> typing.Dict[str, typing.Any]:
         _list = get_socketcan_ports()
-        return json.dumps(_list)
+        _list_hash = json.dumps(_list, sort_keys=True)
+        return {
+            "ports": _list,
+            "hash": _list_hash,
+        }
 
-    def get_slcan_ports(self) -> str:
+    def get_slcan_ports(self) -> typing.Dict[str, typing.Any]:
         _list = get_slcan_ports()
-        return json.dumps(_list)
+        _list_hash = json.dumps(_list, sort_keys=True)
+        return {
+            "ports": _list,
+            "hash": _list_hash,
+        }
 
     def add_local_message(self, message: str) -> None:
         logger.info(message)
@@ -295,6 +307,7 @@ class Api:
         interface = Interface()
         interface.udp_iface = udp_iface
         interface.udp_mtu = int(udp_mtu)
+        interface.is_udp = True
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         self.state.queues.attach_transport.put(atr)
         while True:
@@ -321,6 +334,16 @@ class Api:
                 break
         return json.dumps(self.state.queues.attach_transport_response.get(), cls=EnhancedJSONEncoder)
 
+    def detach_transport(self, hash: str) -> typing.Any:
+        logger.info(f"Detaching transport {hash}")
+        self.state.queues.detach_transport.put(hash)
+        while True:
+            if self.state.queues.detach_transport_response.empty():
+                sleep(0.1)
+            else:
+                break
+        return self.state.queues.detach_transport_response.get()
+
     # def save_registers_of_node(self, node_id: int, registers: typing.Dict["str"]) -> None:
     def show_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = False
@@ -340,6 +363,7 @@ class Api:
         return messages_serialized
 
     def get_avatars(self) -> str:
+        self.state.gui.last_poll_received = monotonic()
         avatar_list = [avatar.to_builtin() for avatar in list(self.state.avatar.avatars_by_node_id.values())]
         avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
         if self.state.avatar.hide_yakut_avatar:
@@ -349,7 +373,8 @@ class Api:
                     avatar_list.remove(avatar)
                 elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
                     avatar_list.remove(avatar)
-        return json.dumps(avatar_dto)
+        return_string = json.dumps(avatar_dto, cls=EnhancedJSONEncoder)
+        return return_string
 
     def open_monitor_window(self) -> None:
         # If env contains IS_BROWSER_BASED
@@ -357,25 +382,14 @@ class Api:
         parameters = ""
         if os.environ.get("IS_SANITY_TEST"):
             parameters = "?sanity_test=true"
-        url = "http://localhost:5000/monitor/monitor.html" + parameters
+        url = "http://localhost:5000/main/main.html" + parameters
         if "IS_BROWSER_BASED" in os.environ:
             if os.environ.get("BROWSER_PATH"):
                 webbrowser.get("custom_browser").open_new_tab(url)
             else:
                 webbrowser.open(url)
         else:
-            os.spawnl(os.P_NOWAIT, exe_path, exe_path, "http://localhost:5000/monitor/monitor.html")
-
-    def open_add_transport_window(self) -> None:
-        exe_path = get_electron_path()
-        url = "http://localhost:5000/add_transport/add_transport.html"
-        if "IS_BROWSER_BASED" in os.environ:
-            if os.environ.get("BROWSER_PATH"):
-                webbrowser.get("custom_browser").open_new_tab(url)
-            else:
-                webbrowser.open(url)
-        else:
-            os.spawnl(os.P_NOWAIT, exe_path, exe_path, url)
+            os.spawnl(os.P_NOWAIT, exe_path, exe_path, "http://localhost:5000/main/main.html")
 
     def fail_sanity_test(self, error: str, url: str, line: str) -> str:
         logger.error(f"Sanity test failed: {error} at {url}:{line}")
@@ -388,3 +402,26 @@ class Api:
         self.state.gui.gui_running = False
         self.state.failed_sanity_test = False
         return "Now you can close too"
+
+    def set_log_level(self, severity: str) -> None:
+        self.state.gui.message_severity = severity
+
+    def get_connected_transport_interfaces(self) -> str:
+        composed_list = [x.to_builtin() for x in self.state.cyphal.transports_list]
+        return json.dumps({"interfaces": composed_list, "hash": hash(json.dumps(composed_list, sort_keys=True))})
+
+    def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
+        send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)
+        self.state.queues.send_command.put(send_command_request)
+        while True:
+            if self.state.queues.command_response.empty():
+                sleep(0.1)
+            else:
+                break
+        command_response = self.state.queues.command_response.get()
+        return {"success": command_response.is_success, "message": command_response.message}
+
+    def reread_node(self, node_id: str) -> None:
+        node_id_as_int = int(node_id)
+        if node_id_as_int:
+            self.state.queues.reread_register_names.put(RereadRegisterNamesRequest(node_id_as_int))

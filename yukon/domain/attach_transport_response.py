@@ -7,3 +7,4 @@ class AttachTransportResponse:
 
     success: bool
     message: str = ""
+    message_short: str = ""
