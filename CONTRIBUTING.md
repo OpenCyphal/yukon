@@ -35,6 +35,25 @@
     ```
     python build_exe.py
     ```
+
+* Build the DSDL namespace for demos
+    ```
+    yakut compile -O.compiled demos\sirius_cyber_corp
+    ```
+
+# Running the application in vscode
+Use this as a template for your .env file, the .vscode also includes the launch configurations.
+
+```
+PYTHONPATH=C:\Users\silver\Documents\zubax\yukon\.compiled;C:\Users\silver\Documents\zubax\yukon
+IS_BROWSER_BASED=1
+IS_DEBUG=1
+```
+
+It's important to use absolute paths in the PYTHONPATH here.
+
+On Windows use ; as the separator, on GNU/Linux use : as the separator.
+
 # Contributing
 1. Fork the repository
 2. Make your changes
