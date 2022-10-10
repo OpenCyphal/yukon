@@ -369,3 +369,16 @@ function isAllSelected(yukon_state) {
     }
     return allSelected;
 }
+export const moreThanOneSelectedConstraint = () => {
+    // If there are more than 1 selected registers
+    if (Object.keys(yukon_state.selections.selected_registers).length > 1) {
+        return true;
+    }
+    return false;
+}
+export const oneSelectedConstraint = () => {
+    if (Object.keys(yukon_state.selections.selected_registers).length == 1) {
+        return true;
+    }
+    return false;
+};

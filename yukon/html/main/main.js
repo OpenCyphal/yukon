@@ -1,12 +1,13 @@
 import { make_context_menus } from '../modules/context-menu.module.js';
 import { create_directed_graph, refresh_graph_layout, update_directed_graph } from '../modules/monitor.module.js';
 import { secondsToString, JsonParseHelper } from "../modules/utilities.module.js";
-import { loadConfigurationFromOpenDialog } from '../modules/yaml.configurations.module.js';
+import { loadConfigurationFromOpenDialog, return_all_selected_registers_as_yaml } from '../modules/yaml.configurations.module.js';
 import { create_registers_table, update_tables } from '../modules/registers.module.js';
-import { get_all_selected_pairs, unselectAll, selectAll } from '../modules/registers.selection.module.js';
+import { get_all_selected_pairs, unselectAll, selectAll, oneSelectedConstraint, moreThanOneSelectedConstraint } from '../modules/registers.selection.module.js';
 import { rereadPairs } from "../modules/registers.data.module.js"
 import { openFile } from "../modules/yaml.configurations.module.js"
 import { initTransports } from "../modules/transports.module.js"
+import { copyTextToClipboard } from "../modules/copy.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
@@ -885,13 +886,53 @@ import { initTransports } from "../modules/transports.module.js"
                 y: event.pageY
             };
         }
-        window.onkeydown = function (e) {
+        window.onkeydown = async function (e) {
             // If alt tab was pressed return
             yukon_state.pressedKeys[e.keyCode] = true;
             // If ctrl a was pressed, select all
             if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[65]) {
                 selectAll(yukon_state);
                 e.preventDefault();
+            }
+            // If ctrl c was pressed
+            if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[67]) {
+                // If there are any cells selected
+                // If there aren't any cells selected then get the element that the mouse is hovering over and copy its value
+                if (oneSelectedConstraint() || moreThanOneSelectedConstraint()) {
+                    let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
+                    const yaml_text = await return_all_selected_registers_as_yaml(pairs, yukon_state);
+                    copyTextToClipboard(yaml_text, e);
+                    e.stopPropagation();
+                } else {
+                    console.log("Just copying from under the mouse")
+                    let element = document.elementFromPoint(mousePos.x, mousePos.y);
+                    if (element.classList.contains("input")) {
+                        copyTextToClipboard(element.innerText, e);
+                        return;
+                    }
+                    // Check if any child of the element has the class input
+                    let inputElement = element.querySelector(".input");
+                    if (inputElement) {
+                        console.log("A child had the class");
+                        copyTextToClipboard(inputElement.innerText, e);
+                        return;
+                    }
+                    let currentElement = element
+                    while (element != document.body) {
+                        if (currentElement.parentElement == null) {
+                            console.log("Didn't find the element to copy from.")
+                            return;
+                        }
+                        if (currentElement.classList.contains("input")) {
+                            break;
+                        } else {
+                            currentElement = currentElement.parentElement;
+                        }
+                    }
+                    if (currentElement.classList.contains("input")) {
+                        copyTextToClipboard(currentElement.innerText, e);
+                    }
+                }
             }
             // If ctrl space was pressed, toggle maximize-minimize of the currently hovered over ContentItem
             if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[32]) {
