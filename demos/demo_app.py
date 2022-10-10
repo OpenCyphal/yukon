@@ -31,7 +31,6 @@ class DemoApp:
     def __init__(self) -> None:
         # Add the node id from its environment variable to the REGISTER_FILE filename
         # so that each node has its own register file.
-        self.REGISTER_FILE = pathlib.Path(self.REGISTER_FILE).with_name(f"{os.environ.get('UAVCAN__NODE__ID', '0')}_{self.REGISTER_FILE}")
 
         node_info = uavcan.node.GetInfo_1.Response(
             software_version=uavcan.node.Version_1(major=1, minor=0),
@@ -41,7 +40,7 @@ class DemoApp:
         # the UAVCAN network. Also, it implements certain standard application-layer functions, such as publishing
         # heartbeats and port introspection messages, responding to GetInfo, serving the register API, etc.
         # The register file stores the configuration parameters of our node (you can inspect it using SQLite Browser).
-        self._node = pycyphal.application.make_node(node_info, self.REGISTER_FILE)
+        self._node = pycyphal.application.make_node(node_info, ":memory:")
 
         # Published heartbeat fields can be configured as follows.
         self._node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
