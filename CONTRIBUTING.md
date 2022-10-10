@@ -31,6 +31,28 @@
     set IS_DEBUG=1
     python yukon/__main__.py
     ```
+* Build the application for your current OS and obtain ElectronJS (to run in ElectronJS)
+    ```
+    python build_exe.py
+    ```
+
+* Build the DSDL namespace for demos
+    ```
+    yakut compile -O.compiled demos\sirius_cyber_corp
+    ```
+
+# Running the application in vscode
+Use this as a template for your .env file, the .vscode also includes the launch configurations.
+
+```
+PYTHONPATH=C:\Users\silver\Documents\zubax\yukon\.compiled;C:\Users\silver\Documents\zubax\yukon
+IS_BROWSER_BASED=1
+IS_DEBUG=1
+```
+
+It's important to use absolute paths in the PYTHONPATH here.
+
+On Windows use ; as the separator, on GNU/Linux use : as the separator.
 
 * Prepare the sirius_cyber_corp namespace for using demos and tests
     ```batch
@@ -39,11 +61,11 @@
 
 # Contributing
 1. Fork the repository
-2. Make your changes
+2. Make your changess
 3. Make a pull request
 4. Wait for a review
 5. Make changes if needed
-6. Merge
+6. Merge the pull request
 
 # Code style
 - Use black for formatting

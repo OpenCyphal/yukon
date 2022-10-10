@@ -1,13 +1,13 @@
-import { make_context_menus } from './context-menu.module.js';
-import { create_directed_graph, refresh_graph_layout, update_directed_graph } from './monitor.module.js';
-import { secondsToString } from "./utilities.module.js";
-import { loadConfigurationFromOpenDialog } from './yaml.configurations.module.js';
-import { create_registers_table, update_tables } from './registers.module.js';
-import { get_all_selected_pairs, unselectAll, selectAll } from './registers.selection.module.js';
-import { rereadPairs } from "./registers.data.module.js"
-import { openFile } from "./yaml.configurations.module.js"
-import { initTransports } from "./transports.module.js"
-import { JsonParseHelper } from "./utils.module.js"
+import { make_context_menus } from '../modules/context-menu.module.js';
+import { create_directed_graph, refresh_graph_layout, update_directed_graph } from '../modules/monitor.module.js';
+import { secondsToString, JsonParseHelper } from "../modules/utilities.module.js";
+import { loadConfigurationFromOpenDialog, return_all_selected_registers_as_yaml } from '../modules/yaml.configurations.module.js';
+import { create_registers_table, update_tables } from '../modules/registers.module.js';
+import { get_all_selected_pairs, unselectAll, selectAll, oneSelectedConstraint, moreThanOneSelectedConstraint } from '../modules/registers.selection.module.js';
+import { rereadPairs } from "../modules/registers.data.module.js"
+import { openFile } from "../modules/yaml.configurations.module.js"
+import { initTransports } from "../modules/transports.module.js"
+import { copyTextToClipboard } from "../modules/copy.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
@@ -264,6 +264,8 @@ import { JsonParseHelper } from "./utils.module.js"
         const optionsPanel = await waitForElm(".options-panel");
         function setDisplayState() {
             if (containerElement.getAttribute("data-isexpanded")) {
+                containerElement.scrollTop = 0;
+                cbAutoscroll.checked = false;
                 optionsPanel.style.display = "block";
             } else {
                 optionsPanel.style.display = "none";
@@ -432,11 +434,12 @@ import { JsonParseHelper } from "./utils.module.js"
                         // If el is the last in d
                         if (messagesObject.indexOf(el) == messagesObject.length - 1) {
                             // Scroll to bottom of messages-list
-
-                            var iAutoscrollFilter = document.getElementById("iAutoscrollFilter");
-                            if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
-                                messagesList.scrollTop = messagesList.scrollHeight;
-                            }
+                            setTimeout(function () {
+                                var iAutoscrollFilter = document.getElementById("iAutoscrollFilter");
+                                if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
+                                    containerElement.scrollTop = containerElement.scrollHeight;
+                                }
+                            }, 50);
                             lastIndex = el.index;
                         }
                         messagesList.appendChild(li);
@@ -579,19 +582,18 @@ import { JsonParseHelper } from "./utils.module.js"
                                         },
                                         {
                                             type: "component",
-                                            componentName: "transportsListComponent",
-                                            isClosable: true,
-                                            title: "Transports list",
-                                        },
-                                        {
-                                            type: "component",
                                             componentName: "commandsComponent",
                                             isClosable: true,
                                             title: "Commands",
                                         }
                                     ]
-                                }
-
+                                },
+                                {
+                                    type: "component",
+                                    componentName: "transportsListComponent",
+                                    isClosable: true,
+                                    title: "Transports list",
+                                },
                             ]
                         }
                     ]
@@ -749,7 +751,7 @@ import { JsonParseHelper } from "./utils.module.js"
             });
         });
         myLayout.registerComponent('transportsComponent', function (container, componentState) {
-            registerComponentAction("../add_transport.panel.html", "transportsComponent", container, () => {
+            registerComponentAction("../transport.panel.html", "transportsComponent", container, () => {
                 const containerElement = container.getElement()[0];
                 containerElementToContainerObjectMap.set(containerElement, container);
                 setUpTransportsComponent.bind(outsideContext)(container);
@@ -886,13 +888,45 @@ import { JsonParseHelper } from "./utils.module.js"
                 y: event.pageY
             };
         }
-        window.onkeydown = function (e) {
+        window.onkeydown = async function (e) {
             // If alt tab was pressed return
             yukon_state.pressedKeys[e.keyCode] = true;
             // If ctrl a was pressed, select all
             if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[65]) {
                 selectAll(yukon_state);
                 e.preventDefault();
+            }
+            // If ctrl c was pressed
+            if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[67]) {
+                // If there are any cells selected
+                // If there aren't any cells selected then get the element that the mouse is hovering over and copy its value
+                if (oneSelectedConstraint() || moreThanOneSelectedConstraint()) {
+                    let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
+                    const yaml_text = await return_all_selected_registers_as_yaml(pairs, yukon_state);
+                    copyTextToClipboard(yaml_text, e);
+                    e.stopPropagation();
+                } else {
+                    console.log("Just copying from under the mouse")
+                    let element = document.elementFromPoint(mousePos.x, mousePos.y);
+                    if (element.classList.contains("input")) {
+                        copyTextToClipboard(element.innerText, e);
+                        return;
+                    }
+                    // Check if any child of the element has the class input
+                    let inputElement = element.querySelector(".input");
+                    if (inputElement) {
+                        console.log("A child had the class");
+                        copyTextToClipboard(inputElement.innerText, e);
+                        const previousText = inputElement.innerHTML;
+                        inputElement.innerHTML = "Copied!";
+                        setTimeout(function () {
+                            if (inputElement.innerHTML == "Copied!") {
+                                inputElement.innerHTML = previousText;
+                            }
+                        }, 700);
+                        return;
+                    }
+                }
             }
             // If ctrl space was pressed, toggle maximize-minimize of the currently hovered over ContentItem
             if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[32]) {

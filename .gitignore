@@ -1,7 +1,5 @@
 *.db
 
-.vscode
-
 electronbinaries.zip
 electronbinaries
 .electron

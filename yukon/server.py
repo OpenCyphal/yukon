@@ -16,10 +16,10 @@ if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
 else:
     print("running in a normal Python process")
     root_path = os.path.dirname(os.path.abspath(__file__))
-gui_dir = os.path.join(root_path, "html")  # development path
+gui_dir = os.path.join(root_path, "web")  # development path
 
 if not os.path.exists(gui_dir):  # frozen executable path
-    gui_dir = os.path.join(root_path, "html")
+    gui_dir = os.path.join(root_path, "web")
 
 server = Flask(__name__, static_folder=gui_dir, template_folder=gui_dir, static_url_path="")
 server.config["SEND_FILE_MAX_AGE_DEFAULT"] = 1  # disable caching
