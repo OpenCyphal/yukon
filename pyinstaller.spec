@@ -107,4 +107,5 @@ exe = EXE(
     upx=False,
     runtime_tmpdir=None,
     console=True,
+    icon="icon_128_128.png",
 )

@@ -7,7 +7,8 @@ function createWindow() {
         height: 600,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js')
-        }
+        },
+        icon: "icon_128_128.png",
     })
     win.loadURL('http://localhost:5000/main/main.html')
     win.maximize();
