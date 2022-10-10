@@ -1,3 +1,4 @@
+from inspect import getsource
 import json
 import os
 import re
@@ -209,13 +210,21 @@ class Api:
         self.state = state
         self.last_avatars = []
 
-    def get_socketcan_ports(self) -> str:
+    def get_socketcan_ports(self) -> typing.Dict[str, typing.Any]:
         _list = get_socketcan_ports()
-        return json.dumps(_list)
+        _list_hash = json.dumps(_list, sort_keys=True)
+        return {
+            "ports": _list,
+            "hash": _list_hash,
+        }
 
-    def get_slcan_ports(self) -> str:
+    def get_slcan_ports(self) -> typing.Dict[str, typing.Any]:
         _list = get_slcan_ports()
-        return json.dumps(_list)
+        _list_hash = json.dumps(_list, sort_keys=True)
+        return {
+            "ports": _list,
+            "hash": _list_hash,
+        }
 
     def add_local_message(self, message: str) -> None:
         logger.info(message)
@@ -369,15 +378,6 @@ class Api:
 
     def set_log_level(self, severity: str) -> None:
         self.state.gui.message_severity = severity
-
-    def open_monitor_window(self) -> None:
-        # If env contains IS_BROWSER_BASED
-        exe_path = get_electron_path()
-        url = "http://localhost:5000/monitor/monitor.html"
-        if "IS_BROWSER_BASED" in os.environ:
-            webbrowser.open_new_tab(url)
-        else:
-            os.spawnl(os.P_NOWAIT, exe_path, exe_path, "http://localhost:5000/monitor/monitor.html")
 
     def get_connected_transport_interfaces(self) -> str:
         composed_list = [x.to_builtin() for x in self.state.cyphal.transports_list]

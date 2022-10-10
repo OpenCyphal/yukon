@@ -1,4 +1,4 @@
-import { JsonParseHelper } from "./utils.module.js";
+import { JsonParseHelper } from "./utilities.module.js";
 export function initTransports(container, yukon_state) {
     const containerElem = container.getElement()[0];
     const transports = Object.freeze({
@@ -16,53 +16,80 @@ export function initTransports(container, yukon_state) {
     var currentSelectedTransportType = [transports.CAN, transports.CAN.MANUAL];
     console.log("zubax_api_ready in add_transport.js");
     const cbShowTransportCombobox = containerElem.querySelector('#cbShowTransportCombobox');
-    function fillSelectionWithSlcan() {
-        zubax_api.get_slcan_ports().then(function (ports) {
-            ports = JSON.parse(ports, JsonParseHelper);
-            console.log(ports);
-            var sTransport = containerElem.querySelector("#sTransport");
-            sTransport.innerHTML = "";
-            if (ports.length == 0) {
-                var option = document.createElement("option");
-                option.value = "";
-                option.text = "No available ports";
-                sTransport.add(option);
-            }
-            // Fill sTransport with ports
-            for (var i = 0; i < ports.length; i++) {
-                var option = document.createElement("option");
-                option.value = ports[i].device;
-                option.text = ports[i].device + " (" + ports[i].description + ")";
-                sTransport.add(option);
-            }
-        });
+    function resetAllHashes() {
+        yukon_state.last_slcan_list_hash = null;
+        yukon_state.last_socketcan_list_hash = null;
     }
-    function fillSelectionWithSocketcan() {
-        zubax_api.get_socketcan_ports().then(function (ports) {
-            ports = JSON.parse(ports, JsonParseHelper);
-            console.log(ports);
-            var sTransport = containerElem.querySelector("#sTransport");
+    function detectDeviceFromProductId(productId) {
+        if (productId == 24600) {
+            return "Dronecode probe"
+        } else if (productId == 24775) {
+            return "Babel (CAN to USB)"
+        }
+        return null;
+
+    }
+    async function fillSelectionWithSlcan() {
+        const results = await zubax_api.get_slcan_ports();
+        const ports = results.ports;
+        const hash = results.hash;
+        if (hash !== yukon_state.last_slcan_list_hash) {
+            resetAllHashes();
+            yukon_state.last_slcan_list_hash = hash;
+            const sTransport = containerElem.querySelector("#sTransport");
             sTransport.innerHTML = "";
-            // Fill sTransport with ports
             if (ports.length == 0) {
-                var option = document.createElement("option");
+                const option = document.createElement("option");
                 option.value = "";
                 option.text = "No available ports";
                 sTransport.add(option);
             }
-            for (var i = 0; i < ports.length; i++) {
-                var option = document.createElement("option");
-                option.value = ports[i];
-                option.text = ports[i];
+            // Fill sTransport with ports
+            for (const port of ports) {
+                const option = document.createElement("option");
+                option.value = port.device;
+                let device_name = detectDeviceFromProductId(port.product_id);
+                if (device_name == null) {
+                    device_name = port.description;
+                }
+                option.text = port.device + " — " + device_name;
                 sTransport.add(option);
             }
-        });
+        }
+    }
+    async function fillSelectionWithSocketcan() {
+        const results = await zubax_api.get_socketcan_ports();
+        const ports = results.ports;
+        const hash = results.hash;
+        if (hash !== yukon_state.last_socketcan_list_hash) {
+            resetAllHashes();
+            yukon_state.last_socketcan_list_hash = hash;
+            const sTransport = containerElem.querySelector("#sTransport");
+            sTransport.innerHTML = "";
+            if (ports.length == 0) {
+                const option = document.createElement("option");
+                option.value = "";
+                option.text = "No available ports";
+                sTransport.add(option);
+            }
+            // Fill sTransport with ports
+            for (const port of ports) {
+                const option = document.createElement("option");
+                let device_name = detectDeviceFromProductId(port.product_id);
+                if (device_name == null) {
+                    device_name = port.description;
+                }
+                option.value = port.device;
+                option.text = port.device + " — " + device_name;
+                sTransport.add(option);
+            }
+        }
     }
 
     function addLocalMessage(message) {
         zubax_api.add_local_message(message)
     }
-    function doTheTabSwitching() {
+    async function doTheTabSwitching() {
         const h1TransportType = containerElem.querySelector("h1#TransportType");
         const iTransport = containerElem.querySelector("#iTransport");
         const sTransport = containerElem.querySelector("#sTransport");
@@ -119,18 +146,38 @@ export function initTransports(container, yukon_state) {
                 UDPLinuxWarning.style.display = "block";
                 break;
             case transports.CAN.SLCAN:
-                h1TransportType.innerHTML = "SLCAN";
-                divTypeTransport.style.display = "none";
-                iMtu.value = 8;
-                fillSelectionWithSlcan();
+                {
+                    h1TransportType.innerHTML = "SLCAN";
+                    divTypeTransport.style.display = "none";
+                    iMtu.value = 8;
+                    await fillSelectionWithSlcan();
+                    let thisInterval;
+                    thisInterval = setInterval(async function () {
+                        if (currentSelectedTransportType[1] != transports.CAN.SLCAN) {
+                            clearInterval(thisInterval);
+                            return
+                        }
+                        await fillSelectionWithSlcan();
+                    }, 1000);
+                }
                 break;
             case transports.CAN.SOCKETCAN:
-                h1TransportType.innerHTML = "SocketCAN";
-                divTypeTransport.style.display = "none";
-                divArbRate.style.display = "none";
-                divDataRate.style.display = "none";
-                iMtu.value = 64;
-                fillSelectionWithSocketcan();
+                {
+                    h1TransportType.innerHTML = "SocketCAN";
+                    divTypeTransport.style.display = "none";
+                    divArbRate.style.display = "none";
+                    divDataRate.style.display = "none";
+                    iMtu.value = 64;
+                    await fillSelectionWithSocketcan();
+                    let thisInterval;
+                    thisInterval = setInterval(async function () {
+                        if (currentSelectedTransportType[1] != transports.CAN.SOCKETCAN) {
+                            clearInterval(thisInterval);
+                            return
+                        }
+                        await fillSelectionWithSocketcan();
+                    }, 1000);
+                }
                 break;
             case transports.CAN.CANDUMP:
                 h1TransportType.innerHTML = "CANDUMP";
@@ -204,7 +251,7 @@ export function initTransports(container, yukon_state) {
         }
         return true;
     }
-    function moveTab(tabRow, index, isTopMost, wasClicked) {
+    async function moveTab(tabRow, index, isTopMost, wasClicked) {
         if (tabRow.selectedTabIndex == index) {
             return;
         }
@@ -227,7 +274,7 @@ export function initTransports(container, yukon_state) {
             addChildTabRow(tabRow, selectedTabName, true, false);
         }
 
-        doTheTabSwitching();
+        await doTheTabSwitching();
         child.classList.add("selected-tab");
         for (const child2 of labelChildren) {
             if (child2 != child) {
@@ -282,14 +329,14 @@ export function initTransports(container, yukon_state) {
             new_label.setAttribute("value", tabName);
             tabRow.div.appendChild(new_radio);
             tabRow.div.appendChild(new_label);
-            new_radio.addEventListener('change', function () {
+            new_radio.addEventListener('change', async function () {
                 if (this.checked) {
                     moveTab(tabRow, thisChildIndex, isTopMost, true);
                 }
             });
             current_child_index++;
         }
-        const interval_id = setInterval(() => {
+        const interval_id = setInterval(async () => {
             // See if the tabRow div has width
             if (tabRow.div.getBoundingClientRect().width > 0) {
                 moveTab(tabRow, 0, isTopMost, false);

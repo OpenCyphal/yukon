@@ -1,5 +1,5 @@
 import { export_all_selected_registers, return_all_selected_registers_as_yaml, update_available_configurations_list, applyConfiguration, openFile, actionApplyConfiguration } from "./yaml.configurations.module.js";
-import { selectColumn, selectRow, getAllEntireColumnsThatAreSelected, get_all_selected_pairs, make_select_row, unselectAll, make_select_column } from "./registers.selection.module.js";
+import { selectColumn, selectRow, getAllEntireColumnsThatAreSelected, get_all_selected_pairs, make_select_row, unselectAll, make_select_column, moreThanOneSelectedConstraint, oneSelectedConstraint } from "./registers.selection.module.js";
 import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./registers.module.js";
 import { rereadNode, rereadPairs } from "./registers.data.module.js";
 import { downloadIcon, copyIcon, pasteIcon } from "./icons.module.js";
@@ -67,19 +67,6 @@ export function make_context_menus(yukon_state) {
             }
         }
     }
-    const moreThanOneSelectedConstraint = (e, elementOpenedOn) => {
-        // If there are more than 1 selected registers
-        if (Object.keys(yukon_state.selections.selected_registers).length > 1) {
-            return true;
-        }
-        return false;
-    }
-    const oneSelectedConstraint = (e, elementOpenedOn) => {
-        if (Object.keys(yukon_state.selections.selected_registers).length <= 1) {
-            return true;
-        }
-        return false;
-    };
     // For table cells
     const table_cell_context_menu_items = [
         {

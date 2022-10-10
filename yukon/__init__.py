@@ -41,7 +41,7 @@ if sys.version_info < (3, 9):  # pragma: no cover
 
 logging.basicConfig(
     stream=sys.stderr,
-    level=os.getenv("KUCHERX_LOGLEVEL", "WARNING"),
+    level=os.getenv("YUKON_LOGLEVEL", "WARNING"),
     format="%(asctime)s %(process)07d %(levelname)-3.3s: %(name)s: %(message)s",
 )
 

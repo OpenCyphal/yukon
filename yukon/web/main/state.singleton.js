@@ -16,6 +16,8 @@ var yukon_state = {
     "pressedKeys": {},
     "existingHashesSet": {
     },
+    "last_slcan_list_hash": null,
+    "last_socketcan_list_hash": null,
     "settings": {
         "showAlotOfButtons": false,
         "showDoubleRowHeadersFromCount": 6,

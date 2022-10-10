@@ -1,4 +1,4 @@
-function fallbackCopyTextToClipboard(text) {
+function fallbackCopyTextToClipboard(text, event) {
     var textArea = document.createElement("textarea");
     textArea.value = text;
 
@@ -21,7 +21,7 @@ function fallbackCopyTextToClipboard(text) {
 
     document.body.removeChild(textArea);
 }
-export function copyTextToClipboard(text) {
+export function copyTextToClipboard(text, event) {
     if (!navigator.clipboard) {
         fallbackCopyTextToClipboard(text);
         return;
