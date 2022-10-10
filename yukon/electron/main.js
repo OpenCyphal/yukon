@@ -9,7 +9,7 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js')
         }
     })
-    win.loadURL('http://localhost:5000/monitor/monitor.html')
+    win.loadURL('http://localhost:5000/main/main.html')
     win.maximize();
 }
 

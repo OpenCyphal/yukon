@@ -9,3 +9,12 @@ export function secondsToString(seconds) {
     var numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
     return numyears + " years " + numdays + " days " + numhours + " hours " + numminutes + " minutes " + numseconds + " seconds";
 }
+export function JsonParseHelper(k, v) {
+    if (v === Infinity) {
+        return "Infinity";
+    } else if (v === NaN) {
+        return "NaN";
+    } else {
+        return v;
+    }
+}

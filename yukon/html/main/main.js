@@ -1,13 +1,12 @@
-import { make_context_menus } from './context-menu.module.js';
-import { create_directed_graph, refresh_graph_layout, update_directed_graph } from './monitor.module.js';
-import { secondsToString } from "./utilities.module.js";
-import { loadConfigurationFromOpenDialog } from './yaml.configurations.module.js';
-import { create_registers_table, update_tables } from './registers.module.js';
-import { get_all_selected_pairs, unselectAll, selectAll } from './registers.selection.module.js';
-import { rereadPairs } from "./registers.data.module.js"
-import { openFile } from "./yaml.configurations.module.js"
-import { initTransports } from "./transports.module.js"
-import { JsonParseHelper } from "./utils.module.js"
+import { make_context_menus } from '../modules/context-menu.module.js';
+import { create_directed_graph, refresh_graph_layout, update_directed_graph } from '../modules/monitor.module.js';
+import { secondsToString, JsonParseHelper } from "../modules/utilities.module.js";
+import { loadConfigurationFromOpenDialog } from '../modules/yaml.configurations.module.js';
+import { create_registers_table, update_tables } from '../modules/registers.module.js';
+import { get_all_selected_pairs, unselectAll, selectAll } from '../modules/registers.selection.module.js';
+import { rereadPairs } from "../modules/registers.data.module.js"
+import { openFile } from "../modules/yaml.configurations.module.js"
+import { initTransports } from "../modules/transports.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
@@ -749,7 +748,7 @@ import { JsonParseHelper } from "./utils.module.js"
             });
         });
         myLayout.registerComponent('transportsComponent', function (container, componentState) {
-            registerComponentAction("../add_transport.panel.html", "transportsComponent", container, () => {
+            registerComponentAction("../transport.panel.html", "transportsComponent", container, () => {
                 const containerElement = container.getElement()[0];
                 containerElementToContainerObjectMap.set(containerElement, container);
                 setUpTransportsComponent.bind(outsideContext)(container);

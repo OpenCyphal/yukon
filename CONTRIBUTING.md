@@ -34,11 +34,11 @@
 
 # Contributing
 1. Fork the repository
-2. Make your changes
+2. Make your changess
 3. Make a pull request
 4. Wait for a review
 5. Make changes if needed
-6. Merge
+6. Merge the pull request
 
 # Code style
 - Use black for formatting
