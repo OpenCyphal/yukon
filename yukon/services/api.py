@@ -1,3 +1,4 @@
+from inspect import getsource
 import json
 import os
 import re
@@ -211,11 +212,19 @@ class Api:
 
     def get_socketcan_ports(self) -> str:
         _list = get_socketcan_ports()
-        return json.dumps(_list)
+        _list_hash = json.dumps(_list, sort_keys=True)
+        return {
+            "ports": _list,
+            "hash": _list_hash,
+        }
 
     def get_slcan_ports(self) -> str:
         _list = get_slcan_ports()
-        return json.dumps(_list)
+        _list_hash = json.dumps(_list, sort_keys=True)
+        return {
+            "ports": _list,
+            "hash": _list_hash,
+        }
 
     def add_local_message(self, message: str) -> None:
         logger.info(message)

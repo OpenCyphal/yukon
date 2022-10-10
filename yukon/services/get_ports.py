@@ -10,6 +10,11 @@ def ListPortInfo_to_dict(list_port_info: ListPortInfo) -> typing.Any:
         "device": list_port_info.device,
         "description": list_port_info.description,
         "hwid": list_port_info.hwid,
+        "product": list_port_info.product,
+        "product_id": list_port_info.pid,
+        "serial_number": list_port_info.serial_number,
+        "manufacturer": list_port_info.manufacturer,
+        "interface": list_port_info.interface,
     }
 
 

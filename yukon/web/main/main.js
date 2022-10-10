@@ -582,19 +582,18 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                                         },
                                         {
                                             type: "component",
-                                            componentName: "transportsListComponent",
-                                            isClosable: true,
-                                            title: "Transports list",
-                                        },
-                                        {
-                                            type: "component",
                                             componentName: "commandsComponent",
                                             isClosable: true,
                                             title: "Commands",
                                         }
                                     ]
-                                }
-
+                                },
+                                {
+                                    type: "component",
+                                    componentName: "transportsListComponent",
+                                    isClosable: true,
+                                    title: "Transports list",
+                                },
                             ]
                         }
                     ]
