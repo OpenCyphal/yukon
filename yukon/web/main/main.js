@@ -264,6 +264,8 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         const optionsPanel = await waitForElm(".options-panel");
         function setDisplayState() {
             if (containerElement.getAttribute("data-isexpanded")) {
+                containerElement.scrollTop = 0;
+                cbAutoscroll.checked = false;
                 optionsPanel.style.display = "block";
             } else {
                 optionsPanel.style.display = "none";
@@ -432,11 +434,12 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                         // If el is the last in d
                         if (messagesObject.indexOf(el) == messagesObject.length - 1) {
                             // Scroll to bottom of messages-list
-
-                            var iAutoscrollFilter = document.getElementById("iAutoscrollFilter");
-                            if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
-                                containerElement.scrollTop = containerElement.scrollHeight;
-                            }
+                            setTimeout(function () {
+                                var iAutoscrollFilter = document.getElementById("iAutoscrollFilter");
+                                if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
+                                    containerElement.scrollTop = containerElement.scrollHeight;
+                                }
+                            }, 50);
                             lastIndex = el.index;
                         }
                         messagesList.appendChild(li);

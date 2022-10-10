@@ -1,3 +1,4 @@
+import socket
 import threading
 import webbrowser
 from typing import Optional, Any
@@ -9,6 +10,7 @@ import logging
 from time import sleep, monotonic
 import subprocess
 import mimetypes
+import requests
 import sentry_sdk
 
 from yukon.services.messages_publisher import MessagesPublisher
@@ -89,7 +91,21 @@ def open_webbrowser(state: GodState) -> None:
 
 
 def run_server(state: GodState) -> None:
-    server.run(host="0.0.0.0", port=state.gui.server_port)
+    # Check if the port state.gui.server_port is available, means that it can be used
+    # If it is not available, then increment the port number and check again
+    # If it is available, then use it
+    while True:
+        a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        location = ("127.0.0.1", state.gui.server_port)
+        is_port_available = a_socket.connect_ex(location) != 0
+        a_socket.close()
+        if not is_port_available:
+            state.gui.server_port += 1
+            continue
+        try:
+            server.run(host="0.0.0.0", port=state.gui.server_port)
+        except:
+            logger.exception("Server was unable to start or crashed.")
 
 
 def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
