@@ -159,10 +159,9 @@ export function make_context_menus(yukon_state) {
             content: `${copyIcon}Copy selected as yaml`,
             events: {
                 click: async (e, elementOpenedOn) => {
-                    const headerCell = elementOpenedOn;
-                    const node_id = headerCell.getAttribute("data-node_id");
                     let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
-                    copyTextToClipboard(await return_all_selected_registers_as_yaml(pairs, yukon_state));
+                    const yaml_text = await return_all_selected_registers_as_yaml(pairs, yukon_state);
+                    copyTextToClipboard(yaml_text);
                     e.stopPropagation();
                 }
             },

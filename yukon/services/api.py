@@ -298,6 +298,7 @@ class Api:
         interface = Interface()
         interface.udp_iface = udp_iface
         interface.udp_mtu = int(udp_mtu)
+        interface.is_udp = True
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         self.state.queues.attach_transport.put(atr)
         while True:
@@ -363,11 +364,7 @@ class Api:
                     avatar_list.remove(avatar)
                 elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
                     avatar_list.remove(avatar)
-        return_string = json.dumps(avatar_dto)
-        return_string = return_string.replace("Infinity", '"Infinity"')
-        return_string = return_string.replace("-Infinity", '"-Infinity"')
-        return_string = return_string.replace("NaN", '"NaN"')
-        return_string = return_string.replace("-NaN", '"-NaN"')
+        return_string = json.dumps(avatar_dto, cls=EnhancedJSONEncoder)
         return return_string
 
     def set_log_level(self, severity: str) -> None:
