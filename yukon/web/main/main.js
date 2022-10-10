@@ -917,22 +917,14 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                     if (inputElement) {
                         console.log("A child had the class");
                         copyTextToClipboard(inputElement.innerText, e);
+                        const previousText = inputElement.innerHTML;
+                        inputElement.innerHTML = "Copied!";
+                        setTimeout(function () {
+                            if (inputElement.innerHTML == "Copied!") {
+                                inputElement.innerHTML = previousText;
+                            }
+                        }, 700);
                         return;
-                    }
-                    let currentElement = element
-                    while (element != document.body) {
-                        if (currentElement.parentElement == null) {
-                            console.log("Didn't find the element to copy from.")
-                            return;
-                        }
-                        if (currentElement.classList.contains("input")) {
-                            break;
-                        } else {
-                            currentElement = currentElement.parentElement;
-                        }
-                    }
-                    if (currentElement.classList.contains("input")) {
-                        copyTextToClipboard(currentElement.innerText, e);
                     }
                 }
             }
