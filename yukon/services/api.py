@@ -210,7 +210,7 @@ class Api:
         self.state = state
         self.last_avatars = []
 
-    def get_socketcan_ports(self) -> str:
+    def get_socketcan_ports(self) -> typing.Dict[str, typing.Any]:
         _list = get_socketcan_ports()
         _list_hash = json.dumps(_list, sort_keys=True)
         return {
@@ -218,7 +218,7 @@ class Api:
             "hash": _list_hash,
         }
 
-    def get_slcan_ports(self) -> str:
+    def get_slcan_ports(self) -> typing.Dict[str, typing.Any]:
         _list = get_slcan_ports()
         _list_hash = json.dumps(_list, sort_keys=True)
         return {
