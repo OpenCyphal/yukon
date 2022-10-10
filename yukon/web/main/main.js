@@ -11,6 +11,39 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
+    let isSanityTest = false;
+    if (window.location.href.includes("sanity_test=true")) {
+        yukon_state.isSanityTest = true;
+        isSanityTest = true;
+    } else {
+        yukon_state.isSanityTest = false;
+        isSanityTest = false;
+    }
+    if (yukon_state.isSanityTest) {
+        console.log("Sanity test is enabled");
+        
+        setTimeout(async function () {
+            console.log("Sanity test on transport is moving to monitor");
+            await zubax_api.attach_udp_transport("127.0.0.0", 1200, 1);
+            window.addEventListener("error", async function (error, url, line) {
+                await zubax_api.fail_sanity_test(error, url, line);
+                // Close the browser tab after 0.5 seconds
+                setTimeout(function () {
+                    window.close();
+                }, 500);
+            });
+            setTimeout(async function () {
+                await zubax_api.succeed_sanity_test();
+                setTimeout(function () {
+                    window.close();
+                }, 500);
+            }, 6000);
+            console.log("Sanity test is enabled");
+            window.addEventListener("error", function (error, url, line) {
+                zubax_api.fail_sanity_test(error, url, line);
+            });
+        }, 2500);
+    }
     function waitForElm(selector, timeOutMilliSeconds) {
         return new Promise(resolve => {
             let timeOutTimeout
@@ -38,7 +71,6 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 childList: true,
                 subtree: true
             });
-
         });
     }
     async function update_avatars_dto() {
@@ -1090,6 +1122,13 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             });
         }
     } catch (e) {
+        if (isSanityTest) {
+            await zubax_api.fail_sanity_test(e, "null", "null");
+            // Close the browser tab after 0.5 seconds
+            setTimeout(function () {
+                window.close();
+            }, 500);
+        }
         addLocalMessage("Error: " + e);
         console.error(e);
     }
