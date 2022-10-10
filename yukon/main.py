@@ -39,19 +39,22 @@ else:
     root_path = os.path.dirname(os.path.abspath(__file__))
 
 
-def run_electron() -> None:
+def run_electron(state: GodState) -> None:
     # Make the thread sleep for 1 second waiting for the server to start
     sleep(1)
     exe_path = get_electron_path()
     # Use subprocess to run the exe
     try:
         # Keeping reading the stdout and stderr, look for the string electron: symbol lookup error
+        os.environ["YUKON_SERVER_PORT"] = str(state.gui.server_port)
+        logger.info("YUKON_SERVER_PORT=" + os.environ["YUKON_SERVER_PORT"])
         print(root_path)
         with subprocess.Popen(
             [exe_path, Path(root_path) / "electron/main.js"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
+            env=os.environ,
         ) as p:
             while p.poll() is None:
                 line1 = p.stdout.readline()  # type: ignore
@@ -64,6 +67,8 @@ def run_electron() -> None:
                     logger.error("There was an error while trying to run the electron app")
                     exit_code = 1
                     break
+                logger.debug(line1)
+                logger.error(line2)
             if p.returncode is not None:
                 exit_code = p.returncode
 
@@ -76,15 +81,15 @@ def run_electron() -> None:
     if exit_code != 0:
         logging.warning("Electron wasn't found or encountered an error, falling back to browser")
         os.environ["IS_BROWSER_BASED"] = "1"
-        open_webbrowser()
+        open_webbrowser(state)
 
 
-def open_webbrowser() -> None:
-    webbrowser.open("http://localhost:5000/main/main.html")
+def open_webbrowser(state: GodState) -> None:
+    webbrowser.open(f"http://localhost:{state.gui.server_port}/main/main.html")
 
 
-def run_server() -> None:
-    server.run(host="0.0.0.0", port=5000)
+def run_server(state: GodState) -> None:
+    server.run(host="0.0.0.0", port=state.gui.server_port)
 
 
 def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
@@ -116,7 +121,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         pass
 
     asyncio.get_event_loop().create_task(sendAMessage())
-    start_server_thread = threading.Thread(target=run_server, daemon=True)
+    start_server_thread = threading.Thread(target=run_server, args=[state], daemon=True)
     start_server_thread.start()
     # if environment variable IS_BROWSER_BASED is set, open the webbrowser
     if os.environ.get("IS_BROWSER_BASED"):
@@ -124,7 +129,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         thread = threading.Thread(target=open_webbrowser, daemon=True)
         thread.start()
     else:
-        start_electron_thread = threading.Thread(target=run_electron, daemon=True)
+        start_electron_thread = threading.Thread(target=run_electron, args=[state], daemon=True)
         start_electron_thread.start()
     while True:
         sleep(1)

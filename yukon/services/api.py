@@ -370,15 +370,6 @@ class Api:
     def set_log_level(self, severity: str) -> None:
         self.state.gui.message_severity = severity
 
-    def open_monitor_window(self) -> None:
-        # If env contains IS_BROWSER_BASED
-        exe_path = get_electron_path()
-        url = "http://localhost:5000/main/main.html"
-        if "IS_BROWSER_BASED" in os.environ:
-            webbrowser.open_new_tab(url)
-        else:
-            os.spawnl(os.P_NOWAIT, exe_path, exe_path, "http://localhost:5000/main/main.html")
-
     def get_connected_transport_interfaces(self) -> str:
         composed_list = [x.to_builtin() for x in self.state.cyphal.transports_list]
         return json.dumps({"interfaces": composed_list, "hash": hash(json.dumps(composed_list, sort_keys=True))})
