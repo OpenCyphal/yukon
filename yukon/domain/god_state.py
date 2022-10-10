@@ -23,7 +23,7 @@ from yukon.domain.avatar import Avatar
 from yukon.domain.interface import Interface
 from yukon.domain.note_state import NodeState
 from yukon.domain.update_register_request import UpdateRegisterRequest
-from yukon.services.the_faulty_transport import FaultyTransport
+from yukon.services.faulty_transport import FaultyTransport
 from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.command_send_response import CommandSendResponse
 from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
@@ -84,7 +84,7 @@ class CyphalState:
     transports_list: typing.List[Interface] = field(default_factory=list)
     inferior_transports_by_interface_hashes: Dict[int, Interface] = field(default_factory=dict)
     already_used_transport_interfaces: Dict[str, int] = field(default_factory=dict)
-    faulty_transport: Optional[FaultyTransport] = field(default_factory=none_factory)
+    faulty_transposrt: Optional[FaultyTransport] = field(default_factory=none_factory)
 
 
 @dataclass

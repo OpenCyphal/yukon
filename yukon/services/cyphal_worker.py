@@ -22,7 +22,7 @@ from yukon.domain.god_state import GodState
 from yukon.services.snoop_registers import make_tracers_trackers
 from yukon.services.snoop_registers import get_register_value, get_register_names
 from yukon.services.messages_publisher import add_local_message
-from yukon.services.the_faulty_transport import FaultyTransport
+from yukon.services.faulty_transport import FaultyTransport
 
 
 logger = logging.getLogger(__name__)

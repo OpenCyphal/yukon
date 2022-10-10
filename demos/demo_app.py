@@ -23,6 +23,8 @@ import uavcan.si.unit.voltage  # noqa
 class DemoApp:
     REGISTER_FILE = "demo_app.db"
     """
+    In this case the register file is not used, but it is possible to use it to store the state of the application.
+    
     The register file stores configuration parameters of the local application/node. The registers can be modified
     at launch via environment variables and at runtime via RPC-service "uavcan.register.Access".
     The file will be created automatically if it doesn't exist.
@@ -36,11 +38,14 @@ class DemoApp:
             software_version=uavcan.node.Version_1(major=1, minor=0),
             name="org.opencyphal.pycyphal.demo.demo_app",
         )
+
+        registry = pycyphal.application.make_registry(":memory:", environment_variables=os.environ)
+
         # The Node class is basically the central part of the library -- it is the bridge between the application and
         # the UAVCAN network. Also, it implements certain standard application-layer functions, such as publishing
         # heartbeats and port introspection messages, responding to GetInfo, serving the register API, etc.
         # The register file stores the configuration parameters of our node (you can inspect it using SQLite Browser).
-        self._node = pycyphal.application.make_node(node_info, ":memory:")
+        self._node = pycyphal.application.make_node(node_info, registry)
 
         # Published heartbeat fields can be configured as follows.
         self._node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
@@ -156,4 +161,12 @@ async def main() -> None:
         app.close()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as ex:
+        # If the exception text contains Hipp  hooreeey! The transport is closed, then ignore it and don't log it
+        if ex.args and "Hipp  hooreeey! The transport is closed" not in ex.args[0]:
+            logging.exception("Unhandled exception")
+            sys.exit(1)
+        else:
+            logging.info("Exception ignored")

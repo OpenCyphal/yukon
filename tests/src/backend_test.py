@@ -6,7 +6,7 @@ from threading import Thread
 import os
 import sys
 import time
-
+import logging
 root = Path(__file__).parent.parent.parent
 
 # Add .compiled and yukon to PYTHONPATH
@@ -25,6 +25,7 @@ os.environ["YUKON_IS_UDP_FAULTY"] = "1"
 os.environ["YUKON_UDP_IFACE"] = "127.0.0.127"
 os.environ["YUKON_NODE_ID"] = "1"
 os.environ["YUKON_UDP_MTU"] = "1200"
+os.environ["PYCYPHAL_LOGLEVEL"] = "CRITICAL"
 # The first argument to the script is the path to the browser that will be used, it doesn't have to be provided however
 run_demos_path = root / "demos" / "run_demos.py"
 print(run_demos_path.absolute())

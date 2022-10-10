@@ -1,3 +1,4 @@
+import asyncio
 import pycyphal
 from pycyphal.transport import (
     ProtocolParameters,
@@ -90,6 +91,14 @@ class FaultyTransport(pycyphal.transport.Transport):
 
 import random
 
+async def failing_async_task():
+    await asyncio.sleep(0.3)
+    return None
+
+async def false_async_task():
+    await asyncio.sleep(0.3)
+    return False
+
 
 class FaultySession:
     def should_fail(self) -> bool:
@@ -107,11 +116,12 @@ class FaultyInputSession(InputSession, FaultySession):
     def sample_statistics(self) -> TransportStatistics:
         raise NotImplementedError
 
-    def receive(self, deadline: float) -> pycyphal.transport.Transfer:
+    async def receive(self, deadline: float) -> pycyphal.transport.Transfer:
         if self.should_fail():
-            raise Exception("The transport is closed")
+            return await failing_async_task()
+            # raise Exception("Hipp  hooreeey! The transport is closed")
         else:
-            return self._inner.receive(deadline)
+            return await self._inner.receive(deadline)
 
     def close(self) -> None:
         self._inner.close()
@@ -139,7 +149,8 @@ class FaultyOutputSession(OutputSession, FaultySession):
 
     async def send(self, transfer: Transfer, monotonic_deadline: float) -> typing.Any:
         if self.should_fail():
-            raise Exception("The transport is closed")
+            # raise Exception("Hipp  hooreeey! The transport is closed")
+            return await false_async_task()
         return await self._inner.send(transfer, monotonic_deadline)
 
     def close(self) -> None:
