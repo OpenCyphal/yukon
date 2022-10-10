@@ -145,7 +145,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     # if environment variable IS_BROWSER_BASED is set, open the webbrowser
     if os.environ.get("IS_BROWSER_BASED"):
         # Make a thread and call open_webbrowser() in it
-        thread = threading.Thread(target=open_webbrowser, daemon=True)
+        thread = threading.Thread(target=open_webbrowser, args=[state], daemon=True)
         thread.start()
     else:
         start_electron_thread = threading.Thread(target=run_electron, args=[state], daemon=True)
