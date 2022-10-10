@@ -10,7 +10,6 @@ import logging
 from time import sleep, monotonic
 import subprocess
 import mimetypes
-import requests
 import sentry_sdk
 
 from yukon.services.messages_publisher import MessagesPublisher
@@ -50,7 +49,7 @@ def run_electron(state: GodState) -> None:
     try:
         # Keeping reading the stdout and stderr, look for the string electron: symbol lookup error
         os.environ["YUKON_SERVER_PORT"] = str(state.gui.server_port)
-        logger.info("YUKON_SERVER_PORT=" + os.environ["YUKON_SERVER_PORT"])
+        logger.info("YUKON_SERVER_PORT=%s", os.environ["YUKON_SERVER_PORT"])
         print(root_path)
         with subprocess.Popen(
             [exe_path, Path(root_path) / "electron/main.js"],
