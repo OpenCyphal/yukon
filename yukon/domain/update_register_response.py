@@ -5,8 +5,9 @@ import uavcan.register
 
 
 @dataclass
-class UpdateRegisterRequest:
+class UpdateRegisterResponse:
     request_id: UUID
     register_name: str
     value: uavcan.register.Value_1
     node_id: int
+    success: bool

@@ -4,6 +4,7 @@ import webbrowser
 from typing import Optional, Any
 import os
 import sys
+import argparse
 from pathlib import Path
 import asyncio
 import logging
@@ -100,7 +101,7 @@ def run_server(state: GodState) -> None:
     # Check if the port state.gui.server_port is available, means that it can be used
     # If it is not available, then increment the port number and check again
     # If it is available, then use it
-    while True:
+    while not state.gui.is_port_decided:
         a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         location = ("127.0.0.1", state.gui.server_port)
         is_port_available = a_socket.connect_ex(location) != 0
@@ -108,11 +109,12 @@ def run_server(state: GodState) -> None:
         if not is_port_available:
             state.gui.server_port += 1
             continue
-        state.gui.is_port_decided = True
-        try:
-            server.run(host="0.0.0.0", port=state.gui.server_port)
-        except:
-            logger.exception("Server was unable to start or crashed.")
+        else:
+            state.gui.is_port_decided = True
+    try:
+        server.run(host="0.0.0.0", port=state.gui.server_port)
+    except:
+        logger.exception("Server was unable to start or crashed.")
 
 
 def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
@@ -205,6 +207,13 @@ async def main() -> int:
         auto_exit_thread = threading.Thread(target=auto_exit_task)
         auto_exit_thread.start()
     state: GodState = GodState()
+    parser: argparse.ArgumentParser = argparse.ArgumentParser("Yukon")
+    parser.add_argument("--port", type=int, help="Port to use for the internal webserver")
+    # Read the port argument to state.gui.server_port
+    args = parser.parse_args()
+    if args.port:
+        state.gui.server_port = args.port
+        state.gui.is_port_decided = True
     api: Api = Api(state)
     api2: SendingApi = SendingApi()
     run_gui_app(state, api, api2)

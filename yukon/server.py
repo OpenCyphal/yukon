@@ -54,7 +54,7 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
         try:
             response = found_method(*(_object["arguments"]))
             if response is None:
-                return '["Nice"]'
+                return '["the API method returns None"]'
             return response
         except Exception as e:  # pylint: disable=broad-except
             logger.exception("So something went wrong with calling the method %s", path)

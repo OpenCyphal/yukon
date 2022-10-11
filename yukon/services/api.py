@@ -7,7 +7,10 @@ import webbrowser
 from pathlib import Path
 from time import sleep, monotonic
 import logging
+from zoneinfo import available_timezones
 import yaml
+from uuid import uuid4
+from time import time
 
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
@@ -298,9 +301,18 @@ class Api:
         return file_dto
 
     def update_register_value(self, register_name: str, register_value: str, node_id: str) -> None:
-        # Check if register_value can be converted to an int, is purely numeric
         new_value: uavcan.register.Value_1 = unexplode_value(register_value)
-        self.state.queues.update_registers.put(UpdateRegisterRequest(register_name, new_value, int(node_id)))
+        request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id))
+        self.state.queues.update_registers.put(request)
+        timeout = time() + 5
+        while time() < timeout:
+            response = self.state.queues.update_registers_response.get(request.request_id)
+            if not response:
+                sleep(0.1)
+            else:
+                if response.success:
+                    logger.info(f"Successfully updated register {register_name} to {register_value}")
+                break
 
     def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> str:
         logger.info(f"Attaching UDP transport to {udp_iface}")
@@ -311,7 +323,8 @@ class Api:
         interface.is_udp = True
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         self.state.queues.attach_transport.put(atr)
-        while True:
+        timeout = time() + 5
+        while time() < timeout:
             if self.state.queues.attach_transport_response.empty():
                 sleep(0.1)
             else:
@@ -328,7 +341,8 @@ class Api:
 
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         self.state.queues.attach_transport.put(atr)
-        while True:
+        timeout = time() + 5
+        while time() < timeout:
             if self.state.queues.attach_transport_response.empty():
                 sleep(0.1)
             else:
@@ -338,7 +352,8 @@ class Api:
     def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
         self.state.queues.detach_transport.put(hash)
-        while True:
+        timeout = time() + 5
+        while time() < timeout:
             if self.state.queues.detach_transport_response.empty():
                 sleep(0.1)
             else:
@@ -387,7 +402,8 @@ class Api:
     def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
         send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)
         self.state.queues.send_command.put(send_command_request)
-        while True:
+        timeout = time() + 5
+        while time() < timeout:
             if self.state.queues.command_response.empty():
                 sleep(0.1)
             else:

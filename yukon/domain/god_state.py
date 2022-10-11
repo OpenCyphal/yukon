@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from queue import Queue
 from typing import Optional, Any, Callable, Dict
+from uuid import UUID
 
 from pycyphal.application.node_tracker import NodeTracker
 
@@ -23,6 +24,7 @@ from yukon.domain.avatar import Avatar
 from yukon.domain.interface import Interface
 from yukon.domain.note_state import NodeState
 from yukon.domain.update_register_request import UpdateRegisterRequest
+from yukon.domain.update_register_response import UpdateRegisterResponse
 from yukon.services.faulty_transport import FaultyTransport
 from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.command_send_response import CommandSendResponse
@@ -37,7 +39,16 @@ def none_factory() -> None:
 
 @dataclass
 class QueuesState:
-    """A class that holds all queues used by the god state."""
+    """
+    A class that holds all queues used by the god state.
+
+    Queues exist because operations with Pycyphal can only be performed from its own thread.
+
+    Some responses are put in dictionaries with the request id as key. This is more appropriate
+    when compared to each client of a queue having to search through the queue by popping and
+    later reinserting requests that didn't have a matching id.
+
+    """
 
     message_queue_counter: int = 0
     messages: Queue[Message] = field(default_factory=Queue)
@@ -45,6 +56,7 @@ class QueuesState:
     attach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
     detach_transport: Queue[int] = field(default_factory=Queue)
     update_registers: Queue[UpdateRegisterRequest] = field(default_factory=Queue)
+    update_registers_response: Dict[UUID, UpdateRegisterResponse] = field(default_factory=Queue)
     apply_configuration: Queue[ApplyConfigurationRequest] = field(default_factory=Queue)
     reread_registers: Queue[RereadRegistersRequest] = field(default_factory=Queue)
     reread_register_names: Queue[RereadRegisterNamesRequest] = field(default_factory=Queue)
@@ -62,6 +74,7 @@ class GuiState:
     message_severity: str = "DEBUG"
     server_port: int = 5000
     is_port_decided: bool = False
+    forced_port: Optional[int] = None
 
 
 @dataclass
