@@ -3,3 +3,4 @@ parsimonious
 nox==2022.8.*
 types-PyYAML
 Pillow==9.*
+pytest==7.*

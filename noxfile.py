@@ -41,3 +41,10 @@ def pylint(session):
     session.run("pip", "install", "pylint==2.*")
     session.run("pylint", *map(str, src_dirs), env={"PYTHONPATH": str(compiled_dir)})
     session.run("pylint", "build_exe.py", env={"PYTHONPATH": str(compiled_dir)})
+
+
+@nox.session(reuse_venv=True)
+def pytest(session):
+    session.run("pip", "install", "-r", "dev-requirements.txt")
+    session.run("pip", "install", "-r", "requirements.txt")
+    session.run("pytest", "tests/src/necessary")
