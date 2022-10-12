@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import logging
+
 root = Path(__file__).parent.parent.parent
 
 # Add .compiled and yukon to PYTHONPATH
@@ -18,7 +19,7 @@ sys.path.append(str(root.absolute()))
 path_separator = ";" if os.name == "nt" else ":"
 
 os.environ["PYTHONPATH"] = (
-    str(root / ".compiled") + path_separator + str(root / "yukon") + path_separator + str(root.absolute())
+        str(root / ".compiled") + path_separator + str(root / "yukon") + path_separator + str(root.absolute())
 )
 os.environ["IS_HEADLESS"] = "1"
 os.environ["YUKON_IS_UDP_FAULTY"] = "1"
@@ -39,6 +40,8 @@ p = Popen(f"{python_exe} {str(run_demos_path.absolute())}", shell=True, env=os.e
 
 # Run the yukon __main__.py script and save its exit code
 arguments = [python_exe, str(root / "yukon" / "__main__.py")]
+
+
 # If this subprocess run takes more than 20 seconds to run, then kill it and exit with code 1
 def run_yukon():
     needed_timeout = 20
