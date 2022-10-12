@@ -71,49 +71,62 @@ class TestBackendTestSession:
 
         Uses the example_node fixture.
         """
-        with pycyphal.application.make_node(uavcan.node.GetInfo_1.Response(
-                software_version=uavcan.node.Version_1(major=1, minor=0),
-                name="test_subject",
-        ), registry_with_transport_set_up) as node:
-            node.start()
-            # Published heartbeat fields can be configured as follows.
-            node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
-            node.heartbeat_publisher.vendor_specific_status_code = os.getpid() % 100
+        try:
             with pycyphal.application.make_node(uavcan.node.GetInfo_1.Response(
                     software_version=uavcan.node.Version_1(major=1, minor=0),
-                    name="tester",
-            ), registry_with_transport_set_up) as tester_node:
-                tester_node.start()
-                # Wait 10 seconds for Yukon to start
-                await asyncio.sleep(10)
-                response = requests.post(
-                    "http://localhost:5001/api/update_register_value",
-                    json={
-                        "arguments": [
-                            "analog.rcpwm.deadband",
-                            {"real32": {"value": [0.00004599999873689376]},
-                             "_meta_": {"mutable": True, "persistent": True}},
-                            125,
-                        ]
-                    },
-                )
-                # Make a new client to send an access request to the demo node
-                service_client = tester_node.make_client(uavcan.register.Access_1_0, node.node.id)
-                msg = uavcan.register.Access_1_0.Request()
-                msg.name.name = None
-                response = await service_client.call(msg)
-                if response is not None:
-                    pass
-                if response.status_code != 200:
-                    return False
-                try:
-                    response_update = json.loads(response.text)
-                except json.decoder.JSONDecodeError:
-                    return False
-                logger.debug("response_update: %s", response_update)
-                if response_update.get("success") is not True:
-                    return False
-                return True
+                    name="test_subject",
+            ), registry_with_transport_set_up) as node:
+                node.start()
+                # Published heartbeat fields can be configured as follows.
+                node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
+                node.heartbeat_publisher.vendor_specific_status_code = os.getpid() % 100
+                with pycyphal.application.make_node(uavcan.node.GetInfo_1.Response(
+                        software_version=uavcan.node.Version_1(major=1, minor=0),
+                        name="tester",
+                ), registry_with_transport_set_up) as tester_node:
+                    tester_node.start()
+                    # Wait 10 seconds for Yukon to start
+                    await asyncio.sleep(10)
+                    try:
+                        response = requests.post(
+                            "http://localhost:5001/api/update_register_value",
+                            json={
+                                "arguments": [
+                                    "analog.rcpwm.deadband",
+                                    {"real32": {"value": [0.00004599999873689376]},
+                                     "_meta_": {"mutable": True, "persistent": True}},
+                                    125,
+                                ]
+                            },
+                        )
+                    except requests.exceptions.ConnectionError as e:
+                        logger.exception("Connection error")
+                        raise Exception(
+                            "Update registers command to Yukon FAILED,"
+                            " API was not available. Connection error.")
+                    # Make a new client to send an access request to the demo node
+                    service_client = tester_node.make_client(uavcan.register.Access_1_0, node.node.id)
+                    msg = uavcan.register.Access_1_0.Request()
+                    msg.name.name = None
+                    response = await service_client.call(msg)
+                    if response is not None:
+                        pass
+                    if response.status_code != 200:
+                        return False
+                    try:
+                        response_update = json.loads(response.text)
+                    except json.decoder.JSONDecodeError:
+                        return False
+                    logger.debug("response_update: %s", response_update)
+                    if response_update.get("success") is not True:
+                        return False
+                    return True
+        except Exception as e:
+            # I choose to ignore exceptions to make sure the Yukon thread stays open
+            # I want to manually see how the requests fail
+            logger.exception("Exception")
+            pass
+            # raise e
 
     # Unit tests here
     async def verify_demo_node_has_register(self):
