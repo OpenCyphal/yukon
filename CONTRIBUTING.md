@@ -1,60 +1,68 @@
 # Running the application in a development environment
-* Clone the repository, there aren't any submodules
-* Make a venv and install the requirements on GNU/Linux
-    ```bash
-    python -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt -r dev-requirements.txt
-    ```
-* Additional step when using systems where Tk is missing by default (like ArchLinux)
-    ```bash
-    sudo pacman -S tk
-    ```
-* Make a venv and install the requirements on Windows
-    ```bat
-    python -m venv venv
-    venv\Scripts\activate.bat
-    pip install -r requirements.txt -r dev-requirements.txt
-    ```
-* Install yakut and use it to create the .compiled folder for compiled dsdl
-    ```bash
-    pip install yakut
-    yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
-    ```
-* Run the application on GNU/Linux
-    ```bash
-    IS_DEBUG=1 PYTHONPATH=.:.compiled python3 yukon/__main__.py
-    ```
-* Run the application on Windows
-    ```batch
-    set PYTHONPATH=.;.compiled
-    set IS_DEBUG=1
-    python yukon/__main__.py
-    ```
-* Build the application for your current OS and obtain ElectronJS (to run in ElectronJS)
-    ```
-    python build_exe.py
-    ```
 
-* Build the DSDL namespace for demos
-    ```
+* Clone the repository, there aren't any submodules (you know how, just an example here)
+
+      git clone https://github.com/OpenCyphal-Garage/yukon.git
+
+* Only on GNU/Linux: Make a venv and install the requirements
+
+      python -m venv venv
+      source venv/bin/activate
+      pip install -r requirements.txt -r dev-requirements.txt
+
+* Only on Arch Linux: additional step when using systems where Tk is missing by default
+
+      sudo pacman -S tk
+
+* Only on Windows: Make a venv and install the requirements
+
+      python -m venv venv
+      venv\Scripts\activate.bat
+      pip install -r requirements.txt -r dev-requirements.txt
+
+* On every OS: Install yakut and use it to create the .compiled folder for compiled dsdl
+
+      pip install yakut
+      yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
+
+* Only on GNU/Linux: Run the application
+
+      IS_DEBUG=1 PYTHONPATH=.:.compiled python3 yukon/__main__.py
+
+* Only on Windows: Run the application
+
+      set PYTHONPATH=.;.compiled
+      set IS_DEBUG=1
+      python yukon/__main__.py
+
+* On every OS: Build the application for your current OS and obtain ElectronJS (to run in ElectronJS)
+  Without this step you will have to run Yukon in a browser.
+
+      python build_exe.py
+
+* On every OS: Build the DSDL namespace for demos
+
+This step will create demos that you can run and use to test Yukon if you have no Cyphal capable devices available
+to connec to your computer.
+
     yakut compile -O.compiled demos\sirius_cyber_corp
-    ```
 
-# Running the application in vscode
-Use this as a template for your .env file, the .vscode also includes the launch configurations.
+* How to run the application from vscode, using the buttons
 
-```
-PYTHONPATH=C:\Users\silver\Documents\zubax\yukon\.compiled;C:\Users\silver\Documents\zubax\yukon
-IS_BROWSER_BASED=1
-IS_DEBUG=1
-```
+CREATE a .env file in the root of the project with the following content (; separator on Windows):
 
-It's important to use absolute paths in the PYTHONPATH here.
+    PYTHONPATH=C:\Users\silver\Documents\zubax\yukon\.compiled;C:\Users\silver\Documents\zubax\yukon
+    IS_BROWSER_BASED=1
+    IS_DEBUG=1
 
-On Windows use ; as the separator, on GNU/Linux use : as the separator.
+It's IMPORTANT to use absolute paths in the PYTHONPATH here.
+
+There is an IMPORTANT difference in the first line of the previous snippet: on Windows use ; as the separator, on
+GNU/Linux use :
+as the separator.
 
 # Contributing
+
 1. Fork the repository
 2. Make your changess
 3. Make a pull request
@@ -63,6 +71,7 @@ On Windows use ; as the separator, on GNU/Linux use : as the separator.
 6. Merge the pull request
 
 # Code style
+
 - Use black for formatting
 - Run `nox -s mypy` to check for type errors
 - Run `nox -s pylint` to check for linting errors
