@@ -43,11 +43,11 @@
 * On every OS: Build the DSDL namespace for demos
 
 This step will create demos that you can run and use to test Yukon if you have no Cyphal capable devices available
-to connec to your computer.
+to connect to your computer.
 
     yakut compile -O.compiled demos\sirius_cyber_corp
 
-* How to run the application from vscode, using the buttons
+* On every OS: How to run the application from vscode, using the buttons
 
 CREATE a .env file in the root of the project with the following content (; separator on Windows):
 
@@ -58,8 +58,10 @@ CREATE a .env file in the root of the project with the following content (; sepa
 It's IMPORTANT to use absolute paths in the PYTHONPATH here.
 
 There is an IMPORTANT difference in the first line of the previous snippet: on Windows use ; as the separator, on
-GNU/Linux use :
-as the separator.
+GNU/Linux use : as the separator.
+
+It is also IMPORTANT that the PYTHONPATH contains the path to the .compiled folder and the path to the root directory of
+the repository. It doesn't matter which order that paths are placed in.
 
 # Contributing
 
