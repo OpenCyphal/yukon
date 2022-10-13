@@ -26,26 +26,22 @@ def kill(proc_pid):
 OneTryHttpAdapter = HTTPAdapter(max_retries=1)
 
 
-@pytest.fixture
-def yukon_fixture():
+def create_yukon(attached_with_node_id: int):
     session = requests.Session()
     session.mount('http://localhost:5001/api', OneTryHttpAdapter)
-    yukon_process = Process(target=run_application, args=(False, 5001, False), daemon=True)
-    yukon_process.start()
-    yukon_process.join(timeout=None)
     # First check if there is any other yukon on that port
-    # is_any_yukon_already_running = True
-    # try:
-    #     session.post("http://localhost:5001/api/attach_udp_transport",
-    #                  json={"arguments": ["127.0.0.0", "1200", "127"]},
-    #                  timeout=1)
-    # except requests.exceptions.ConnectionError:
-    #     is_any_yukon_already_running = False
-    # if is_any_yukon_already_running:
-    #     raise Exception("A Yukon was already running on a testing port at the time when it had to be launched") \
-    #         from None
-
-    logger.debug("Yukon thread started")
+    is_any_yukon_already_running = True
+    try:
+        session.post("http://localhost:5001/api/attach_udp_transport",
+                     json={"arguments": ["127.0.0.0", "1200", str(attached_with_node_id)]},
+                     timeout=1.0)
+    except requests.exceptions.ConnectionError:
+        is_any_yukon_already_running = False
+    if is_any_yukon_already_running:
+        raise Exception("A Yukon was already running on a testing port at the time when it had to be launched") \
+            from None
+    yukon_process = Process(target=run_application, args=(True, 5001, False), daemon=True)
+    yukon_process.start()
     time.sleep(10)
     logger.debug("Sending a request to attach transport")
     # Send a request to localhost:5000/api/attach_udp_transport, containing json
@@ -53,7 +49,7 @@ def yukon_fixture():
     # and check that the response.success == true
     try:
         response = session.post("http://localhost:5001/api/attach_udp_transport",
-                                json={"arguments": ["127.0.0.0", "1200", "127"]},
+                                json={"arguments": ["127.0.0.0", "1200", str(attached_with_node_id)]},
                                 timeout=3)
     except requests.exceptions.ConnectionError:
         logger.exception("Connection error")
@@ -70,3 +66,4 @@ def yukon_fixture():
             logger.debug("Strangely enough, the UDP transport was already attached.")
     print("The test has successfully attached a UDP transport to Yukon.")
     print("Yukon was launched")
+    return yukon_process
