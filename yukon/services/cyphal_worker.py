@@ -203,7 +203,7 @@ def cyphal_worker(state: GodState) -> None:
                             f"{value}",
                         )
                         state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
-                    except NoSuccess as e:
+                    except (Exception, NoSuccess) as e:
                         response_from_yukon = UpdateRegisterResponse(
                             register_update.request_id, register_update.register_name,
                             register_update.value,

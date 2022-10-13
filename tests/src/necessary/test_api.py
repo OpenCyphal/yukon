@@ -112,7 +112,7 @@ class TestBackendTestSession:
                             126,
                         ]
                     },
-                    timeout=3.0,
+                    timeout=30.0,
                 )
                 # Make a new client to send an access request to the demo node
                 service_client = tester_node.make_client(uavcan.register.Access_1_0, node.id)
