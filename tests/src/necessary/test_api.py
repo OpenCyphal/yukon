@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 import os
@@ -84,13 +83,11 @@ class TestBackendTestSession:
         session = requests.Session()
         session.mount("http://localhost:5001/api", OneTryHttpAdapter)
         with pycyphal.application.make_node(
-                make_test_node_info("test_subject"),
-                get_registry_with_transport_set_up(126)
-        ) as node, \
-                pycyphal.application.make_node(
-                    make_test_node_info("tester"),
-                    get_registry_with_transport_set_up(127),
-                ) as tester_node:
+            make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+        ) as node, pycyphal.application.make_node(
+            make_test_node_info("tester"),
+            get_registry_with_transport_set_up(127),
+        ) as tester_node:
             # Published heartbeat fields can be configured as follows.
             node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
             node.heartbeat_publisher.vendor_specific_status_code = os.getpid() % 100

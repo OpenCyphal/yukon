@@ -300,7 +300,7 @@ class Api:
             file_dto["name"] = Path(file_path).name
         return file_dto
 
-    def update_register_value(self, register_name: str, register_value: str, node_id: str) -> None:
+    def update_register_value(self, register_name: str, register_value: str, node_id: str) -> typing.Any:
         new_value: uavcan.register.Value_1 = unexplode_value(register_value)
         request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id))
         self.state.queues.update_registers.put(request)
@@ -312,6 +312,8 @@ class Api:
             else:
                 if response.success:
                     logger.info(f"Successfully updated register {register_name} to {register_value}")
+                else:
+                    logger.error(f"Failed to update register {register_name} to {register_value}")
                 return response
         logger.critical("Something is wrong with updating registers.")
         raise Exception(f"Failed to update register {register_name} to {register_value}, critical timeout")
