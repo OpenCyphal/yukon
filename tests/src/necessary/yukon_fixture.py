@@ -5,8 +5,10 @@ import os
 import requests
 import time
 from pathlib import Path
-from .root_folder import get_root_folder
+import sys
 import logging
+import traceback
+from .root_folder import get_root_folder
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +37,14 @@ def yukon():
                                  json={"arguments": ["127.0.0.0", "1200", "127"]})
     except requests.exceptions.ConnectionError as e:
         logger.exception("Connection error")
-        raise Exception("The test failed to send an attach command to Yukon, API was not available. Connection error.")
+        raise Exception(
+            f"The test failed to send an attach command to Yukon, API was not available. Connection error.\n {traceback.format_exc(chain=False)}") from None
     if response.status_code != 200:
-        raise Exception("Failed to attach UDP transport")
+        raise Exception("Response to the request had a different response code from 200.") from None
     else:
         response_json = response.json()
         if not response_json["success"]:
-            raise Exception("Failed to attach UDP transport: " + response_json["message"])
+            raise Exception("Failed to attach UDP transport: " + response_json["message"]) from None
         else:
             print("The test has successfully attached a UDP transport to Yukon.")
     print("Yukon was launched")

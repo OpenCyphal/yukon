@@ -99,28 +99,29 @@ class TestBackendTestSession:
                                 ]
                             },
                         )
+                        # Make a new client to send an access request to the demo node
+                        service_client = tester_node.make_client(uavcan.register.Access_1_0, node.node.id)
+                        msg = uavcan.register.Access_1_0.Request()
+                        msg.name.name = None
+                        verification_response = await service_client.call(msg)
+                        if response is not None:
+                            pass
+                        if response.status_code != 200:
+                            return False
+                        try:
+                            response_update = json.loads(response.text)
+                        except json.decoder.JSONDecodeError:
+                            return False
+                        logger.debug("response_update: %s", response_update)
+                        if response_update.get("success") is not True:
+                            return False
+                        return True
                     except requests.exceptions.ConnectionError as e:
                         logger.exception("Connection error")
+                        sys.tracebacklimit = 0
                         raise Exception(
                             "Update registers command to Yukon FAILED,"
-                            " API was not available. Connection error.")
-                    # Make a new client to send an access request to the demo node
-                    service_client = tester_node.make_client(uavcan.register.Access_1_0, node.node.id)
-                    msg = uavcan.register.Access_1_0.Request()
-                    msg.name.name = None
-                    response = await service_client.call(msg)
-                    if response is not None:
-                        pass
-                    if response.status_code != 200:
-                        return False
-                    try:
-                        response_update = json.loads(response.text)
-                    except json.decoder.JSONDecodeError:
-                        return False
-                    logger.debug("response_update: %s", response_update)
-                    if response_update.get("success") is not True:
-                        return False
-                    return True
+                            " API was not available. Connection error.") from None
         except Exception as e:
             # I choose to ignore exceptions to make sure the Yukon thread stays open
             # I want to manually see how the requests fail
