@@ -311,8 +311,11 @@ class Api:
                 sleep(0.1)
             else:
                 if response.success:
+                    return response
                     logger.info(f"Successfully updated register {register_name} to {register_value}")
                 break
+        logger.critical("Something is wrong with updating registers.")
+        raise Exception(f"Failed to update register {register_name} to {register_value}, critical timeout")
 
     def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> str:
         logger.info(f"Attaching UDP transport to {udp_iface}")

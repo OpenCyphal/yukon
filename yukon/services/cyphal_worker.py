@@ -194,6 +194,15 @@ def cyphal_worker(state: GodState) -> None:
                             raise NoSuccess(
                                 f"Register {register_update.register_name} does not exist on node {register_update.node_id}."
                             )
+                        response_from_yukon = UpdateRegisterResponse(
+                            register_update.request_id, register_update.register_name,
+                            register_update.value,
+                            register_update.node_id,
+                            True,
+                            f"A successful register update, value for {register_name} was sent to node {node_id}: "
+                            f"{value}",
+                        )
+                        state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
                     except NoSuccess as e:
                         response_from_yukon = UpdateRegisterResponse(
                             register_update.request_id, register_update.register_name,
