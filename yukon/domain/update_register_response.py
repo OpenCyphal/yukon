@@ -11,3 +11,4 @@ class UpdateRegisterResponse:
     value: uavcan.register.Value_1
     node_id: int
     success: bool
+    message: str
