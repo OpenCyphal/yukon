@@ -15,6 +15,7 @@ from yukon.domain.reread_register_names_request import RereadRegisterNamesReques
 from yukon.services.api import is_configuration_simplified
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_request import UpdateRegisterRequest
+from yukon.domain.update_register_response import UpdateRegisterResponse
 from yukon.services.value_utils import unexplode_value
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.attach_transport_response import AttachTransportResponse
@@ -23,7 +24,6 @@ from yukon.services.snoop_registers import make_tracers_trackers
 from yukon.services.snoop_registers import get_register_value, get_register_names
 from yukon.services.messages_publisher import add_local_message
 from yukon.services.faulty_transport import FaultyTransport
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
@@ -179,9 +179,16 @@ def cyphal_worker(state: GodState) -> None:
                         # We don't need the response here because it is snooped by an avatar anyway
                         response = await client.call(request)
                         if response is None:
+                            response_from_yukon = UpdateRegisterResponse(register_update.request_id,
+                                                                         register_update.register_name,
+                                                                         register_update.value,
+                                                                         register_update.node_id,
+                                                                         False)
+                            state.queues.update_registers_response.put(response_from_yukon)
                             add_local_message(
                                 state,
-                                "Failed to update register {}".format(register_update.register_name),
+                                "Failed to update register {}, no response was received a node with node id {}".format(
+                                    register_update.register_name, register_update.node_id),
                                 register_update.register_name,
                             )
                             continue
