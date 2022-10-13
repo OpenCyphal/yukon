@@ -75,6 +75,7 @@ class GuiState:
     server_port: int = 5000
     is_port_decided: bool = False
     forced_port: Optional[int] = None
+    is_headless: bool = False
 
 
 @dataclass

@@ -8,6 +8,7 @@ import typing
 from pathlib import Path
 
 import pycyphal
+import pycyphal.application
 import pytest
 import requests
 from requests.adapters import HTTPAdapter
@@ -98,6 +99,7 @@ class TestBackendTestSession:
                                 125,
                             ]
                         },
+                        timeout=3
                     )
                     # Make a new client to send an access request to the demo node
                     service_client = tester_node.make_client(uavcan.register.Access_1_0, node.node.id)
@@ -116,7 +118,7 @@ class TestBackendTestSession:
                     if response_update.get("success") is not True:
                         return False
                     return True
-                except requests.exceptions.ConnectionError:
+                except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
                     logger.exception("Connection error")
                     raise Exception(
                         "Update registers command to Yukon FAILED,"

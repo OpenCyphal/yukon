@@ -56,19 +56,19 @@ def run_electron(state: GodState) -> None:
         logger.info("YUKON_SERVER_PORT=%s", os.environ["YUKON_SERVER_PORT"])
         print(root_path)
         with subprocess.Popen(
-            [exe_path, Path(root_path) / "electron/main.js"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-            env=os.environ,
+                [exe_path, Path(root_path) / "electron/main.js"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                env=os.environ,
         ) as p:
             while p.poll() is None:
                 line1 = p.stdout.readline()  # type: ignore
                 line2 = p.stderr.readline()  # type: ignore
                 if (
-                    (line1 and "electron: symbol lookup error" in line1)
-                    or line2
-                    and ("electron: symbol lookup error" in line2)
+                        (line1 and "electron: symbol lookup error" in line1)
+                        or line2
+                        and ("electron: symbol lookup error" in line2)
                 ):
                     logger.error("There was an error while trying to run the electron app")
                     exit_code = 1
@@ -150,7 +150,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     start_server_thread = threading.Thread(target=run_server, args=[state], daemon=True)
     start_server_thread.start()
     # if environment variable IS_BROWSER_BASED is set, open the webbrowser
-    if not os.environ.get("IS_HEADLESS"):
+    if not state.gui.is_headless:
         if os.environ.get("IS_BROWSER_BASED"):
             # Make a thread and call open_webbrowser() in it
             thread = threading.Thread(target=open_webbrowser, args=[state], daemon=True)
@@ -161,10 +161,10 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     else:
         os.environ.setdefault("IS_DEBUG", "1")
     if (
-        os.environ.get("IS_HEADLESS")
-        and os.environ.get("YUKON_UDP_IFACE")
-        and os.environ.get("YUKON_NODE_ID")
-        and os.environ.get("YUKON_UDP_MTU")
+            state.gui.is_headless
+            and os.environ.get("YUKON_UDP_IFACE")
+            and os.environ.get("YUKON_NODE_ID")
+            and os.environ.get("YUKON_UDP_MTU")
     ):
         interface: Interface = Interface()
         interface.is_udp = True
@@ -184,7 +184,8 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     while True:
         sleep(1)
         time_since_last_poll = monotonic() - state.gui.last_poll_received
-        if state.gui.last_poll_received != 0 and time_since_last_poll > 3 and not os.environ.get("IS_DEBUG"):
+        if state.gui.last_poll_received != 0 and time_since_last_poll > 3 and not os.environ.get("IS_DEBUG") and \
+                not state.gui.is_headless:
             logging.debug("No poll received in 3 seconds, shutting down")
             state.gui.gui_running = False
         if not state.gui.gui_running:
@@ -206,7 +207,7 @@ def auto_exit_task() -> int:
     return 0
 
 
-async def main() -> int:
+async def main(is_headless: bool, port: Optional[int] = None) -> int:
     asyncio.get_event_loop().slow_callback_duration = 35
     if get_stop_after_value():
         auto_exit_thread = threading.Thread(target=auto_exit_task)
@@ -216,9 +217,17 @@ async def main() -> int:
     parser.add_argument("--port", type=int, help="Port to use for the internal webserver")
     # Read the port argument to state.gui.server_port
     args = parser.parse_args()
-    if args.port:
-        state.gui.server_port = args.port
+    state.gui.is_headless = is_headless
+    if not state.gui.is_headless:
+        if os.environ.get("IS_HEADLESS"):
+            state.gui.is_headless = True
+    if port:
+        state.gui.server_port = port
         state.gui.is_port_decided = True
+    else:
+        if args.port:
+            state.gui.server_port = args.port
+            state.gui.is_port_decided = True
     api: Api = Api(state)
     api2: SendingApi = SendingApi()
     run_gui_app(state, api, api2)
