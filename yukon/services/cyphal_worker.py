@@ -180,22 +180,29 @@ def cyphal_worker(state: GodState) -> None:
                         # We don't need the response here because it is snooped by an avatar anyway
                         response = await client.call(request)
                         if response is None:
-                            raise NoSuccess("Failed to update register {}, no response was received from {}" \
-                                            .format(register_update.register_name, register_update.node_id))
+                            raise NoSuccess(
+                                "Failed to update register {}, no response was received from {}".format(
+                                    register_update.register_name, register_update.node_id
+                                )
+                            )
                         access_response, transfer_object = response
                         if not access_response.mutable:
-                            raise NoSuccess("Failed to update register {}, it is not mutable" \
-                                            .format(register_update.register_name))
+                            raise NoSuccess(
+                                "Failed to update register {}, it is not mutable".format(register_update.register_name)
+                            )
                         if isinstance(access_response.value.empty, uavcan.primitive.Empty_1):
                             raise NoSuccess(
-                                f"Register {register_update.register_name} does not exist on node {register_update.node_id}.")
+                                f"Register {register_update.register_name} does not exist on node {register_update.node_id}."
+                            )
                     except NoSuccess as e:
-                        response_from_yukon = UpdateRegisterResponse(register_update.request_id,
-                                                                     register_update.register_name,
-                                                                     register_update.value,
-                                                                     register_update.node_id,
-                                                                     False,
-                                                                     e.message)
+                        response_from_yukon = UpdateRegisterResponse(
+                            register_update.request_id,
+                            register_update.register_name,
+                            register_update.value,
+                            register_update.node_id,
+                            False,
+                            e.message,
+                        )
                         state.queues.update_registers_response.put(response_from_yukon)
                         add_local_message(state, e.message, register_update.register_name)
                 await asyncio.sleep(0.02)
