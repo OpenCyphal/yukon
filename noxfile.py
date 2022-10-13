@@ -26,7 +26,7 @@ src_dirs = [
 def black(session):
     session.run("pip", "install", "black == 22.*")
     # black yukon
-    session.run("black", "--check", "yukon")
+    session.run("black", "--check", "yukon", "tests")
 
 
 @nox.session(reuse_venv=True)
