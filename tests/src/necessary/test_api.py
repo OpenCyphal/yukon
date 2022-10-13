@@ -1,12 +1,14 @@
 import logging
-from multiprocessing.managers import ValueProxy
 import os
 import pycyphal
 import sys
+import traceback
 from pathlib import Path
 import subprocess
 import typing
 from pycyphal.application.register import ValueProxy, Natural16, Natural32
+from requests.adapters import HTTPAdapter
+
 import uavcan
 import pytest
 import requests
@@ -16,6 +18,8 @@ import asyncio
 from .yukon_fixture import yukon
 
 logger = logging.getLogger(__name__)
+
+OneTryHttpAdapter = HTTPAdapter(max_retries=1)
 
 
 class TestBackendTestSession:
@@ -71,6 +75,8 @@ class TestBackendTestSession:
 
         Uses the example_node fixture.
         """
+        session = requests.Session()
+        session.mount('http://localhost:5001/api', OneTryHttpAdapter)
         try:
             with pycyphal.application.make_node(uavcan.node.GetInfo_1.Response(
                     software_version=uavcan.node.Version_1(major=1, minor=0),
@@ -85,10 +91,8 @@ class TestBackendTestSession:
                         name="tester",
                 ), registry_with_transport_set_up) as tester_node:
                     tester_node.start()
-                    # Wait 10 seconds for Yukon to start
-                    await asyncio.sleep(10)
                     try:
-                        response = requests.post(
+                        response = session.post(
                             "http://localhost:5001/api/update_register_value",
                             json={
                                 "arguments": [
@@ -118,10 +122,9 @@ class TestBackendTestSession:
                         return True
                     except requests.exceptions.ConnectionError as e:
                         logger.exception("Connection error")
-                        sys.tracebacklimit = 0
                         raise Exception(
                             "Update registers command to Yukon FAILED,"
-                            " API was not available. Connection error.") from None
+                            f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}") from None
         except Exception as e:
             # I choose to ignore exceptions to make sure the Yukon thread stays open
             # I want to manually see how the requests fail
