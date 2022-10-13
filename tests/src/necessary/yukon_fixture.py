@@ -1,14 +1,13 @@
-import pytest
 import subprocess
 import threading
 import os
-import requests
-from requests.adapters import HTTPAdapter
 import time
 from pathlib import Path
-import sys
 import logging
 import traceback
+import requests
+from requests.adapters import HTTPAdapter
+import pytest
 from .root_folder import get_root_folder
 
 logger = logging.getLogger(__name__)
@@ -26,14 +25,14 @@ def yukon_thread_callback():
     environment_variables.update({"IS_HEADLESS": "1"})
     logger.debug("Going to execute the Yukon python exe now with the following environment variables: %s",
                  environment_variables)
-    subprocess.run([python_exe, yukon_path, "--port", "5001"], env=environment_variables)
+    subprocess.run([python_exe, yukon_path, "--port", "5001"], env=environment_variables, check=True)
 
 
 OneTryHttpAdapter = HTTPAdapter(max_retries=1)
 
 
 @pytest.fixture
-def yukon():
+def yukon_fixture():
     session = requests.Session()
     session.mount('http://localhost:5001/api', OneTryHttpAdapter)
     yukon_thread = threading.Thread(target=yukon_thread_callback, daemon=True)
@@ -47,17 +46,15 @@ def yukon():
     try:
         response = session.post("http://localhost:5001/api/attach_udp_transport",
                                 json={"arguments": ["127.0.0.0", "1200", "127"]})
-    except requests.exceptions.ConnectionError as e:
+    except requests.exceptions.ConnectionError:
         logger.exception("Connection error")
         raise Exception(
             "The test failed to send an attach command to Yukon, API was not available. Connection error.\n"
             f" {traceback.format_exc(chain=False)}") from None
     if response.status_code != 200:
         raise Exception("Response to the request had a different response code from 200.") from None
-    else:
-        response_json = response.json()
-        if not response_json["success"]:
-            raise Exception("Failed to attach UDP transport: " + response_json["message"]) from None
-        else:
-            print("The test has successfully attached a UDP transport to Yukon.")
+    response_json = response.json()
+    if not response_json["success"]:
+        raise Exception("Failed to attach UDP transport: " + response_json["message"]) from None
+    print("The test has successfully attached a UDP transport to Yukon.")
     print("Yukon was launched")

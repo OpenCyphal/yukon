@@ -91,11 +91,13 @@ class FaultyTransport(pycyphal.transport.Transport):
 
 import random
 
-async def failing_async_task():
+
+async def failing_async_task() -> None:
     await asyncio.sleep(0.3)
     return None
 
-async def false_async_task():
+
+async def false_async_task() -> bool:
     await asyncio.sleep(0.3)
     return False
 

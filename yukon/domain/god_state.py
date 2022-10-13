@@ -56,7 +56,7 @@ class QueuesState:
     attach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
     detach_transport: Queue[int] = field(default_factory=Queue)
     update_registers: Queue[UpdateRegisterRequest] = field(default_factory=Queue)
-    update_registers_response: Dict[UUID, UpdateRegisterResponse] = field(default_factory=Queue)
+    update_registers_response: Dict[UUID, UpdateRegisterResponse] = field(default_factory=dict)
     apply_configuration: Queue[ApplyConfigurationRequest] = field(default_factory=Queue)
     reread_registers: Queue[RereadRegistersRequest] = field(default_factory=Queue)
     reread_register_names: Queue[RereadRegisterNamesRequest] = field(default_factory=Queue)

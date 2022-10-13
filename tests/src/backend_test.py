@@ -8,6 +8,8 @@ import sys
 import time
 import logging
 
+logger = logging.getLogger(__name__)
+
 root = Path(__file__).parent.parent.parent
 
 # Add .compiled and yukon to PYTHONPATH
@@ -36,13 +38,8 @@ if os.name == "nt":
     python_exe = "venv\\Scripts\\python.exe"
 else:
     python_exe = "./venv/bin/python"
-p = Popen(f"{python_exe} {str(run_demos_path.absolute())}", shell=True, env=os.environ)
-
-# Run the yukon __main__.py script and save its exit code
-arguments = [python_exe, str(root / "yukon" / "__main__.py")]
 
 
-# If this subprocess run takes more than 20 seconds to run, then kill it and exit with code 1
 def run_yukon():
     needed_timeout = 20
     if os.environ.get("IS_DEBUG"):
@@ -109,28 +106,31 @@ def get_avatars():
     return False
 
 
-try:
-    yukon_running_thread = Thread(target=run_yukon, args=[], daemon=True)
-    yukon_running_thread.start()
-    success = False
-    while yukon_running_thread.is_alive():
-        time.sleep(5)
-        if get_avatars():
-            success = True
-            break
-    print("Subprocess run has finished")
-    if not success:
-        print("Failed to get avatars")
+with Popen(f"{python_exe} {str(run_demos_path.absolute())}", shell=True, env=os.environ) as p:
+    # Run the yukon __main__.py script and save its exit code
+    arguments = [python_exe, str(root / "yukon" / "__main__.py")]
+    try:
+        yukon_running_thread = Thread(target=run_yukon, args=[], daemon=True)
+        yukon_running_thread.start()
+        success = False
+        while yukon_running_thread.is_alive():
+            time.sleep(5)
+            if get_avatars():
+                success = True
+                break
+        print("Subprocess run has finished")
+        if not success:
+            print("Failed to get avatars")
+            sys.exit(1)
+        else:
+            print("Successfully got avatars")
+            sys.exit(0)
+    except subprocess.TimeoutExpired:
+        print("Yukon took too long to complete the sanity test, exiting with code 1")
+        sys.exit(1)
+    except subprocess.CalledProcessError as e:
+        print("Yukon failed the sanity test, exiting with code 1")
         sys.exit(1)
     else:
-        print("Successfully got avatars")
+        print("Yukon passed the sanity test, exiting with code 0")
         sys.exit(0)
-except subprocess.TimeoutExpired:
-    print("Yukon took too long to complete the sanity test, exiting with code 1")
-    sys.exit(1)
-except subprocess.CalledProcessError as e:
-    print("Yukon failed the sanity test, exiting with code 1")
-    sys.exit(1)
-else:
-    print("Yukon passed the sanity test, exiting with code 0")
-    sys.exit(0)

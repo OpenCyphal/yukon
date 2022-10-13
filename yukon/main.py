@@ -56,19 +56,19 @@ def run_electron(state: GodState) -> None:
         logger.info("YUKON_SERVER_PORT=%s", os.environ["YUKON_SERVER_PORT"])
         print(root_path)
         with subprocess.Popen(
-                [exe_path, Path(root_path) / "electron/main.js"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=True,
-                env=os.environ,
+            [exe_path, Path(root_path) / "electron/main.js"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            env=os.environ,
         ) as p:
             while p.poll() is None:
                 line1 = p.stdout.readline()  # type: ignore
                 line2 = p.stderr.readline()  # type: ignore
                 if (
-                        (line1 and "electron: symbol lookup error" in line1)
-                        or line2
-                        and ("electron: symbol lookup error" in line2)
+                    (line1 and "electron: symbol lookup error" in line1)
+                    or line2
+                    and ("electron: symbol lookup error" in line2)
                 ):
                     logger.error("There was an error while trying to run the electron app")
                     exit_code = 1
@@ -108,20 +108,22 @@ def run_server(state: GodState) -> None:
         if not is_port_available:
             state.gui.server_port += 1
             continue
-        else:
-            state.gui.is_port_decided = True
+        state.gui.is_port_decided = True
     try:
         server.run(host="0.0.0.0", port=state.gui.server_port)
-    except:
+    except:  # pylint: disable=bare-except
         logger.exception("Server was unable to start or crashed.")
 
 
-def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
+def set_logging_levels():
     logging.getLogger("pycyphal").setLevel(logging.INFO)
     logging.getLogger("can").setLevel(logging.INFO)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
     logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
 
+
+def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
+    set_logging_levels()
     messages_publisher = MessagesPublisher(state)
     messages_publisher.setLevel(logging.NOTSET)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -159,17 +161,18 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     else:
         os.environ.setdefault("IS_DEBUG", "1")
     if (
-            os.environ.get("IS_HEADLESS")
-            and os.environ.get("YUKON_UDP_IFACE")
-            and os.environ.get("YUKON_NODE_ID")
-            and os.environ.get("YUKON_UDP_MTU")
+        os.environ.get("IS_HEADLESS")
+        and os.environ.get("YUKON_UDP_IFACE")
+        and os.environ.get("YUKON_NODE_ID")
+        and os.environ.get("YUKON_UDP_MTU")
     ):
         interface: Interface = Interface()
         interface.is_udp = True
         interface.udp_iface = os.environ.get("YUKON_UDP_IFACE")
         interface.udp_mtu = int(os.environ.get("YUKON_UDP_MTU"))  # type: ignore
-        atr: AttachTransportRequest = AttachTransportRequest(interface,
-                                                             int(os.environ.get("YUKON_NODE_ID")))  # type: ignore
+        atr: AttachTransportRequest = AttachTransportRequest(
+            interface, int(os.environ.get("YUKON_NODE_ID"))
+        )  # type: ignore
         state.queues.attach_transport.put(atr)
         required_queue_timeout: Optional[int] = 4
         if os.environ.get("IS_DEBUG"):
