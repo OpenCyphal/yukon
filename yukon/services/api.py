@@ -314,7 +314,7 @@ class Api:
                     logger.info(f"Successfully updated register {register_name} to {register_value}")
                 else:
                     logger.error(f"Failed to update register {register_name} to {register_value}")
-                return response
+                return json.dumps(response.to_builtin())
         logger.critical("Something is wrong with updating registers.")
         raise Exception(f"Failed to update register {register_name} to {register_value}, critical timeout")
 

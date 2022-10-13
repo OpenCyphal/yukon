@@ -83,7 +83,7 @@ class TestBackendTestSession:
         session = requests.Session()
         session.mount("http://localhost:5001/api", OneTryHttpAdapter)
         with pycyphal.application.make_node(
-            make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+                make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
         ) as node, pycyphal.application.make_node(
             make_test_node_info("tester"),
             get_registry_with_transport_set_up(127),
@@ -109,7 +109,7 @@ class TestBackendTestSession:
                             126,
                         ]
                     },
-                    timeout=30.0,
+                    timeout=3.0,
                 )
                 # Make a new client to send an access request to the demo node
                 service_client = tester_node.make_client(uavcan.register.Access_1_0, node.id)
