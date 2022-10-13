@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -11,6 +12,7 @@ import pycyphal
 import pycyphal.application
 import pytest
 import requests
+from pycyphal.application.register import ValueProxy, Real32
 from requests.adapters import HTTPAdapter
 
 import uavcan
@@ -26,10 +28,18 @@ def get_registry_with_transport_set_up(node_id: int) -> typing.Dict[str, typing.
         ":memory:",
         environment_variables={
             "UAVCAN__UDP__IFACE": "127.0.0.0",
-            "UAVCAN__NODE__ID": "257",
+            "UAVCAN__NODE__ID": str(node_id),
         },
     )
     return registry_dict
+
+
+def make_test_node_info(name: str) -> uavcan.node.GetInfo_1.Response:
+    node_info = uavcan.node.GetInfo_1.Response(
+        software_version=uavcan.node.Version_1(major=1, minor=0),
+        name=name,
+    )
+    return node_info
 
 
 class TestBackendTestSession:
@@ -74,59 +84,56 @@ class TestBackendTestSession:
         session = requests.Session()
         session.mount("http://localhost:5001/api", OneTryHttpAdapter)
         with pycyphal.application.make_node(
-                uavcan.node.GetInfo_1.Response(
-                    software_version=uavcan.node.Version_1(major=1, minor=0),
-                    name="test_subject",
-                ),
-                get_registry_with_transport_set_up(126),
-        ) as node:
-            node.start()
+                make_test_node_info("test_subject"),
+                get_registry_with_transport_set_up(126)
+        ) as node, \
+                pycyphal.application.make_node(
+                    make_test_node_info("tester"),
+                    get_registry_with_transport_set_up(127),
+                ) as tester_node:
             # Published heartbeat fields can be configured as follows.
             node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
             node.heartbeat_publisher.vendor_specific_status_code = os.getpid() % 100
-            with pycyphal.application.make_node(
-                    uavcan.node.GetInfo_1.Response(
-                        software_version=uavcan.node.Version_1(major=1, minor=0),
-                        name="tester",
-                    ),
-                    get_registry_with_transport_set_up(127),
-            ) as tester_node:
-                tester_node.start()
+            node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.00004699999873689376)))
+            tester_node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
+            tester_node.heartbeat_publisher.vendor_specific_status_code = (os.getpid() - 1) % 100
+            node.start()
+            tester_node.start()
+            try:
+                response = session.post(
+                    "http://localhost:5001/api/update_register_value",
+                    json={
+                        "arguments": [
+                            "analog.rcpwm.deadband",
+                            {
+                                "real32": {"value": [0.00004599999873689376]},
+                                "_meta_": {"mutable": True, "persistent": True},
+                            },
+                            126,
+                        ]
+                    },
+                    timeout=3.0,
+                )
+                # Make a new client to send an access request to the demo node
+                service_client = tester_node.make_client(uavcan.register.Access_1_0, node.id)
+                msg = uavcan.register.Access_1_0.Request()
+                msg.name.name = "analog.rcpwm.deadband"
+                verification_response = await service_client.call(msg)
+                if verification_response is not None:
+                    logger.debug("Response: %s", verification_response)
+                if response.status_code != 200:
+                    return False
                 try:
-                    response = session.post(
-                        "http://localhost:5001/api/update_register_value",
-                        json={
-                            "arguments": [
-                                "analog.rcpwm.deadband",
-                                {
-                                    "real32": {"value": [0.00004599999873689376]},
-                                    "_meta_": {"mutable": True, "persistent": True},
-                                },
-                                126,
-                            ]
-                        },
-                        timeout=3.0,
-                    )
-                    # Make a new client to send an access request to the demo node
-                    service_client = tester_node.make_client(uavcan.register.Access_1_0, node.node.id)
-                    msg = uavcan.register.Access_1_0.Request()
-                    msg.name.name = None
-                    verification_response = await service_client.call(msg)
-                    if verification_response is not None:
-                        logger.debug("Response: %s", verification_response)
-                    if response.status_code != 200:
-                        return False
-                    try:
-                        response_update = json.loads(response.text)
-                    except json.decoder.JSONDecodeError:
-                        return False
-                    logger.debug("response_update: %s", response_update)
-                    if response_update.get("success") is not True:
-                        return False
-                    return True
-                except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
-                    logger.exception("Connection error")
-                    raise Exception(
-                        "Update registers command to Yukon FAILED,"
-                        f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
-                    ) from None
+                    response_update = json.loads(response.text)
+                except json.decoder.JSONDecodeError:
+                    return False
+                logger.debug("response_update: %s", response_update)
+                if response_update.get("success") is not True:
+                    return False
+                return True
+            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+                logger.exception("Connection error")
+                raise Exception(
+                    "Update registers command to Yukon FAILED,"
+                    f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
+                ) from None

@@ -196,14 +196,13 @@ def cyphal_worker(state: GodState) -> None:
                             )
                     except NoSuccess as e:
                         response_from_yukon = UpdateRegisterResponse(
-                            register_update.request_id,
-                            register_update.register_name,
+                            register_update.request_id, register_update.register_name,
                             register_update.value,
                             register_update.node_id,
                             False,
                             e.message,
                         )
-                        state.queues.update_registers_response.put(response_from_yukon)
+                        state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
                         add_local_message(state, e.message, register_update.register_name)
                 await asyncio.sleep(0.02)
                 if not state.queues.apply_configuration.empty():
