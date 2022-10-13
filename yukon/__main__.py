@@ -3,12 +3,13 @@ import logging
 from typing import Optional
 
 
-def run_application(is_headless: bool, port: Optional[int] = None):
+def run_application(is_headless: bool, port: Optional[int] = None, should_look_at_arguments: bool = True):
     from yukon.main import main
 
     logging.basicConfig(level=logging.DEBUG)
     try:
-        asyncio.run(main(is_headless, port), debug=True)  # pylint: disable=no-value-for-parameter
+        asyncio.run(main(is_headless, port, should_look_at_arguments),
+                    debug=True)  # pylint: disable=no-value-for-parameter
     except KeyboardInterrupt:
         print("Yukon is closing.")
 

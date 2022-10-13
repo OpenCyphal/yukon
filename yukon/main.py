@@ -207,16 +207,18 @@ def auto_exit_task() -> int:
     return 0
 
 
-async def main(is_headless: bool, port: Optional[int] = None) -> int:
+async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arguments: bool = True) -> int:
     asyncio.get_event_loop().slow_callback_duration = 35
     if get_stop_after_value():
         auto_exit_thread = threading.Thread(target=auto_exit_task)
         auto_exit_thread.start()
     state: GodState = GodState()
-    parser: argparse.ArgumentParser = argparse.ArgumentParser("Yukon")
-    parser.add_argument("--port", type=int, help="Port to use for the internal webserver")
-    # Read the port argument to state.gui.server_port
-    args = parser.parse_args()
+    args = None
+    if should_look_at_arguments:
+        parser: argparse.ArgumentParser = argparse.ArgumentParser("Yukon")
+        parser.add_argument("--port", type=int, help="Port to use for the internal webserver")
+        # Read the port argument to state.gui.server_port
+        args = parser.parse_args()
     state.gui.is_headless = is_headless
     if not state.gui.is_headless:
         if os.environ.get("IS_HEADLESS"):
@@ -224,7 +226,7 @@ async def main(is_headless: bool, port: Optional[int] = None) -> int:
     if port:
         state.gui.server_port = port
         state.gui.is_port_decided = True
-    else:
+    elif args:
         if args.port:
             state.gui.server_port = args.port
             state.gui.is_port_decided = True

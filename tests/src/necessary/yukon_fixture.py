@@ -30,7 +30,7 @@ OneTryHttpAdapter = HTTPAdapter(max_retries=1)
 def yukon_fixture():
     session = requests.Session()
     session.mount('http://localhost:5001/api', OneTryHttpAdapter)
-    yukon_process = Process(target=run_application, args=(5001, False), daemon=True)
+    yukon_process = Process(target=run_application, args=(False, 5001, False), daemon=True)
     yukon_process.start()
     yukon_process.join(timeout=None)
     # First check if there is any other yukon on that port
