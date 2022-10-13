@@ -56,19 +56,19 @@ def run_electron(state: GodState) -> None:
         logger.info("YUKON_SERVER_PORT=%s", os.environ["YUKON_SERVER_PORT"])
         print(root_path)
         with subprocess.Popen(
-                [exe_path, Path(root_path) / "electron/main.js"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=True,
-                env=os.environ,
+            [exe_path, Path(root_path) / "electron/main.js"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            env=os.environ,
         ) as p:
             while p.poll() is None:
                 line1 = p.stdout.readline()  # type: ignore
                 line2 = p.stderr.readline()  # type: ignore
                 if (
-                        (line1 and "electron: symbol lookup error" in line1)
-                        or line2
-                        and ("electron: symbol lookup error" in line2)
+                    (line1 and "electron: symbol lookup error" in line1)
+                    or line2
+                    and ("electron: symbol lookup error" in line2)
                 ):
                     logger.error("There was an error while trying to run the electron app")
                     exit_code = 1
@@ -115,7 +115,7 @@ def run_server(state: GodState) -> None:
         logger.exception("Server was unable to start or crashed.")
 
 
-def set_logging_levels():
+def set_logging_levels() -> None:
     logging.getLogger("pycyphal").setLevel(logging.INFO)
     logging.getLogger("can").setLevel(logging.INFO)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
@@ -161,10 +161,10 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     else:
         os.environ.setdefault("IS_DEBUG", "1")
     if (
-            state.gui.is_headless
-            and os.environ.get("YUKON_UDP_IFACE")
-            and os.environ.get("YUKON_NODE_ID")
-            and os.environ.get("YUKON_UDP_MTU")
+        state.gui.is_headless
+        and os.environ.get("YUKON_UDP_IFACE")
+        and os.environ.get("YUKON_NODE_ID")
+        and os.environ.get("YUKON_UDP_MTU")
     ):
         interface: Interface = Interface()
         interface.is_udp = True
@@ -184,8 +184,12 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     while True:
         sleep(1)
         time_since_last_poll = monotonic() - state.gui.last_poll_received
-        if state.gui.last_poll_received != 0 and time_since_last_poll > 3 and not os.environ.get("IS_DEBUG") and \
-                not state.gui.is_headless:
+        if (
+            state.gui.last_poll_received != 0
+            and time_since_last_poll > 3
+            and not os.environ.get("IS_DEBUG")
+            and not state.gui.is_headless
+        ):
             logging.debug("No poll received in 3 seconds, shutting down")
             state.gui.gui_running = False
         if not state.gui.gui_running:
@@ -239,5 +243,5 @@ async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arg
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main(False))
     sys.exit(0)

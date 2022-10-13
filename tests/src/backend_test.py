@@ -21,7 +21,7 @@ sys.path.append(str(root.absolute()))
 path_separator = ";" if os.name == "nt" else ":"
 
 os.environ["PYTHONPATH"] = (
-        str(root / ".compiled") + path_separator + str(root / "yukon") + path_separator + str(root.absolute())
+    str(root / ".compiled") + path_separator + str(root / "yukon") + path_separator + str(root.absolute())
 )
 os.environ["IS_HEADLESS"] = "1"
 os.environ["YUKON_IS_UDP_FAULTY"] = "1"
