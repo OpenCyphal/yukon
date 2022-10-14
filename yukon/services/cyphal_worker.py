@@ -10,6 +10,7 @@ from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
 import uavcan.node.ExecuteCommand_1_1
+from services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.domain.command_send_response import CommandSendResponse
 from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 from yukon.services.api import is_configuration_simplified
@@ -17,7 +18,7 @@ from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_request import UpdateRegisterRequest
 from yukon.domain.update_register_response import UpdateRegisterResponse
 from yukon.domain.no_success import NoSuccess
-from yukon.services.value_utils import unexplode_value
+from yukon.services.value_utils import unexplode_value, explode_value
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.attach_transport_response import AttachTransportResponse
 from yukon.domain.god_state import GodState
@@ -194,10 +195,16 @@ def cyphal_worker(state: GodState) -> None:
                             raise NoSuccess(
                                 f"Register {register_update.register_name} does not exist on node {register_update.node_id}."
                             )
+                        verification_exploded_value = explode_value(
+                            access_response.value, metadata={"mutable": access_response.mutable,
+                                                             "persistent": access_response.persistent}
+                        )
+                        verification_exploded_value_str = json.dumps(verification_exploded_value,
+                                                                     cls=EnhancedJSONEncoder)
                         response_from_yukon = UpdateRegisterResponse(
                             register_update.request_id,
                             register_update.register_name,
-                            register_update.value,
+                            verification_exploded_value_str,
                             register_update.node_id,
                             True,
                             f"A successful register update, value for {register_update.register_name} was sent to node {register_update.node_id}: "

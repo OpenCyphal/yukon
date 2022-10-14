@@ -136,18 +136,10 @@ class TestBackendTestSession:
                         except json.decoder.JSONDecodeError:
                             return False
                         logger.debug("response_update: %s", response_update)
-                        # try:
-                        #     from console_thrift import KeyboardInterruptException as KeyboardInterrupt
-                        # except ImportError:
-                        #     logger.debug("Was unable to get KeyboardInterruptException")
-                        #     pass
-                        try:
-                            await asyncio.sleep(100000)
-                        except KeyboardInterrupt:
-                            pass
+
                         if response_update.get("success") is not True:
                             return False
-                        return True
+                        return verification_exploded_value_str == response_update.get("value")
             except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
                 logger.exception("Connection error")
                 raise Exception(
