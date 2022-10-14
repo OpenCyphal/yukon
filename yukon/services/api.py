@@ -17,6 +17,7 @@ try:
 except ImportError:
     from yaml import Loader, Dumper  # type: ignore
 import websockets
+from flask import jsonify
 import uavcan
 from domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
@@ -31,7 +32,6 @@ from yukon.services.get_electron_path import get_electron_path
 from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.command_send_response import CommandSendResponse
 from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
-
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
 logger = logging.getLogger(__file__)
@@ -393,8 +393,8 @@ class Api:
                     avatar_list.remove(avatar)
                 elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
                     avatar_list.remove(avatar)
-        return_string = json.dumps(avatar_dto, cls=EnhancedJSONEncoder)
-        return return_string
+        # return_string = json.dumps(, cls=EnhancedJSONEncoder)
+        return jsonify(avatar_dto)
 
     def set_log_level(self, severity: str) -> None:
         self.state.gui.message_severity = severity
