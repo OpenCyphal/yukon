@@ -1,28 +1,24 @@
+import aiohttp
 import time
 import logging
 import traceback
 from multiprocessing import Process
-import requests
-from requests.adapters import HTTPAdapter
 from yukon.__main__ import run_application
 
 logger = logging.getLogger(__name__)
 
-OneTryHttpAdapter = HTTPAdapter(max_retries=1)
 
-
-def create_yukon(attached_with_node_id: int):
-    session = requests.Session()
-    session.mount("http://localhost:5001/api", OneTryHttpAdapter)
+async def create_yukon(attached_with_node_id: int):
+    session = aiohttp.ClientSession()
     # First check if there is any other yukon on that port
     is_any_yukon_already_running = True
     try:
-        session.post(
+        await session.post(
             "http://localhost:5001/api/attach_udp_transport",
             json={"arguments": ["127.0.0.0", "1200", str(attached_with_node_id)]},
             timeout=1.0,
         )
-    except requests.exceptions.ConnectionError:
+    except aiohttp.ClientConnectionError:
         is_any_yukon_already_running = False
     if is_any_yukon_already_running:
         raise Exception(
@@ -36,12 +32,12 @@ def create_yukon(attached_with_node_id: int):
     # {"arguments":["127.0.0.0","1200","127"]}
     # and check that the response.success == true
     try:
-        response = session.post(
+        response = await session.post(
             "http://localhost:5001/api/attach_udp_transport",
             json={"arguments": ["127.0.0.0", "1200", str(attached_with_node_id)]},
             timeout=3,
         )
-    except requests.exceptions.ConnectionError:
+    except aiohttp.ClientConnectionError:
         logger.exception("Connection error")
         raise Exception(
             "The test failed to send an attach command to Yukon, API was not available. Connection error.\n"

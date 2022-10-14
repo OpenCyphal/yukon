@@ -77,83 +77,78 @@ class TestBackendTestSession:
             subprocess.run(["sudo", "setcap", "cap_net_raw+eip", str(Path("which", "python").resolve())], check=True)
 
     async def test_reread_register_value(self):
-        """Make a test, set up Yukon, make a test_subject node and a test_node node, set the value of
-        analog.rcpwm.deadband to 0.1, then read the value of analog.rcpwm.deadband and check that it is 0.1,
-        after that use registry.setdefault to set the value of analog.rcpwm.deadband to 0.2, then
-        send a request to reread all registers, then read the value of analog.rcpwm.deadband and check that it is 0.2"""
+        """0. Make a test_subject node and a test_node node.
+        1. Set the value of analog.rcpwm.deadband to 0.1.
+        2. Initialize Yukon (create_yukon).
+        3. Use registry.setdefault to set the value of analog.rcpwm.deadband to 0.2.
+        4. At this point, a request should be made to localhost:5001/api/get_avatars,
+         the node with node_id corresponding to
+         test_subject should have the register analog.rcpwm.deadband with the value of 0.1, because it doesn't reread
+         automatically.
+        5. Send a request to reread the register.
+        6. Read the value of analog.rcpwm.deadband and check that it is 0.2.
+         Do this by making a request to localhost:5000/api/get_avatars. The avatar that has
+         the node id of the test_subject node should have a register named analog.rcpwm.deadband with a value of 0.2.
+        """
         try:
-            create_yukon(124)
+
             with pycyphal.application.make_node(
                     make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
             ) as node, pycyphal.application.make_node(
                 make_test_node_info("tester"),
                 get_registry_with_transport_set_up(127),
             ) as tester_node:
-                session = aiohttp.ClientSession()
                 # Published heartbeat fields can be configured as follows.
                 node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
                 node.heartbeat_publisher.vendor_specific_status_code = os.getpid() % 100
-                node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.00004699999873689376)))
+                node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.1)))
                 tester_node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
                 tester_node.heartbeat_publisher.vendor_specific_status_code = (os.getpid() - 1) % 100
+                await create_yukon(124)
+                await asyncio.sleep(7)  # An extra wait to make sure that Yukon has read the registers by now.
+                node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.2)))
                 node.start()
                 tester_node.start()
-                http_update_response = await session.post("http://localhost:5001/api/update_register_value",
-                                                          json={
-                                                              "arguments": [
-                                                                  "analog.rcpwm.deadband",
-                                                                  {
-                                                                      "real32": {"value": [0.00004599999873689376]},
-                                                                      "_meta_": {"mutable": True, "persistent": True},
-                                                                  },
-                                                                  126,
-                                                              ]
-                                                          }, timeout=3)
-                service_client = tester_node.make_client(uavcan.register.Access_1_0, node.id)
-                msg = uavcan.register.Access_1_0.Request()
-                msg.name.name = "analog.rcpwm.deadband"
-                verification_response = await service_client.call(msg)
-                obj = verification_response[0]
-                verification_exploded_value = explode_value(
-                    obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent}
-                )
-                verification_exploded_value_str = json.dumps(verification_exploded_value,
-                                                             cls=EnhancedJSONEncoder)
-                verification_simplified_value = str(explode_value(obj.value, simplify=True))
-                if verification_response is not None:
-                    logger.debug("Response: %s", verification_response)
-                if http_update_response.status != 200:
+                session = aiohttp.ClientSession()
+                avatars_response = await session.get("http://localhost:5001/api/get_avatars", timeout=3)
+                if avatars_response.status != 200:
                     return False
-                try:
-                    response_update = json.loads(await http_update_response.text())
-                except json.decoder.JSONDecodeError:
-                    return False
-                logger.debug("response_update: %s", response_update)
+                avatars = await avatars_response.json()
 
-                if response_update.get("success") is not True:
+                for avatar in avatars["avatars"]:
+                    if avatar["node_id"] == node.id:
+                        correct_avatar = avatar
+
+                assert avatar["registers_exploded_values"]["analog.rcpwm.deadband"]["real32"]["value"][0] == 0.1
+                await session.get("http://localhost:5001/api/reread_registers",
+                                  json={"arguments": [{{node.id: {"analog.rcpwm.deadband": True}}}]}, timeout=3)
+                await asyncio.sleep(1)  # Give it some time to make sure it finishes the reread
+                avatars_response = await session.get("http://localhost:5001/api/get_avatars", timeout=3)
+                if avatars_response.status != 200:
                     return False
-                return verification_exploded_value_str == response_update.get("value")
-        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
-            logger.exception("Connection error")
-            raise Exception(
-                "Update registers command to Yukon FAILED,"
-                f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
-            ) from None
+                avatars = await avatars_response.json()
+
+                for avatar in avatars["avatars"]:
+                    if avatar["node_id"] == node.id:
+                        correct_avatar = avatar
+
+                assert avatar["registers_exploded_values"]["analog.rcpwm.deadband"]["real32"]["value"][0] == 0.2
         finally:
             if session:
                 await session.close()
 
     async def test_update_register_value(self):
-        """
+        """Initialize Yukon. Make a test_subject and a tester node.
+        1. Set the value of analog.rcpwm.deadband to 0.00004699999873689376.
+        2. Make a request to localhost:5001/api/update_register_value, this will make Yukon set the register value.
+        3. Use the tester node to verify that the register value has changed.
+        4. Compare the values the register node received and the value that Yukon reports that it changed the register
+         to.
+        Note:
         Testing is done on port 5001 and the actual application uses port 5000
-
-        Start a demo node first.
-        Send an api request to localhost:5001/api/update_register_value and check the response.
-
-        Uses the example_node fixture.
         """
         try:
-            create_yukon(124)
+            await create_yukon(124)
             with pycyphal.application.make_node(
                     make_test_node_info("test_subject"),
                     get_registry_with_transport_set_up(126)

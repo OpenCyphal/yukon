@@ -368,7 +368,8 @@ class Api:
     def show_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = False
 
-    def reread_registers(self, request_contents: dict) -> None:
+    def reread_registers(self, request_contents: typing.Dict[int, typing.Dict[str, bool]]) -> None:
+        """yukon/web/modules/registers.data.module.js explains the request_contents structure."""
         request = RereadRegistersRequest(request_contents)
         self.state.queues.reread_registers.put(request)
 
