@@ -1,3 +1,4 @@
+import typing
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -13,7 +14,7 @@ class UpdateRegisterResponse:
     success: bool
     message: str
 
-    def to_builtin(self):
+    def to_builtin(self) -> typing.Dict[str, typing.Any]:
         return {
             "request_id": str(self.request_id),
             "register_name": self.register_name,

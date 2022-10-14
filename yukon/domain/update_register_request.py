@@ -1,3 +1,4 @@
+import typing
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -11,10 +12,10 @@ class UpdateRegisterRequest:
     value: uavcan.register.Value_1
     node_id: int
 
-    def to_builtin(self):
+    def to_builtin(self) -> typing.Dict[str, typing.Any]:
         return {
             "request_id": str(self.request_id),
             "register_name": self.register_name,
             "value": self.value,
-            "node_id": self.node_id
+            "node_id": self.node_id,
         }

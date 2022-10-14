@@ -171,8 +171,8 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         interface.udp_iface = os.environ.get("YUKON_UDP_IFACE")
         interface.udp_mtu = int(os.environ.get("YUKON_UDP_MTU"))  # type: ignore
         atr: AttachTransportRequest = AttachTransportRequest(
-            interface, int(os.environ.get("YUKON_NODE_ID"))
-        )  # type: ignore
+            interface, int(os.environ.get("YUKON_NODE_ID"))  # type: ignore
+        )
         state.queues.attach_transport.put(atr)
         required_queue_timeout: Optional[int] = 4
         if os.environ.get("IS_DEBUG"):

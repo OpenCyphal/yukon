@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -15,6 +16,9 @@ from pycyphal.application.register import ValueProxy, Real32
 from requests.adapters import HTTPAdapter
 
 import uavcan
+from services.enhanced_json_encoder import EnhancedJSONEncoder
+from services.get_ports import get_socketcan_ports
+from services.value_utils import explode_value
 from .create_yukon import create_yukon
 
 logger = logging.getLogger(__name__)
@@ -57,6 +61,7 @@ class TestBackendTestSession:
         except json.decoder.JSONDecodeError:
             return False
         ports_array = response_ports.get("ports")
+        verification_ports_array = get_socketcan_ports()
         logger.debug("ports_array: %s", ports_array)
         if not ports_array:
             return False
@@ -83,7 +88,7 @@ class TestBackendTestSession:
         session = requests.Session()
         session.mount("http://localhost:5001/api", OneTryHttpAdapter)
         with pycyphal.application.make_node(
-                make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+            make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
         ) as node, pycyphal.application.make_node(
             make_test_node_info("tester"),
             get_registry_with_transport_set_up(127),
@@ -116,6 +121,12 @@ class TestBackendTestSession:
                 msg = uavcan.register.Access_1_0.Request()
                 msg.name.name = "analog.rcpwm.deadband"
                 verification_response = await service_client.call(msg)
+                obj = verification_response[0]
+                verification_exploded_value = explode_value(
+                    obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent}
+                )
+                verification_exploded_value_str = json.dumps(verification_exploded_value, cls=EnhancedJSONEncoder)
+                verification_simplified_value = str(explode_value(obj.value, simplify=True))
                 if verification_response is not None:
                     logger.debug("Response: %s", verification_response)
                 if response.status_code != 200:
@@ -125,6 +136,15 @@ class TestBackendTestSession:
                 except json.decoder.JSONDecodeError:
                     return False
                 logger.debug("response_update: %s", response_update)
+                # try:
+                #     from console_thrift import KeyboardInterruptException as KeyboardInterrupt
+                # except ImportError:
+                #     logger.debug("Was unable to get KeyboardInterruptException")
+                #     pass
+                # try:
+                #     await asyncio.sleep(100000)
+                # except KeyboardInterrupt:
+                #     pass
                 if response_update.get("success") is not True:
                     return False
                 return True

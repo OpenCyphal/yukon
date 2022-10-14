@@ -211,10 +211,10 @@ def cyphal_worker(state: GodState) -> None:
                             register_update.value,
                             register_update.node_id,
                             False,
-                            e.message,
+                            str(e),
                         )
                         state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
-                        add_local_message(state, e.message, register_update.register_name)
+                        add_local_message(state, str(e), register_update.register_name)
                 await asyncio.sleep(0.02)
                 if not state.queues.apply_configuration.empty():
                     config = state.queues.apply_configuration.get_nowait()
