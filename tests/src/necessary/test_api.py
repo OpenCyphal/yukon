@@ -76,6 +76,75 @@ class TestBackendTestSession:
             # It can't be done from within the test suite because it has to be done before the interpreter is started.
             subprocess.run(["sudo", "setcap", "cap_net_raw+eip", str(Path("which", "python").resolve())], check=True)
 
+    async def test_reread_register_value(self):
+        """Make a test, set up Yukon, make a test_subject node and a test_node node, set the value of
+        analog.rcpwm.deadband to 0.1, then read the value of analog.rcpwm.deadband and check that it is 0.1,
+        after that use registry.setdefault to set the value of analog.rcpwm.deadband to 0.2, then
+        send a request to reread all registers, then read the value of analog.rcpwm.deadband and check that it is 0.2"""
+        create_yukon(124)
+        session = requests.Session()
+        session.mount("http://localhost:5001/api", OneTryHttpAdapter)
+        with pycyphal.application.make_node(
+                make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+        ) as node, pycyphal.application.make_node(
+            make_test_node_info("tester"),
+            get_registry_with_transport_set_up(127),
+        ) as tester_node:
+            # Published heartbeat fields can be configured as follows.
+            node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
+            node.heartbeat_publisher.vendor_specific_status_code = os.getpid() % 100
+            node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.00004699999873689376)))
+            tester_node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
+            tester_node.heartbeat_publisher.vendor_specific_status_code = (os.getpid() - 1) % 100
+            node.start()
+            tester_node.start()
+            try:
+                session = aiohttp.ClientSession()
+                http_update_response = await session.post("http://localhost:5001/api/update_register_value",
+                                                          json={
+                                                              "arguments": [
+                                                                  "analog.rcpwm.deadband",
+                                                                  {
+                                                                      "real32": {"value": [0.00004599999873689376]},
+                                                                      "_meta_": {"mutable": True, "persistent": True},
+                                                                  },
+                                                                  126,
+                                                              ]
+                                                          }, timeout=300)
+                service_client = tester_node.make_client(uavcan.register.Access_1_0, node.id)
+                msg = uavcan.register.Access_1_0.Request()
+                msg.name.name = "analog.rcpwm.deadband"
+                verification_response = await service_client.call(msg)
+                obj = verification_response[0]
+                verification_exploded_value = explode_value(
+                    obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent}
+                )
+                verification_exploded_value_str = json.dumps(verification_exploded_value,
+                                                             cls=EnhancedJSONEncoder)
+                verification_simplified_value = str(explode_value(obj.value, simplify=True))
+                if verification_response is not None:
+                    logger.debug("Response: %s", verification_response)
+                if http_update_response.status != 200:
+                    return False
+                try:
+                    response_update = json.loads(await http_update_response.text())
+                except json.decoder.JSONDecodeError:
+                    return False
+                logger.debug("response_update: %s", response_update)
+
+                if response_update.get("success") is not True:
+                    return False
+                return verification_exploded_value_str == response_update.get("value")
+            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+                logger.exception("Connection error")
+                raise Exception(
+                    "Update registers command to Yukon FAILED,"
+                    f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
+                ) from None
+            finally:
+                if session:
+                    await session.close()
+
     async def test_update_register_value(self):
         """
         Testing is done on port 5001 and the actual application uses port 5000
@@ -103,46 +172,48 @@ class TestBackendTestSession:
             node.start()
             tester_node.start()
             try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.post("http://localhost:5001/api/update_register_value",
-                                            json={
-                                                "arguments": [
-                                                    "analog.rcpwm.deadband",
-                                                    {
-                                                        "real32": {"value": [0.00004599999873689376]},
-                                                        "_meta_": {"mutable": True, "persistent": True},
-                                                    },
-                                                    126,
-                                                ]
-                                            }, timeout=300) as http_update_response:
-                        # Make a new client to send an access request to the demo node
-                        service_client = tester_node.make_client(uavcan.register.Access_1_0, node.id)
-                        msg = uavcan.register.Access_1_0.Request()
-                        msg.name.name = "analog.rcpwm.deadband"
-                        verification_response = await service_client.call(msg)
-                        obj = verification_response[0]
-                        verification_exploded_value = explode_value(
-                            obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent}
-                        )
-                        verification_exploded_value_str = json.dumps(verification_exploded_value,
-                                                                     cls=EnhancedJSONEncoder)
-                        verification_simplified_value = str(explode_value(obj.value, simplify=True))
-                        if verification_response is not None:
-                            logger.debug("Response: %s", verification_response)
-                        if http_update_response.status != 200:
-                            return False
-                        try:
-                            response_update = json.loads(await http_update_response.text())
-                        except json.decoder.JSONDecodeError:
-                            return False
-                        logger.debug("response_update: %s", response_update)
+                session = aiohttp.ClientSession()
+                http_update_response = await session.post("http://localhost:5001/api/update_register_value",
+                                                          json={
+                                                              "arguments": [
+                                                                  "analog.rcpwm.deadband",
+                                                                  {
+                                                                      "real32": {"value": [0.00004599999873689376]},
+                                                                      "_meta_": {"mutable": True, "persistent": True},
+                                                                  },
+                                                                  126,
+                                                              ]
+                                                          }, timeout=300)
+                service_client = tester_node.make_client(uavcan.register.Access_1_0, node.id)
+                msg = uavcan.register.Access_1_0.Request()
+                msg.name.name = "analog.rcpwm.deadband"
+                verification_response = await service_client.call(msg)
+                obj = verification_response[0]
+                verification_exploded_value = explode_value(
+                    obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent}
+                )
+                verification_exploded_value_str = json.dumps(verification_exploded_value,
+                                                             cls=EnhancedJSONEncoder)
+                verification_simplified_value = str(explode_value(obj.value, simplify=True))
+                if verification_response is not None:
+                    logger.debug("Response: %s", verification_response)
+                if http_update_response.status != 200:
+                    return False
+                try:
+                    response_update = json.loads(await http_update_response.text())
+                except json.decoder.JSONDecodeError:
+                    return False
+                logger.debug("response_update: %s", response_update)
 
-                        if response_update.get("success") is not True:
-                            return False
-                        return verification_exploded_value_str == response_update.get("value")
+                if response_update.get("success") is not True:
+                    return False
+                return verification_exploded_value_str == response_update.get("value")
             except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
                 logger.exception("Connection error")
                 raise Exception(
                     "Update registers command to Yukon FAILED,"
                     f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
                 ) from None
+            finally:
+                if session:
+                    await session.close()
