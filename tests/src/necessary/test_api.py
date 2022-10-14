@@ -89,6 +89,7 @@ class TestBackendTestSession:
                 make_test_node_info("tester"),
                 get_registry_with_transport_set_up(127),
             ) as tester_node:
+                session = aiohttp.ClientSession()
                 # Published heartbeat fields can be configured as follows.
                 node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
                 node.heartbeat_publisher.vendor_specific_status_code = os.getpid() % 100
@@ -97,8 +98,6 @@ class TestBackendTestSession:
                 tester_node.heartbeat_publisher.vendor_specific_status_code = (os.getpid() - 1) % 100
                 node.start()
                 tester_node.start()
-
-                session = aiohttp.ClientSession()
                 http_update_response = await session.post("http://localhost:5001/api/update_register_value",
                                                           json={
                                                               "arguments": [
@@ -109,7 +108,7 @@ class TestBackendTestSession:
                                                                   },
                                                                   126,
                                                               ]
-                                                          }, timeout=300)
+                                                          }, timeout=3)
                 service_client = tester_node.make_client(uavcan.register.Access_1_0, node.id)
                 msg = uavcan.register.Access_1_0.Request()
                 msg.name.name = "analog.rcpwm.deadband"
@@ -156,7 +155,8 @@ class TestBackendTestSession:
         try:
             create_yukon(124)
             with pycyphal.application.make_node(
-                    make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+                    make_test_node_info("test_subject"),
+                    get_registry_with_transport_set_up(126)
             ) as node, pycyphal.application.make_node(
                 make_test_node_info("tester"),
                 get_registry_with_transport_set_up(127),
@@ -181,7 +181,7 @@ class TestBackendTestSession:
                                                                   },
                                                                   126,
                                                               ]
-                                                          }, timeout=300)
+                                                          }, timeout=3)
                 service_client = tester_node.make_client(uavcan.register.Access_1_0, node.id)
                 msg = uavcan.register.Access_1_0.Request()
                 msg.name.name = "analog.rcpwm.deadband"
