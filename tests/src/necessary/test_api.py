@@ -14,6 +14,7 @@ import pytest
 import requests
 from pycyphal.application.register import ValueProxy, Real32
 from requests.adapters import HTTPAdapter
+import aiohttp
 
 import uavcan
 from services.enhanced_json_encoder import EnhancedJSONEncoder
@@ -88,7 +89,7 @@ class TestBackendTestSession:
         session = requests.Session()
         session.mount("http://localhost:5001/api", OneTryHttpAdapter)
         with pycyphal.application.make_node(
-            make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+                make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
         ) as node, pycyphal.application.make_node(
             make_test_node_info("tester"),
             get_registry_with_transport_set_up(127),
@@ -102,52 +103,51 @@ class TestBackendTestSession:
             node.start()
             tester_node.start()
             try:
-                response = session.post(
-                    "http://localhost:5001/api/update_register_value",
-                    json={
-                        "arguments": [
-                            "analog.rcpwm.deadband",
-                            {
-                                "real32": {"value": [0.00004599999873689376]},
-                                "_meta_": {"mutable": True, "persistent": True},
-                            },
-                            126,
-                        ]
-                    },
-                    timeout=3.0,
-                )
-                # Make a new client to send an access request to the demo node
-                service_client = tester_node.make_client(uavcan.register.Access_1_0, node.id)
-                msg = uavcan.register.Access_1_0.Request()
-                msg.name.name = "analog.rcpwm.deadband"
-                verification_response = await service_client.call(msg)
-                obj = verification_response[0]
-                verification_exploded_value = explode_value(
-                    obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent}
-                )
-                verification_exploded_value_str = json.dumps(verification_exploded_value, cls=EnhancedJSONEncoder)
-                verification_simplified_value = str(explode_value(obj.value, simplify=True))
-                if verification_response is not None:
-                    logger.debug("Response: %s", verification_response)
-                if response.status_code != 200:
-                    return False
-                try:
-                    response_update = json.loads(response.text)
-                except json.decoder.JSONDecodeError:
-                    return False
-                logger.debug("response_update: %s", response_update)
-                # try:
-                #     from console_thrift import KeyboardInterruptException as KeyboardInterrupt
-                # except ImportError:
-                #     logger.debug("Was unable to get KeyboardInterruptException")
-                #     pass
-                # try:
-                #     await asyncio.sleep(100000)
-                # except KeyboardInterrupt:
-                #     pass
-                if response_update.get("success") is not True:
-                    return False
-                return True
+                async with aiohttp.ClientSession() as session:
+                    async with session.post("http://localhost:5001/api/update_register_value",
+                                            json={
+                                                "arguments": [
+                                                    "analog.rcpwm.deadband",
+                                                    {
+                                                        "real32": {"value": [0.00004599999873689376]},
+                                                        "_meta_": {"mutable": True, "persistent": True},
+                                                    },
+                                                    126,
+                                                ]
+                                            }, timeout=300) as http_update_response:
+                        # Make a new client to send an access request to the demo node
+                        service_client = tester_node.make_client(uavcan.register.Access_1_0, node.id)
+                        msg = uavcan.register.Access_1_0.Request()
+                        msg.name.name = "analog.rcpwm.deadband"
+                        verification_response = await service_client.call(msg)
+                        obj = verification_response[0]
+                        verification_exploded_value = explode_value(
+                            obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent}
+                        )
+                        verification_exploded_value_str = json.dumps(verification_exploded_value,
+                                                                     cls=EnhancedJSONEncoder)
+                        verification_simplified_value = str(explode_value(obj.value, simplify=True))
+                        if verification_response is not None:
+                            logger.debug("Response: %s", verification_response)
+                        if http_update_response.status != 200:
+                            return False
+                        try:
+                            response_update = json.loads(await http_update_response.text())
+                        except json.decoder.JSONDecodeError:
+                            return False
+                        logger.debug("response_update: %s", response_update)
+                        # try:
+                        #     from console_thrift import KeyboardInterruptException as KeyboardInterrupt
+                        # except ImportError:
+                        #     logger.debug("Was unable to get KeyboardInterruptException")
+                        #     pass
+                        try:
+                            await asyncio.sleep(100000)
+                        except KeyboardInterrupt:
+                            pass
+                        if response_update.get("success") is not True:
+                            return False
+                        return True
             except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
                 logger.exception("Connection error")
                 raise Exception(
