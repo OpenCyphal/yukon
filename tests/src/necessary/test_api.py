@@ -81,24 +81,23 @@ class TestBackendTestSession:
         analog.rcpwm.deadband to 0.1, then read the value of analog.rcpwm.deadband and check that it is 0.1,
         after that use registry.setdefault to set the value of analog.rcpwm.deadband to 0.2, then
         send a request to reread all registers, then read the value of analog.rcpwm.deadband and check that it is 0.2"""
-        create_yukon(124)
-        session = requests.Session()
-        session.mount("http://localhost:5001/api", OneTryHttpAdapter)
-        with pycyphal.application.make_node(
-                make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
-        ) as node, pycyphal.application.make_node(
-            make_test_node_info("tester"),
-            get_registry_with_transport_set_up(127),
-        ) as tester_node:
-            # Published heartbeat fields can be configured as follows.
-            node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
-            node.heartbeat_publisher.vendor_specific_status_code = os.getpid() % 100
-            node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.00004699999873689376)))
-            tester_node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
-            tester_node.heartbeat_publisher.vendor_specific_status_code = (os.getpid() - 1) % 100
-            node.start()
-            tester_node.start()
-            try:
+        try:
+            create_yukon(124)
+            with pycyphal.application.make_node(
+                    make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+            ) as node, pycyphal.application.make_node(
+                make_test_node_info("tester"),
+                get_registry_with_transport_set_up(127),
+            ) as tester_node:
+                # Published heartbeat fields can be configured as follows.
+                node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
+                node.heartbeat_publisher.vendor_specific_status_code = os.getpid() % 100
+                node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.00004699999873689376)))
+                tester_node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
+                tester_node.heartbeat_publisher.vendor_specific_status_code = (os.getpid() - 1) % 100
+                node.start()
+                tester_node.start()
+
                 session = aiohttp.ClientSession()
                 http_update_response = await session.post("http://localhost:5001/api/update_register_value",
                                                           json={
@@ -135,15 +134,15 @@ class TestBackendTestSession:
                 if response_update.get("success") is not True:
                     return False
                 return verification_exploded_value_str == response_update.get("value")
-            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
-                logger.exception("Connection error")
-                raise Exception(
-                    "Update registers command to Yukon FAILED,"
-                    f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
-                ) from None
-            finally:
-                if session:
-                    await session.close()
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            logger.exception("Connection error")
+            raise Exception(
+                "Update registers command to Yukon FAILED,"
+                f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
+            ) from None
+        finally:
+            if session:
+                await session.close()
 
     async def test_update_register_value(self):
         """
@@ -154,24 +153,23 @@ class TestBackendTestSession:
 
         Uses the example_node fixture.
         """
-        create_yukon(124)
-        session = requests.Session()
-        session.mount("http://localhost:5001/api", OneTryHttpAdapter)
-        with pycyphal.application.make_node(
-                make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
-        ) as node, pycyphal.application.make_node(
-            make_test_node_info("tester"),
-            get_registry_with_transport_set_up(127),
-        ) as tester_node:
-            # Published heartbeat fields can be configured as follows.
-            node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
-            node.heartbeat_publisher.vendor_specific_status_code = os.getpid() % 100
-            node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.00004699999873689376)))
-            tester_node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
-            tester_node.heartbeat_publisher.vendor_specific_status_code = (os.getpid() - 1) % 100
-            node.start()
-            tester_node.start()
-            try:
+        try:
+            create_yukon(124)
+            with pycyphal.application.make_node(
+                    make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+            ) as node, pycyphal.application.make_node(
+                make_test_node_info("tester"),
+                get_registry_with_transport_set_up(127),
+            ) as tester_node:
+                # Published heartbeat fields can be configured as follows.
+                node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
+                node.heartbeat_publisher.vendor_specific_status_code = os.getpid() % 100
+                node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.00004699999873689376)))
+                tester_node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
+                tester_node.heartbeat_publisher.vendor_specific_status_code = (os.getpid() - 1) % 100
+                node.start()
+                tester_node.start()
+
                 session = aiohttp.ClientSession()
                 http_update_response = await session.post("http://localhost:5001/api/update_register_value",
                                                           json={
@@ -208,12 +206,12 @@ class TestBackendTestSession:
                 if response_update.get("success") is not True:
                     return False
                 return verification_exploded_value_str == response_update.get("value")
-            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
-                logger.exception("Connection error")
-                raise Exception(
-                    "Update registers command to Yukon FAILED,"
-                    f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
-                ) from None
-            finally:
-                if session:
-                    await session.close()
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            logger.exception("Connection error")
+            raise Exception(
+                "Update registers command to Yukon FAILED,"
+                f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
+            ) from None
+        finally:
+            if session:
+                await session.close()
