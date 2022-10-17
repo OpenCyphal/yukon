@@ -31,3 +31,7 @@ export function isRunningInElectron(yukon_state) {
      typeof yukon_state.navigator.userAgent === 'string' &&
       yukon_state.navigator.userAgent.indexOf('Electron') >= 0
 }
+
+export function areThereAnyActiveModals() {
+    return document.querySelectorAll('#modal').length > 0
+}

@@ -1,6 +1,6 @@
 import { make_context_menus } from '../modules/context-menu.module.js';
 import { create_directed_graph, refresh_graph_layout, update_directed_graph } from '../modules/monitor.module.js';
-import { secondsToString, JsonParseHelper, isRunningInElectron } from "../modules/utilities.module.js";
+import { secondsToString, JsonParseHelper, isRunningInElectron, areThereAnyActiveModals } from "../modules/utilities.module.js";
 import { loadConfigurationFromOpenDialog, return_all_selected_registers_as_yaml } from '../modules/yaml.configurations.module.js';
 import { create_registers_table, update_tables } from '../modules/registers.module.js';
 import { get_all_selected_pairs, unselectAll, selectAll, oneSelectedConstraint, moreThanOneSelectedConstraint } from '../modules/registers.selection.module.js';
@@ -900,6 +900,10 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             }
             // If ctrl c was pressed
             if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[67]) {
+                if (areThereAnyActiveModals(yukon_state)) {
+                    // The modal should handle its own copy and paste events (natively)
+                    return;
+                }
                 // If there are any cells selected
                 // If there aren't any cells selected then get the element that the mouse is hovering over and copy its value
                 if (oneSelectedConstraint() || moreThanOneSelectedConstraint()) {
