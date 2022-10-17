@@ -23,6 +23,8 @@ import uavcan.si.unit.voltage  # noqa
 class DemoApp:
     REGISTER_FILE = "demo_app.db"
     """
+    In this case the register file is not used, but it is possible to use it to store the state of the application.
+    
     The register file stores configuration parameters of the local application/node. The registers can be modified
     at launch via environment variables and at runtime via RPC-service "uavcan.register.Access".
     The file will be created automatically if it doesn't exist.
@@ -31,17 +33,19 @@ class DemoApp:
     def __init__(self) -> None:
         # Add the node id from its environment variable to the REGISTER_FILE filename
         # so that each node has its own register file.
-        self.REGISTER_FILE = pathlib.Path(self.REGISTER_FILE).with_name(f"{os.environ.get('UAVCAN__NODE__ID', '0')}_{self.REGISTER_FILE}")
 
         node_info = uavcan.node.GetInfo_1.Response(
             software_version=uavcan.node.Version_1(major=1, minor=0),
             name="org.opencyphal.pycyphal.demo.demo_app",
         )
+
+        registry = pycyphal.application.make_registry(":memory:", environment_variables=os.environ)
+
         # The Node class is basically the central part of the library -- it is the bridge between the application and
         # the UAVCAN network. Also, it implements certain standard application-layer functions, such as publishing
         # heartbeats and port introspection messages, responding to GetInfo, serving the register API, etc.
         # The register file stores the configuration parameters of our node (you can inspect it using SQLite Browser).
-        self._node = pycyphal.application.make_node(node_info, self.REGISTER_FILE)
+        self._node = pycyphal.application.make_node(node_info, registry)
 
         # Published heartbeat fields can be configured as follows.
         self._node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
@@ -63,7 +67,7 @@ class DemoApp:
         # Create an RPC-server. The service-ID is read from standard register "uavcan.srv.least_squares.id".
         # This service is optional: if the service-ID is not specified, we simply don't provide it.
         try:
-            srv_least_sq = self._node.get_server(sirius_cyber_corp.PerformLinearLeastSquaresFit_1, "least_squares")
+            srv_least_sq = self._node.get_server(sirius_cyber_corp.PerformLinearLeastSquaresFit_1_0, "least_squares")
             srv_least_sq.serve_in_background(self._serve_linear_least_squares)
         except pycyphal.application.register.MissingRegisterError:
             logging.info("The least squares service is disabled by configuration")
@@ -77,9 +81,9 @@ class DemoApp:
 
     @staticmethod
     async def _serve_linear_least_squares(
-        request: sirius_cyber_corp.PerformLinearLeastSquaresFit_1.Request,
+        request: sirius_cyber_corp.PerformLinearLeastSquaresFit_1_0.Request,
         metadata: pycyphal.presentation.ServiceRequestMetadata,
-    ) -> sirius_cyber_corp.PerformLinearLeastSquaresFit_1.Response:
+    ) -> sirius_cyber_corp.PerformLinearLeastSquaresFit_1_0.Response:
         logging.info("Least squares request %s from node %d", request, metadata.client_node_id)
         sum_x = sum(map(lambda p: p.x, request.points))  # type: ignore
         sum_y = sum(map(lambda p: p.y, request.points))  # type: ignore
@@ -91,7 +95,7 @@ class DemoApp:
         except ZeroDivisionError:
             slope = float("nan")
             y_intercept = float("nan")
-        return sirius_cyber_corp.PerformLinearLeastSquaresFit_1.Response(slope=slope, y_intercept=y_intercept)
+        return sirius_cyber_corp.PerformLinearLeastSquaresFit_1_0.Response(slope=slope, y_intercept=y_intercept)
 
     @staticmethod
     async def _serve_execute_command(
@@ -157,4 +161,12 @@ async def main() -> None:
         app.close()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as ex:
+        # If the exception text contains Hipp  hooreeey! The transport is closed, then ignore it and don't log it
+        if ex.args and "Hipp  hooreeey! The transport is closed" not in ex.args[0]:
+            logging.exception("Unhandled exception")
+            sys.exit(1)
+        else:
+            logging.info("Exception ignored")

@@ -5,23 +5,27 @@ import subprocess
 import traceback
 
 import platform
-
+import os
 from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
 import uavcan.node.ExecuteCommand_1_1
+from services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.domain.command_send_response import CommandSendResponse
 from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 from yukon.services.api import is_configuration_simplified
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_request import UpdateRegisterRequest
-from yukon.services.value_utils import unexplode_value
+from yukon.domain.update_register_response import UpdateRegisterResponse
+from yukon.domain.no_success import NoSuccess
+from yukon.services.value_utils import unexplode_value, explode_value
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.attach_transport_response import AttachTransportResponse
 from yukon.domain.god_state import GodState
 from yukon.services.snoop_registers import make_tracers_trackers
 from yukon.services.snoop_registers import get_register_value, get_register_names
 from yukon.services.messages_publisher import add_local_message
+from yukon.services.faulty_transport import FaultyTransport
 
 logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
@@ -54,6 +58,10 @@ def cyphal_worker(state: GodState) -> None:
                             if state.cyphal.already_used_transport_interfaces.get(atr.requested_interface.iface):
                                 raise Exception("Interface already in use")
                         new_transport = make_transport(atr.get_registry())
+                        if atr.requested_interface.is_udp and os.environ.get("YUKON_IS_UDP_FAULTY"):
+                            new_transport = FaultyTransport(new_transport)
+                            new_transport.faulty = True
+
                         state.cyphal.inferior_transports_by_interface_hashes[
                             str(hash(atr.requested_interface))
                         ] = new_transport
@@ -173,32 +181,48 @@ def cyphal_worker(state: GodState) -> None:
                         # We don't need the response here because it is snooped by an avatar anyway
                         response = await client.call(request)
                         if response is None:
-                            add_local_message(
-                                state,
-                                "Failed to update register {}".format(register_update.register_name),
-                                register_update.register_name,
+                            raise NoSuccess(
+                                "Failed to update register {}, no response was received from {}".format(
+                                    register_update.register_name, register_update.node_id
+                                )
                             )
-                            continue
                         access_response, transfer_object = response
                         if not access_response.mutable:
-                            add_local_message(
-                                state,
-                                "Register %s is not mutable." % register_update.register_name,
-                                register_update.register_name,
+                            raise NoSuccess(
+                                "Failed to update register {}, it is not mutable".format(register_update.register_name)
                             )
                         if isinstance(access_response.value.empty, uavcan.primitive.Empty_1):
-                            add_local_message(
-                                state,
-                                f"Register {register_update.register_name} does not exist on node {register_update.node_id}.",
-                                register_update.register_name,
-                                register_update.node_id,
+                            raise NoSuccess(
+                                f"Register {register_update.register_name} does not exist on node {register_update.node_id}."
                             )
-                    except:
-                        logger.exception(
-                            "Failed to update register %s for %s",
-                            register_update.register_name,
-                            register_update.node_id,
+                        verification_exploded_value = explode_value(
+                            access_response.value,
+                            metadata={"mutable": access_response.mutable, "persistent": access_response.persistent},
                         )
+                        verification_exploded_value_str = json.dumps(
+                            verification_exploded_value, cls=EnhancedJSONEncoder
+                        )
+                        response_from_yukon = UpdateRegisterResponse(
+                            register_update.request_id,
+                            register_update.register_name,
+                            verification_exploded_value_str,
+                            register_update.node_id,
+                            True,
+                            f"A successful register update, value for {register_update.register_name} was sent to node {register_update.node_id}: "
+                            f"{register_update.value}",
+                        )
+                        state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
+                    except (Exception, NoSuccess) as e:
+                        response_from_yukon = UpdateRegisterResponse(
+                            register_update.request_id,
+                            register_update.register_name,
+                            register_update.value,
+                            register_update.node_id,
+                            False,
+                            str(e),
+                        )
+                        state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
+                        add_local_message(state, str(e), register_update.register_name)
                 await asyncio.sleep(0.02)
                 if not state.queues.apply_configuration.empty():
                     config = state.queues.apply_configuration.get_nowait()
@@ -260,12 +284,10 @@ def cyphal_worker(state: GodState) -> None:
                 if not state.queues.reread_registers.empty():
                     try:
                         request2: RereadRegistersRequest = state.queues.reread_registers.get_nowait()
-                        for pair in request2.pairs:
-                            if pair is None:
-                                continue
-                            node_id2 = int(pair)
-                            register_name2 = list(request2.pairs[pair].keys())[0]
-                            asyncio.create_task(get_register_value(state, node_id2, register_name2, True))
+                        for node_id in request2.pairs:
+                            node_id2 = int(node_id)
+                            for register_name in request2.pairs[node_id]:
+                                asyncio.create_task(get_register_value(state, node_id2, register_name, True))
                     except:
                         logger.exception("Reread register values failed")
                 await asyncio.sleep(0.02)

@@ -63,6 +63,11 @@ GNU/Linux use : as the separator.
 It is also IMPORTANT that the PYTHONPATH contains the path to the .compiled folder and the path to the root directory of
 the repository. It doesn't matter which order that paths are placed in.
 
+* Prepare the sirius_cyber_corp namespace for using demos and tests
+    ```batch
+    yakut compile -O.compiled demos/sirius_cyber_corp
+    ```
+
 # Contributing
 
 1. Fork the repository

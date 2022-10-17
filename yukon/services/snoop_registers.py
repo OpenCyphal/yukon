@@ -31,13 +31,13 @@ async def get_register_value(
         # service_client.response_timeout = 0.5
         msg = uavcan.register.Access_1_0.Request()
         msg.name.name = register_name
-        logger.warning("Getting register value for %s", register_name)
+        logger.info("Getting register value for %s", register_name)
         response = await service_client.call(msg)
         if response is not None:
             if is_reread:
-                logger.warning("Received a valid response to a reread request on register %s", register_name)
+                logger.info("Received a valid response to a reread request on register %s", register_name)
             else:
-                logger.warning("Got register value for %s", register_name)
+                logger.info("Got register value for %s", register_name)
             obj = response[0]
             assert isinstance(obj, uavcan.register.Access_1.Response)
             if isinstance(obj.value, uavcan.primitive.Empty_1):
@@ -61,9 +61,9 @@ async def get_register_names(
     counter = 0
     list_client = state.cyphal.local_node.make_client(List_1, node_id)
     if is_reread:
-        logger.debug("Rereading all names and values of registers of node %d", node_id)
+        logger.info("Rereading all names and values of registers of node %d", node_id)
     else:
-        logger.debug("Reading all names and values of registers of node %d", node_id)
+        logger.info("Reading all names and values of registers of node %d", node_id)
     while not state.avatar.disappeared_nodes.get(node_id):
         msg = uavcan.register.List_1_0.Request(counter)
         response = await list_client.call(msg)

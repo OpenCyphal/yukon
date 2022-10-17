@@ -13,7 +13,7 @@ from pathlib import Path
 current_directory = Path(__file__).parent.absolute()
 demo_app_path = current_directory / "demo_app.py"
 os.chdir(current_directory)
-how_many = 6
+how_many = 2
 commands = []
 for i in range(how_many):
     commands.append(f"python {demo_app_path.absolute()}")

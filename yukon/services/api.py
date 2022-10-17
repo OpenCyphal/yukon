@@ -7,13 +7,17 @@ import webbrowser
 from pathlib import Path
 from time import sleep, monotonic
 import logging
+from zoneinfo import available_timezones
 import yaml
+from uuid import uuid4
+from time import time
 
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
     from yaml import Loader, Dumper  # type: ignore
 import websockets
+from flask import jsonify
 import uavcan
 from domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
@@ -28,7 +32,6 @@ from yukon.services.get_electron_path import get_electron_path
 from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.command_send_response import CommandSendResponse
 from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
-
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
 logger = logging.getLogger(__file__)
@@ -297,27 +300,44 @@ class Api:
             file_dto["name"] = Path(file_path).name
         return file_dto
 
-    def update_register_value(self, register_name: str, register_value: str, node_id: str) -> None:
-        # Check if register_value can be converted to an int, is purely numeric
+    def update_register_value(self, register_name: str, register_value: str, node_id: str) -> typing.Any:
         new_value: uavcan.register.Value_1 = unexplode_value(register_value)
-        self.state.queues.update_registers.put(UpdateRegisterRequest(register_name, new_value, int(node_id)))
+        request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id))
+        self.state.queues.update_registers.put(request)
+        timeout = time() + 5
+        while time() < timeout:
+            response = self.state.queues.update_registers_response.get(request.request_id)
+            if not response:
+                sleep(0.1)
+            else:
+                if response.success:
+                    logger.info(f"Successfully updated register {register_name} to {register_value}")
+                else:
+                    logger.error(f"Failed to update register {register_name} to {register_value}")
+                return json.dumps(response.to_builtin())
+        logger.critical("Something is wrong with updating registers.")
+        raise Exception(f"Failed to update register {register_name} to {register_value}, critical timeout")
 
-    def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> str:
+    def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> typing.Any:
         logger.info(f"Attaching UDP transport to {udp_iface}")
         interface = Interface()
+        interface.is_udp = True
         interface.udp_iface = udp_iface
         interface.udp_mtu = int(udp_mtu)
         interface.is_udp = True
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         self.state.queues.attach_transport.put(atr)
-        while True:
+        timeout = time() + 5
+        while time() < timeout:
             if self.state.queues.attach_transport_response.empty():
                 sleep(0.1)
             else:
                 break
-        return json.dumps(self.state.queues.attach_transport_response.get(), cls=EnhancedJSONEncoder)
+        return jsonify(self.state.queues.attach_transport_response.get())
 
-    def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
+    def attach_transport(
+        self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
+    ) -> typing.Any:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()
         interface.rate_arb = int(arb_rate)
@@ -327,17 +347,19 @@ class Api:
 
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         self.state.queues.attach_transport.put(atr)
-        while True:
+        timeout = time() + 5
+        while time() < timeout:
             if self.state.queues.attach_transport_response.empty():
                 sleep(0.1)
             else:
                 break
-        return json.dumps(self.state.queues.attach_transport_response.get(), cls=EnhancedJSONEncoder)
+        return jsonify(self.state.queues.attach_transport_response.get())
 
     def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
         self.state.queues.detach_transport.put(hash)
-        while True:
+        timeout = time() + 5
+        while time() < timeout:
             if self.state.queues.detach_transport_response.empty():
                 sleep(0.1)
             else:
@@ -348,8 +370,9 @@ class Api:
     def show_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = False
 
-    def reread_registers(self, request_contents: dict) -> None:
-        request = RereadRegistersRequest(request_contents)
+    def reread_registers(self, request_contents: typing.Dict[int, typing.Dict[str, bool]]) -> None:
+        """yukon/web/modules/registers.data.module.js explains the request_contents structure."""
+        request = RereadRegistersRequest(uuid4(), request_contents)
         self.state.queues.reread_registers.put(request)
 
     def hide_yakut(self) -> None:
@@ -362,7 +385,7 @@ class Api:
         messages_serialized = json.dumps(my_list)
         return messages_serialized
 
-    def get_avatars(self) -> str:
+    def get_avatars(self) -> typing.Any:
         self.state.gui.last_poll_received = monotonic()
         avatar_list = [avatar.to_builtin() for avatar in list(self.state.avatar.avatars_by_node_id.values())]
         avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
@@ -373,8 +396,8 @@ class Api:
                     avatar_list.remove(avatar)
                 elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
                     avatar_list.remove(avatar)
-        return_string = json.dumps(avatar_dto, cls=EnhancedJSONEncoder)
-        return return_string
+        # return_string = json.dumps(, cls=EnhancedJSONEncoder)
+        return jsonify(avatar_dto)
 
     def set_log_level(self, severity: str) -> None:
         self.state.gui.message_severity = severity
@@ -386,7 +409,8 @@ class Api:
     def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
         send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)
         self.state.queues.send_command.put(send_command_request)
-        while True:
+        timeout = time() + 5
+        while time() < timeout:
             if self.state.queues.command_response.empty():
                 sleep(0.1)
             else:
@@ -398,3 +422,18 @@ class Api:
         node_id_as_int = int(node_id)
         if node_id_as_int:
             self.state.queues.reread_register_names.put(RereadRegisterNamesRequest(node_id_as_int))
+
+    def announce_running_in_electron(self) -> None:
+        logger.info("Announcing that we are running in electron")
+        self.state.gui.is_running_in_electron = True
+        self.state.gui.is_running_in_browser = False
+        self.state.gui.is_target_client_known = True
+
+    def announce_running_in_browser(self) -> None:
+        logger.info("Announcing that we are running in browser")
+        self.state.gui.is_running_in_electron = False
+        self.state.gui.is_running_in_browser = True
+        self.state.gui.is_target_client_known = True
+
+    def close_yukon(self) -> None:
+        self.state.gui.gui_running = False
