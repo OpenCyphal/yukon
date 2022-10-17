@@ -278,6 +278,34 @@ export function make_context_menus(yukon_state) {
                 }
             }
         },
+        {
+            content: "Store persistent states",
+            events: {
+                click: async (e, elementOpenedOn) => {
+                    const headerCell = elementOpenedOn;
+                    const node_id = headerCell.getAttribute("data-node_id");
+                    const response = await yukon_state.zubax_api.send_command(parseInt(node_id), 65530, "");
+                    if (response) {
+                        if (response.success) {
+                            addLocalMessage("Stored persistent states for node " + node_id);
+                            const previousValue = headerCell.innerText;
+                            headerCell.innerText = "Stored";
+                            setTimeout(() => {
+                                headerCell.innerText = previousValue;
+                            }, 1200);
+                        } else {
+                            addLocalMessage("Failed to store persistent states for node " + node_id + " for this reason: ");
+                            addLocalMessage(response.message);
+                            const previousValue = headerCell.innerText;
+                            headerCell.innerText = "Store failed";
+                            setTimeout(() => {
+                                headerCell.innerText = previousValue;
+                            }, 1200);
+                        }
+                    }
+                }
+            }
+        },
         unselectAllMenuElement,
         importFromSelectedConfigurationMenuElement
     ];
