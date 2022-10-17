@@ -18,3 +18,16 @@ export function JsonParseHelper(k, v) {
         return v;
     }
 }
+export function getDictionaryValueFieldName(dictionary) {
+    // Iterate over keys of the dictionary and return the first one that doesn't start with _
+    for (let key in dictionary) {
+        if (!key.startsWith("_")) {
+            return key;
+        }
+    }
+}
+export function isRunningInElectron(yukon_state) {
+    return typeof yukon_state.navigator === 'object' &&
+     typeof yukon_state.navigator.userAgent === 'string' &&
+      yukon_state.navigator.userAgent.indexOf('Electron') >= 0
+}

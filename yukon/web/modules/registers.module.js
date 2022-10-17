@@ -2,6 +2,7 @@ import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.m
 import { applyConfiguration } from './yaml.configurations.module.js';
 import { make_select_column, make_select_row, make_select_cell } from './registers.selection.module.js';
 import { update_register_value } from './registers.data.module.js';
+import { getDictionaryValueFieldName } from './utilities.module.js';
 export function add_node_id_headers(table_header_row, yukon_state) {
     const current_avatars = yukon_state.current_avatars;
     current_avatars.forEach(function (avatar) {
@@ -125,8 +126,8 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             table_cell.innerHTML = "Not available";
             return;
         }
-        let type_string = Object.keys(register_value)[0];
-        let value = Object.values(register_value)[0].value;
+        let type_string = getDictionaryValueFieldName(register_value);
+        let value = register_value[type_string].value;
         let isOnlyValueInArray = false;
         // If value is an array
         if (Array.isArray(value)) {
@@ -408,11 +409,22 @@ export function updateRegistersTableColors(yukon_state, repeat_times, repeat_del
 }
 export function showCellValue(node_id, register_name, yukon_state) {
     const avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id == node_id);
+    let enterListener = null;
+    let disconnectEnterListener = function() {
+        if (enterListener) {
+            document.removeEventListener("keydown", enterListener);
+            enterListener = null;
+        }
+    }
     let register_value = avatar.registers_exploded_values[register_name];
-    let type_string = Object.keys(register_value)[0];
-    let value = Object.values(register_value)[0].value;
+    let type_string = getDictionaryValueFieldName(register_value);
+    let value = register_value[type_string].value;
+    // If value is an array then convert it to a string
+    if (Array.isArray(value)) {
+        value = JSON.stringify(value);
+    }
     // Create a modal with the value of the register
-    let returnObject = createGenericModal();
+    let returnObject = createGenericModal(disconnectEnterListener);
     let modal = returnObject.modal;
     document.body.appendChild(modal);
     let modal_content = returnObject.modal_content;
@@ -428,6 +440,7 @@ export function showCellValue(node_id, register_name, yukon_state) {
     modal_value.setAttribute("spellcheck", "false");
 
     modal_content.appendChild(modal_value);
+
     autosize(modal_value);
     let submit_modal = function () {
         let new_value = modal_value.value;
@@ -440,6 +453,7 @@ export function showCellValue(node_id, register_name, yukon_state) {
             let interval1 = setInterval(() => update_tables(true), 1000);
             setTimeout(() => clearInterval(interval1), 4000);
             document.body.removeChild(modal);
+            disconnectEnterListener();
         } else {
             addLocalMessage("No value entered");
         }
@@ -449,13 +463,14 @@ export function showCellValue(node_id, register_name, yukon_state) {
     modal_submit.innerHTML = "Submit";
     modal_submit.onclick = submit_modal;
     // If enter is pressed the modal should submit too
-    document.addEventListener("keydown", function (event) {
+    enterListener = function (event) {
         if (event.key == "Enter") {
             console.log("Enter pressed");
             submit_modal();
-            document.removeEventListener("keydown", arguments.callee);
+            disconnectEnterListener();
         }
-    });
+    }
+    document.addEventListener("keydown", enterListener);
     modal_content.appendChild(modal_submit);
 
     let modal_type = document.createElement("p");
@@ -510,7 +525,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
         for (const register_name in registers) {
             register_count += 1;
             const register_value = registers[register_name];
-            const datatype = Object.keys(register_value)[0];
+            const datatype = getDictionaryValueFieldName(register_value);
             datatypes.add(datatype);
             const register_value_object = register_value[datatype].value;
             let pair_div = document.createElement("div");
@@ -612,7 +627,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
 }
 
 // TODO: Move this to a separate file
-function createGenericModal() {
+function createGenericModal(escapeCallback) {
     let modal = document.createElement("div");
     modal.id = "modal";
     modal.style.position = "fixed";
@@ -634,19 +649,33 @@ function createGenericModal() {
     modal_content.style.width = "80%";
     modal.appendChild(modal_content);
     let modal_close = document.createElement("button");
+    let escapeListener = null;
+    let disconnectEscapeListener = function() {
+        if (escapeListener) {
+            document.removeEventListener("keydown", escapeListener);
+            escapeListener = null;
+        }
+    }
     modal_close.innerHTML = "Close";
     modal_close.onclick = function () {
+        disconnectEscapeListener();
         document.body.removeChild(modal);
     }
     modal_content.appendChild(modal_close);
-    // Also close the modal if escape is pressed
-    document.addEventListener("keydown", function (event) {
+
+    escapeListener = function (event) {
         if (event.key == "Escape") {
-            document.removeEventListener("keydown", this);
+            console.log("Escape was pressed to close a modal");
+            disconnectEscapeListener();
             if (modal.parentNode == document.body) {
+                if(escapeCallback) {
+                    escapeCallback();
+                }
                 document.body.removeChild(modal);
             }
         }
-    });
+    }
+    // Also close the modal if escape is pressed
+    document.addEventListener("keydown", escapeListener);
     return { "modal": modal, "modal_content": modal_content };
 }

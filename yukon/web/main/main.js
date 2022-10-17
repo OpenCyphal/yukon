@@ -1,6 +1,6 @@
 import { make_context_menus } from '../modules/context-menu.module.js';
 import { create_directed_graph, refresh_graph_layout, update_directed_graph } from '../modules/monitor.module.js';
-import { secondsToString, JsonParseHelper } from "../modules/utilities.module.js";
+import { secondsToString, JsonParseHelper, isRunningInElectron } from "../modules/utilities.module.js";
 import { loadConfigurationFromOpenDialog, return_all_selected_registers_as_yaml } from '../modules/yaml.configurations.module.js';
 import { create_registers_table, update_tables } from '../modules/registers.module.js';
 import { get_all_selected_pairs, unselectAll, selectAll, oneSelectedConstraint, moreThanOneSelectedConstraint } from '../modules/registers.selection.module.js';
@@ -11,6 +11,11 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
+    if(isRunningInElectron(yukon_state)) {
+        zubax_api.announce_running_in_electron();
+    } else {
+        zubax_api.announce_running_in_browser();
+    }
     function waitForElm(selector, timeOutMilliSeconds) {
         return new Promise(resolve => {
             let timeOutTimeout
@@ -43,7 +48,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
     }
     async function update_avatars_dto() {
         const text_result = await zubax_api.get_avatars();
-        const obj_result = JSON.parse(text_result, JsonParseHelper);
+        const obj_result = text_result;
         yukon_state.current_avatars = obj_result.avatars;
     }
     function setUpMonitorComponent() {
@@ -516,9 +521,6 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
     yukon_state.addLocalMessage = function (message) {
         zubax_api.add_local_message(message);
     }
-    yukon_state.navigator = navigator;
-    yukon_state.document = document;
-    yukon_state.window = window;
     const addLocalMessage = yukon_state.addLocalMessage;
     async function doStuffWhenReady() {
         var config = {

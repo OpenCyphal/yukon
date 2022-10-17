@@ -283,12 +283,10 @@ def cyphal_worker(state: GodState) -> None:
                 if not state.queues.reread_registers.empty():
                     try:
                         request2: RereadRegistersRequest = state.queues.reread_registers.get_nowait()
-                        for pair in request2.pairs:
-                            if pair is None:
-                                continue
-                            node_id2 = int(pair)
-                            register_name2 = list(request2.pairs[pair].keys())[0]
-                            asyncio.create_task(get_register_value(state, node_id2, register_name2, True))
+                        for node_id in request2.pairs:
+                            node_id2 = int(node_id)
+                            for register_name in request2.pairs[node_id]:
+                                asyncio.create_task(get_register_value(state, node_id2, register_name, True))
                     except:
                         logger.exception("Reread register values failed")
                 await asyncio.sleep(0.02)

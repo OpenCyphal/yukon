@@ -180,15 +180,16 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         response: AttachTransportResponse = state.queues.attach_transport_response.get(timeout=required_queue_timeout)
         if not response.success:
             raise Exception("Failed to attach transport", response.message)
-
     while True:
         sleep(1)
         time_since_last_poll = monotonic() - state.gui.last_poll_received
+        is_running_in_browser = (state.gui.is_target_client_known and state.gui.is_running_in_browser)
         if (
                 state.gui.last_poll_received != 0
-                and time_since_last_poll > 3
+                and time_since_last_poll > state.gui.time_allowed_between_polls
                 and not os.environ.get("IS_DEBUG")
                 and not state.gui.is_headless
+                and is_running_in_browser
         ):
             logging.debug("No poll received in 3 seconds, shutting down")
             state.gui.gui_running = False

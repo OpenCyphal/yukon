@@ -1,6 +1,8 @@
 const { app, BrowserWindow } = require('electron')
 const process = require('process');
 const path = require('path')
+const http = require('http');
+const net = require('net');
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -11,6 +13,9 @@ function createWindow() {
         },
         icon: "icon_128_128.png",
     })
+    // Send a GET request to http://locahost:5000/api/announce_running_in_electron
+    // to announce that the app is running in electron
+    http.get('http://localhost:5000/api/announce_running_in_electron', (resp) => {});
     // Get the environment variable YUKON_SERVER_PORT
     const yukon_server_port = process.env.YUKON_SERVER_PORT;
     const url = `http://localhost:${yukon_server_port}/main/main.html`
@@ -33,6 +38,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
+        http.get('http://localhost:5000/api/close_yukon', (resp) => {});
         app.quit()
     }
 })
