@@ -86,7 +86,7 @@ export function make_context_menus(yukon_state) {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
                     const all_selected_pairs = get_all_selected_pairs(null, yukon_state);
-                    editSelectedCellValues(all_selected_pairs);
+                    editSelectedCellValues(all_selected_pairs, yukon_state);
                 }
             },
             shouldBeDisplayed: moreThanOneSelectedConstraint

@@ -499,7 +499,12 @@ export function editSelectedCellValues(pairs, yukon_state) {
             // Update the value in the table
             // text_input.value = new_value;
             // Update the value in the server
-            update_register_value(register_name, new_value, avatar.node_id, yukon_state);
+            for (const node_id in pairs) {
+                const registers = pairs[node_id];
+                for (const register_name in registers) {
+                    update_register_value(register_name, new_value, node_id, yukon_state);
+                }
+            }
             // Run update_tables every second, do that only for the next 4 seconds
             let interval1 = setInterval(() => update_tables(true), 1000);
             setTimeout(() => clearInterval(interval1), 4000);
