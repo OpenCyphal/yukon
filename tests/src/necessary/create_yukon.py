@@ -1,3 +1,5 @@
+import asyncio.exceptions
+
 import aiohttp
 import time
 import logging
@@ -18,7 +20,7 @@ async def create_yukon(attached_with_node_id: int):
             json={"arguments": ["127.0.0.0", "1200", str(attached_with_node_id)]},
             timeout=1.0,
         )
-    except aiohttp.ClientConnectionError:
+    except asyncio.exceptions.TimeoutError:
         is_any_yukon_already_running = False
     if is_any_yukon_already_running:
         raise Exception(
@@ -37,15 +39,15 @@ async def create_yukon(attached_with_node_id: int):
             json={"arguments": ["127.0.0.0", "1200", str(attached_with_node_id)]},
             timeout=3,
         )
-    except aiohttp.ClientConnectionError:
+    except (aiohttp.ClientConnectionError, asyncio.exceptions.TimeoutError):
         logger.exception("Connection error")
         raise Exception(
             "The test failed to send an attach command to Yukon, API was not available. Connection error.\n"
             f" {traceback.format_exc(chain=False)}"
         ) from None
-    if response.status_code != 200:
+    if response.status != 200:
         raise Exception("Response to the request had a different response code from 200.") from None
-    response_json = response.json()
+    response_json = await response.json()
     if not response_json["success"]:
         if "Interface already in use" not in response_json["message"]:
             raise Exception("Failed to attach UDP transport: " + response_json["message"]) from None

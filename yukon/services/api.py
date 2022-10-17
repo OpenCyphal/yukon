@@ -333,7 +333,7 @@ class Api:
                 sleep(0.1)
             else:
                 break
-        return json.dumps(self.state.queues.attach_transport_response.get(), cls=EnhancedJSONEncoder)
+        return jsonify(self.state.queues.attach_transport_response.get())
 
     def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
@@ -351,7 +351,7 @@ class Api:
                 sleep(0.1)
             else:
                 break
-        return json.dumps(self.state.queues.attach_transport_response.get(), cls=EnhancedJSONEncoder)
+        return jsonify(self.state.queues.attach_transport_response.get())
 
     def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
