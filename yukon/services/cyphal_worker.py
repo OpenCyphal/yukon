@@ -196,11 +196,12 @@ def cyphal_worker(state: GodState) -> None:
                                 f"Register {register_update.register_name} does not exist on node {register_update.node_id}."
                             )
                         verification_exploded_value = explode_value(
-                            access_response.value, metadata={"mutable": access_response.mutable,
-                                                             "persistent": access_response.persistent}
+                            access_response.value,
+                            metadata={"mutable": access_response.mutable, "persistent": access_response.persistent},
                         )
-                        verification_exploded_value_str = json.dumps(verification_exploded_value,
-                                                                     cls=EnhancedJSONEncoder)
+                        verification_exploded_value_str = json.dumps(
+                            verification_exploded_value, cls=EnhancedJSONEncoder
+                        )
                         response_from_yukon = UpdateRegisterResponse(
                             register_update.request_id,
                             register_update.register_name,

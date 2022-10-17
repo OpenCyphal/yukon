@@ -318,7 +318,7 @@ class Api:
         logger.critical("Something is wrong with updating registers.")
         raise Exception(f"Failed to update register {register_name} to {register_value}, critical timeout")
 
-    def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> str:
+    def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> typing.Any:
         logger.info(f"Attaching UDP transport to {udp_iface}")
         interface = Interface()
         interface.is_udp = True
@@ -335,7 +335,9 @@ class Api:
                 break
         return jsonify(self.state.queues.attach_transport_response.get())
 
-    def attach_transport(self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str) -> str:
+    def attach_transport(
+        self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
+    ) -> typing.Any:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()
         interface.rate_arb = int(arb_rate)
@@ -383,7 +385,7 @@ class Api:
         messages_serialized = json.dumps(my_list)
         return messages_serialized
 
-    def get_avatars(self) -> str:
+    def get_avatars(self) -> typing.Any:
         self.state.gui.last_poll_received = monotonic()
         avatar_list = [avatar.to_builtin() for avatar in list(self.state.avatar.avatars_by_node_id.values())]
         avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
@@ -433,5 +435,5 @@ class Api:
         self.state.gui.is_running_in_browser = True
         self.state.gui.is_target_client_known = True
 
-    def close_yukon(self):
+    def close_yukon(self) -> None:
         self.state.gui.gui_running = False

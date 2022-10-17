@@ -1,10 +1,9 @@
-import asyncio.exceptions
-
-import aiohttp
 import time
 import logging
 import traceback
 from multiprocessing import Process
+import asyncio.exceptions
+import aiohttp
 from yukon.__main__ import run_application
 
 logger = logging.getLogger(__name__)
