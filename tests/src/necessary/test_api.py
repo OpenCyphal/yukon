@@ -7,6 +7,7 @@ import sys
 import traceback
 import typing
 from pathlib import Path
+import math
 
 import pycyphal
 import pycyphal.application
@@ -52,22 +53,6 @@ class TestBackendTestSession:
     def state():
         return {"demo_node": None, "tester_node": None}
 
-    async def test_get_socketcan_ports(self):
-        """Send an api request to localhost:5000/api/get_socketcan_ports and check the response"""
-        response = requests.post("http://localhost:5001/api/get_socketcan_ports")
-        if response.status_code != 200:
-            return False
-        try:
-            response_ports = json.loads(response.text)
-        except json.decoder.JSONDecodeError:
-            return False
-        ports_array = response_ports.get("ports")
-        verification_ports_array = get_socketcan_ports()
-        logger.debug("ports_array: %s", ports_array)
-        if not ports_array:
-            return False
-        return True
-
     @staticmethod
     @pytest.fixture(scope="session")
     def setup_udp_capability() -> None:
@@ -106,7 +91,7 @@ class TestBackendTestSession:
                 tester_node.heartbeat_publisher.vendor_specific_status_code = (os.getpid() - 1) % 100
                 await create_yukon(124)
                 await asyncio.sleep(7)  # An extra wait to make sure that Yukon has read the registers by now.
-                node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.2)))
+                node.registry["analog.rcpwm.deadband"] = ValueProxy(Real32(0.2))
                 node.start()
                 tester_node.start()
                 session = aiohttp.ClientSession()
@@ -118,21 +103,29 @@ class TestBackendTestSession:
                 for avatar in avatars["avatars"]:
                     if avatar["node_id"] == node.id:
                         correct_avatar = avatar
-
-                assert avatar["registers_exploded_values"]["analog.rcpwm.deadband"]["real32"]["value"][0] == 0.1
+                assert correct_avatar
+                assert math.isclose(
+                    correct_avatar["registers_exploded_values"]["analog.rcpwm.deadband"]["real32"]["value"][0],
+                    0.1, abs_tol=0.0001)
+                correct_avatar = None
+                avatars = None
                 await session.get("http://localhost:5001/api/reread_registers",
-                                  json={"arguments": [{{node.id: {"analog.rcpwm.deadband": True}}}]}, timeout=3)
+                                  json={"arguments": [{node.id: {"analog.rcpwm.deadband": True}}]}, timeout=3)
                 await asyncio.sleep(1)  # Give it some time to make sure it finishes the reread
                 avatars_response = await session.get("http://localhost:5001/api/get_avatars", timeout=3)
                 if avatars_response.status != 200:
                     return False
                 avatars = await avatars_response.json()
-
+                assert avatars
                 for avatar in avatars["avatars"]:
                     if avatar["node_id"] == node.id:
                         correct_avatar = avatar
-
-                assert avatar["registers_exploded_values"]["analog.rcpwm.deadband"]["real32"]["value"][0] == 0.2
+                assert correct_avatar
+                assert math.isclose(
+                    correct_avatar["registers_exploded_values"]["analog.rcpwm.deadband"]["real32"]["value"][0],
+                    0.2, abs_tol=0.0001)
+                correct_avatar = None
+                avatars = None
         finally:
             if session:
                 await session.close()

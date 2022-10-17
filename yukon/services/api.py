@@ -370,7 +370,7 @@ class Api:
 
     def reread_registers(self, request_contents: typing.Dict[int, typing.Dict[str, bool]]) -> None:
         """yukon/web/modules/registers.data.module.js explains the request_contents structure."""
-        request = RereadRegistersRequest(request_contents)
+        request = RereadRegistersRequest(uuid4(), request_contents)
         self.state.queues.reread_registers.put(request)
 
     def hide_yakut(self) -> None:
@@ -422,13 +422,13 @@ class Api:
             self.state.queues.reread_register_names.put(RereadRegisterNamesRequest(node_id_as_int))
 
     def announce_running_in_electron(self) -> None:
-        logger.warning("Announcing that we are running in electron")
+        logger.info("Announcing that we are running in electron")
         self.state.gui.is_running_in_electron = True
         self.state.gui.is_running_in_browser = False
         self.state.gui.is_target_client_known = True
 
     def announce_running_in_browser(self) -> None:
-        logger.warning("Announcing that we are running in browser")
+        logger.info("Announcing that we are running in browser")
         self.state.gui.is_running_in_electron = False
         self.state.gui.is_running_in_browser = True
         self.state.gui.is_target_client_known = True
