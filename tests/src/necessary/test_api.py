@@ -210,3 +210,97 @@ class TestBackendTestSession:
             if yukon_process:
                 kill(yukon_process.pid)
                 await asyncio.sleep(1)
+
+    async def test_simplify_configuration(self):
+        """Initialize Yukon.
+        1. Make a request to localhost:5001/api/simplify_configuration, this will make Yukon simplify the configuration.
+        2. Check if the value is as expected.
+        Note:
+        Testing is done on port 5001 and the actual application uses port 5000
+        """
+        session = None
+        yukon_process = None
+        try:
+            yukon_process = await create_yukon(128)
+            session = aiohttp.ClientSession()
+            http_simplify_response = await session.post(
+                "http://localhost:5001/api/simplify_configuration",
+                json={"arguments": [{"analog.rcpwm.deadband": {"real32": {"value": [0.00004599999873689376]}}}]},
+                timeout=3,
+            )
+            if http_simplify_response.status != 200:
+                return False
+            try:
+                response_simplify = json.loads(await http_simplify_response.text())
+            except json.decoder.JSONDecodeError:
+                return False
+            logger.debug("response_simplify: %s", response_simplify)
+            return response_simplify.get("analog.rcpwm.deadband") == [0.000046]
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            logger.exception("Connection error")
+            raise Exception(
+                "Simplify configuration command to Yukon FAILED,"
+                f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
+            ) from None
+        finally:
+            if session:
+                await session.close()
+            if yukon_process:
+                kill(yukon_process.pid)
+                await asyncio.sleep(1)
+
+    async def test_unsimplify_configuration(self):
+        """Initialize Yukon.
+        1. Set the value of analog.rcpwm.deadband in Yukon to 0.00004699999873689376.
+        2. Make a request to localhost:5001/api/unsimplify_configuration, this will make Yukon unsimplify the configuration.
+        3. Check if the value is as expected.
+        Note:
+        Testing is done on port 5001 and the actual application uses port 5000
+        """
+        session = None
+        yukon_process = None
+        try:
+            yukon_process = await create_yukon(129)
+            session = aiohttp.ClientSession()
+            http_update_response = await session.post(
+                "http://localhost:5001/api/update_register_value",
+                json={
+                    "arguments": [
+                        "analog.rcpwm.deadband",
+                        {
+                            "real32": {"value": [0.00004599999873689376]},
+                            "_meta_": {"mutable": True, "persistent": True},
+                        },
+                        126,
+                    ]
+                },
+                timeout=3,
+            )
+            await asyncio.sleep(1)
+            http_unsimplify_response = await session.post(
+                "http://localhost:5001/api/unsimplify_configuration",
+                json={"arguments": [{"128": {"analog.rcpwm.deadband": [0.000046]}}]},
+                timeout=3,
+            )
+            if http_unsimplify_response.status != 200:
+                return False
+            try:
+                response_unsimplify = json.loads(await http_unsimplify_response.text())
+            except json.decoder.JSONDecodeError:
+                return False
+            logger.debug("response_unsimplify: %s", response_unsimplify)
+            return response_unsimplify.get("analog.rcpwm.deadband") == \
+                   {"128": {"analog.rcpwm.deadband": {"real32": {"value": [0.00004599999873689376]}}}}
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            logger.exception("Connection error")
+            raise Exception(
+                "Unsimplify configuration command to Yukon FAILED,"
+                f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
+            ) from None
+        finally:
+            if session:
+                await session.close()
+            if yukon_process:
+                kill(yukon_process.pid)
+                await asyncio.sleep(1)
+            logger.critical("The test actually failed")

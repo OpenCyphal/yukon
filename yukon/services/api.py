@@ -283,7 +283,7 @@ class Api:
                 deserialized_conf = json.loads(configuration)
             else:
                 deserialized_conf = yaml.load(configuration, Loader=Loader)
-        return unsimplify_configuration(self.state.avatar.avatars_by_node_id, deserialized_conf)
+        return jsonify(json.loads(unsimplify_configuration(self.state.avatar.avatars_by_node_id, deserialized_conf)))
 
     def open_file_dialog(self) -> typing.Any:
         import tkinter as tk
