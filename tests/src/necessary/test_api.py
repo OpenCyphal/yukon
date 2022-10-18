@@ -9,6 +9,7 @@ import typing
 from pathlib import Path
 import math
 
+import psutil
 import pycyphal
 import pycyphal.application
 import pytest
@@ -45,20 +46,22 @@ def make_test_node_info(name: str) -> uavcan.node.GetInfo_1.Response:
     )
     return node_info
 
+def kill(proc_pid):
+    process = psutil.Process(proc_pid)
+    for proc in process.children(recursive=True):
+        proc.kill()
+    process.kill()
+
+
 
 class TestBackendTestSession:
-    @staticmethod
-    @pytest.fixture(scope="session")
-    def state():
-        return {"demo_node": None, "tester_node": None}
-
-    @staticmethod
-    @pytest.fixture(scope="session")
-    def setup_udp_capability() -> None:
-        if sys.platform.startswith("linux"):
-            # Enable packet capture for the Python executable. This is necessary for testing the UDP capture capability.
-            # It can't be done from within the test suite because it has to be done before the interpreter is started.
-            subprocess.run(["sudo", "setcap", "cap_net_raw+eip", str(Path("which", "python").resolve())], check=True)
+    # @staticmethod
+    # @pytest.fixture(scope="session")
+    # def setup_udp_capability() -> None:
+    #     if sys.platform.startswith("linux"):
+    #         # Enable packet capture for the Python executable. This is necessary for testing the UDP capture capability.
+    #         # It can't be done from within the test suite because it has to be done before the interpreter is started.
+    #         subprocess.run(["sudo", "setcap", "cap_net_raw+eip", str(Path("which", "python").resolve())], check=True)
 
     async def test_reread_register_value(self):
         """0. Make a test_subject node and a test_node node.
@@ -74,8 +77,9 @@ class TestBackendTestSession:
          Do this by making a request to localhost:5000/api/get_avatars. The avatar that has
          the node id of the test_subject node should have a register named analog.rcpwm.deadband with a value of 0.2.
         """
+        session = None
+        yukon_process = None
         try:
-
             with pycyphal.application.make_node(
                 make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
             ) as node, pycyphal.application.make_node(
@@ -88,7 +92,7 @@ class TestBackendTestSession:
                 node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.1)))
                 tester_node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
                 tester_node.heartbeat_publisher.vendor_specific_status_code = (os.getpid() - 1) % 100
-                await create_yukon(124)
+                yukon_process = await create_yukon(124)
                 await asyncio.sleep(7)  # An extra wait to make sure that Yukon has read the registers by now.
                 node.registry["analog.rcpwm.deadband"] = ValueProxy(Real32(0.2))
                 node.start()
@@ -135,6 +139,9 @@ class TestBackendTestSession:
         finally:
             if session:
                 await session.close()
+            if yukon_process:
+                kill(yukon_process.pid)
+                await asyncio.sleep(1)
 
     async def test_update_register_value(self):
         """Initialize Yukon. Make a test_subject and a tester node.
@@ -146,8 +153,10 @@ class TestBackendTestSession:
         Note:
         Testing is done on port 5001 and the actual application uses port 5000
         """
+        session = None
+        yukon_process = None
         try:
-            await create_yukon(124)
+            yukon_process = await create_yukon(124)
             with pycyphal.application.make_node(
                 make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
             ) as node, pycyphal.application.make_node(
@@ -210,3 +219,6 @@ class TestBackendTestSession:
         finally:
             if session:
                 await session.close()
+            if yukon_process:
+                kill(yukon_process.pid)
+                await asyncio.sleep(1)
