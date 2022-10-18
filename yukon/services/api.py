@@ -273,6 +273,8 @@ class Api:
                 deserialized_conf = json.loads(configuration)
             else:
                 deserialized_conf = yaml.load(configuration, Loader=Loader)
+        else:
+            deserialized_conf = configuration
         simplified_configuration_string = simplify_configuration(deserialized_conf)
         return simplified_configuration_string
 
@@ -283,6 +285,8 @@ class Api:
                 deserialized_conf = json.loads(configuration)
             else:
                 deserialized_conf = yaml.load(configuration, Loader=Loader)
+        else:
+            deserialized_conf = configuration
         return jsonify(json.loads(unsimplify_configuration(self.state.avatar.avatars_by_node_id, deserialized_conf)))
 
     def open_file_dialog(self) -> typing.Any:
@@ -336,7 +340,7 @@ class Api:
         return jsonify(self.state.queues.attach_transport_response.get())
 
     def attach_transport(
-        self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
+            self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()

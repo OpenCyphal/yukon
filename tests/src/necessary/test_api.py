@@ -69,7 +69,7 @@ class TestBackendTestSession:
         yukon_process = None
         try:
             with pycyphal.application.make_node(
-                make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+                    make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
             ) as node, pycyphal.application.make_node(
                 make_test_node_info("tester"),
                 get_registry_with_transport_set_up(127),
@@ -146,7 +146,7 @@ class TestBackendTestSession:
         try:
             yukon_process = await create_yukon(124)
             with pycyphal.application.make_node(
-                make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+                    make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
             ) as node, pycyphal.application.make_node(
                 make_test_node_info("tester"),
                 get_registry_with_transport_set_up(127),
@@ -197,7 +197,7 @@ class TestBackendTestSession:
 
                 if response_update.get("success") is not True:
                     return False
-                return verification_exploded_value_str == response_update.get("value")
+                assert verification_exploded_value_str == response_update.get("value")
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             logger.exception("Connection error")
             raise Exception(
@@ -225,7 +225,7 @@ class TestBackendTestSession:
             session = aiohttp.ClientSession()
             http_simplify_response = await session.post(
                 "http://localhost:5001/api/simplify_configuration",
-                json={"arguments": [{"analog.rcpwm.deadband": {"real32": {"value": [0.00004599999873689376]}}}]},
+                json={"arguments": [{"analog.rcpwm.deadband": {"real32": {"value": [0.000046]}}}]},
                 timeout=3,
             )
             if http_simplify_response.status != 200:
@@ -235,7 +235,7 @@ class TestBackendTestSession:
             except json.decoder.JSONDecodeError:
                 return False
             logger.debug("response_simplify: %s", response_simplify)
-            return response_simplify.get("analog.rcpwm.deadband") == [0.000046]
+            assert response_simplify.get("analog.rcpwm.deadband") == [0.000046]
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             logger.exception("Connection error")
             raise Exception(
@@ -251,7 +251,7 @@ class TestBackendTestSession:
 
     async def test_unsimplify_configuration(self):
         """Initialize Yukon.
-        1. Set the value of analog.rcpwm.deadband in Yukon to 0.00004699999873689376.
+        1. Set the value of analog.rcpwm.deadband in Yukon to 0.1.
         2. Make a request to localhost:5001/api/unsimplify_configuration, this will make Yukon unsimplify the configuration.
         3. Check if the value is as expected.
         Note:
@@ -261,36 +261,34 @@ class TestBackendTestSession:
         yukon_process = None
         try:
             yukon_process = await create_yukon(129)
-            session = aiohttp.ClientSession()
-            http_update_response = await session.post(
-                "http://localhost:5001/api/update_register_value",
-                json={
-                    "arguments": [
-                        "analog.rcpwm.deadband",
-                        {
-                            "real32": {"value": [0.00004599999873689376]},
-                            "_meta_": {"mutable": True, "persistent": True},
-                        },
-                        126,
-                    ]
-                },
-                timeout=3,
-            )
-            await asyncio.sleep(1)
-            http_unsimplify_response = await session.post(
-                "http://localhost:5001/api/unsimplify_configuration",
-                json={"arguments": [{"128": {"analog.rcpwm.deadband": [0.000046]}}]},
-                timeout=3,
-            )
-            if http_unsimplify_response.status != 200:
-                return False
-            try:
-                response_unsimplify = json.loads(await http_unsimplify_response.text())
-            except json.decoder.JSONDecodeError:
-                return False
-            logger.debug("response_unsimplify: %s", response_unsimplify)
-            return response_unsimplify.get("analog.rcpwm.deadband") == \
-                   {"128": {"analog.rcpwm.deadband": {"real32": {"value": [0.00004599999873689376]}}}}
+            with pycyphal.application.make_node(
+                    make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+            ) as node:
+                node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.1)))
+                session = aiohttp.ClientSession()
+                await asyncio.sleep(3)
+                http_unsimplify_response = await session.post(
+                    "http://localhost:5001/api/unsimplify_configuration",
+                    json={"arguments": [{"126": {"analog.rcpwm.deadband": [0.1]}}]},
+                    timeout=3,
+                )
+                if http_unsimplify_response.status != 200:
+                    return False
+                try:
+                    response_unsimplify = json.loads(await http_unsimplify_response.text())
+                except json.decoder.JSONDecodeError:
+                    return False
+                logger.debug("response_unsimplify: %s", response_unsimplify)
+                node_id_exists = response_unsimplify.get("126")
+                register_exists = response_unsimplify.get("126").get("analog.rcpwm.deadband")
+                datatype_exists = response_unsimplify.get("126").get("analog.rcpwm.deadband").get("real32")
+                datatype_has_value = response_unsimplify.get("126").get("analog.rcpwm.deadband").get("real32") \
+                    .get("value")
+                datatype_value_is_correct = math.isclose(
+                    response_unsimplify.get("126").get("analog.rcpwm.deadband").get("real32").get("value")[0],
+                    0.1, abs_tol=0.0001)
+                assert node_id_exists and register_exists and datatype_exists and datatype_exists \
+                       and datatype_has_value and datatype_value_is_correct
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             logger.exception("Connection error")
             raise Exception(
@@ -303,4 +301,3 @@ class TestBackendTestSession:
             if yukon_process:
                 kill(yukon_process.pid)
                 await asyncio.sleep(1)
-            logger.critical("The test actually failed")
