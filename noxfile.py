@@ -53,5 +53,5 @@ def pytest(session):
     session.run("pip", "install", "-r", "dev-requirements.txt")
     session.run("pip", "install", "-r", "requirements.txt")
     if platform.system() != "Windows":
-        session.run("sudo", "setcap", "cap_net_raw+eip", str(Path("which", "python")))
+        session.run("sudo", "setcap", "cap_net_raw+eip", str(Path("which", "python")), external=True)
     session.run("pytest", "tests/src/necessary/test_api.py", env={"PYTHONPATH": Path(str(compiled_dir) + separator + str(ROOT_DIR)).absolute()})
