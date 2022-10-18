@@ -68,7 +68,7 @@ class TestBackendTestSession:
         yukon_process = None
         try:
             with pycyphal.application.make_node(
-                    make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+                make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
             ) as node, pycyphal.application.make_node(
                 make_test_node_info("tester"),
                 get_registry_with_transport_set_up(127),
@@ -145,7 +145,7 @@ class TestBackendTestSession:
         try:
             yukon_process = await create_yukon(124)
             with pycyphal.application.make_node(
-                    make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+                make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
             ) as node, pycyphal.application.make_node(
                 make_test_node_info("tester"),
                 get_registry_with_transport_set_up(127),
@@ -262,7 +262,7 @@ class TestBackendTestSession:
         try:
             yukon_process = await create_yukon(129)
             with pycyphal.application.make_node(
-                    make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+                make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
             ) as node:
                 node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.1)))
                 session = aiohttp.ClientSession()
@@ -291,12 +291,12 @@ class TestBackendTestSession:
                     abs_tol=0.0001,
                 )
                 assert (
-                        node_id_exists
-                        and register_exists
-                        and datatype_exists
-                        and datatype_exists
-                        and datatype_has_value
-                        and datatype_value_is_correct
+                    node_id_exists
+                    and register_exists
+                    and datatype_exists
+                    and datatype_exists
+                    and datatype_has_value
+                    and datatype_value_is_correct
                 )
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             logger.exception("Connection error")
