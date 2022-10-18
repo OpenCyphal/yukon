@@ -23,6 +23,7 @@ jobs:
           PYTHONPATH="." nox -s mypy
           PYTHONPATH="." nox -s black
           PYTHONPATH="." nox -s pylint
+
   build-release-linux:
     name: Yukon Linux Build
     runs-on: ubuntu-20.04

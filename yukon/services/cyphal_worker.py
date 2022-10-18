@@ -10,7 +10,7 @@ from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
 import uavcan.node.ExecuteCommand_1_1
-from services.enhanced_json_encoder import EnhancedJSONEncoder
+from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.domain.command_send_response import CommandSendResponse
 from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 from yukon.services.api import is_configuration_simplified

@@ -3,9 +3,10 @@
 # Author: Silver Valdvee
 # type: ignore
 
-import shutil
 from pathlib import Path
+import platform
 import nox
+import shutil
 
 ROOT_DIR = Path(__file__).resolve().parent
 
@@ -21,6 +22,10 @@ src_dirs = [
     ROOT_DIR / "tests",
 ]
 
+if platform.system() == "Windows":
+    separator = ";"
+else:
+    separator = ":"
 
 @nox.session(reuse_venv=True)
 def black(session):
@@ -47,4 +52,4 @@ def pylint(session):
 def pytest(session):
     session.run("pip", "install", "-r", "dev-requirements.txt")
     session.run("pip", "install", "-r", "requirements.txt")
-    session.run("pytest", "tests/src/necessary")
+    session.run("pytest", "tests/src/necessary/test_api.py", env={"PYTHONPATH": Path(str(compiled_dir) + separator + str(ROOT_DIR)).absolute()})

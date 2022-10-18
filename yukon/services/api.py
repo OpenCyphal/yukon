@@ -19,7 +19,7 @@ except ImportError:
 import websockets
 from flask import jsonify
 import uavcan
-from domain.reread_registers_request import RereadRegistersRequest
+from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
 from yukon.services.get_ports import get_socketcan_ports, get_slcan_ports
 from yukon.domain.attach_transport_request import AttachTransportRequest
