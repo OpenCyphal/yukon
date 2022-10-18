@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 OneTryHttpAdapter = HTTPAdapter(max_retries=1)
 
 
-def get_registry_with_transport_set_up(node_id: int) -> typing.Dict[str, typing.Any]:
+def get_registry_with_transport_set_up(node_id: int) -> pycyphal.application.register.Registry:
     registry_dict = pycyphal.application.make_registry(
         ":memory:",
         environment_variables={
@@ -51,14 +51,6 @@ def kill(proc_pid):
 
 
 class TestBackendTestSession:
-    # @staticmethod
-    # @pytest.fixture(scope="session")
-    # def setup_udp_capability() -> None:
-    #     if sys.platform.startswith("linux"):
-    #         # Enable packet capture for the Python executable. This is necessary for testing the UDP capture capability.
-    #         # It can't be done from within the test suite because it has to be done before the interpreter is started.
-    #         subprocess.run(["sudo", "setcap", "cap_net_raw+eip", str(Path("which", "python").resolve())], check=True)
-
     async def test_reread_register_value(self):
         """0. Make a test_subject node and a test_node node.
         1. Set the value of analog.rcpwm.deadband to 0.1.
@@ -109,7 +101,7 @@ class TestBackendTestSession:
                     abs_tol=0.0001,
                 )
                 correct_avatar = None
-                avatars = None
+                del avatars
                 await session.get(
                     "http://localhost:5001/api/reread_registers",
                     json={"arguments": [{node.id: {"analog.rcpwm.deadband": True}}]},
@@ -130,8 +122,8 @@ class TestBackendTestSession:
                     0.2,
                     abs_tol=0.0001,
                 )
-                correct_avatar = None
-                avatars = None
+                del correct_avatar
+                del avatars
         finally:
             if session:
                 await session.close()
