@@ -17,7 +17,7 @@ try:
 except ImportError:
     from yaml import Loader, Dumper  # type: ignore
 import websockets
-from flask import jsonify
+from flask import jsonify, Response
 import uavcan
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
@@ -278,7 +278,7 @@ class Api:
         simplified_configuration_string = simplify_configuration(deserialized_conf)
         return simplified_configuration_string
 
-    def unsimplify_configuration(self, configuration: str) -> str:
+    def unsimplify_configuration(self, configuration: str) -> Response:
         if isinstance(configuration, str):
             # if the first character in deserialize_conf is a {, then it is a JSON string.
             if configuration[0] == "{":
@@ -340,7 +340,7 @@ class Api:
         return jsonify(self.state.queues.attach_transport_response.get())
 
     def attach_transport(
-            self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
+        self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()
