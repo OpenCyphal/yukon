@@ -1,5 +1,8 @@
 name: Yukon tests
 on: push
+concurrency:
+  group: "CI"
+  cancel-in-progress: true
 jobs:
   python-quality-check:
     runs-on: ubuntu-22.04

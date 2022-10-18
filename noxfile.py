@@ -3,10 +3,10 @@
 # Author: Silver Valdvee
 # type: ignore
 
+import sys
 from pathlib import Path
 import platform
 import nox
-import shutil
 
 ROOT_DIR = Path(__file__).resolve().parent
 
@@ -53,5 +53,5 @@ def pytest(session):
     session.run("pip", "install", "-r", "dev-requirements.txt")
     session.run("pip", "install", "-r", "requirements.txt")
     if platform.system() != "Windows":
-        session.run("sudo", "setcap", "cap_net_raw+eip", str(Path("which", "python")), external=True)
+        session.run("sudo", "setcap", "cap_net_raw+eip", sys.executable, external=True)
     session.run("pytest", "tests/src/necessary/test_api.py", env={"PYTHONPATH": Path(str(compiled_dir) + separator + str(ROOT_DIR)).absolute()})
