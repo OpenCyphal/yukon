@@ -18,6 +18,7 @@ except ImportError:
     from yaml import Loader, Dumper  # type: ignore
 import websockets
 from flask import jsonify, Response
+
 import uavcan
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
