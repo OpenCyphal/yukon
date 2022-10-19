@@ -409,6 +409,8 @@ export function updateRegistersTableColors(yukon_state, repeat_times, repeat_del
 }
 export function showCellValue(node_id, register_name, yukon_state) {
     const avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id == node_id);
+    const explodedRegister = avatar.registers_exploded_values[register_name];
+    const isMutable = explodedRegister["_meta_"].mutable;
     let enterListener = null;
     let disconnectEnterListener = function() {
         if (enterListener) {
@@ -461,6 +463,10 @@ export function showCellValue(node_id, register_name, yukon_state) {
     // Add a submit button
     let modal_submit = document.createElement("button");
     modal_submit.innerHTML = "Submit";
+    if(!isMutable) {
+        modal_submit.disabled = true;
+
+    }
     modal_submit.onclick = submit_modal;
     // If enter is pressed the modal should submit too
     enterListener = function (event) {
@@ -528,6 +534,10 @@ export function editSelectedCellValues(pairs, yukon_state) {
     for (const node_id in pairs) {
         const registers = pairs[node_id];
         for (const register_name in registers) {
+            const avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id == node_id);
+            const explodedRegister = avatar.registers_exploded_values[register_name];
+            const isMutable = explodedRegister["_meta_"].mutable;
+            const isPersistent = explodedRegister["_meta_"].persistent;
             register_count += 1;
             const register_value = registers[register_name];
             const datatype = getDictionaryValueFieldName(register_value);
@@ -560,7 +570,11 @@ export function editSelectedCellValues(pairs, yukon_state) {
                 is_pair_incompatible = true;
             }
             let pair_datatype = document.createElement("span");
-            pair_datatype.innerHTML = datatype + "[" + current_array_size + "]";
+            if(!is_pair_incompatible) {
+                pair_datatype.innerHTML = datatype + "[" + current_array_size + "]";
+            } else {
+                pair_datatype.innerHTML = datatype + "[<b>" + current_array_size + "</b>]";
+            }
             pair_datatype.style.marginRight = "10px";
             pair_div.appendChild(pair_datatype);
             let pair_value = document.createElement("input");
@@ -578,6 +592,11 @@ export function editSelectedCellValues(pairs, yukon_state) {
             pair_div.appendChild(discard_button);
             let pair_submit = document.createElement("button");
             pair_submit.innerHTML = "Submit";
+            if(!isMutable) {
+                pair_submit.disabled = true;
+                pair_submit.innerHTML = "Immutable";
+                pair_div.classList.add("incompatible");
+            }
             if (is_pair_incompatible) {
                 pair_submit.disabled = true;
             }

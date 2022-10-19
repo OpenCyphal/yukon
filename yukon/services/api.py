@@ -343,7 +343,7 @@ class Api:
         return jsonify(self.state.queues.attach_transport_response.get())
 
     def attach_transport(
-        self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
+            self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()
@@ -358,7 +358,7 @@ class Api:
         while True:
             if time() >= timeout:
                 raise Exception("Failed to receive a response for attached transport.")
-            if self.state.queues.attach_transport_responses.empty():
+            if self.state.queues.attach_transport_response.empty():
                 sleep(0.1)
             else:
                 break
