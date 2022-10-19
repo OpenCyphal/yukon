@@ -332,7 +332,9 @@ class Api:
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         self.state.queues.attach_transport.put(atr)
         timeout = time() + 5
-        while time() < timeout:
+        while True:
+            if time() >= timeout:
+                raise Exception("Failed to receive a response for attached CAN transport.")
             if self.state.queues.attach_transport_response.empty():
                 sleep(0.1)
             else:
@@ -352,8 +354,10 @@ class Api:
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         self.state.queues.attach_transport.put(atr)
         timeout = time() + 5
-        while time() < timeout:
-            if self.state.queues.attach_transport_response.empty():
+        while True:
+            if time() >= timeout:
+                raise Exception("Failed to receive a response for attached transport.")
+            if self.state.queues.attach_transport_responses.empty():
                 sleep(0.1)
             else:
                 break
@@ -363,12 +367,15 @@ class Api:
         logger.info(f"Detaching transport {hash}")
         self.state.queues.detach_transport.put(hash)
         timeout = time() + 5
-        while time() < timeout:
+        while True:
+            if time() >= timeout:
+                raise Exception("Failed to receive a response for detached transport.")
             if self.state.queues.detach_transport_response.empty():
                 sleep(0.1)
             else:
                 break
-        return self.state.queues.detach_transport_response.get()
+
+        return jsonify(self.state.queues.detach_transport_response.get().to_builtin())
 
     # def save_registers_of_node(self, node_id: int, registers: typing.Dict["str"]) -> None:
     def show_yakut(self) -> None:

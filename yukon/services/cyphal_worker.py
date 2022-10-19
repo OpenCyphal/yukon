@@ -10,6 +10,7 @@ from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
 import uavcan.node.ExecuteCommand_1_1
+from yukon.domain.detach_transport_response import DetachTransportResponse
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.domain.command_send_response import CommandSendResponse
 from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
@@ -119,6 +120,9 @@ def cyphal_worker(state: GodState) -> None:
                                 del state.cyphal.already_used_transport_interfaces[interface.udp_iface]
                             else:
                                 del state.cyphal.already_used_transport_interfaces[interface.iface]
+                            state.queues.detach_transport_response.put(
+                                DetachTransportResponse(True, interface, "Detached transport")
+                            )
                             state.cyphal.transports_list.remove(interface)
                             break
                 await asyncio.sleep(0.02)

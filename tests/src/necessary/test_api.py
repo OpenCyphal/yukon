@@ -4,6 +4,7 @@ import logging
 import os
 import traceback
 import math
+import typing
 
 import psutil
 import pycyphal
@@ -302,6 +303,57 @@ class TestBackendTestSession:
             logger.exception("Connection error")
             raise Exception(
                 "Unsimplify configuration command to Yukon FAILED,"
+                f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
+            ) from None
+        finally:
+            if session:
+                await session.close()
+            if yukon_process:
+                kill(yukon_process.pid)
+                await asyncio.sleep(1)
+
+    async def test_attach_detach(self):
+        """Initialize Yukon.
+        1. Make a request to localhost:5001/api/attach, this will make Yukon attach to the node.
+        2. Check if the value is as expected.
+        3. Make a request to localhost:5001/api/detach, this will make Yukon detach from the node.
+        4. Check if the value is as expected.
+        Note:
+        Testing is done on port 5001 and the actual application uses port 5000
+        """
+        session = None
+        yukon_process = None
+        try:
+            yukon_process = await create_yukon(130)
+            session = aiohttp.ClientSession()
+            http_get_interfaces_response = await session.get(
+                "http://localhost:5001/api/get_connected_transport_interfaces"
+            )
+            interfaces_response_object: typing.List[typing.Dict[typing.Union[str, int]]] = json.loads(
+                await http_get_interfaces_response.text()
+            ).get("interfaces")
+            main_interface_found = False
+            for interface in interfaces_response_object:
+                if interface.get("udp_iface") == "127.0.0.0":
+                    interface_hash = interface.get("hash")
+                    main_interface_found = True
+                    break
+            assert main_interface_found
+            http_detach_response = await session.post(
+                "http://localhost:5001/api/detach_transport", json={"arguments": [interface_hash]}
+            )
+            if http_detach_response.status != 200:
+                assert False
+            try:
+                response_detach = json.loads(await http_detach_response.text())
+            except json.decoder.JSONDecodeError:
+                assert False
+            logger.debug("response_detach: %s", response_detach)
+            assert response_detach.get("is_success") is True
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            logger.exception("Connection error")
+            raise Exception(
+                "Attach/detach command to Yukon FAILED,"
                 f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
             ) from None
         finally:
