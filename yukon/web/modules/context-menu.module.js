@@ -70,7 +70,7 @@ export function make_context_menus(yukon_state) {
     // For table cells
     const table_cell_context_menu_items = [
         {
-            content: `${downloadIcon}Edit value`,
+            content: `${downloadIcon}Show/edit value`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;

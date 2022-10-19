@@ -779,6 +779,8 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         if (useSVG) {
             caretDownImgSrc = "../images/caret-down.svg";
             caretUpImgSrc = "../images/caret-up.svg";
+            caretDownImgSrc = "../images/threelines.svg";
+            caretUpImgSrc = "../images/threelines.svg";
         } else {
             caretDownImgSrc = "../images/caret-down-18-18.png";
             caretUpImgSrc = "../images/caret-up-18-18.png";
