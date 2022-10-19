@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="130"
+   height="130"
+   viewBox="0 0 34.395835 34.395834"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   sodipodi:docname="gear.svg"
+   inkscape:export-filename="carets2.png"
+   inkscape:export-xdpi="94.523079"
+   inkscape:export-ydpi="94.523079"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="true"
+     inkscape:zoom="7.319248"
+     inkscape:cx="-9.7004501"
+     inkscape:cy="77.193723"
+     inkscape:window-width="3840"
+     inkscape:window-height="2066"
+     inkscape:window-x="2869"
+     inkscape:window-y="-11"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid9"
+       originx="0"
+       originy="0"
+       spacingx="0.13229167"
+       spacingy="0.13229167"
+       color="#e5e200"
+       opacity="0.14901961"
+       empspacing="13" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="display:none;fill:#000000;stroke-width:0.264583"
+       d="M 33.072916,26.458333 17.197917,7.9375 1.3229166,26.458333 l 3.3072919,1e-6 12.5677085,-14.552084 12.567709,14.552084 3.30729,-1e-6"
+       id="path171"
+       sodipodi:nodetypes="ccccccc"
+       inkscape:label="path171" />
+    <path
+       style="fill:#000000;stroke-width:0.264583"
+       d="M 5.1593749,5.1593749 H 29.236458"
+       id="path324" />
+    <path
+       id="path1633"
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:2.165"
+       d="M 17.197917 6.8791667 A 10.318749 10.318749 0 0 0 6.8791667 17.197917 A 10.318749 10.318749 0 0 0 17.197917 27.516667 A 10.318749 10.318749 0 0 0 27.516667 17.197917 A 10.318749 10.318749 0 0 0 17.197917 6.8791667 z M 17.197917 13.758333 A 3.4395845 3.4395845 0 0 1 20.6375 17.197917 A 3.4395845 3.4395845 0 0 1 17.197917 20.6375 A 3.4395845 3.4395845 0 0 1 13.758333 17.197917 A 3.4395845 3.4395845 0 0 1 17.197917 13.758333 z " />
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:2.165"
+       id="path3819"
+       cx="6.8791666"
+       cy="17.197916"
+       r="1.7197917" />
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:2.165"
+       id="path3821"
+       cx="17.197916"
+       cy="6.8791666"
+       r="1.7197917" />
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:2.165"
+       id="path3823"
+       cx="27.516666"
+       cy="17.197916"
+       r="1.7197917" />
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:2.165"
+       id="path3825"
+       cx="17.197916"
+       cy="27.516666"
+       r="1.7197917" />
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:2.165"
+       id="circle3827"
+       cx="14.00027"
+       cy="-0.34921086"
+       r="1.7197917"
+       transform="rotate(45.822686)" />
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:2.165"
+       id="circle3829"
+       cx="24.319019"
+       cy="-10.66796"
+       r="1.7197917"
+       transform="rotate(45.822686)" />
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:2.165"
+       id="circle3831"
+       cx="34.637768"
+       cy="-0.34921086"
+       r="1.7197917"
+       transform="rotate(45.822686)" />
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:2.165"
+       id="circle3833"
+       cx="24.319019"
+       cy="9.9695396"
+       r="1.7197917"
+       transform="rotate(45.822686)" />
+  </g>
+</svg>

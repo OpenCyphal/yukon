@@ -634,10 +634,10 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 title: componentText,
             };
             try {
-                myLayout.root.contentItems[0].addChild(addedComponent);
+                yukon_state.myLayout.root.contentItems[0].addChild(addedComponent);
             } catch (e) {
                 console.log(e);
-                myLayout.root.addChild(addedComponent);
+                yukon_state.myLayout.root.addChild(addedComponent);
             }
         }
         const outsideContext = this;
@@ -652,7 +652,148 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             });
             toolbar.appendChild(btnRestore);
         }
-        var myLayout = new GoldenLayout(config, document.querySelector("#layout"));
+        function initalizeLayout()
+        {
+            let hadPreviousLayout = false;
+            if (typeof yukon_state.myLayout !== 'undefined') {
+                try {
+                    hadPreviousLayout = true;
+                    yukon_state.myLayout.destroy();
+                } catch (e) {
+                    console.log(e);
+                }
+            }
+            let requiredTimeout = 0;
+            if(hadPreviousLayout) {
+                requiredTimeout = 3;
+            }
+            setTimeout(function(){
+                yukon_state.myLayout = new GoldenLayout(config, document.querySelector("#layout"));
+                var myLayout = yukon_state.myLayout;
+                myLayout.registerComponent('registersComponent', function (container, componentState) {
+                    registerComponentAction("../registers.panel.html", "registersComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpRegistersComponent.bind(outsideContext)(true);
+                    });
+                });
+                myLayout.registerComponent('statusComponent', function (container, componentState) {
+                    registerComponentAction("../status.panel.html", "statusComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpStatusComponent.bind(outsideContext)();
+                    });
+                });
+                myLayout.registerComponent('monitorComponent', function (container, componentState) {
+                    registerComponentAction("../monitor.panel.html", "monitorComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpMonitorComponent.bind(outsideContext)();
+                    });
+                });
+                myLayout.registerComponent('messagesComponent', function (container, componentState) {
+                    registerComponentAction("../messages.panel.html", "messagesComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpMessagesComponent.bind(outsideContext)(container);
+                    });
+                });
+                myLayout.registerComponent('transportsComponent', function (container, componentState) {
+                    registerComponentAction("../transport.panel.html", "transportsComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpTransportsComponent.bind(outsideContext)(container);
+                    });
+                });
+                myLayout.registerComponent("transportsListComponent", function (container, componentState) {
+                    registerComponentAction("../transports_list.panel.html", "transportsListComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpTransportsListComponent.bind(outsideContext)();
+                    });
+                });
+                myLayout.registerComponent("commandsComponent", function (container, componentState) {
+                    registerComponentAction("../commands.panel.html", "transportsListComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpCommandsComponent.bind(outsideContext)(container);
+                    });
+                });
+                const useSVG = true;
+                let caretDownImgSrc = null;
+                let caretUpImgSrc = null;
+                if (useSVG) {
+                    caretDownImgSrc = "../images/caret-down.svg";
+                    caretUpImgSrc = "../images/caret-up.svg";
+                    caretDownImgSrc = "../images/gear.svg";
+                    caretUpImgSrc = "../images/gear.svg";
+                } else {
+                    caretDownImgSrc = "../images/caret-down-18-18.png";
+                    caretUpImgSrc = "../images/caret-up-18-18.png";
+                }
+
+                myLayout.on('stackCreated', function (stack) {
+                    //HTML for the colorDropdown is stored in a template tag
+                    const btnPanelShowHideToggle = document.createElement("li");
+                    btnPanelShowHideToggle.setAttribute("id", "btn-panel-show-hide-yakut");
+                    const caretDownImageElement = document.createElement("img");
+                    // Make sure it has 100% width and height
+                    caretDownImageElement.setAttribute("width", "100%");
+                    caretDownImageElement.setAttribute("height", "100%");
+                    caretDownImageElement.setAttribute("src", caretDownImgSrc);
+                    btnPanelShowHideToggle.appendChild(caretDownImageElement);
+                    const caretUpImageElement = document.createElement("img");
+                    // Make sure it has 100% width and height
+                    caretUpImageElement.setAttribute("width", "100%");
+                    caretUpImageElement.setAttribute("height", "100%");
+                    caretUpImageElement.setAttribute("src", caretUpImgSrc);
+                    btnPanelShowHideToggle.appendChild(caretUpImageElement);
+                    btnPanelShowHideToggle.addEventListener("click",
+                        function (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const container = stack.getActiveContentItem().container.getElement()[0];
+                            // Use the data-isExpanded attribute and toggle it
+                            if (container.getAttribute("data-isExpanded") == "true") {
+                                container.removeAttribute("data-isExpanded");
+                            } else {
+                                container.setAttribute("data-isExpanded", "true");
+                            }
+                            const isExpanded = container.getAttribute("data-isExpanded");
+                            if (isExpanded) {
+                                caretDownImageElement.style.display = "none";
+                                caretUpImageElement.style.display = "block";
+                            } else {
+                                caretDownImageElement.style.display = "block";
+                                caretUpImageElement.style.display = "none";
+                            }
+                        }
+                    );
+                    // Add the btnPanelShowHideToggle to the header
+                    stack.header.controlsContainer.prepend(btnPanelShowHideToggle);
+                    stack.on('activeContentItemChanged', function (contentItem) {
+                        const container = stack.getActiveContentItem().container.getElement()[0];
+                        // If the key "isExpanded" is not contained in the state of the container
+
+                        const isExpanded = container.getAttribute("data-isExpanded");
+                        if (isExpanded) {
+                            caretDownImageElement.style.display = "none";
+                            caretUpImageElement.style.display = "block";
+                        } else {
+                            caretDownImageElement.style.display = "block";
+                            caretUpImageElement.style.display = "none";
+                        }
+                    });
+                });
+                myLayout.init();
+            }, requiredTimeout);
+        } // initializeLayout
+        initalizeLayout();
+        btnRestoreDefaultLayout.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            initalizeLayout();
+        });
         const btnShowHideToolbar = document.getElementById('btnShowHideToolbar');
         btnShowHideToolbar.addEventListener('click', function () {
             const toolbar = document.getElementById('toolbar');
@@ -674,18 +815,18 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 btnShowHideToolbar.classList.remove("bottom-right");
             }
             setTimeout(function () {
-                myLayout.updateSize();
+                yukon_state.myLayout.updateSize();
             }, 50);
         });
         window.addEventListener("resize", () => {
             console.log("resize event");
             setTimeout(function () {
-                myLayout.updateSize();
+                yukon_state.myLayout.updateSize();
             }, 50);
         });
         document.querySelector("#layout").addEventListener("resize", () => {
             setTimeout(function () {
-                myLayout.updateSize();
+                yukon_state.myLayout.updateSize();
             }, 50);
         });
         let last_time_when_a_window_was_opened = null;
@@ -708,138 +849,28 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 });
             });
             container.on("destroy", function () {
-                const lastOpenPopoutsLength = myLayout.openPopouts.length;
-                setTimeout(() => {
-                    // The popout event is not fired, I believe it is a bug in GoldenLayout
-                    //                    if(last_time_when_a_window_was_opened != null && Date.now() - last_time_when_a_window_was_opened < 100) {
-                    //                        return;
-                    //                    }
-                    if (lastOpenPopoutsLength < myLayout.openPopouts.length) {
-                        console.log("Not making a restore button because a popout was opened");
-                        return;
-                    }
-                    addRestoreButton(container._config.title, componentName);
-                    isDestroyed = true;
-                }, 1000);
+                try {
+                    const lastOpenPopoutsLength = yukon_state.myLayout.openPopouts.length;
+                    setTimeout(() => {
+                        // The popout event is not fired, I believe it is a bug in GoldenLayout
+                        //                    if(last_time_when_a_window_was_opened != null && Date.now() - last_time_when_a_window_was_opened < 100) {
+                        //                        return;
+                        //                    }
+                        if (lastOpenPopoutsLength < yukon_state.myLayout.openPopouts.length) {
+                            console.log("Not making a restore button because a popout was opened");
+                            return;
+                        }
+                        addRestoreButton(container._config.title, componentName);
+                        isDestroyed = true;
+                    }, 1000);
+                } catch (e) {
+                    console.error(e);
+                }
+
             });
         }
         let containerElementToContainerObjectMap = new WeakMap();
-        myLayout.registerComponent('registersComponent', function (container, componentState) {
-            registerComponentAction("../registers.panel.html", "registersComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpRegistersComponent.bind(outsideContext)(true);
-            });
-        });
-        myLayout.registerComponent('statusComponent', function (container, componentState) {
-            registerComponentAction("../status.panel.html", "statusComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpStatusComponent.bind(outsideContext)();
-            });
-        });
-        myLayout.registerComponent('monitorComponent', function (container, componentState) {
-            registerComponentAction("../monitor.panel.html", "monitorComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpMonitorComponent.bind(outsideContext)();
-            });
-        });
-        myLayout.registerComponent('messagesComponent', function (container, componentState) {
-            registerComponentAction("../messages.panel.html", "messagesComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpMessagesComponent.bind(outsideContext)(container);
-            });
-        });
-        myLayout.registerComponent('transportsComponent', function (container, componentState) {
-            registerComponentAction("../transport.panel.html", "transportsComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpTransportsComponent.bind(outsideContext)(container);
-            });
-        });
-        myLayout.registerComponent("transportsListComponent", function (container, componentState) {
-            registerComponentAction("../transports_list.panel.html", "transportsListComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpTransportsListComponent.bind(outsideContext)();
-            });
-        });
-        myLayout.registerComponent("commandsComponent", function (container, componentState) {
-            registerComponentAction("../commands.panel.html", "transportsListComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpCommandsComponent.bind(outsideContext)(container);
-            });
-        });
-        const useSVG = true;
-        let caretDownImgSrc = null;
-        let caretUpImgSrc = null;
-        if (useSVG) {
-            caretDownImgSrc = "../images/caret-down.svg";
-            caretUpImgSrc = "../images/caret-up.svg";
-            caretDownImgSrc = "../images/threelines.svg";
-            caretUpImgSrc = "../images/threelines.svg";
-        } else {
-            caretDownImgSrc = "../images/caret-down-18-18.png";
-            caretUpImgSrc = "../images/caret-up-18-18.png";
-        }
 
-        myLayout.on('stackCreated', function (stack) {
-            //HTML for the colorDropdown is stored in a template tag
-            const btnPanelShowHideToggle = document.createElement("li");
-            btnPanelShowHideToggle.setAttribute("id", "btn-panel-show-hide-yakut");
-            const caretDownImageElement = document.createElement("img");
-            // Make sure it has 100% width and height
-            caretDownImageElement.setAttribute("width", "100%");
-            caretDownImageElement.setAttribute("height", "100%");
-            caretDownImageElement.setAttribute("src", caretDownImgSrc);
-            btnPanelShowHideToggle.appendChild(caretDownImageElement);
-            const caretUpImageElement = document.createElement("img");
-            // Make sure it has 100% width and height
-            caretUpImageElement.setAttribute("width", "100%");
-            caretUpImageElement.setAttribute("height", "100%");
-            caretUpImageElement.setAttribute("src", caretUpImgSrc);
-            btnPanelShowHideToggle.appendChild(caretUpImageElement);
-            btnPanelShowHideToggle.addEventListener("click",
-                function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const container = stack.getActiveContentItem().container.getElement()[0];
-                    // Use the data-isExpanded attribute and toggle it
-                    if (container.getAttribute("data-isExpanded") == "true") {
-                        container.removeAttribute("data-isExpanded");
-                    } else {
-                        container.setAttribute("data-isExpanded", "true");
-                    }
-                    const isExpanded = container.getAttribute("data-isExpanded");
-                    if (isExpanded) {
-                        caretDownImageElement.style.display = "none";
-                        caretUpImageElement.style.display = "block";
-                    } else {
-                        caretDownImageElement.style.display = "block";
-                        caretUpImageElement.style.display = "none";
-                    }
-                }
-            );
-            // Add the btnPanelShowHideToggle to the header
-            stack.header.controlsContainer.prepend(btnPanelShowHideToggle);
-            stack.on('activeContentItemChanged', function (contentItem) {
-                const container = stack.getActiveContentItem().container.getElement()[0];
-                // If the key "isExpanded" is not contained in the state of the container
-
-                const isExpanded = container.getAttribute("data-isExpanded");
-                if (isExpanded) {
-                    caretDownImageElement.style.display = "none";
-                    caretUpImageElement.style.display = "block";
-                } else {
-                    caretDownImageElement.style.display = "block";
-                    caretUpImageElement.style.display = "none";
-                }
-            });
-        });
-        myLayout.init();
         yukon_state.zubax_api = zubax_api;
         yukon_state.jsyaml = jsyaml;
         let lastInternalMessageIndex = -1;
