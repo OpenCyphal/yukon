@@ -895,6 +895,10 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             yukon_state.pressedKeys[e.keyCode] = true;
             // If ctrl a was pressed, select all
             if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[65]) {
+                if (areThereAnyActiveModals(yukon_state)) {
+                    // The modal should handle its own copy and paste events (natively)
+                    return;
+                }
                 selectAll(yukon_state);
                 e.preventDefault();
             }

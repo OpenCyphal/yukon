@@ -521,6 +521,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
     }
     let datatypes = new Set();
     let register_count = 0;
+    let uneditable_register_count = 0;
     // Create a list with all pairs, displaying the register name and the value and a submit button
     // When the submit button is clicked then the value is updated in the server and the list element is removed
     // Make a div that is at max 80% of the screen height and has a scrollbar
@@ -568,6 +569,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
                 // Color the pair div red
                 pair_div.classList.add("incompatible");
                 is_pair_incompatible = true;
+                uneditable_register_count += 1;
             }
             let pair_datatype = document.createElement("span");
             if(!is_pair_incompatible) {
@@ -593,9 +595,13 @@ export function editSelectedCellValues(pairs, yukon_state) {
             let pair_submit = document.createElement("button");
             pair_submit.innerHTML = "Submit";
             if(!isMutable) {
-                pair_submit.disabled = true;
                 pair_submit.innerHTML = "Immutable";
-                pair_div.classList.add("incompatible");
+                if(!is_pair_incompatible) {
+                    uneditable_register_count += 1;
+                    pair_submit.disabled = true;
+                    pair_div.classList.add("incompatible");
+                }
+
             }
             if (is_pair_incompatible) {
                 pair_submit.disabled = true;
@@ -629,7 +635,10 @@ export function editSelectedCellValues(pairs, yukon_state) {
 
     // Add a submit button
     let modal_submit = document.createElement("button");
-    modal_submit.innerHTML = "Submit all";
+    modal_submit.innerHTML = "Submit compatible";
+    if(uneditable_register_count == register_count) {
+        modal_submit.disabled = true;
+    }
     modal_submit.onclick = submit_modal;
     // If enter is pressed the modal should submit too
     document.addEventListener("keydown", function (event) {
