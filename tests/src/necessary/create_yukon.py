@@ -4,6 +4,7 @@ import traceback
 from multiprocessing import Process
 import asyncio.exceptions
 import aiohttp
+import aiohttp.client_exceptions
 from yukon.__main__ import run_application
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ async def create_yukon(attached_with_node_id: int):
             json={"arguments": ["127.0.0.0", "1200", str(attached_with_node_id)]},
             timeout=1.0,
         )
-    except asyncio.exceptions.TimeoutError:
+    except (asyncio.exceptions.TimeoutError, aiohttp.client_exceptions.ClientConnectorError):
         is_any_yukon_already_running = False
     if is_any_yukon_already_running:
         raise Exception(

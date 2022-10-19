@@ -2,24 +2,21 @@ import asyncio
 import json
 import logging
 import os
-import subprocess
-import sys
 import traceback
-import typing
-from pathlib import Path
 import math
+import typing
 
+import psutil
 import pycyphal
 import pycyphal.application
-import pytest
 import requests
 from pycyphal.application.register import ValueProxy, Real32
 from requests.adapters import HTTPAdapter
 import aiohttp
 
 import uavcan
-from services.enhanced_json_encoder import EnhancedJSONEncoder
-from services.value_utils import explode_value
+from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
+from yukon.services.value_utils import explode_value
 from .create_yukon import create_yukon
 
 logger = logging.getLogger(__name__)
@@ -27,7 +24,7 @@ logger = logging.getLogger(__name__)
 OneTryHttpAdapter = HTTPAdapter(max_retries=1)
 
 
-def get_registry_with_transport_set_up(node_id: int) -> typing.Dict[str, typing.Any]:
+def get_registry_with_transport_set_up(node_id: int) -> pycyphal.application.register.Registry:
     registry_dict = pycyphal.application.make_registry(
         ":memory:",
         environment_variables={
@@ -46,20 +43,14 @@ def make_test_node_info(name: str) -> uavcan.node.GetInfo_1.Response:
     return node_info
 
 
+def kill(proc_pid):
+    process = psutil.Process(proc_pid)
+    for proc in process.children(recursive=True):
+        proc.kill()
+    process.kill()
+
+
 class TestBackendTestSession:
-    @staticmethod
-    @pytest.fixture(scope="session")
-    def state():
-        return {"demo_node": None, "tester_node": None}
-
-    @staticmethod
-    @pytest.fixture(scope="session")
-    def setup_udp_capability() -> None:
-        if sys.platform.startswith("linux"):
-            # Enable packet capture for the Python executable. This is necessary for testing the UDP capture capability.
-            # It can't be done from within the test suite because it has to be done before the interpreter is started.
-            subprocess.run(["sudo", "setcap", "cap_net_raw+eip", str(Path("which", "python").resolve())], check=True)
-
     async def test_reread_register_value(self):
         """0. Make a test_subject node and a test_node node.
         1. Set the value of analog.rcpwm.deadband to 0.1.
@@ -74,8 +65,9 @@ class TestBackendTestSession:
          Do this by making a request to localhost:5000/api/get_avatars. The avatar that has
          the node id of the test_subject node should have a register named analog.rcpwm.deadband with a value of 0.2.
         """
+        session = None
+        yukon_process = None
         try:
-
             with pycyphal.application.make_node(
                 make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
             ) as node, pycyphal.application.make_node(
@@ -88,7 +80,7 @@ class TestBackendTestSession:
                 node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.1)))
                 tester_node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
                 tester_node.heartbeat_publisher.vendor_specific_status_code = (os.getpid() - 1) % 100
-                await create_yukon(124)
+                yukon_process = await create_yukon(124)
                 await asyncio.sleep(7)  # An extra wait to make sure that Yukon has read the registers by now.
                 node.registry["analog.rcpwm.deadband"] = ValueProxy(Real32(0.2))
                 node.start()
@@ -109,7 +101,7 @@ class TestBackendTestSession:
                     abs_tol=0.0001,
                 )
                 correct_avatar = None
-                avatars = None
+                del avatars
                 await session.get(
                     "http://localhost:5001/api/reread_registers",
                     json={"arguments": [{node.id: {"analog.rcpwm.deadband": True}}]},
@@ -130,11 +122,14 @@ class TestBackendTestSession:
                     0.2,
                     abs_tol=0.0001,
                 )
-                correct_avatar = None
-                avatars = None
+                del correct_avatar
+                del avatars
         finally:
             if session:
                 await session.close()
+            if yukon_process:
+                kill(yukon_process.pid)
+                await asyncio.sleep(1)
 
     async def test_update_register_value(self):
         """Initialize Yukon. Make a test_subject and a tester node.
@@ -146,8 +141,10 @@ class TestBackendTestSession:
         Note:
         Testing is done on port 5001 and the actual application uses port 5000
         """
+        session = None
+        yukon_process = None
         try:
-            await create_yukon(124)
+            yukon_process = await create_yukon(124)
             with pycyphal.application.make_node(
                 make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
             ) as node, pycyphal.application.make_node(
@@ -200,7 +197,7 @@ class TestBackendTestSession:
 
                 if response_update.get("success") is not True:
                     return False
-                return verification_exploded_value_str == response_update.get("value")
+                assert verification_exploded_value_str == response_update.get("value")
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             logger.exception("Connection error")
             raise Exception(
@@ -210,3 +207,158 @@ class TestBackendTestSession:
         finally:
             if session:
                 await session.close()
+            if yukon_process:
+                kill(yukon_process.pid)
+                await asyncio.sleep(1)
+
+    async def test_simplify_configuration(self):
+        """Initialize Yukon.
+        1. Make a request to localhost:5001/api/simplify_configuration, this will make Yukon simplify the configuration.
+        2. Check if the value is as expected.
+        Note:
+        Testing is done on port 5001 and the actual application uses port 5000
+        """
+        session = None
+        yukon_process = None
+        try:
+            yukon_process = await create_yukon(128)
+            session = aiohttp.ClientSession()
+            http_simplify_response = await session.post(
+                "http://localhost:5001/api/simplify_configuration",
+                json={"arguments": [{"analog.rcpwm.deadband": {"real32": {"value": [0.000046]}}}]},
+                timeout=3,
+            )
+            if http_simplify_response.status != 200:
+                return False
+            try:
+                response_simplify = json.loads(await http_simplify_response.text())
+            except json.decoder.JSONDecodeError:
+                return False
+            logger.debug("response_simplify: %s", response_simplify)
+            assert math.isclose(response_simplify.get("analog.rcpwm.deadband"), 0.000046, abs_tol=0.0001)
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            logger.exception("Connection error")
+            raise Exception(
+                "Simplify configuration command to Yukon FAILED,"
+                f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
+            ) from None
+        finally:
+            if session:
+                await session.close()
+            if yukon_process:
+                kill(yukon_process.pid)
+                await asyncio.sleep(1)
+
+    async def test_unsimplify_configuration(self):
+        """Initialize Yukon.
+        1. Set the value of analog.rcpwm.deadband in Yukon to 0.1.
+        2. Make a request to localhost:5001/api/unsimplify_configuration,
+        this will make Yukon unsimplify the configuration.
+        3. Check if the value is as expected.
+        Note:
+        Testing is done on port 5001 and the actual application uses port 5000
+        """
+        session = None
+        yukon_process = None
+        try:
+            yukon_process = await create_yukon(129)
+            with pycyphal.application.make_node(
+                make_test_node_info("test_subject"), get_registry_with_transport_set_up(126)
+            ) as node:
+                node.registry.setdefault("analog.rcpwm.deadband", ValueProxy(Real32(0.1)))
+                session = aiohttp.ClientSession()
+                await asyncio.sleep(3)
+                http_unsimplify_response = await session.post(
+                    "http://localhost:5001/api/unsimplify_configuration",
+                    json={"arguments": [{"126": {"analog.rcpwm.deadband": [0.1]}}]},
+                    timeout=3,
+                )
+                if http_unsimplify_response.status != 200:
+                    return False
+                try:
+                    response_unsimplify = json.loads(await http_unsimplify_response.text())
+                except json.decoder.JSONDecodeError:
+                    return False
+                logger.debug("response_unsimplify: %s", response_unsimplify)
+                node_id_exists = response_unsimplify.get("126")
+                register_exists = response_unsimplify.get("126").get("analog.rcpwm.deadband")
+                datatype_exists = response_unsimplify.get("126").get("analog.rcpwm.deadband").get("real32")
+                datatype_has_value = (
+                    response_unsimplify.get("126").get("analog.rcpwm.deadband").get("real32").get("value")
+                )
+                datatype_value_is_correct = math.isclose(
+                    response_unsimplify.get("126").get("analog.rcpwm.deadband").get("real32").get("value")[0],
+                    0.1,
+                    abs_tol=0.0001,
+                )
+                assert (
+                    node_id_exists
+                    and register_exists
+                    and datatype_exists
+                    and datatype_exists
+                    and datatype_has_value
+                    and datatype_value_is_correct
+                )
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            logger.exception("Connection error")
+            raise Exception(
+                "Unsimplify configuration command to Yukon FAILED,"
+                f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
+            ) from None
+        finally:
+            if session:
+                await session.close()
+            if yukon_process:
+                kill(yukon_process.pid)
+                await asyncio.sleep(1)
+
+    async def test_attach_detach(self):
+        """Initialize Yukon.
+        1. Make a request to localhost:5001/api/attach, this will make Yukon attach to the node.
+        2. Check if the value is as expected.
+        3. Make a request to localhost:5001/api/detach, this will make Yukon detach from the node.
+        4. Check if the value is as expected.
+        Note:
+        Testing is done on port 5001 and the actual application uses port 5000
+        """
+        session = None
+        yukon_process = None
+        try:
+            yukon_process = await create_yukon(130)
+            session = aiohttp.ClientSession()
+            http_get_interfaces_response = await session.get(
+                "http://localhost:5001/api/get_connected_transport_interfaces"
+            )
+            interfaces_response_object: typing.List[typing.Dict[typing.Union[str, int]]] = json.loads(
+                await http_get_interfaces_response.text()
+            ).get("interfaces")
+            main_interface_found = False
+            for interface in interfaces_response_object:
+                if interface.get("udp_iface") == "127.0.0.0":
+                    interface_hash = interface.get("hash")
+                    main_interface_found = True
+                    break
+            assert main_interface_found
+            http_detach_response = await session.post(
+                "http://localhost:5001/api/detach_transport", json={"arguments": [interface_hash]}
+            )
+            if http_detach_response.status != 200:
+                assert False
+            try:
+                response_detach = json.loads(await http_detach_response.text())
+            except json.decoder.JSONDecodeError:
+                assert False
+            logger.debug("response_detach: %s", response_detach)
+            assert response_detach.get("is_success") is True
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            logger.exception("Connection error")
+            raise Exception(
+                "Attach/detach command to Yukon FAILED,"
+                f" API was not available. Connection error.\n {traceback.format_exc(chain=False)}"
+            ) from None
+        finally:
+            if session:
+                await session.close()
+            if yukon_process:
+                kill(yukon_process.pid)
+                await asyncio.sleep(1)

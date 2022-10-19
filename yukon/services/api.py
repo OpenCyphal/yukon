@@ -17,9 +17,10 @@ try:
 except ImportError:
     from yaml import Loader, Dumper  # type: ignore
 import websockets
-from flask import jsonify
+from flask import jsonify, Response
+
 import uavcan
-from domain.reread_registers_request import RereadRegistersRequest
+from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
 from yukon.services.get_ports import get_socketcan_ports, get_slcan_ports
 from yukon.domain.attach_transport_request import AttachTransportRequest
@@ -273,17 +274,21 @@ class Api:
                 deserialized_conf = json.loads(configuration)
             else:
                 deserialized_conf = yaml.load(configuration, Loader=Loader)
+        else:
+            deserialized_conf = configuration
         simplified_configuration_string = simplify_configuration(deserialized_conf)
         return simplified_configuration_string
 
-    def unsimplify_configuration(self, configuration: str) -> str:
+    def unsimplify_configuration(self, configuration: str) -> Response:
         if isinstance(configuration, str):
             # if the first character in deserialize_conf is a {, then it is a JSON string.
             if configuration[0] == "{":
                 deserialized_conf = json.loads(configuration)
             else:
                 deserialized_conf = yaml.load(configuration, Loader=Loader)
-        return unsimplify_configuration(self.state.avatar.avatars_by_node_id, deserialized_conf)
+        else:
+            deserialized_conf = configuration
+        return jsonify(json.loads(unsimplify_configuration(self.state.avatar.avatars_by_node_id, deserialized_conf)))
 
     def open_file_dialog(self) -> typing.Any:
         import tkinter as tk
@@ -328,7 +333,9 @@ class Api:
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         self.state.queues.attach_transport.put(atr)
         timeout = time() + 5
-        while time() < timeout:
+        while True:
+            if time() >= timeout:
+                raise Exception("Failed to receive a response for attached CAN transport.")
             if self.state.queues.attach_transport_response.empty():
                 sleep(0.1)
             else:
@@ -348,8 +355,10 @@ class Api:
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
         self.state.queues.attach_transport.put(atr)
         timeout = time() + 5
-        while time() < timeout:
-            if self.state.queues.attach_transport_response.empty():
+        while True:
+            if time() >= timeout:
+                raise Exception("Failed to receive a response for attached transport.")
+            if self.state.queues.attach_transport_responses.empty():
                 sleep(0.1)
             else:
                 break
@@ -359,12 +368,15 @@ class Api:
         logger.info(f"Detaching transport {hash}")
         self.state.queues.detach_transport.put(hash)
         timeout = time() + 5
-        while time() < timeout:
+        while True:
+            if time() >= timeout:
+                raise Exception("Failed to receive a response for detached transport.")
             if self.state.queues.detach_transport_response.empty():
                 sleep(0.1)
             else:
                 break
-        return self.state.queues.detach_transport_response.get()
+
+        return jsonify(self.state.queues.detach_transport_response.get().to_builtin())
 
     # def save_registers_of_node(self, node_id: int, registers: typing.Dict["str"]) -> None:
     def show_yakut(self) -> None:
