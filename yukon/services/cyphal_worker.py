@@ -282,7 +282,7 @@ def cyphal_worker(state: GodState) -> None:
                                 continue
                             for k, v in register_values_exploded.items():
                                 state.queues.update_registers.put(
-                                    UpdateRegisterRequest(k, unexplode_value(v), int(node_id))
+                                    UpdateRegisterRequest(uuid4(), k, unexplode_value(v), int(node_id))
                                 )
                     else:
                         raise Exception("Didn't do anything with this configuration")

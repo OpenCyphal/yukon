@@ -966,22 +966,25 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 } else {
                     console.log("Just copying from under the mouse")
                     let element = document.elementFromPoint(mousePos.x, mousePos.y);
-                    if (element.classList.contains("input")) {
-                        copyTextToClipboard(element.innerText, e);
+                    const copyTextOfElement = function (element, event) {
+                        copyTextToClipboard(element.innerText, event);
+                        const previousText = element.innerHTML;
+                        element.innerHTML = "Copied!";
+                        setTimeout(function () {
+                            if (element.innerHTML == "Copied!") {
+                                element.innerHTML = previousText;
+                            }
+                        }, 700);
+                    }
+                    if (element.classList.contains("input") || element.classList.contains("left-side-table-header")) {
+                        copyTextOfElement(element, e);
                         return;
                     }
                     // Check if any child of the element has the class input
-                    let inputElement = element.querySelector(".input");
+                    let inputElement = element.querySelector(".input") || element.querySelector(".left-side-table-header");
                     if (inputElement) {
                         console.log("A child had the class");
-                        copyTextToClipboard(inputElement.innerText, e);
-                        const previousText = inputElement.innerHTML;
-                        inputElement.innerHTML = "Copied!";
-                        setTimeout(function () {
-                            if (inputElement.innerHTML == "Copied!") {
-                                inputElement.innerHTML = previousText;
-                            }
-                        }, 700);
+                        copyTextOfElement(element, e);
                         return;
                     }
                 }
