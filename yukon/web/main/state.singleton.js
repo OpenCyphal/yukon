@@ -22,6 +22,7 @@ var yukon_state = {
         "showAlotOfButtons": false,
         "showDoubleRowHeadersFromCount": 6,
         "shouldDoubleClickOpenModal": true,
+        "shouldDoubleClickPromptToSetValue": true,
         "isTableCellTextSelectable": false,
         "isSelectionModeComplicated": false,
         "simplifyRegisters": true,

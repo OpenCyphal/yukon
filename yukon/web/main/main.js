@@ -321,19 +321,19 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             messagesList.appendChild(messageItem);
             autosize(messageItem);
         }
-        function fetchAndDisplayMessages() {
-            zubax_api.get_messages(lastMessageIndex + 1).then(function (messages) {
-                var messagesObject = JSON.parse(messages, JsonParseHelper);
-                for (const message of messagesObject) {
-                    displayOneMessage(message.message);
-                    // For the last message
-                    if (message == messagesObject[messagesObject.length - 1]) {
-                        lastMessageIndex = message.index;
-                    }
-                }
-            });
-        }
-        setInterval(fetchAndDisplayMessages, 1000);
+//        function fetchAndDisplayMessages() {
+//            zubax_api.get_messages(lastMessageIndex + 1).then(function (messages) {
+//                var messagesObject = JSON.parse(messages, JsonParseHelper);
+//                for (const message of messagesObject) {
+//                    displayOneMessage(message.message);
+//                    // For the last message
+//                    if (message == messagesObject[messagesObject.length - 1]) {
+//                        lastMessageIndex = message.index;
+//                    }
+//                }
+//            });
+//        }
+//        setInterval(fetchAndDisplayMessages, 1000);
         console.log("Messages javascript is ready");
         var lastIndex = -1;
         var messagesList = await waitForElm("#messages-list");
@@ -519,7 +519,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         }, 500);
     }
     yukon_state.addLocalMessage = function (message) {
-        zubax_api.add_local_message(message);
+        zubax_api.add_local_message(message, false);
     }
     const addLocalMessage = yukon_state.addLocalMessage;
     async function doStuffWhenReady() {

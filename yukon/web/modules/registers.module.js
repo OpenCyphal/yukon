@@ -267,25 +267,8 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             if (event.button !== 0) {
                 return;
             }
-            if (lastClick && new Date() - lastClick < 500 && table_cell.getAttribute("mutable") == "true"
-                && yukon_state.settings.shouldDoubleClickPromptToSetValue) {
+            if (lastClick && new Date() - lastClick < 500 && yukon_state.settings.shouldDoubleClickPromptToSetValue) {
                 // Make a dialog box to enter the new value
-                var new_value = prompt("Enter new value for " + register_name + ":", value);
-                // If the user entered a value
-                if (new_value != null) {
-                    // Update the value in the table
-                    // text_input.value = new_value;
-                    // Update the value in the server
-                    update_register_value(register_name, new_value, avatar.node_id);
-                    // Run update_tables every second, do that only for the next 4 seconds
-                    let interval1 = setInterval(() => update_tables(true), 1000);
-                    setTimeout(() => clearInterval(interval1), 4000);
-                } else {
-                    yukon_state.addLocalMessage("No value entered");
-                }
-            } else if (lastClick && new Date() - lastClick < 500 && table_cell.getAttribute("mutable") == "true" &&
-                yukon_state.settings.shouldDoubleClickOpenModal
-            ) {
                 showCellValue(avatar.node_id, register_name, yukon_state);
             } else {
                 make_select_cell(avatar, register_name, null, yukon_state)(event)

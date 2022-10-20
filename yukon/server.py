@@ -7,6 +7,7 @@ from inspect import signature
 import sys
 from flask import Flask, jsonify, request
 from flask.blueprints import T_after_request
+from werkzeug.serving import WSGIRequestHandler
 
 from yukon.domain.god_state import GodState
 from yukon.services.api import Api
@@ -23,7 +24,7 @@ if not os.path.exists(gui_dir):  # frozen executable path
 
 server = Flask(__name__, static_folder=gui_dir, template_folder=gui_dir, static_url_path="")
 server.config["SEND_FILE_MAX_AGE_DEFAULT"] = 1  # disable caching
-
+WSGIRequestHandler.protocol_version = "HTTP/1.1"
 our_token = "ABC"
 logger = logging.getLogger(__file__)
 logger.setLevel("NOTSET")

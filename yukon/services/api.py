@@ -29,6 +29,7 @@ from yukon.domain.update_register_request import UpdateRegisterRequest
 from yukon.domain.avatar import Avatar
 from yukon.services.value_utils import unexplode_value, explode_value
 from yukon.domain.god_state import GodState
+from yukon.services.messages_publisher import add_local_message
 from yukon.services.get_electron_path import get_electron_path
 from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.command_send_response import CommandSendResponse
@@ -230,8 +231,10 @@ class Api:
             "hash": _list_hash,
         }
 
-    def add_local_message(self, message: str) -> None:
-        logger.info(message)
+    def add_local_message(self, message: str, coming_from_backend: bool) -> None:
+        if coming_from_backend:
+            # This was already displayed in the console and only needs to be shown in the messages panel now
+            add_local_message(self.state, message)
 
     def save_yaml(self, text: str, convert_to_numbers: bool = True) -> None:
         new_text = make_yaml_string_node_ids_numbers(text)
@@ -340,7 +343,7 @@ class Api:
                 sleep(0.1)
             else:
                 break
-        return jsonify(self.state.queues.attach_transport_response.get())
+        return jsonify(self.state.queues.attach_transport_response.get().to_builtin())
 
     def attach_transport(
             self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
@@ -362,7 +365,7 @@ class Api:
                 sleep(0.1)
             else:
                 break
-        return jsonify(self.state.queues.attach_transport_response.get())
+        return jsonify(self.state.queues.attach_transport_response.get().to_builtin())
 
     def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
