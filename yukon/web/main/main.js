@@ -122,7 +122,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         btnSendCommand.addEventListener("click", async function (event) {
             const result = await zubax_api.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
             if (result.message == undefined) {
-                result.message = "No response.";
+                result.message = "No information.";
             }
             if (!result.success) {
                 feedbackMessage.classList.remove("success");
@@ -519,7 +519,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         }, 500);
     }
     yukon_state.addLocalMessage = function (message) {
-        zubax_api.add_local_message(message, false);
+        zubax_api.add_local_message(message);
     }
     const addLocalMessage = yukon_state.addLocalMessage;
     async function doStuffWhenReady() {
@@ -962,6 +962,18 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                     let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
                     const yaml_text = await return_all_selected_registers_as_yaml(pairs, yukon_state);
                     copyTextToClipboard(yaml_text, e);
+                    const selectedCells = document.querySelectorAll(".selected-cell .input")
+                    // Change the text of each selected cell to Copied!
+                    for (let i = 0; i < selectedCells.length; i++) {
+                        const selectedCell = selectedCells[i];
+                        const previousText = selectedCell.innerHTML;
+                        selectedCell.innerHTML = "Copied!";
+                        setTimeout(function () {
+                            if (selectedCell.innerHTML == "Copied!") {
+                                selectedCell.innerHTML = previousText;
+                            }
+                        }, 700);
+                    }
                     e.stopPropagation();
                 } else {
                     console.log("Just copying from under the mouse")
@@ -984,7 +996,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                     let inputElement = element.querySelector(".input") || element.querySelector(".left-side-table-header");
                     if (inputElement) {
                         console.log("A child had the class");
-                        copyTextOfElement(element, e);
+                        copyTextOfElement(inputElement, e);
                         return;
                     }
                 }
