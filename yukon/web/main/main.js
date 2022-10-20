@@ -519,7 +519,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         }, 500);
     }
     yukon_state.addLocalMessage = function (message) {
-        zubax_api.add_local_message(message, false);
+        zubax_api.add_local_message(message);
     }
     const addLocalMessage = yukon_state.addLocalMessage;
     async function doStuffWhenReady() {

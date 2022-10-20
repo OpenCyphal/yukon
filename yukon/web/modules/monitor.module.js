@@ -65,7 +65,10 @@ export function create_directed_graph(yukon_state) {
         ]
 
     });
-
+    my_graph.on("click", "node", function (evt) {
+        // If through all activeContainers in the myLayout, if commandPanel is one of the active containers then set the clicked node id as the target of the command
+        console.log("My layout:", yukon_state.myLayout)
+    });
     my_graph.on('mouseover', 'node', function (evt) {
         var node = evt.target;
         // Find the avatar for the node

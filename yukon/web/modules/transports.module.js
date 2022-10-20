@@ -87,7 +87,7 @@ export function initTransports(container, yukon_state) {
     }
 
     function addLocalMessage(message) {
-        zubax_api.add_local_message(message)
+        zubax_api.add_local_message(message, false)
     }
     async function doTheTabSwitching() {
         const h1TransportType = containerElem.querySelector("h1#TransportType");
