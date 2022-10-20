@@ -164,11 +164,8 @@ def cyphal_worker(state: GodState) -> None:
                                         message += " (success)"
                             was_command_success = response is not None and response.status == 0
                         except Exception as e:
-                            logger.exception(
-                                "Failed to send command %s on try %d",
-                                send_command_request, count
-                            )
-                            
+                            logger.exception("Failed to send command %s on try %d", send_command_request, count)
+
                     if not was_command_success:
                         if not message:
                             message = "Failed"

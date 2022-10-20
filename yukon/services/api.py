@@ -344,7 +344,7 @@ class Api:
         return jsonify(self.state.queues.attach_transport_response.get().to_builtin())
 
     def attach_transport(
-            self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
+        self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()

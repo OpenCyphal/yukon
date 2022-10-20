@@ -262,17 +262,25 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             await updateTextOut(true);
         });
     }
-    async function setUpMessagesComponent(container) {
+    async function setUpPerformedRegisterUpdatesComponent() {
 
+    }
+    async function setUpMessagesComponent(container) {
         const containerElement = container.getElement()[0];
         var messagesList = document.querySelector("#messages-list");
         const optionsPanel = await waitForElm(".options-panel");
         function setDisplayState() {
             if (containerElement.getAttribute("data-isexpanded")) {
                 containerElement.scrollTop = 0;
-                cbAutoscroll.checked = false;
+                if (typeof cbAutoscroll !== "undefined") {
+                    cbAutoscroll.checked = false;
+                }
                 optionsPanel.style.display = "block";
             } else {
+                if (typeof cbAutoscroll !== "undefined") {
+                    cbAutoscroll.checked = true;
+                    containerElement.scrollTop = containerElement.scrollHeight;
+                }
                 optionsPanel.style.display = "none";
             }
         }
@@ -588,6 +596,12 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                                             componentName: "commandsComponent",
                                             isClosable: true,
                                             title: "Commands",
+                                        },
+                                        {
+                                            type: "component",
+                                            componentName: "performedRegisterUpdatesComponent",
+                                            isClosable: true,
+                                            title: "Register updates",
                                         }
                                     ]
                                 },
@@ -717,6 +731,13 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                         const containerElement = container.getElement()[0];
                         containerElementToContainerObjectMap.set(containerElement, container);
                         setUpCommandsComponent.bind(outsideContext)(container);
+                    });
+                });
+                myLayout.registerComponent("performedRegisterUpdatesComponent", function (container, componentState) {
+                    registerComponentAction("../performed_register_updates.html", "performedRegisterUpdatesComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpPerformedRegisterUpdatesComponent.bind(outsideContext)(container);
                     });
                 });
                 const useSVG = true;
