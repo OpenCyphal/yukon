@@ -48,7 +48,7 @@ async def create_yukon(attached_with_node_id: int):
     if response.status != 200:
         raise Exception("Response to the request had a different response code from 200.") from None
     response_json = await response.json()
-    if not response_json["success"]:
+    if not response_json["is_success"]:
         if "Interface already in use" not in response_json["message"]:
             raise Exception("Failed to attach UDP transport: " + response_json["message"]) from None
         logger.debug("Strangely enough, the UDP transport was already attached.")
