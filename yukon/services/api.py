@@ -231,10 +231,8 @@ class Api:
             "hash": _list_hash,
         }
 
-    def add_local_message(self, message: str, coming_from_backend: bool) -> None:
-        if coming_from_backend:
-            # This was already displayed in the console and only needs to be shown in the messages panel now
-            add_local_message(self.state, message)
+    def add_local_message(self, message: str) -> None:
+        add_local_message(self.state, message)
 
     def save_yaml(self, text: str, convert_to_numbers: bool = True) -> None:
         new_text = make_yaml_string_node_ids_numbers(text)
@@ -346,7 +344,7 @@ class Api:
         return jsonify(self.state.queues.attach_transport_response.get().to_builtin())
 
     def attach_transport(
-        self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
+            self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()
