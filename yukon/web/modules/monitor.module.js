@@ -66,8 +66,30 @@ export function create_directed_graph(yukon_state) {
 
     });
     my_graph.on("click", "node", function (evt) {
-        // If through all activeContainers in the myLayout, if commandPanel is one of the active containers then set the clicked node id as the target of the command
+        // If through all activeContainers in the myLayout, if commandsComponent is one of the active containers then set the clicked node id as the target of the command
         console.log("My layout:", yukon_state.myLayout)
+        let queue = []
+        for (const element of yukon_state.myLayout.root.contentItems) {
+            queue.push(element);
+        }
+        while (true) {
+            const currentElement = queue.shift();
+            if (currentElement) {
+                if (currentElement.isStack && currentElement.getActiveContentItem().config.hasOwnProperty("componentName")) {
+                    if (currentElement.getActiveContentItem().config.componentName == "commandsComponent") {
+                        const commandsComponentOuterElement = currentElement.getActiveContentItem().element[0];
+                        const nodeIdInput = commandsComponentOuterElement.querySelector("#iNodeId");
+                        nodeIdInput.value = evt.target.id();
+                    }
+                } else {
+                    for (const contentItem of currentElement.contentItems) {
+                        queue.push(contentItem)
+                    }
+                }
+            } else {
+                break;
+            }
+        }
     });
     my_graph.on('mouseover', 'node', function (evt) {
         var node = evt.target;
