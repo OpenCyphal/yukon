@@ -273,14 +273,13 @@ export function initTransports(container, yukon_state) {
             const selectedTabName = Object.keys(transports)[index];
             addChildTabRow(tabRow, selectedTabName, true, false);
         }
-
-        await doTheTabSwitching();
         child.classList.add("selected-tab");
         for (const child2 of labelChildren) {
             if (child2 != child) {
                 child2.classList.remove("selected-tab");
             }
         }
+        await doTheTabSwitching();
     }
     const maybe_tabs = containerElem.querySelector('#maybe-tabs');
     function addChildTabRow(ParentTabRow, selectedTabName, wasClicked) {

@@ -6,6 +6,8 @@ import traceback
 
 import platform
 import os
+from uuid import uuid4
+
 from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
@@ -250,7 +252,7 @@ def cyphal_worker(state: GodState) -> None:
                                 prototype = unexplode_value(prototype_string)
                                 unexploded_value = unexplode_value(register_value, prototype)
                                 state.queues.update_registers.put(
-                                    UpdateRegisterRequest(register_name, unexploded_value, config.node_id)
+                                    UpdateRegisterRequest(uuid4(), register_name, unexploded_value, config.node_id)
                                 )
                             if not at_least_one_register_was_modified:
                                 add_local_message(
@@ -266,7 +268,7 @@ def cyphal_worker(state: GodState) -> None:
                                         value = json.loads(value)
                                     unexploded_value = unexplode_value(value)
                                     state.queues.update_registers.put(
-                                        UpdateRegisterRequest(register_name, unexploded_value, config.node_id)
+                                        UpdateRegisterRequest(uuid4(), register_name, unexploded_value, config.node_id)
                                     )
                     elif config.is_network_config:
                         logger.debug("Setting configuration for all configured nodes")

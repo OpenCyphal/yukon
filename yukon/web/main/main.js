@@ -11,7 +11,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
-    if(isRunningInElectron(yukon_state)) {
+    if (isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_electron();
     } else {
         zubax_api.announce_running_in_browser();
@@ -321,19 +321,19 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             messagesList.appendChild(messageItem);
             autosize(messageItem);
         }
-//        function fetchAndDisplayMessages() {
-//            zubax_api.get_messages(lastMessageIndex + 1).then(function (messages) {
-//                var messagesObject = JSON.parse(messages, JsonParseHelper);
-//                for (const message of messagesObject) {
-//                    displayOneMessage(message.message);
-//                    // For the last message
-//                    if (message == messagesObject[messagesObject.length - 1]) {
-//                        lastMessageIndex = message.index;
-//                    }
-//                }
-//            });
-//        }
-//        setInterval(fetchAndDisplayMessages, 1000);
+        //        function fetchAndDisplayMessages() {
+        //            zubax_api.get_messages(lastMessageIndex + 1).then(function (messages) {
+        //                var messagesObject = JSON.parse(messages, JsonParseHelper);
+        //                for (const message of messagesObject) {
+        //                    displayOneMessage(message.message);
+        //                    // For the last message
+        //                    if (message == messagesObject[messagesObject.length - 1]) {
+        //                        lastMessageIndex = message.index;
+        //                    }
+        //                }
+        //            });
+        //        }
+        //        setInterval(fetchAndDisplayMessages, 1000);
         console.log("Messages javascript is ready");
         var lastIndex = -1;
         var messagesList = await waitForElm("#messages-list");
@@ -555,6 +555,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                                             type: 'component',
                                             componentName: 'messagesComponent',
                                             isClosable: true,
+                                            doesRequireSettingsButton: true,
                                             title: 'Messages',
                                         },
                                         {
@@ -652,8 +653,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             });
             toolbar.appendChild(btnRestore);
         }
-        function initalizeLayout()
-        {
+        function initalizeLayout() {
             let hadPreviousLayout = false;
             if (typeof yukon_state.myLayout !== 'undefined') {
                 try {
@@ -664,10 +664,10 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 }
             }
             let requiredTimeout = 0;
-            if(hadPreviousLayout) {
+            if (hadPreviousLayout) {
                 requiredTimeout = 3;
             }
-            setTimeout(function(){
+            setTimeout(function () {
                 yukon_state.myLayout = new GoldenLayout(config, document.querySelector("#layout"));
                 var myLayout = yukon_state.myLayout;
                 myLayout.registerComponent('registersComponent', function (container, componentState) {
@@ -733,6 +733,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 }
 
                 myLayout.on('stackCreated', function (stack) {
+                    console.log("Stack:", stack);
                     //HTML for the colorDropdown is stored in a template tag
                     const btnPanelShowHideToggle = document.createElement("li");
                     btnPanelShowHideToggle.setAttribute("id", "btn-panel-show-hide-yakut");
@@ -772,6 +773,15 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                     // Add the btnPanelShowHideToggle to the header
                     stack.header.controlsContainer.prepend(btnPanelShowHideToggle);
                     stack.on('activeContentItemChanged', function (contentItem) {
+                        const activeElementName = stack.getActiveContentItem().config.componentName;
+                        console.log("Active element changed to " + activeElementName);
+                        const requiresSettingsButton = stack.getActiveContentItem().config.hasOwnProperty("doesRequireSettingsButton") && stack.getActiveContentItem().config.doesRequireSettingsButton == true;
+                        if (!requiresSettingsButton) {
+                            btnPanelShowHideToggle.style.display = "none";
+                        } else {
+                            btnPanelShowHideToggle.style.display = "block";
+                        }
+                        console.log(activeElementName + " requires settings button: " + requiresSettingsButton);
                         const container = stack.getActiveContentItem().container.getElement()[0];
                         // If the key "isExpanded" is not contained in the state of the container
 
@@ -792,7 +802,11 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         btnRestoreDefaultLayout.addEventListener("click", function (e) {
             e.preventDefault();
             e.stopPropagation();
+            yukon_state.is_currently_restoring_default_layout = true;
             initalizeLayout();
+            setTimeout(function () {
+                yukon_state.is_currently_restoring_default_layout = false;
+            }, 3000);
         });
         const btnShowHideToolbar = document.getElementById('btnShowHideToolbar');
         btnShowHideToolbar.addEventListener('click', function () {
@@ -860,6 +874,9 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                             console.log("Not making a restore button because a popout was opened");
                             return;
                         }
+                        if (yukon_state.is_currently_restoring_default_layout) {
+                            return;
+                        }
                         addRestoreButton(container._config.title, componentName);
                         isDestroyed = true;
                     }, 1000);
@@ -886,11 +903,9 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         window.onkeyup = function (e) { yukon_state.pressedKeys[e.keyCode] = false; }
         // Add event listeners for focus and blur event handlers to window
         window.addEventListener('focus', function () {
-            console.log("Window focused");
             yukon_state.pressedKeys[18] = false;
         });
         window.addEventListener('blur', function () {
-            console.log("Window blurred");
             yukon_state.pressedKeys[18] = false;
         });
         var mousePos;
