@@ -130,13 +130,26 @@ def cyphal_worker(state: GodState) -> None:
                 await asyncio.sleep(0.02)
                 if not state.queues.send_command.empty():
                     was_command_success = False
+                    stop_retry = False
                     max_count = 3
                     count = 0
                     message = None
-                    while not was_command_success and count < max_count:
+                    while not was_command_success and count < max_count and not stop_retry:
                         count += 1
                         try:
                             send_command_request = state.queues.send_command.get_nowait()
+                            if send_command_request.node_id < 0:
+                                message = "Node ID must be positive!"
+                                stop_retry = True
+                                raise Exception("Node ID must be positive")
+                            if len(state.cyphal.already_used_transport_interfaces.keys()) == 0:
+                                message = "No transports attached!"
+                                stop_retry = True
+                                raise Exception("No transports attached")
+                            if not state.avatar.avatars_by_node_id.get(send_command_request.node_id):
+                                message = "There is no such node with ID " + str(send_command_request.node_id)
+                                stop_retry = True
+                                raise Exception("There is no such node with ID " + str(send_command_request.node_id))
                             service_client = state.cyphal.local_node.make_client(
                                 uavcan.node.ExecuteCommand_1_1, send_command_request.node_id
                             )
@@ -144,19 +157,20 @@ def cyphal_worker(state: GodState) -> None:
                             msg.command = int(send_command_request.command_id)
                             responseTuple = await service_client.call(msg)
                             if responseTuple:
+                                stop_retry = True
                                 response = responseTuple[0]
                                 if response.status == 1:
-                                    message = "Status: failure"
+                                    message = "Device responds: failure"
                                 elif response.status == 2:
-                                    message = "Status: not authorized"
+                                    message = "Device responds: not authorized"
                                 elif response.status == 3:
-                                    message = "Status: bad command"
+                                    message = "Device responds: bad command"
                                 elif response.status == 4:
-                                    message = "Status: bad parameter"
+                                    message = "Device responds: bad parameter"
                                 elif response.status == 5:
-                                    message = "Status: bad state"
+                                    message = "Device responds: bad state"
                                 elif response.status == 6:
-                                    message = "Status: internal error"
+                                    message = "Device responds: internal error"
                                 else:
                                     message = repr(response)
                                     if response.status == 0:
@@ -164,7 +178,7 @@ def cyphal_worker(state: GodState) -> None:
                                         message += " (success)"
                             was_command_success = response is not None and response.status == 0
                         except Exception as e:
-                            logger.exception("Failed to send command %s on try %d", send_command_request, count)
+                            logger.exception("Failure sending command %s on try %d", send_command_request, count)
 
                     if not was_command_success:
                         if not message:

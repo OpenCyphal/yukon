@@ -23,6 +23,7 @@ import uavcan
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
 from yukon.services.get_ports import get_socketcan_ports, get_slcan_ports
+from yukon.services._dumper import Dumper
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.interface import Interface
 from yukon.domain.update_register_request import UpdateRegisterRequest
@@ -344,7 +345,7 @@ class Api:
         return jsonify(self.state.queues.attach_transport_response.get().to_builtin())
 
     def attach_transport(
-        self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
+            self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()
@@ -450,3 +451,7 @@ class Api:
 
     def close_yukon(self) -> None:
         self.state.gui.gui_running = False
+
+    def yaml_to_yaml(self, yaml_in: str) -> Response:
+        return Response(
+            response=Dumper().dumps(yaml.load(yaml_in, Loader)), content_type="text/yaml", mimetype="text/yaml")
