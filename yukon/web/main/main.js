@@ -11,6 +11,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
+    yukon_state.navigator = window.navigator;
     if (isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_electron();
     } else {
@@ -176,7 +177,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 uptime_cell.innerHTML = secondsToString(yukon_state.current_avatars[i].last_heartbeat.uptime);
             }
         }
-        setInterval(update_avatars_table, 1000);
+        setInterval(update_avatars_table, 955);
     }
 
     function setUpTransportsListComponent() {
@@ -209,7 +210,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 transportsList.appendChild(transport_interface);
             }
         }
-        setInterval(syncList, 1000);
+        setInterval(syncList, 1143);
     }
     async function setUpRegistersComponent(immediateCreateTable) {
         if (immediateCreateTable) {
@@ -219,7 +220,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         setInterval(async () => {
             await update_avatars_dto();
             update_tables();
-        }, 1000)
+        }, 893);
         var timer = null;
         const iRegistersFilter = document.getElementById('iRegistersFilter');
         iRegistersFilter.addEventListener("input", function () {
@@ -262,8 +263,28 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             await updateTextOut(true);
         });
     }
-    async function setUpPerformedRegisterUpdatesComponent() {
-
+    async function setUpRegisterUpdateLogComponent(container) {
+        const containerElement = container.getElement()[0];
+        const registerUpdateLog = document.querySelector("#register-update-log");
+        async function fetchRegisterUpdateLog() {
+            const items = await zubax_api.get_register_update_log_items();
+            registerUpdateLog.innerHTML = "";
+            for (const item of items) {
+                // Create fields for new_value, previous_value, request_sent_time, request_received_time
+                const row = registerUpdateLog.insertRow();
+                const new_value_cell = row.insertCell(0);
+                const previous_value_cell = row.insertCell(1);
+                const request_sent_time_cell = row.insertCell(2);
+                const request_received_time_cell = row.insertCell(3);
+                const success = row.insertCell(4);
+                new_value_cell.innerHTML = item.response.value;
+                previous_value_cell.innerHTML = item.previous_value;
+                request_sent_time_cell.innerHTML = item.request_sent_time;
+                request_received_time_cell.innerHTML = item.request_received_time;
+                success.innerHTML = item.response.success;
+            }
+        }
+        setInterval(fetchRegisterUpdateLog, 1000);
     }
     async function setUpMessagesComponent(container) {
         const containerElement = container.getElement()[0];
@@ -319,29 +340,6 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         });
         var messagesList = document.querySelector("#messages-list");
         let messagesListWidth = messagesList.getBoundingClientRect().width
-        var lastMessageIndex = -1;
-        function displayOneMessage(message) {
-            var messageItem = document.createElement("textarea");
-            messageItem.classList.add("message-item");
-            messageItem.classList.add("is-active");
-            messageItem.setAttribute("spellcheck", "false");
-            messageItem.innerHTML = message;
-            messagesList.appendChild(messageItem);
-            autosize(messageItem);
-        }
-        //        function fetchAndDisplayMessages() {
-        //            zubax_api.get_messages(lastMessageIndex + 1).then(function (messages) {
-        //                var messagesObject = JSON.parse(messages, JsonParseHelper);
-        //                for (const message of messagesObject) {
-        //                    displayOneMessage(message.message);
-        //                    // For the last message
-        //                    if (message == messagesObject[messagesObject.length - 1]) {
-        //                        lastMessageIndex = message.index;
-        //                    }
-        //                }
-        //            });
-        //        }
-        //        setInterval(fetchAndDisplayMessages, 1000);
         console.log("Messages javascript is ready");
         var lastIndex = -1;
         var messagesList = await waitForElm("#messages-list");
@@ -435,6 +433,16 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                     for (const el of messagesObject) {
                         var li = document.createElement("textarea");
                         li.innerHTML = el.message;
+                        if (el.severity_nr >= 50) {
+                            // Is bad
+                            li.style.color = "red";
+                            li.style["background-color"] = "rgba(255, 0, 0, 0.1)";
+                            li.style["font-weight"] = "bold";
+                        } else if (el.severity_nr >= 40) { // Error 
+                            li.style.color = "red";
+                        } else if (el.severity_nr == 30) {
+                            li.style.color = "orange";
+                        }
                         // Set an attribute on the list element with current timestamp
                         autosize(li);
                         if (el.internal) {
@@ -465,7 +473,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         }
 
         // Call update_messages every second
-        setInterval(update_messages, 1000);
+        setInterval(update_messages, 656);
         // btnTextOutput.addEventListener('click', function () {
         //     var textOut = document.querySelector("#textOut");
         //     autosize.update(textOut);
@@ -510,7 +518,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         autosize(textOut);
         var messagesList = document.querySelector("#messages-list");
         // On resize event
-        addLocalMessage("Found messageList");
+        addLocalMessage("Found messageList", 10);
         // at interval of 3 seconds
         messagesListWidth = messagesList.getBoundingClientRect().width;
 
@@ -526,8 +534,8 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             }
         }, 500);
     }
-    yukon_state.addLocalMessage = function (message) {
-        zubax_api.add_local_message(message);
+    yukon_state.addLocalMessage = function (message, severity) {
+        zubax_api.add_local_message(message, severity);
     }
     const addLocalMessage = yukon_state.addLocalMessage;
     async function doStuffWhenReady() {
@@ -599,9 +607,9 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                                         },
                                         {
                                             type: "component",
-                                            componentName: "performedRegisterUpdatesComponent",
+                                            componentName: "registerUpdateLogComponent",
                                             isClosable: true,
-                                            title: "Register updates",
+                                            title: "Register update logs",
                                         }
                                     ]
                                 },
@@ -733,11 +741,11 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                         setUpCommandsComponent.bind(outsideContext)(container);
                     });
                 });
-                myLayout.registerComponent("performedRegisterUpdatesComponent", function (container, componentState) {
-                    registerComponentAction("../performed_register_updates.html", "performedRegisterUpdatesComponent", container, () => {
+                myLayout.registerComponent("registerUpdateLogComponent", function (container, componentState) {
+                    registerComponentAction("../register_update_log.html", "registerUpdateLogComponent", container, () => {
                         const containerElement = container.getElement()[0];
                         containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpPerformedRegisterUpdatesComponent.bind(outsideContext)(container);
+                        setUpRegisterUpdateLogComponent.bind(outsideContext)(container);
                     });
                 });
                 const useSVG = true;
@@ -981,20 +989,34 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 // If there aren't any cells selected then get the element that the mouse is hovering over and copy its value
                 if (oneSelectedConstraint() || moreThanOneSelectedConstraint()) {
                     let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
-                    const yaml_text = await return_all_selected_registers_as_yaml(pairs, yukon_state);
-                    copyTextToClipboard(yaml_text, e);
                     const selectedCells = document.querySelectorAll(".selected-cell .input")
-                    // Change the text of each selected cell to Copied!
                     for (let i = 0; i < selectedCells.length; i++) {
                         const selectedCell = selectedCells[i];
                         const previousText = selectedCell.innerHTML;
-                        selectedCell.innerHTML = "Copied!";
+                        selectedCell.innerHTML = "Generating yaml!";
                         setTimeout(function () {
-                            if (selectedCell.innerHTML == "Copied!") {
+                            if (selectedCell.innerHTML == "Copied!" || selectedCell.innerHTML == "Generating yaml!" || selectedCell.innerHTML == "Copy failed!") {
                                 selectedCell.innerHTML = previousText;
                             }
-                        }, 700);
+                        }, 1000);
                     }
+                    const yaml_text = await return_all_selected_registers_as_yaml(pairs, yukon_state);
+
+                    const didCopySucceed = await copyTextToClipboard(yaml_text, e);
+                    if (!didCopySucceed) {
+                        for (let i = 0; i < selectedCells.length; i++) {
+                            const selectedCell = selectedCells[i];
+                            selectedCell.innerHTML = "Copy failed!";
+                        }
+                        addLocalMessage("Please make sure to click on the Yukon window somewhere to focus the window when a copy fails.", 40)
+                    }
+                    for (let i = 0; i < selectedCells.length; i++) {
+                        const selectedCell = selectedCells[i];
+                        selectedCell.innerHTML = "Copied!";
+                    }
+
+                    // Change the text of each selected cell to Copied!
+
                     e.stopPropagation();
                 } else {
                     console.log("Just copying from under the mouse")
@@ -1124,14 +1146,14 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                     for (const message in deserialized_messages) {
                         if (message.internal) {
                             if (message.message.includes("is not mutable")) {
-                                addLocalMessage(message.message);
+                                addLocalMessage(message.message, 40);
                             } else if (message.message.includes("does not exist on node")) {
-                                addLocalMessage(message.message);
+                                addLocalMessage(message.message, 40);
                                 markCellWithMessage(findTableCell(message.arguments[0], message.arguments[1]), "This node has no such register but you tried to set it.", 3000);
                             } else if (message.message.includes("was supplied the wrong value.")) {
                                 markCellWithMessage();
                             } else {
-                                addLocalMessage("Internal message: " + message.message);
+                                addLocalMessage("Internal message: " + message.message, 10);
                             }
                         }
                     }
@@ -1184,7 +1206,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             });
         }
     } catch (e) {
-        addLocalMessage("Error: " + e);
+        addLocalMessage("Error: " + e, 40);
         console.error(e);
     }
 })();

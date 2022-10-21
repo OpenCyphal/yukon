@@ -13,6 +13,7 @@ import pycyphal
 from pycyphal.application import Node
 from pycyphal.transport.redundant import RedundantTransport
 
+from yukon.domain.update_registe_log_item import UpdateRegisterLogItem
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
 from yukon.domain.message import Message
@@ -101,7 +102,8 @@ class CyphalState:
     transports_list: typing.List[Interface] = field(default_factory=list)
     inferior_transports_by_interface_hashes: Dict[int, Interface] = field(default_factory=dict)
     already_used_transport_interfaces: Dict[str, int] = field(default_factory=dict)
-    faulty_transposrt: Optional[FaultyTransport] = field(default_factory=none_factory)
+    faulty_transport: Optional[FaultyTransport] = field(default_factory=none_factory)
+    register_update_log: typing.List[UpdateRegisterLogItem] = field(default_factory=list)
 
 
 @dataclass

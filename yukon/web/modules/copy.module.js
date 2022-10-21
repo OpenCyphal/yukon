@@ -21,14 +21,17 @@ function fallbackCopyTextToClipboard(text, event) {
 
     document.body.removeChild(textArea);
 }
-export function copyTextToClipboard(text, event) {
-    if (!navigator.clipboard) {
-        fallbackCopyTextToClipboard(text);
-        return;
-    }
-    navigator.clipboard.writeText(text).then(function () {
+export async function copyTextToClipboard(text, event) {
+    try {
+        if (!navigator.clipboard) {
+            fallbackCopyTextToClipboard(text);
+            return;
+        }
+        await navigator.clipboard.writeText(text)
         console.log('Async: Copying to clipboard was successful!');
-    }, function (err) {
+        return true
+    } catch (err) {
         console.error('Async: Could not copy text: ', err);
-    });
+        return false
+    }
 }
