@@ -9,7 +9,7 @@ import { copyTextToClipboard } from "./copy.module.js";
 export function make_context_menus(yukon_state) {
     const addLocalMessage = yukon_state.addLocalMessage;
     const importFromSelectedConfigurationMenuElement = {
-        content: "Import from selected configuration",
+        content: "Apply from selected configuration",
         events: {
             click: async function (event, elementOpenedOn) {
                 const cell = elementOpenedOn;
@@ -223,6 +223,7 @@ export function make_context_menus(yukon_state) {
             },
             divider: "top"
         },
+        importFromSelectedConfigurationMenuElement,
         {
             content: `Export all registers`,
             events: {
@@ -307,7 +308,6 @@ export function make_context_menus(yukon_state) {
             }
         },
         unselectAllMenuElement,
-        importFromSelectedConfigurationMenuElement
     ];
 
     const table_header_context_menu = new ContextMenu({

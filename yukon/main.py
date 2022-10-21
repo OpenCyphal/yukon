@@ -110,7 +110,7 @@ def run_server(state: GodState) -> None:
             continue
         state.gui.is_port_decided = True
     try:
-        server.run(host="0.0.0.0", port=state.gui.server_port)
+        server.run(host="0.0.0.0", port=state.gui.server_port, threaded=True)
     except:  # pylint: disable=bare-except
         logger.exception("Server was unable to start or crashed.")
 

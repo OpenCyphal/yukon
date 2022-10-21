@@ -11,6 +11,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
+    yukon_state.navigator = window.navigator;
     if (isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_electron();
     } else {
@@ -176,7 +177,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 uptime_cell.innerHTML = secondsToString(yukon_state.current_avatars[i].last_heartbeat.uptime);
             }
         }
-        setInterval(update_avatars_table, 1000);
+        setInterval(update_avatars_table, 955);
     }
 
     function setUpTransportsListComponent() {
@@ -209,7 +210,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 transportsList.appendChild(transport_interface);
             }
         }
-        setInterval(syncList, 1000);
+        setInterval(syncList, 1143);
     }
     async function setUpRegistersComponent(immediateCreateTable) {
         if (immediateCreateTable) {
@@ -219,7 +220,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         setInterval(async () => {
             await update_avatars_dto();
             update_tables();
-        }, 1000)
+        }, 893);
         var timer = null;
         const iRegistersFilter = document.getElementById('iRegistersFilter');
         iRegistersFilter.addEventListener("input", function () {
@@ -465,7 +466,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         }
 
         // Call update_messages every second
-        setInterval(update_messages, 1000);
+        setInterval(update_messages, 656);
         // btnTextOutput.addEventListener('click', function () {
         //     var textOut = document.querySelector("#textOut");
         //     autosize.update(textOut);
@@ -981,20 +982,27 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 // If there aren't any cells selected then get the element that the mouse is hovering over and copy its value
                 if (oneSelectedConstraint() || moreThanOneSelectedConstraint()) {
                     let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
-                    const yaml_text = await return_all_selected_registers_as_yaml(pairs, yukon_state);
-                    copyTextToClipboard(yaml_text, e);
                     const selectedCells = document.querySelectorAll(".selected-cell .input")
-                    // Change the text of each selected cell to Copied!
                     for (let i = 0; i < selectedCells.length; i++) {
                         const selectedCell = selectedCells[i];
                         const previousText = selectedCell.innerHTML;
-                        selectedCell.innerHTML = "Copied!";
+                        selectedCell.innerHTML = "Generating yaml!";
                         setTimeout(function () {
-                            if (selectedCell.innerHTML == "Copied!") {
+                            if (selectedCell.innerHTML == "Copied!" || selectedCell.innerHTML == "Generating yaml!") {
                                 selectedCell.innerHTML = previousText;
                             }
-                        }, 700);
+                        }, 1000);
                     }
+                    const yaml_text = await return_all_selected_registers_as_yaml(pairs, yukon_state);
+
+                    copyTextToClipboard(yaml_text, e);
+                    for (let i = 0; i < selectedCells.length; i++) {
+                        const selectedCell = selectedCells[i];
+                        selectedCell.innerHTML = "Copied!";
+                    }
+
+                    // Change the text of each selected cell to Copied!
+
                     e.stopPropagation();
                 } else {
                     console.log("Just copying from under the mouse")

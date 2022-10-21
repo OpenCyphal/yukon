@@ -396,7 +396,7 @@ export function showCellValue(node_id, register_name, yukon_state) {
     const explodedRegister = avatar.registers_exploded_values[register_name];
     const isMutable = explodedRegister["_meta_"].mutable;
     let enterListener = null;
-    let disconnectEnterListener = function() {
+    let disconnectEnterListener = function () {
         if (enterListener) {
             document.removeEventListener("keydown", enterListener);
             enterListener = null;
@@ -428,13 +428,13 @@ export function showCellValue(node_id, register_name, yukon_state) {
     modal_content.appendChild(modal_value);
 
     autosize(modal_value);
-    let submit_modal = function () {
+    let submit_modal = async function () {
         let new_value = modal_value.value;
         if (new_value != null) {
             // Update the value in the table
             // text_input.value = new_value;
             // Update the value in the server
-            update_register_value(register_name, new_value, avatar.node_id, yukon_state);
+            await update_register_value(register_name, new_value, avatar.node_id, yukon_state);
             // Run update_tables every second, do that only for the next 4 seconds
             let interval1 = setInterval(() => update_tables(true), 1000);
             setTimeout(() => clearInterval(interval1), 4000);
@@ -447,7 +447,7 @@ export function showCellValue(node_id, register_name, yukon_state) {
     // Add a submit button
     let modal_submit = document.createElement("button");
     modal_submit.innerHTML = "Submit";
-    if(!isMutable) {
+    if (!isMutable) {
         modal_submit.disabled = true;
 
     }
@@ -483,7 +483,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
 
     modal_content.appendChild(modal_value);
     autosize(modal_value);
-    let submit_modal = function () {
+    let submit_modal = async function () {
         let new_value = modal_value.value;
         if (new_value != null) {
             // Update the value in the table
@@ -492,7 +492,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
             for (const node_id in pairs) {
                 const registers = pairs[node_id];
                 for (const register_name in registers) {
-                    update_register_value(register_name, new_value, node_id, yukon_state);
+                    await update_register_value(register_name, new_value, node_id, yukon_state);
                 }
             }
             // Run update_tables every second, do that only for the next 4 seconds
@@ -556,7 +556,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
                 uneditable_register_count += 1;
             }
             let pair_datatype = document.createElement("span");
-            if(!is_pair_incompatible) {
+            if (!is_pair_incompatible) {
                 pair_datatype.innerHTML = datatype + "[" + current_array_size + "]";
             } else {
                 pair_datatype.innerHTML = datatype + "[<b>" + current_array_size + "</b>]";
@@ -578,9 +578,9 @@ export function editSelectedCellValues(pairs, yukon_state) {
             pair_div.appendChild(discard_button);
             let pair_submit = document.createElement("button");
             pair_submit.innerHTML = "Submit";
-            if(!isMutable) {
+            if (!isMutable) {
                 pair_submit.innerHTML = "Immutable";
-                if(!is_pair_incompatible) {
+                if (!is_pair_incompatible) {
                     uneditable_register_count += 1;
                     pair_submit.disabled = true;
                     pair_div.classList.add("incompatible");
@@ -590,14 +590,14 @@ export function editSelectedCellValues(pairs, yukon_state) {
             if (is_pair_incompatible) {
                 pair_submit.disabled = true;
             }
-            pair_submit.onclick = function () {
+            pair_submit.onclick = async function () {
                 if (modal_value.value != "") {
                     // Remove the list element
                     pair_div.parentNode.removeChild(pair_div);
                     // Update the value in the table
                     // text_input.value = new_value;
                     // Update the value in the server
-                    update_register_value(register_name, modal_value.value, node_id, yukon_state);
+                    await update_register_value(register_name, modal_value.value, node_id, yukon_state);
                     // Run update_tables every second, do that only for the next 4 seconds
                     let interval1 = setInterval(() => update_tables(true), 1000);
                     setTimeout(() => clearInterval(interval1), 4000);
@@ -620,7 +620,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
     // Add a submit button
     let modal_submit = document.createElement("button");
     modal_submit.innerHTML = "Submit compatible";
-    if(uneditable_register_count == register_count) {
+    if (uneditable_register_count == register_count) {
         modal_submit.disabled = true;
     }
     modal_submit.onclick = submit_modal;

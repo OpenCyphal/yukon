@@ -1,5 +1,6 @@
 import typing
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 import uavcan.register
@@ -11,6 +12,7 @@ class UpdateRegisterRequest:
     register_name: str
     value: uavcan.register.Value_1
     node_id: int
+    request_sent_time: float
 
     def to_builtin(self) -> typing.Dict[str, typing.Any]:
         return {

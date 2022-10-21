@@ -1,6 +1,6 @@
 import { updateRegistersTableColors } from "./registers.module.js";
 import { copyObject, getDictionaryValueFieldName } from "./utilities.module.js";
-export function update_register_value(register_name, register_value, node_id, yukon_state) {
+export async function update_register_value(register_name, register_value, node_id, yukon_state) {
     const zubax_api = yukon_state.zubax_api;
     // Find the avatar which has the node_id
     const the_avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id === parseInt(node_id));
@@ -16,7 +16,7 @@ export function update_register_value(register_name, register_value, node_id, yu
         unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"] = register_values
     }
     console.log("Register value updated for " + register_name + " to " + register_value + " for node " + node_id)
-    zubax_api.update_register_value(register_name, unprocessed_value, node_id);
+    return await zubax_api.update_register_value(register_name, unprocessed_value, node_id);
 }
 export function rereadPairs(pairs, yukon_state) {
     // For every key of node_id in pairs

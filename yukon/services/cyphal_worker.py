@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import subprocess
+import time
 import traceback
 
 import platform
@@ -12,6 +13,7 @@ from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
 import uavcan.node.ExecuteCommand_1_1
+from domain.update_registe_log_item import UpdateRegisterLogItem
 from yukon.domain.detach_transport_response import DetachTransportResponse
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.domain.command_send_response import CommandSendResponse
@@ -191,6 +193,9 @@ def cyphal_worker(state: GodState) -> None:
                 if not state.queues.update_registers.empty():
                     register_update = state.queues.update_registers.get_nowait()
                     # make a uavcan.register.Access_1 request to the node
+                    value_before_update: str = state.avatar.avatars_by_node_id[register_update.node_id].register_values[
+                        register_update.register_name
+                    ]
                     try:
                         client = state.cyphal.local_node.make_client(uavcan.register.Access_1, register_update.node_id)
                         request = uavcan.register.Access_1.Request()
@@ -229,6 +234,10 @@ def cyphal_worker(state: GodState) -> None:
                             f"A successful register update, value for {register_update.register_name} was sent to node {register_update.node_id}: "
                             f"{register_update.value}",
                         )
+                        success_log_item: UpdateRegisterLogItem = UpdateRegisterLogItem(
+                            response_from_yukon, register_update.request_sent_time, time.time(), value_before_update
+                        )
+                        state.cyphal.register_update_log.append(success_log_item)
                         state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
                     except (Exception, NoSuccess) as e:
                         response_from_yukon = UpdateRegisterResponse(
@@ -239,6 +248,10 @@ def cyphal_worker(state: GodState) -> None:
                             False,
                             str(e),
                         )
+                        log_item: UpdateRegisterLogItem = UpdateRegisterLogItem(
+                            response_from_yukon, register_update.request_time, None, value_before_update
+                        )
+                        state.cyphal.register_update_log.push(log_item)
                         state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
                         add_local_message(state, str(e), register_update.register_name)
                 await asyncio.sleep(0.02)

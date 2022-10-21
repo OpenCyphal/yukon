@@ -309,7 +309,7 @@ class Api:
 
     def update_register_value(self, register_name: str, register_value: str, node_id: str) -> typing.Any:
         new_value: uavcan.register.Value_1 = unexplode_value(register_value)
-        request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id))
+        request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id), time())
         self.state.queues.update_registers.put(request)
         timeout = time() + 5
         while time() < timeout:
@@ -324,6 +324,9 @@ class Api:
                 return json.dumps(response.to_builtin())
         logger.critical("Something is wrong with updating registers.")
         raise Exception(f"Failed to update register {register_name} to {register_value}, critical timeout")
+
+    def get_register_update_log_items(self) -> Response:
+        return jsonify(self.state.cyphal.register_update_log)
 
     def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> typing.Any:
         logger.info(f"Attaching UDP transport to {udp_iface}")

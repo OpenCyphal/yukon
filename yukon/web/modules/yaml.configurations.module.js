@@ -85,7 +85,7 @@ async function saveString(string, yukon_state) {
     let isElectron = typeof yukon_state.navigator === 'object' && typeof yukon_state.navigator.userAgent === 'string' && yukon_state.navigator.userAgent.indexOf('Electron') >= 0;
     if (window.showSaveFilePicker && !yukon_state.settings.preferSmallerFileSelectionDialog & !isElectron) {
         const fileHandle = await window.showSaveFilePicker();
-        yukon_state.addLocalMessage("We got this path: " + fileHandle);
+        yukon_state.addLocalMessage("We got this path: " + fileHandle.name);
         if (fileHandle) {
             // Create a FileSystemWritableFileStream to write to.
             const writable = await fileHandle.createWritable()
@@ -115,7 +115,7 @@ export async function openFile(yukon_state) {
             const fileHandlesArray = await window.showOpenFilePicker();
             if (fileHandlesArray) {
                 const fileHandle = fileHandlesArray[0];
-                yukon_state.addLocalMessage("We got this path: " + fileHandle);
+                yukon_state.addLocalMessage("We got this path: " + fileHandle.name);
                 if (fileHandle) {
                     // Create a FileSystemWritableFileStream to write to.
                     const file = await fileHandle.getFile();
@@ -216,7 +216,6 @@ export async function update_available_configurations_list(yukon_state) {
         for (const [key, value] of Object.entries(conf_yaml_deserialized)) {
             // If key is not a number continue
             if (isNaN(key)) {
-                console.log("Key is not a number: " + key);
                 continue;
             }
             noKeysWereNumbers = false;
