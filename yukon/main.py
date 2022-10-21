@@ -128,7 +128,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     messages_publisher.setLevel(logging.NOTSET)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     messages_publisher.setFormatter(formatter)
-    logger.root.addHandler(messages_publisher)
+    logger.addHandler(messages_publisher)
     make_landing_and_bridge(state, api)
 
     cyphal_worker_thread = threading.Thread(target=cyphal_worker, args=[state])
@@ -178,7 +178,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         if os.environ.get("IS_DEBUG"):
             required_queue_timeout = None
         response: AttachTransportResponse = state.queues.attach_transport_response.get(timeout=required_queue_timeout)
-        if not response.success:
+        if not response.is_success:
             raise Exception("Failed to attach transport", response.message)
     while True:
         sleep(1)

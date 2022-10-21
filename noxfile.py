@@ -27,6 +27,7 @@ if platform.system() == "Windows":
 else:
     separator = ":"
 
+
 @nox.session(reuse_venv=True)
 def black(session):
     session.run("pip", "install", "black == 22.*")
@@ -54,4 +55,5 @@ def pytest(session):
     session.run("pip", "install", "-r", "requirements.txt")
     if platform.system() != "Windows":
         session.run("sudo", "setcap", "cap_net_raw+eip", str(Path(sys.executable).resolve()), external=True)
-    session.run("pytest", "tests/src/necessary/test_api.py", env={"PYTHONPATH": Path(str(compiled_dir) + separator + str(ROOT_DIR)).absolute()})
+    session.run("pytest", "tests/src/necessary/test_api.py",
+                env={"PYTHONPATH": str(Path(str(compiled_dir) + separator + str(ROOT_DIR)).absolute())})

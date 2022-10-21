@@ -3,6 +3,7 @@ import { applyConfiguration } from './yaml.configurations.module.js';
 import { make_select_column, make_select_row, make_select_cell } from './registers.selection.module.js';
 import { update_register_value } from './registers.data.module.js';
 import { getDictionaryValueFieldName } from './utilities.module.js';
+import { createGenericModal } from './modal.module.js';
 export function add_node_id_headers(table_header_row, yukon_state) {
     const current_avatars = yukon_state.current_avatars;
     current_avatars.forEach(function (avatar) {
@@ -266,25 +267,8 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             if (event.button !== 0) {
                 return;
             }
-            if (lastClick && new Date() - lastClick < 500 && table_cell.getAttribute("mutable") == "true"
-                && yukon_state.settings.shouldDoubleClickPromptToSetValue) {
+            if (lastClick && new Date() - lastClick < 500 && yukon_state.settings.shouldDoubleClickPromptToSetValue) {
                 // Make a dialog box to enter the new value
-                var new_value = prompt("Enter new value for " + register_name + ":", value);
-                // If the user entered a value
-                if (new_value != null) {
-                    // Update the value in the table
-                    // text_input.value = new_value;
-                    // Update the value in the server
-                    update_register_value(register_name, new_value, avatar.node_id);
-                    // Run update_tables every second, do that only for the next 4 seconds
-                    let interval1 = setInterval(() => update_tables(true), 1000);
-                    setTimeout(() => clearInterval(interval1), 4000);
-                } else {
-                    yukon_state.addLocalMessage("No value entered");
-                }
-            } else if (lastClick && new Date() - lastClick < 500 && table_cell.getAttribute("mutable") == "true" &&
-                yukon_state.settings.shouldDoubleClickOpenModal
-            ) {
                 showCellValue(avatar.node_id, register_name, yukon_state);
             } else {
                 make_select_cell(avatar, register_name, null, yukon_state)(event)
@@ -409,6 +393,8 @@ export function updateRegistersTableColors(yukon_state, repeat_times, repeat_del
 }
 export function showCellValue(node_id, register_name, yukon_state) {
     const avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id == node_id);
+    const explodedRegister = avatar.registers_exploded_values[register_name];
+    const isMutable = explodedRegister["_meta_"].mutable;
     let enterListener = null;
     let disconnectEnterListener = function() {
         if (enterListener) {
@@ -461,6 +447,10 @@ export function showCellValue(node_id, register_name, yukon_state) {
     // Add a submit button
     let modal_submit = document.createElement("button");
     modal_submit.innerHTML = "Submit";
+    if(!isMutable) {
+        modal_submit.disabled = true;
+
+    }
     modal_submit.onclick = submit_modal;
     // If enter is pressed the modal should submit too
     enterListener = function (event) {
@@ -515,6 +505,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
     }
     let datatypes = new Set();
     let register_count = 0;
+    let uneditable_register_count = 0;
     // Create a list with all pairs, displaying the register name and the value and a submit button
     // When the submit button is clicked then the value is updated in the server and the list element is removed
     // Make a div that is at max 80% of the screen height and has a scrollbar
@@ -528,6 +519,10 @@ export function editSelectedCellValues(pairs, yukon_state) {
     for (const node_id in pairs) {
         const registers = pairs[node_id];
         for (const register_name in registers) {
+            const avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id == node_id);
+            const explodedRegister = avatar.registers_exploded_values[register_name];
+            const isMutable = explodedRegister["_meta_"].mutable;
+            const isPersistent = explodedRegister["_meta_"].persistent;
             register_count += 1;
             const register_value = registers[register_name];
             const datatype = getDictionaryValueFieldName(register_value);
@@ -558,9 +553,14 @@ export function editSelectedCellValues(pairs, yukon_state) {
                 // Color the pair div red
                 pair_div.classList.add("incompatible");
                 is_pair_incompatible = true;
+                uneditable_register_count += 1;
             }
             let pair_datatype = document.createElement("span");
-            pair_datatype.innerHTML = datatype + "[" + current_array_size + "]";
+            if(!is_pair_incompatible) {
+                pair_datatype.innerHTML = datatype + "[" + current_array_size + "]";
+            } else {
+                pair_datatype.innerHTML = datatype + "[<b>" + current_array_size + "</b>]";
+            }
             pair_datatype.style.marginRight = "10px";
             pair_div.appendChild(pair_datatype);
             let pair_value = document.createElement("input");
@@ -578,6 +578,15 @@ export function editSelectedCellValues(pairs, yukon_state) {
             pair_div.appendChild(discard_button);
             let pair_submit = document.createElement("button");
             pair_submit.innerHTML = "Submit";
+            if(!isMutable) {
+                pair_submit.innerHTML = "Immutable";
+                if(!is_pair_incompatible) {
+                    uneditable_register_count += 1;
+                    pair_submit.disabled = true;
+                    pair_div.classList.add("incompatible");
+                }
+
+            }
             if (is_pair_incompatible) {
                 pair_submit.disabled = true;
             }
@@ -610,7 +619,10 @@ export function editSelectedCellValues(pairs, yukon_state) {
 
     // Add a submit button
     let modal_submit = document.createElement("button");
-    modal_submit.innerHTML = "Submit all";
+    modal_submit.innerHTML = "Submit compatible";
+    if(uneditable_register_count == register_count) {
+        modal_submit.disabled = true;
+    }
     modal_submit.onclick = submit_modal;
     // If enter is pressed the modal should submit too
     document.addEventListener("keydown", function (event) {
@@ -631,56 +643,3 @@ export function editSelectedCellValues(pairs, yukon_state) {
     setTimeout(() => modal_value.focus(), 100);
 }
 
-// TODO: Move this to a separate file
-function createGenericModal(escapeCallback) {
-    let modal = document.createElement("div");
-    modal.id = "modal";
-    modal.style.position = "fixed";
-    modal.style.top = "0px";
-    modal.style.left = "0px";
-    modal.style.width = "100%";
-    modal.style.height = "100%";
-    modal.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-    modal.style.zIndex = "100";
-    modal.style.display = "flex";
-    // Put it vertically to the top
-    modal.style.alignItems = "flex-start";
-    modal.style.justifyContent = "center";
-    let modal_content = document.createElement("div");
-    modal_content.style.backgroundColor = "white";
-    modal_content.style["margin-top"] = "10vh";
-    modal_content.style.padding = "20px";
-    modal_content.style.borderRadius = "10px";
-    modal_content.style.width = "80%";
-    modal.appendChild(modal_content);
-    let modal_close = document.createElement("button");
-    let escapeListener = null;
-    let disconnectEscapeListener = function() {
-        if (escapeListener) {
-            document.removeEventListener("keydown", escapeListener);
-            escapeListener = null;
-        }
-    }
-    modal_close.innerHTML = "Close";
-    modal_close.onclick = function () {
-        disconnectEscapeListener();
-        document.body.removeChild(modal);
-    }
-    modal_content.appendChild(modal_close);
-
-    escapeListener = function (event) {
-        if (event.key == "Escape") {
-            console.log("Escape was pressed to close a modal");
-            disconnectEscapeListener();
-            if (modal.parentNode == document.body) {
-                if(escapeCallback) {
-                    escapeCallback();
-                }
-                document.body.removeChild(modal);
-            }
-        }
-    }
-    // Also close the modal if escape is pressed
-    document.addEventListener("keydown", escapeListener);
-    return { "modal": modal, "modal_content": modal_content };
-}

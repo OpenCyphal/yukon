@@ -16,7 +16,7 @@ const zubax_api = new Proxy(_zubax_api, {
                     data: JSON.stringify(data),
                     contentType: 'application/json',
                     type: 'POST',
-                }).done(function (data, status) {
+                }, headers={"Keep-Alive": "timeout=100, max=10000"}).done(function (data, status) {
                     resolve(data);
                 });
             });

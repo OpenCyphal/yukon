@@ -13,9 +13,9 @@ from uuid import uuid4
 from time import time
 
 try:
-    from yaml import CLoader as Loader, CDumper as Dumper
+    from yaml import CLoader as Loader
 except ImportError:
-    from yaml import Loader, Dumper  # type: ignore
+    from yaml import Loader  # type: ignore
 import websockets
 from flask import jsonify, Response
 
@@ -23,12 +23,14 @@ import uavcan
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
 from yukon.services.get_ports import get_socketcan_ports, get_slcan_ports
+from yukon.services._dumper import Dumper
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.interface import Interface
 from yukon.domain.update_register_request import UpdateRegisterRequest
 from yukon.domain.avatar import Avatar
 from yukon.services.value_utils import unexplode_value, explode_value
 from yukon.domain.god_state import GodState
+from yukon.services.messages_publisher import add_local_message
 from yukon.services.get_electron_path import get_electron_path
 from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.command_send_response import CommandSendResponse
@@ -231,7 +233,7 @@ class Api:
         }
 
     def add_local_message(self, message: str) -> None:
-        logger.info(message)
+        add_local_message(self.state, message)
 
     def save_yaml(self, text: str, convert_to_numbers: bool = True) -> None:
         new_text = make_yaml_string_node_ids_numbers(text)
@@ -340,7 +342,7 @@ class Api:
                 sleep(0.1)
             else:
                 break
-        return jsonify(self.state.queues.attach_transport_response.get())
+        return jsonify(self.state.queues.attach_transport_response.get().to_builtin())
 
     def attach_transport(
         self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
@@ -358,11 +360,11 @@ class Api:
         while True:
             if time() >= timeout:
                 raise Exception("Failed to receive a response for attached transport.")
-            if self.state.queues.attach_transport_responses.empty():
+            if self.state.queues.attach_transport_response.empty():
                 sleep(0.1)
             else:
                 break
-        return jsonify(self.state.queues.attach_transport_response.get())
+        return jsonify(self.state.queues.attach_transport_response.get().to_builtin())
 
     def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
@@ -449,3 +451,8 @@ class Api:
 
     def close_yukon(self) -> None:
         self.state.gui.gui_running = False
+
+    def yaml_to_yaml(self, yaml_in: str) -> Response:
+        return Response(
+            response=Dumper().dumps(yaml.load(yaml_in, Loader)), content_type="text/yaml", mimetype="text/yaml"
+        )

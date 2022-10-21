@@ -70,7 +70,7 @@ export function make_context_menus(yukon_state) {
     // For table cells
     const table_cell_context_menu_items = [
         {
-            content: `${downloadIcon}Edit value`,
+            content: `Show/edit value`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
@@ -81,7 +81,7 @@ export function make_context_menus(yukon_state) {
             },
         },
         {
-            content: `${downloadIcon}Edit values`,
+            content: `Edit values`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
@@ -92,7 +92,7 @@ export function make_context_menus(yukon_state) {
             shouldBeDisplayed: moreThanOneSelectedConstraint
         },
         {
-            content: `${downloadIcon}Export selected registers`,
+            content: `Export selected registers`,
             events: {
                 click: async (e) => {
                     await export_all_selected_registers(null, null, yukon_state);
@@ -100,7 +100,7 @@ export function make_context_menus(yukon_state) {
             },
         },
         {
-            content: `${pasteIcon}Set value from config`,
+            content: `Set value from config`,
             events: {
                 click: (e) => {
 
@@ -109,7 +109,7 @@ export function make_context_menus(yukon_state) {
             shouldBeDisplayed: oneSelectedConstraint
         },
         {
-            content: `${copyIcon}Copy datatype`, divider: "top",
+            content: `Copy datatype`, divider: "top",
             events: {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
@@ -130,7 +130,7 @@ export function make_context_menus(yukon_state) {
             },
         },
         {
-            content: `${copyIcon}Copy value`,
+            content: `Copy value`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
@@ -143,7 +143,7 @@ export function make_context_menus(yukon_state) {
             },
         },
         {
-            content: `${copyIcon}Copy selected as yaml`,
+            content: `Copy selected as yaml`,
             events: {
                 click: async (e, elementOpenedOn) => {
                     let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
@@ -155,7 +155,7 @@ export function make_context_menus(yukon_state) {
             shouldBeDisplayed: moreThanOneSelectedConstraint
         },
         {
-            content: `${downloadIcon}Reread registers`,
+            content: `Reread registers`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
@@ -201,7 +201,7 @@ export function make_context_menus(yukon_state) {
 
     const table_header_context_menu_items = [
         {
-            content: `${pasteIcon}Select node registers`,
+            content: `Select node registers`,
             events: {
                 click: async (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
@@ -212,7 +212,7 @@ export function make_context_menus(yukon_state) {
             },
         },
         {
-            content: `${downloadIcon}Apply config from file`,
+            content: `Apply config from file`,
             events: {
                 click: async (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
@@ -224,7 +224,7 @@ export function make_context_menus(yukon_state) {
             divider: "top"
         },
         {
-            content: `${copyIcon}Export all registers`,
+            content: `Export all registers`,
             events: {
                 click: async (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
@@ -257,7 +257,7 @@ export function make_context_menus(yukon_state) {
             }
         },
         {
-            content: `${copyIcon}Copy node registers as YAML`,
+            content: `Copy node registers as YAML`,
             events: {
                 click: async (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
@@ -269,7 +269,7 @@ export function make_context_menus(yukon_state) {
             },
         },
         {
-            content: `${downloadIcon}Reread node`,
+            content: `Reread node`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;

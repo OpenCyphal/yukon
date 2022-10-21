@@ -18,10 +18,12 @@ var yukon_state = {
     },
     "last_slcan_list_hash": null,
     "last_socketcan_list_hash": null,
+    "is_currently_restoring_default_layout": true,
     "settings": {
         "showAlotOfButtons": false,
         "showDoubleRowHeadersFromCount": 6,
         "shouldDoubleClickOpenModal": true,
+        "shouldDoubleClickPromptToSetValue": true,
         "isTableCellTextSelectable": false,
         "isSelectionModeComplicated": false,
         "simplifyRegisters": true,

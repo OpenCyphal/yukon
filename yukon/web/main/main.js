@@ -11,7 +11,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
-    if(isRunningInElectron(yukon_state)) {
+    if (isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_electron();
     } else {
         zubax_api.announce_running_in_browser();
@@ -122,7 +122,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         btnSendCommand.addEventListener("click", async function (event) {
             const result = await zubax_api.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
             if (result.message == undefined) {
-                result.message = "No response.";
+                result.message = "No information.";
             }
             if (!result.success) {
                 feedbackMessage.classList.remove("success");
@@ -262,17 +262,25 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             await updateTextOut(true);
         });
     }
-    async function setUpMessagesComponent(container) {
+    async function setUpPerformedRegisterUpdatesComponent() {
 
+    }
+    async function setUpMessagesComponent(container) {
         const containerElement = container.getElement()[0];
         var messagesList = document.querySelector("#messages-list");
         const optionsPanel = await waitForElm(".options-panel");
         function setDisplayState() {
             if (containerElement.getAttribute("data-isexpanded")) {
                 containerElement.scrollTop = 0;
-                cbAutoscroll.checked = false;
+                if (typeof cbAutoscroll !== "undefined") {
+                    cbAutoscroll.checked = false;
+                }
                 optionsPanel.style.display = "block";
             } else {
+                if (typeof cbAutoscroll !== "undefined") {
+                    cbAutoscroll.checked = true;
+                    containerElement.scrollTop = containerElement.scrollHeight;
+                }
                 optionsPanel.style.display = "none";
             }
         }
@@ -321,19 +329,19 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             messagesList.appendChild(messageItem);
             autosize(messageItem);
         }
-        function fetchAndDisplayMessages() {
-            zubax_api.get_messages(lastMessageIndex + 1).then(function (messages) {
-                var messagesObject = JSON.parse(messages, JsonParseHelper);
-                for (const message of messagesObject) {
-                    displayOneMessage(message.message);
-                    // For the last message
-                    if (message == messagesObject[messagesObject.length - 1]) {
-                        lastMessageIndex = message.index;
-                    }
-                }
-            });
-        }
-        setInterval(fetchAndDisplayMessages, 1000);
+        //        function fetchAndDisplayMessages() {
+        //            zubax_api.get_messages(lastMessageIndex + 1).then(function (messages) {
+        //                var messagesObject = JSON.parse(messages, JsonParseHelper);
+        //                for (const message of messagesObject) {
+        //                    displayOneMessage(message.message);
+        //                    // For the last message
+        //                    if (message == messagesObject[messagesObject.length - 1]) {
+        //                        lastMessageIndex = message.index;
+        //                    }
+        //                }
+        //            });
+        //        }
+        //        setInterval(fetchAndDisplayMessages, 1000);
         console.log("Messages javascript is ready");
         var lastIndex = -1;
         var messagesList = await waitForElm("#messages-list");
@@ -555,6 +563,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                                             type: 'component',
                                             componentName: 'messagesComponent',
                                             isClosable: true,
+                                            doesRequireSettingsButton: true,
                                             title: 'Messages',
                                         },
                                         {
@@ -587,6 +596,12 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                                             componentName: "commandsComponent",
                                             isClosable: true,
                                             title: "Commands",
+                                        },
+                                        {
+                                            type: "component",
+                                            componentName: "performedRegisterUpdatesComponent",
+                                            isClosable: true,
+                                            title: "Register updates",
                                         }
                                     ]
                                 },
@@ -634,10 +649,10 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 title: componentText,
             };
             try {
-                myLayout.root.contentItems[0].addChild(addedComponent);
+                yukon_state.myLayout.root.contentItems[0].addChild(addedComponent);
             } catch (e) {
                 console.log(e);
-                myLayout.root.addChild(addedComponent);
+                yukon_state.myLayout.root.addChild(addedComponent);
             }
         }
         const outsideContext = this;
@@ -652,7 +667,168 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             });
             toolbar.appendChild(btnRestore);
         }
-        var myLayout = new GoldenLayout(config, document.querySelector("#layout"));
+        function initalizeLayout() {
+            let hadPreviousLayout = false;
+            if (typeof yukon_state.myLayout !== 'undefined') {
+                try {
+                    hadPreviousLayout = true;
+                    yukon_state.myLayout.destroy();
+                } catch (e) {
+                    console.log(e);
+                }
+            }
+            let requiredTimeout = 0;
+            if (hadPreviousLayout) {
+                requiredTimeout = 3;
+            }
+            setTimeout(function () {
+                yukon_state.myLayout = new GoldenLayout(config, document.querySelector("#layout"));
+                var myLayout = yukon_state.myLayout;
+                myLayout.registerComponent('registersComponent', function (container, componentState) {
+                    registerComponentAction("../registers.panel.html", "registersComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpRegistersComponent.bind(outsideContext)(true);
+                    });
+                });
+                myLayout.registerComponent('statusComponent', function (container, componentState) {
+                    registerComponentAction("../status.panel.html", "statusComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpStatusComponent.bind(outsideContext)();
+                    });
+                });
+                myLayout.registerComponent('monitorComponent', function (container, componentState) {
+                    registerComponentAction("../monitor.panel.html", "monitorComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpMonitorComponent.bind(outsideContext)();
+                    });
+                });
+                myLayout.registerComponent('messagesComponent', function (container, componentState) {
+                    registerComponentAction("../messages.panel.html", "messagesComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpMessagesComponent.bind(outsideContext)(container);
+                    });
+                });
+                myLayout.registerComponent('transportsComponent', function (container, componentState) {
+                    registerComponentAction("../transport.panel.html", "transportsComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpTransportsComponent.bind(outsideContext)(container);
+                    });
+                });
+                myLayout.registerComponent("transportsListComponent", function (container, componentState) {
+                    registerComponentAction("../transports_list.panel.html", "transportsListComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpTransportsListComponent.bind(outsideContext)();
+                    });
+                });
+                myLayout.registerComponent("commandsComponent", function (container, componentState) {
+                    registerComponentAction("../commands.panel.html", "transportsListComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpCommandsComponent.bind(outsideContext)(container);
+                    });
+                });
+                myLayout.registerComponent("performedRegisterUpdatesComponent", function (container, componentState) {
+                    registerComponentAction("../performed_register_updates.html", "performedRegisterUpdatesComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpPerformedRegisterUpdatesComponent.bind(outsideContext)(container);
+                    });
+                });
+                const useSVG = true;
+                let caretDownImgSrc = null;
+                let caretUpImgSrc = null;
+                if (useSVG) {
+                    caretDownImgSrc = "../images/caret-down.svg";
+                    caretUpImgSrc = "../images/caret-up.svg";
+                    caretDownImgSrc = "../images/gear.svg";
+                    caretUpImgSrc = "../images/gear.svg";
+                } else {
+                    caretDownImgSrc = "../images/caret-down-18-18.png";
+                    caretUpImgSrc = "../images/caret-up-18-18.png";
+                }
+
+                myLayout.on('stackCreated', function (stack) {
+                    console.log("Stack:", stack);
+                    //HTML for the colorDropdown is stored in a template tag
+                    const btnPanelShowHideToggle = document.createElement("li");
+                    btnPanelShowHideToggle.setAttribute("id", "btn-panel-show-hide-yakut");
+                    const caretDownImageElement = document.createElement("img");
+                    // Make sure it has 100% width and height
+                    caretDownImageElement.setAttribute("width", "100%");
+                    caretDownImageElement.setAttribute("height", "100%");
+                    caretDownImageElement.setAttribute("src", caretDownImgSrc);
+                    btnPanelShowHideToggle.appendChild(caretDownImageElement);
+                    const caretUpImageElement = document.createElement("img");
+                    // Make sure it has 100% width and height
+                    caretUpImageElement.setAttribute("width", "100%");
+                    caretUpImageElement.setAttribute("height", "100%");
+                    caretUpImageElement.setAttribute("src", caretUpImgSrc);
+                    btnPanelShowHideToggle.appendChild(caretUpImageElement);
+                    btnPanelShowHideToggle.addEventListener("click",
+                        function (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const container = stack.getActiveContentItem().container.getElement()[0];
+                            // Use the data-isExpanded attribute and toggle it
+                            if (container.getAttribute("data-isExpanded") == "true") {
+                                container.removeAttribute("data-isExpanded");
+                            } else {
+                                container.setAttribute("data-isExpanded", "true");
+                            }
+                            const isExpanded = container.getAttribute("data-isExpanded");
+                            if (isExpanded) {
+                                caretDownImageElement.style.display = "none";
+                                caretUpImageElement.style.display = "block";
+                            } else {
+                                caretDownImageElement.style.display = "block";
+                                caretUpImageElement.style.display = "none";
+                            }
+                        }
+                    );
+                    // Add the btnPanelShowHideToggle to the header
+                    stack.header.controlsContainer.prepend(btnPanelShowHideToggle);
+                    stack.on('activeContentItemChanged', function (contentItem) {
+                        const activeElementName = stack.getActiveContentItem().config.componentName;
+                        console.log("Active element changed to " + activeElementName);
+                        const requiresSettingsButton = stack.getActiveContentItem().config.hasOwnProperty("doesRequireSettingsButton") && stack.getActiveContentItem().config.doesRequireSettingsButton == true;
+                        if (!requiresSettingsButton) {
+                            btnPanelShowHideToggle.style.display = "none";
+                        } else {
+                            btnPanelShowHideToggle.style.display = "block";
+                        }
+                        console.log(activeElementName + " requires settings button: " + requiresSettingsButton);
+                        const container = stack.getActiveContentItem().container.getElement()[0];
+                        // If the key "isExpanded" is not contained in the state of the container
+
+                        const isExpanded = container.getAttribute("data-isExpanded");
+                        if (isExpanded) {
+                            caretDownImageElement.style.display = "none";
+                            caretUpImageElement.style.display = "block";
+                        } else {
+                            caretDownImageElement.style.display = "block";
+                            caretUpImageElement.style.display = "none";
+                        }
+                    });
+                });
+                myLayout.init();
+            }, requiredTimeout);
+        } // initializeLayout
+        initalizeLayout();
+        btnRestoreDefaultLayout.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            yukon_state.is_currently_restoring_default_layout = true;
+            initalizeLayout();
+            setTimeout(function () {
+                yukon_state.is_currently_restoring_default_layout = false;
+            }, 3000);
+        });
         const btnShowHideToolbar = document.getElementById('btnShowHideToolbar');
         btnShowHideToolbar.addEventListener('click', function () {
             const toolbar = document.getElementById('toolbar');
@@ -674,18 +850,18 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 btnShowHideToolbar.classList.remove("bottom-right");
             }
             setTimeout(function () {
-                myLayout.updateSize();
+                yukon_state.myLayout.updateSize();
             }, 50);
         });
         window.addEventListener("resize", () => {
             console.log("resize event");
             setTimeout(function () {
-                myLayout.updateSize();
+                yukon_state.myLayout.updateSize();
             }, 50);
         });
         document.querySelector("#layout").addEventListener("resize", () => {
             setTimeout(function () {
-                myLayout.updateSize();
+                yukon_state.myLayout.updateSize();
             }, 50);
         });
         let last_time_when_a_window_was_opened = null;
@@ -708,136 +884,31 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 });
             });
             container.on("destroy", function () {
-                const lastOpenPopoutsLength = myLayout.openPopouts.length;
-                setTimeout(() => {
-                    // The popout event is not fired, I believe it is a bug in GoldenLayout
-                    //                    if(last_time_when_a_window_was_opened != null && Date.now() - last_time_when_a_window_was_opened < 100) {
-                    //                        return;
-                    //                    }
-                    if (lastOpenPopoutsLength < myLayout.openPopouts.length) {
-                        console.log("Not making a restore button because a popout was opened");
-                        return;
-                    }
-                    addRestoreButton(container._config.title, componentName);
-                    isDestroyed = true;
-                }, 1000);
+                try {
+                    const lastOpenPopoutsLength = yukon_state.myLayout.openPopouts.length;
+                    setTimeout(() => {
+                        // The popout event is not fired, I believe it is a bug in GoldenLayout
+                        //                    if(last_time_when_a_window_was_opened != null && Date.now() - last_time_when_a_window_was_opened < 100) {
+                        //                        return;
+                        //                    }
+                        if (lastOpenPopoutsLength < yukon_state.myLayout.openPopouts.length) {
+                            console.log("Not making a restore button because a popout was opened");
+                            return;
+                        }
+                        if (yukon_state.is_currently_restoring_default_layout) {
+                            return;
+                        }
+                        addRestoreButton(container._config.title, componentName);
+                        isDestroyed = true;
+                    }, 1000);
+                } catch (e) {
+                    console.error(e);
+                }
+
             });
         }
         let containerElementToContainerObjectMap = new WeakMap();
-        myLayout.registerComponent('registersComponent', function (container, componentState) {
-            registerComponentAction("../registers.panel.html", "registersComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpRegistersComponent.bind(outsideContext)(true);
-            });
-        });
-        myLayout.registerComponent('statusComponent', function (container, componentState) {
-            registerComponentAction("../status.panel.html", "statusComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpStatusComponent.bind(outsideContext)();
-            });
-        });
-        myLayout.registerComponent('monitorComponent', function (container, componentState) {
-            registerComponentAction("../monitor.panel.html", "monitorComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpMonitorComponent.bind(outsideContext)();
-            });
-        });
-        myLayout.registerComponent('messagesComponent', function (container, componentState) {
-            registerComponentAction("../messages.panel.html", "messagesComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpMessagesComponent.bind(outsideContext)(container);
-            });
-        });
-        myLayout.registerComponent('transportsComponent', function (container, componentState) {
-            registerComponentAction("../transport.panel.html", "transportsComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpTransportsComponent.bind(outsideContext)(container);
-            });
-        });
-        myLayout.registerComponent("transportsListComponent", function (container, componentState) {
-            registerComponentAction("../transports_list.panel.html", "transportsListComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpTransportsListComponent.bind(outsideContext)();
-            });
-        });
-        myLayout.registerComponent("commandsComponent", function (container, componentState) {
-            registerComponentAction("../commands.panel.html", "transportsListComponent", container, () => {
-                const containerElement = container.getElement()[0];
-                containerElementToContainerObjectMap.set(containerElement, container);
-                setUpCommandsComponent.bind(outsideContext)(container);
-            });
-        });
-        const useSVG = true;
-        let caretDownImgSrc = null;
-        let caretUpImgSrc = null;
-        if (useSVG) {
-            caretDownImgSrc = "../images/caret-down.svg";
-            caretUpImgSrc = "../images/caret-up.svg";
-        } else {
-            caretDownImgSrc = "../images/caret-down-18-18.png";
-            caretUpImgSrc = "../images/caret-up-18-18.png";
-        }
 
-        myLayout.on('stackCreated', function (stack) {
-            //HTML for the colorDropdown is stored in a template tag
-            const btnPanelShowHideToggle = document.createElement("li");
-            btnPanelShowHideToggle.setAttribute("id", "btn-panel-show-hide-yakut");
-            const caretDownImageElement = document.createElement("img");
-            // Make sure it has 100% width and height
-            caretDownImageElement.setAttribute("width", "100%");
-            caretDownImageElement.setAttribute("height", "100%");
-            caretDownImageElement.setAttribute("src", caretDownImgSrc);
-            btnPanelShowHideToggle.appendChild(caretDownImageElement);
-            const caretUpImageElement = document.createElement("img");
-            // Make sure it has 100% width and height
-            caretUpImageElement.setAttribute("width", "100%");
-            caretUpImageElement.setAttribute("height", "100%");
-            caretUpImageElement.setAttribute("src", caretUpImgSrc);
-            btnPanelShowHideToggle.appendChild(caretUpImageElement);
-            btnPanelShowHideToggle.addEventListener("click",
-                function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const container = stack.getActiveContentItem().container.getElement()[0];
-                    // Use the data-isExpanded attribute and toggle it
-                    if (container.getAttribute("data-isExpanded") == "true") {
-                        container.removeAttribute("data-isExpanded");
-                    } else {
-                        container.setAttribute("data-isExpanded", "true");
-                    }
-                    const isExpanded = container.getAttribute("data-isExpanded");
-                    if (isExpanded) {
-                        caretDownImageElement.style.display = "none";
-                        caretUpImageElement.style.display = "block";
-                    } else {
-                        caretDownImageElement.style.display = "block";
-                        caretUpImageElement.style.display = "none";
-                    }
-                }
-            );
-            // Add the btnPanelShowHideToggle to the header
-            stack.header.controlsContainer.prepend(btnPanelShowHideToggle);
-            stack.on('activeContentItemChanged', function (contentItem) {
-                const container = stack.getActiveContentItem().container.getElement()[0];
-                // If the key "isExpanded" is not contained in the state of the container
-
-                const isExpanded = container.getAttribute("data-isExpanded");
-                if (isExpanded) {
-                    caretDownImageElement.style.display = "none";
-                    caretUpImageElement.style.display = "block";
-                } else {
-                    caretDownImageElement.style.display = "block";
-                    caretUpImageElement.style.display = "none";
-                }
-            });
-        });
-        myLayout.init();
         yukon_state.zubax_api = zubax_api;
         yukon_state.jsyaml = jsyaml;
         let lastInternalMessageIndex = -1;
@@ -853,11 +924,9 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         window.onkeyup = function (e) { yukon_state.pressedKeys[e.keyCode] = false; }
         // Add event listeners for focus and blur event handlers to window
         window.addEventListener('focus', function () {
-            console.log("Window focused");
             yukon_state.pressedKeys[18] = false;
         });
         window.addEventListener('blur', function () {
-            console.log("Window blurred");
             yukon_state.pressedKeys[18] = false;
         });
         var mousePos;
@@ -895,6 +964,10 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             yukon_state.pressedKeys[e.keyCode] = true;
             // If ctrl a was pressed, select all
             if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[65]) {
+                if (areThereAnyActiveModals(yukon_state)) {
+                    // The modal should handle its own copy and paste events (natively)
+                    return;
+                }
                 selectAll(yukon_state);
                 e.preventDefault();
             }
@@ -910,26 +983,41 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                     let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
                     const yaml_text = await return_all_selected_registers_as_yaml(pairs, yukon_state);
                     copyTextToClipboard(yaml_text, e);
+                    const selectedCells = document.querySelectorAll(".selected-cell .input")
+                    // Change the text of each selected cell to Copied!
+                    for (let i = 0; i < selectedCells.length; i++) {
+                        const selectedCell = selectedCells[i];
+                        const previousText = selectedCell.innerHTML;
+                        selectedCell.innerHTML = "Copied!";
+                        setTimeout(function () {
+                            if (selectedCell.innerHTML == "Copied!") {
+                                selectedCell.innerHTML = previousText;
+                            }
+                        }, 700);
+                    }
                     e.stopPropagation();
                 } else {
                     console.log("Just copying from under the mouse")
                     let element = document.elementFromPoint(mousePos.x, mousePos.y);
-                    if (element.classList.contains("input")) {
-                        copyTextToClipboard(element.innerText, e);
+                    const copyTextOfElement = function (element, event) {
+                        copyTextToClipboard(element.innerText, event);
+                        const previousText = element.innerHTML;
+                        element.innerHTML = "Copied!";
+                        setTimeout(function () {
+                            if (element.innerHTML == "Copied!") {
+                                element.innerHTML = previousText;
+                            }
+                        }, 700);
+                    }
+                    if (element.classList.contains("input") || element.classList.contains("left-side-table-header")) {
+                        copyTextOfElement(element, e);
                         return;
                     }
                     // Check if any child of the element has the class input
-                    let inputElement = element.querySelector(".input");
+                    let inputElement = element.querySelector(".input") || element.querySelector(".left-side-table-header");
                     if (inputElement) {
                         console.log("A child had the class");
-                        copyTextToClipboard(inputElement.innerText, e);
-                        const previousText = inputElement.innerHTML;
-                        inputElement.innerHTML = "Copied!";
-                        setTimeout(function () {
-                            if (inputElement.innerHTML == "Copied!") {
-                                inputElement.innerHTML = previousText;
-                            }
-                        }, 700);
+                        copyTextOfElement(inputElement, e);
                         return;
                     }
                 }

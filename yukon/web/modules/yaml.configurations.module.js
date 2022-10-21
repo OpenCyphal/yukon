@@ -134,6 +134,9 @@ export async function openFile(yukon_state) {
         yukon_state.addLocalMessage("Error opening file: " + e);
     }
 }
+async function serverFormatYaml(object) {
+    return await yukon_state.zubax_api.yaml_to_yaml(jsyaml.dump(object));
+}
 export async function return_all_selected_registers_as_yaml(pairs, yukon_state) {
     let zubax_api = yukon_state.zubax_api;
     // A pair is the register_name and the node_id
@@ -151,21 +154,21 @@ export async function return_all_selected_registers_as_yaml(pairs, yukon_state) 
     const required_flow_level = is_networked ? 2 : 1;
     let contains_single_node = is_networked && Object.keys(pairs_object).length == 1;
     let json_string = JSON.stringify(pairs_object);
-    var yaml_string = jsyaml.dump(pairs_object, { flowLevel: required_flow_level });
+    var yaml_string = await serverFormatYaml(pairs_object);
     if (yukon_state.settings.simplifyRegisters) {
         const simplified_json_string = await zubax_api.simplify_configuration(json_string)
         let intermediary_structure = JSON.parse(simplified_json_string, JsonParseHelper);
         if (contains_single_node && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
             intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
         }
-        const simplified_yaml_string = jsyaml.dump(intermediary_structure, { flowLevel: required_flow_level });
+        const simplified_yaml_string = await serverFormatYaml(intermediary_structure);
         return parseYamlStringsToNumbers(simplified_yaml_string);
     } else {
         let intermediary_structure = JSON.parse(yaml_string, JsonParseHelper);
         if (contains_single_node && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
             intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
         }
-        const yaml_string_modified = jsyaml.dump(intermediary_structure, { flowLevel: required_flow_level });
+        const yaml_string_modified = await serverFormatYaml(intermediary_structure);
         return parseYamlStringsToNumbers(yaml_string_modified);
     }
 }
