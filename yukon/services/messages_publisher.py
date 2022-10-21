@@ -28,6 +28,23 @@ def get_level_no(level_name: str) -> int:
         return -1
 
 
+def get_level_name(level_no: int) -> str:
+    if level_no == 50:
+        return "CRITICAL"
+    elif level_no == 40:
+        return "ERROR"
+    elif level_no == 30:
+        return "WARNING"
+    elif level_no == 20:
+        return "INFO"
+    elif level_no == 10:
+        return "DEBUG"
+    elif level_no == 0:
+        return "NOTSET"
+    else:
+        return "UNKNOWN"
+
+
 class MessagesPublisher(logging.Handler):
     def __init__(self, state: GodState) -> None:
         super().__init__()
@@ -50,6 +67,10 @@ class MessagesPublisher(logging.Handler):
         self._state.queues.messages.put(new_message)
 
 
-def add_local_message(state: GodState, text: str, *args: typing.List[typing.Any]) -> None:
+def add_local_message(state: GodState, text: str, severity: int, *args: typing.List[typing.Any]) -> None:
     state.queues.message_queue_counter += 1
-    state.queues.messages.put(Message(text, time.monotonic(), state.queues.message_queue_counter, True, arguments=args))
+    state.queues.messages.put(
+        Message(
+            text, time.monotonic(), state.queues.message_queue_counter, False, args, severity, get_level_name(severity)
+        )
+    )

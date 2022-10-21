@@ -320,29 +320,6 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         });
         var messagesList = document.querySelector("#messages-list");
         let messagesListWidth = messagesList.getBoundingClientRect().width
-        var lastMessageIndex = -1;
-        function displayOneMessage(message) {
-            var messageItem = document.createElement("textarea");
-            messageItem.classList.add("message-item");
-            messageItem.classList.add("is-active");
-            messageItem.setAttribute("spellcheck", "false");
-            messageItem.innerHTML = message;
-            messagesList.appendChild(messageItem);
-            autosize(messageItem);
-        }
-        //        function fetchAndDisplayMessages() {
-        //            zubax_api.get_messages(lastMessageIndex + 1).then(function (messages) {
-        //                var messagesObject = JSON.parse(messages, JsonParseHelper);
-        //                for (const message of messagesObject) {
-        //                    displayOneMessage(message.message);
-        //                    // For the last message
-        //                    if (message == messagesObject[messagesObject.length - 1]) {
-        //                        lastMessageIndex = message.index;
-        //                    }
-        //                }
-        //            });
-        //        }
-        //        setInterval(fetchAndDisplayMessages, 1000);
         console.log("Messages javascript is ready");
         var lastIndex = -1;
         var messagesList = await waitForElm("#messages-list");
@@ -436,6 +413,16 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                     for (const el of messagesObject) {
                         var li = document.createElement("textarea");
                         li.innerHTML = el.message;
+                        if (el.severity_nr >= 50) {
+                            // Is bad
+                            li.style.color = "red";
+                            li.style["background-color"] = "rgba(255, 0, 0, 0.1)";
+                            li.style["font-weight"] = "bold";
+                        } else if (el.severity_nr >= 40) { // Error 
+                            li.style.color = "red";
+                        } else if (el.severity_nr == 30) {
+                            li.style.color = "orange";
+                        }
                         // Set an attribute on the list element with current timestamp
                         autosize(li);
                         if (el.internal) {
@@ -511,7 +498,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         autosize(textOut);
         var messagesList = document.querySelector("#messages-list");
         // On resize event
-        addLocalMessage("Found messageList");
+        addLocalMessage("Found messageList", 10);
         // at interval of 3 seconds
         messagesListWidth = messagesList.getBoundingClientRect().width;
 
@@ -527,8 +514,8 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             }
         }, 500);
     }
-    yukon_state.addLocalMessage = function (message) {
-        zubax_api.add_local_message(message);
+    yukon_state.addLocalMessage = function (message, severity) {
+        zubax_api.add_local_message(message, severity);
     }
     const addLocalMessage = yukon_state.addLocalMessage;
     async function doStuffWhenReady() {
@@ -1132,14 +1119,14 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                     for (const message in deserialized_messages) {
                         if (message.internal) {
                             if (message.message.includes("is not mutable")) {
-                                addLocalMessage(message.message);
+                                addLocalMessage(message.message, 40);
                             } else if (message.message.includes("does not exist on node")) {
-                                addLocalMessage(message.message);
+                                addLocalMessage(message.message, 40);
                                 markCellWithMessage(findTableCell(message.arguments[0], message.arguments[1]), "This node has no such register but you tried to set it.", 3000);
                             } else if (message.message.includes("was supplied the wrong value.")) {
                                 markCellWithMessage();
                             } else {
-                                addLocalMessage("Internal message: " + message.message);
+                                addLocalMessage("Internal message: " + message.message, 10);
                             }
                         }
                     }
@@ -1192,7 +1179,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             });
         }
     } catch (e) {
-        addLocalMessage("Error: " + e);
+        addLocalMessage("Error: " + e, 40);
         console.error(e);
     }
 })();

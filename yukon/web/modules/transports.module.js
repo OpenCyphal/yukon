@@ -86,8 +86,8 @@ export function initTransports(container, yukon_state) {
         }
     }
 
-    function addLocalMessage(message) {
-        zubax_api.add_local_message(message)
+    function addLocalMessage(message, severity) {
+        zubax_api.add_local_message(message, severity)
     }
     async function doTheTabSwitching() {
         const h1TransportType = containerElem.querySelector("h1#TransportType");
@@ -477,14 +477,14 @@ export function initTransports(container, yukon_state) {
             result = await zubax_api.attach_transport(port, data_rate, arb_rate, node_id, mtu)
         }
 
-        addLocalMessage("Going to try to attach.")
+        addLocalMessage("Going to try to attach.", 20)
 
         var resultObject = result;
         if (resultObject.is_success) {
-            addLocalMessage("Now attached: " + resultObject.message);
+            addLocalMessage("Now attached: " + resultObject.message, 20);
         } else {
             console.error("Error: " + resultObject.message);
-            addLocalMessage("Error: " + resultObject.message);
+            zubax_api.add_local_message(resultObject.message, 40);
             feedbackMessageDiv.style.display = "block";
             feedbackMessageDiv.innerHTML = resultObject.message_short;
         }

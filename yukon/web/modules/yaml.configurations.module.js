@@ -85,16 +85,16 @@ async function saveString(string, yukon_state) {
     let isElectron = typeof yukon_state.navigator === 'object' && typeof yukon_state.navigator.userAgent === 'string' && yukon_state.navigator.userAgent.indexOf('Electron') >= 0;
     if (window.showSaveFilePicker && !yukon_state.settings.preferSmallerFileSelectionDialog & !isElectron) {
         const fileHandle = await window.showSaveFilePicker();
-        yukon_state.addLocalMessage("We got this path: " + fileHandle.name);
+        yukon_state.addLocalMessage("We got this path: " + fileHandle.name, 10);
         if (fileHandle) {
             // Create a FileSystemWritableFileStream to write to.
             const writable = await fileHandle.createWritable()
             // Write the contents of the file to the stream.
             await writable.write(string)
             await writable.close()
-            yukon_state.addLocalMessage("File written to disk.");
+            yukon_state.addLocalMessage("File written to disk.", 20);
         } else {
-            yukon_state.addLocalMessage("User didn't specify a file path in the dialog");
+            yukon_state.addLocalMessage("User didn't specify a file path in the dialog", 20);
         }
     } else {
         return await yukon_state.zubax_api.save_yaml(string);
@@ -115,7 +115,7 @@ export async function openFile(yukon_state) {
             const fileHandlesArray = await window.showOpenFilePicker();
             if (fileHandlesArray) {
                 const fileHandle = fileHandlesArray[0];
-                yukon_state.addLocalMessage("We got this path: " + fileHandle.name);
+                yukon_state.addLocalMessage("We got this path: " + fileHandle.name, 20);
                 if (fileHandle) {
                     // Create a FileSystemWritableFileStream to write to.
                     const file = await fileHandle.getFile();
@@ -124,14 +124,14 @@ export async function openFile(yukon_state) {
                     file_dto.name = file.name;
                     return file_dto;
                 } else {
-                    yukon_state.addLocalMessage("User didn't specify a file path in the dialog");
+                    yukon_state.addLocalMessage("User didn't specify a file path in the dialog", 30);
                 }
             }
         } else {
             return await JSON.parse(yukon_state.zubax_api.open_file_dialog(), JsonParseHelper);
         }
     } catch (e) {
-        yukon_state.addLocalMessage("Error opening file: " + e);
+        yukon_state.addLocalMessage("Error opening file: " + e, 40);
     }
 }
 async function serverFormatYaml(object) {
@@ -252,7 +252,7 @@ export async function loadConfigurationFromOpenDialog(selectImmediately, yukon_s
     if (!result_dto || result_dto.text == "") {
         return null;
     }
-    yukon_state.addLocalMessage("Configuration imported");
+    yukon_state.addLocalMessage("Configuration imported", 20);
     if (selectImmediately) {
         yukon_state.selections.selected_config = result_dto.name;
     }

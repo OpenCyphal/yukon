@@ -232,7 +232,7 @@ export function make_context_menus(yukon_state) {
                     const node_id = headerCell.getAttribute("data-node_id");
                     const avatar = Object.values(yukon_state.current_avatars).find((e) => e.node_id == parseInt(node_id));
                     e.stopPropagation();
-                    addLocalMessage("Exporting registers of " + avatar.node_id);
+                    addLocalMessage("Exporting registers of " + avatar.node_id, 20);
                     //const result = window.chooseFileSystemEntries({ type: "save-file" });
                     // Export all but only for this avatar, dried up code
                     await export_all_selected_registers(avatar.node_id, null, yukon_state);
@@ -288,7 +288,7 @@ export function make_context_menus(yukon_state) {
                     const response = await yukon_state.zubax_api.send_command(parseInt(node_id), 65530, "");
                     if (response) {
                         if (response.success) {
-                            addLocalMessage("Stored persistent states for node " + node_id);
+                            addLocalMessage("Stored persistent states for node " + node_id, 20);
                             const previousValue = headerCell.innerText;
                             headerCell.innerText = "Stored";
                             setTimeout(() => {
@@ -296,7 +296,7 @@ export function make_context_menus(yukon_state) {
                             }, 1200);
                         } else {
                             addLocalMessage("Failed to store persistent states for node " + node_id + " for this reason: ");
-                            addLocalMessage(response.message);
+                            addLocalMessage(response.message, 40);
                             const previousValue = headerCell.innerText;
                             headerCell.innerText = "Store failed";
                             setTimeout(() => {

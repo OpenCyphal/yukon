@@ -83,10 +83,8 @@ export function make_select_column(node_id, is_mouse_over, yukon_state) {
         if (yukon_state.settings.is_selection_mode_complicated) {
             if (yukon_state.selections.selected_columns[node_id]) {
                 yukon_state.selections.selected_columns[node_id] = false;
-                yukon_state.addLocalMessage("Column " + node_id + " deselected");
             } else {
                 yukon_state.selections.selected_columns[node_id] = true;
-                yukon_state.addLocalMessage("Column " + node_id + " selected");
             }
         } else {
             selectColumn(node_id, yukon_state);
@@ -325,7 +323,7 @@ function getAllCellsInBetween(start_cell, end_cell, yukon_state) {
 }
 
 export function unselectAll(yukon_state) {
-    yukon_state.addLocalMessage("Unselecting all registers");
+    yukon_state.addLocalMessage("Unselecting all registers", 10);
     yukon_state.selections.selected_registers = {};
     yukon_state.selections.selected_columns = {};
     yukon_state.selections.selected_rows = {};
@@ -336,7 +334,7 @@ export function unselectAll(yukon_state) {
 
 export function selectAll(yukon_state) {
     // Iterate through every avatar in current_avatars and register_name and add them to the selected_registers
-    yukon_state.addLocalMessage("Selecting all registers");
+    yukon_state.addLocalMessage("Selecting all registers", 10);
     if (isAllSelected(yukon_state)) {
         unselectAll(yukon_state);
         return;

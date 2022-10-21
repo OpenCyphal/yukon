@@ -1,8 +1,6 @@
 const _zubax_api = { "empty": true }
 
 let zubax_api_ready = false;
-var ip = location.host;
-alert(ip);
 const zubax_api = new Proxy(_zubax_api, {
     get(target, prop) {
         let url = "http://127.0.0.1:5000/api/" + prop;

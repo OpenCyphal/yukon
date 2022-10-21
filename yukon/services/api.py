@@ -232,8 +232,8 @@ class Api:
             "hash": _list_hash,
         }
 
-    def add_local_message(self, message: str) -> None:
-        add_local_message(self.state, message)
+    def add_local_message(self, message: str, severity: int) -> None:
+        add_local_message(self.state, message, severity)
 
     def save_yaml(self, text: str, convert_to_numbers: bool = True) -> None:
         new_text = make_yaml_string_node_ids_numbers(text)

@@ -441,7 +441,7 @@ export function showCellValue(node_id, register_name, yukon_state) {
             document.body.removeChild(modal);
             disconnectEnterListener();
         } else {
-            addLocalMessage("No value entered");
+            addLocalMessage("No value entered", 40);
         }
     }
     // Add a submit button
@@ -500,7 +500,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
             setTimeout(() => clearInterval(interval1), 4000);
             document.body.removeChild(modal);
         } else {
-            addLocalMessage("No value entered");
+            addLocalMessage("No value entered", 40);
         }
     }
     let datatypes = new Set();
@@ -609,7 +609,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
                         pair_submit.parentNode.removeChild(pair_submit);
                     }
                 } else {
-                    addLocalMessage("No value entered");
+                    addLocalMessage("No value entered", 40);
                 }
             }
             pair_div.appendChild(pair_submit);
