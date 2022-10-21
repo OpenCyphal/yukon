@@ -13,7 +13,7 @@ from pycyphal.application import make_node, NodeInfo, make_transport
 
 import uavcan
 import uavcan.node.ExecuteCommand_1_1
-from domain.update_registe_log_item import UpdateRegisterLogItem
+from yukon.domain.update_registe_log_item import UpdateRegisterLogItem
 from yukon.domain.detach_transport_response import DetachTransportResponse
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.domain.command_send_response import CommandSendResponse
