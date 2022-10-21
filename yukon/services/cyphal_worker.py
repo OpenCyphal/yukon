@@ -220,6 +220,7 @@ def cyphal_worker(state: GodState) -> None:
                             )
                         verification_exploded_value = explode_value(
                             access_response.value,
+                            simplify=True,
                             metadata={"mutable": access_response.mutable, "persistent": access_response.persistent},
                         )
                         verification_exploded_value_str = json.dumps(

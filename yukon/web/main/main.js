@@ -263,8 +263,28 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             await updateTextOut(true);
         });
     }
-    async function setUpPerformedRegisterUpdatesComponent() {
-
+    async function setUpRegisterUpdateLogComponent(container) {
+        const containerElement = container.getElement()[0];
+        const registerUpdateLog = document.querySelector("#register-update-log");
+        async function fetchRegisterUpdateLog() {
+            const items = await zubax_api.get_register_update_log_items();
+            registerUpdateLog.innerHTML = "";
+            for (const item of items) {
+                // Create fields for new_value, previous_value, request_sent_time, request_received_time
+                const row = registerUpdateLog.insertRow();
+                const new_value_cell = row.insertCell(0);
+                const previous_value_cell = row.insertCell(1);
+                const request_sent_time_cell = row.insertCell(2);
+                const request_received_time_cell = row.insertCell(3);
+                const success = row.insertCell(4);
+                new_value_cell.innerHTML = item.response.value;
+                previous_value_cell.innerHTML = item.previous_value;
+                request_sent_time_cell.innerHTML = item.request_sent_time;
+                request_received_time_cell.innerHTML = item.request_received_time;
+                success.innerHTML = item.response.success;
+            }
+        }
+        setInterval(fetchRegisterUpdateLog, 1000);
     }
     async function setUpMessagesComponent(container) {
         const containerElement = container.getElement()[0];
@@ -587,9 +607,9 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                                         },
                                         {
                                             type: "component",
-                                            componentName: "performedRegisterUpdatesComponent",
+                                            componentName: "registerUpdateLogComponent",
                                             isClosable: true,
-                                            title: "Register updates",
+                                            title: "Register update logs",
                                         }
                                     ]
                                 },
@@ -721,11 +741,11 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                         setUpCommandsComponent.bind(outsideContext)(container);
                     });
                 });
-                myLayout.registerComponent("performedRegisterUpdatesComponent", function (container, componentState) {
-                    registerComponentAction("../performed_register_updates.html", "performedRegisterUpdatesComponent", container, () => {
+                myLayout.registerComponent("registerUpdateLogComponent", function (container, componentState) {
+                    registerComponentAction("../register_update_log.html", "registerUpdateLogComponent", container, () => {
                         const containerElement = container.getElement()[0];
                         containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpPerformedRegisterUpdatesComponent.bind(outsideContext)(container);
+                        setUpRegisterUpdateLogComponent.bind(outsideContext)(container);
                     });
                 });
                 const useSVG = true;
@@ -975,14 +995,21 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                         const previousText = selectedCell.innerHTML;
                         selectedCell.innerHTML = "Generating yaml!";
                         setTimeout(function () {
-                            if (selectedCell.innerHTML == "Copied!" || selectedCell.innerHTML == "Generating yaml!") {
+                            if (selectedCell.innerHTML == "Copied!" || selectedCell.innerHTML == "Generating yaml!" || selectedCell.innerHTML == "Copy failed!") {
                                 selectedCell.innerHTML = previousText;
                             }
                         }, 1000);
                     }
                     const yaml_text = await return_all_selected_registers_as_yaml(pairs, yukon_state);
 
-                    copyTextToClipboard(yaml_text, e);
+                    const didCopySucceed = await copyTextToClipboard(yaml_text, e);
+                    if (!didCopySucceed) {
+                        for (let i = 0; i < selectedCells.length; i++) {
+                            const selectedCell = selectedCells[i];
+                            selectedCell.innerHTML = "Copy failed!";
+                        }
+                        addLocalMessage("Please make sure to click on the Yukon window somewhere to focus the window when a copy fails.", 40)
+                    }
                     for (let i = 0; i < selectedCells.length; i++) {
                         const selectedCell = selectedCells[i];
                         selectedCell.innerHTML = "Copied!";

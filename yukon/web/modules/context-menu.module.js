@@ -111,7 +111,7 @@ export function make_context_menus(yukon_state) {
         {
             content: `Copy datatype`, divider: "top",
             events: {
-                click: (e, elementOpenedOn) => {
+                click: async (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
                     const node_id = cell.getAttribute("node_id");
                     const register_name = cell.getAttribute("register_name");
@@ -125,20 +125,20 @@ export function make_context_menus(yukon_state) {
                         dimensionality = "[" + value.length + "]";
                     }
                     datatype = datatype + dimensionality;
-                    copyTextToClipboard(datatype);
+                    await copyTextToClipboard(datatype);
                 }
             },
         },
         {
             content: `Copy value`,
             events: {
-                click: (e, elementOpenedOn) => {
+                click: async (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
                     const node_id = cell.getAttribute("node_id");
                     const register_name = cell.getAttribute("register_name");
                     const avatar = yukon_state.current_avatars.find((a) => a.node_id == node_id);
                     let register_value = avatar.registers_values[register_name];
-                    copyTextToClipboard(register_value);
+                    await copyTextToClipboard(register_value);
                 }
             },
         },
@@ -148,7 +148,7 @@ export function make_context_menus(yukon_state) {
                 click: async (e, elementOpenedOn) => {
                     let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
                     const yaml_text = await return_all_selected_registers_as_yaml(pairs, yukon_state);
-                    copyTextToClipboard(yaml_text);
+                    await copyTextToClipboard(yaml_text);
                     e.stopPropagation();
                 }
             },
@@ -264,7 +264,7 @@ export function make_context_menus(yukon_state) {
                     const headerCell = elementOpenedOn;
                     const node_id = headerCell.getAttribute("data-node_id");
                     let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": node_id, "get_everything": false, "only_of_register_name": null }, yukon_state);
-                    copyTextToClipboard(await return_all_selected_registers_as_yaml(pairs, yukon_state));
+                    await copyTextToClipboard(await return_all_selected_registers_as_yaml(pairs, yukon_state));
                     e.stopPropagation();
                 }
             },
@@ -332,10 +332,10 @@ export function make_context_menus(yukon_state) {
         {
             content: `Copy register name`,
             events: {
-                click: (e, elementOpenedOn) => {
+                click: async (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
                     const register_name = cell.getAttribute("data-register_name");
-                    copyTextToClipboard(register_name);
+                    await copyTextToClipboard(register_name);
                     e.stopPropagation();
                 }
             },
@@ -348,7 +348,7 @@ export function make_context_menus(yukon_state) {
                     const cell = elementOpenedOn;
                     const register_name = cell.getAttribute("data-register_name");
                     let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": register_name }, yukon_state);
-                    copyTextToClipboard(await return_all_selected_registers_as_yaml(pairs, yukon_state));
+                    await copyTextToClipboard(await return_all_selected_registers_as_yaml(pairs, yukon_state));
                     e.stopPropagation();
                 }
             },
