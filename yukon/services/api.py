@@ -13,9 +13,9 @@ from uuid import uuid4
 from time import time
 
 try:
-    from yaml import CLoader as Loader, CDumper as Dumper
+    from yaml import CLoader as Loader
 except ImportError:
-    from yaml import Loader, Dumper  # type: ignore
+    from yaml import Loader  # type: ignore
 import websockets
 from flask import jsonify, Response
 
@@ -345,7 +345,7 @@ class Api:
         return jsonify(self.state.queues.attach_transport_response.get().to_builtin())
 
     def attach_transport(
-            self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
+        self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()
@@ -454,4 +454,5 @@ class Api:
 
     def yaml_to_yaml(self, yaml_in: str) -> Response:
         return Response(
-            response=Dumper().dumps(yaml.load(yaml_in, Loader)), content_type="text/yaml", mimetype="text/yaml")
+            response=Dumper().dumps(yaml.load(yaml_in, Loader)), content_type="text/yaml", mimetype="text/yaml"
+        )

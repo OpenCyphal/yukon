@@ -20,7 +20,7 @@ class Dumper:
         # noinspection PyTypeHints
         self._impl.explicit_start = explicit_start
         self._impl.default_flow_style = False if prefer_block_style else None
-        self._impl.width = 2 ** 31  # Unlimited width
+        self._impl.width = 2**31  # Unlimited width
 
     def dump(self, data: Any, stream: TextIO) -> None:
         self._impl.dump(data, stream)
@@ -62,8 +62,8 @@ def _unittest_yaml() -> None:
         }
     )
     assert (
-            ref
-            == """---
+        ref
+        == """---
 abc: -.inf
 def:
 - .nan
@@ -77,8 +77,8 @@ def:
         }
     )
     assert (
-            ref
-            == """abc: -.inf
+        ref
+        == """abc: -.inf
 def:
 - .nan
 - qaz: 789.0
