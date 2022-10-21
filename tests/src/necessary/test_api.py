@@ -183,8 +183,8 @@ class TestBackendTestSession:
                 verification_exploded_value = explode_value(
                     obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent}
                 )
-                verification_exploded_value_str = json.dumps(verification_exploded_value, cls=EnhancedJSONEncoder)
-                # verification_simplified_value = str(explode_value(obj.value, simplify=True))
+                # verification_exploded_value_str = json.dumps(verification_exploded_value, cls=EnhancedJSONEncoder)
+                verification_simplified_value = str(explode_value(obj.value, simplify=True))
                 if verification_response is not None:
                     logger.debug("Response: %s", verification_response)
                 if http_update_response.status != 200:
@@ -197,7 +197,7 @@ class TestBackendTestSession:
 
                 if response_update.get("success") is not True:
                     return False
-                assert verification_exploded_value_str == response_update.get("value")
+                assert verification_simplified_value == response_update.get("value")
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             logger.exception("Connection error")
             raise Exception(
