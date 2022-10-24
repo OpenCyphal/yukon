@@ -216,13 +216,15 @@ class Api:
         self.state = state
         self.last_avatars = []
 
-    def get_socketcan_ports(self) -> typing.Dict[str, typing.Any]:
+    def get_socketcan_ports(self) -> Response:
         _list = get_socketcan_ports()
         _list_hash = json.dumps(_list, sort_keys=True)
-        return {
-            "ports": _list,
-            "hash": _list_hash,
-        }
+        return jsonify(
+            {
+                "ports": _list,
+                "hash": _list_hash,
+            }
+        )
 
     def get_slcan_ports(self) -> typing.Dict[str, typing.Any]:
         _list = get_slcan_ports()
@@ -254,12 +256,12 @@ class Api:
     def import_node_configuration(self) -> str:
         return import_candump_file_contents()
 
-    def is_configuration_simplified(self, deserialized_configuration: typing.Any) -> str:
-        return json.dumps(is_configuration_simplified(deserialized_configuration))
+    def is_configuration_simplified(self, deserialized_configuration: typing.Any) -> Response:
+        return jsonify(is_configuration_simplified(deserialized_configuration))
 
-    def is_network_configuration(self, deserialized_configuration: typing.Any) -> str:
+    def is_network_configuration(self, deserialized_configuration: typing.Any) -> Response:
         value = is_network_configuration(deserialized_configuration)
-        return json.dumps(value)
+        return jsonify(value)
 
     def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
         request = ApplyConfigurationRequest(node_id, configuration, is_network_configuration(configuration))
@@ -321,7 +323,7 @@ class Api:
                     logger.info(f"Successfully updated register {register_name} to {register_value}")
                 else:
                     logger.error(f"Failed to update register {register_name} to {register_value}")
-                return json.dumps(response.to_builtin())
+                return jsonify(response)
         logger.critical("Something is wrong with updating registers.")
         raise Exception(f"Failed to update register {register_name} to {register_value}, critical timeout")
 
@@ -345,10 +347,10 @@ class Api:
                 sleep(0.1)
             else:
                 break
-        return jsonify(self.state.queues.attach_transport_response.get().to_builtin())
+        return jsonify(self.state.queues.attach_transport_response.get())
 
     def attach_transport(
-            self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
+        self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()
@@ -367,7 +369,7 @@ class Api:
                 sleep(0.1)
             else:
                 break
-        return jsonify(self.state.queues.attach_transport_response.get().to_builtin())
+        return jsonify(self.state.queues.attach_transport_response.get())
 
     def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
@@ -381,7 +383,7 @@ class Api:
             else:
                 break
 
-        return jsonify(self.state.queues.detach_transport_response.get().to_builtin())
+        return jsonify(self.state.queues.detach_transport_response.get())
 
     # def save_registers_of_node(self, node_id: int, registers: typing.Dict["str"]) -> None:
     def show_yakut(self) -> None:
@@ -395,12 +397,11 @@ class Api:
     def hide_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = True
 
-    def get_messages(self, since_index: int = 0) -> str:
+    def get_messages(self, since_index: int = 0) -> Response:
         my_list = [
             x.asdict() for x in list(self.state.queues.messages.queue) if not since_index or x.index_nr >= since_index
         ]
-        messages_serialized = json.dumps(my_list)
-        return messages_serialized
+        return jsonify(my_list)
 
     def get_avatars(self) -> typing.Any:
         self.state.gui.last_poll_received = monotonic()
@@ -419,9 +420,9 @@ class Api:
     def set_log_level(self, severity: str) -> None:
         self.state.gui.message_severity = severity
 
-    def get_connected_transport_interfaces(self) -> str:
+    def get_connected_transport_interfaces(self) -> Response:
         composed_list = [x.to_builtin() for x in self.state.cyphal.transports_list]
-        return json.dumps({"interfaces": composed_list, "hash": hash(json.dumps(composed_list, sort_keys=True))})
+        return jsonify({"interfaces": composed_list, "hash": hash(json.dumps(composed_list, sort_keys=True))})
 
     def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
         send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)

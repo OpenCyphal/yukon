@@ -1,6 +1,7 @@
 import { updateRegistersTableColors } from "./registers.module.js";
 import { copyObject, getDictionaryValueFieldName } from "./utilities.module.js";
 function trueFalseDecider(stringInput) {
+    stringInput = stringInput.trim().toLowerCase();
     if (stringInput === "true") {
         return true;
     } else if (stringInput === "false") {
@@ -30,10 +31,12 @@ export async function update_register_value(register_name, register_value, node_
         } else if (typeof unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"][0] == "boolean") {
             register_value = register_value.replace("[", "").replace("]", "");
             register_value = register_value.toLowerCase();
+            let register_values = null;
             try {
-                let register_values = register_value.split(",").map(trueFalseDecider);
-            } catch {
-q
+                register_values = register_value.split(",").map(trueFalseDecider);
+            } catch (error){
+                console.error(e);
+                return;
             }
             unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"] = register_values;
         } else {

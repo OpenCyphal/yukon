@@ -6,9 +6,11 @@ export async function applyConfiguration(configuration, set_node_id, applyPairs,
     // If configuration starts with a { then it is json
     let configuration_deserialized = null;
     if (configuration.startsWith("{")) {
+        yukon_state.addLocalMessage("Configuration is JSON", 10);
         configuration_deserialized = JSON.parse(configuration, JsonParseHelper);
     } else {
         configuration_deserialized = yukon_state.jsyaml.load(configuration);
+        yukon_state.addLocalMessage("Configuration is YAML", 10);
     }
 
     let potential_node_id;
@@ -16,6 +18,7 @@ export async function applyConfiguration(configuration, set_node_id, applyPairs,
     if (!set_node_id) {
         number_input = number_input_for_configuration[selected_config];
         potential_node_id = parseInt(number_input.value);
+        yukon_state.addLocalMessage("Node ID was specified as " + potential_node_id, 10);
     } else {
         potential_node_id = set_node_id;
     }
@@ -34,7 +37,14 @@ export async function applyConfiguration(configuration, set_node_id, applyPairs,
     }
     const is_network_configuration = await isNetworkConfiguration(configuration_deserialized);
     const is_configuration_simplified = await isSimplifiedConfiguration(configuration_deserialized);
+    if (is_network_configuration) {
+        yukon_state.addLocalMessage("Configuration is a network configuration", 10);
+    }
+    if (is_configuration_simplified) {
+        yukon_state.addLocalMessage("Configuration is simplified", 10);
+    }
     if (applyPairs) {
+        yukon_state.addLocalMessage("Applying only selected registers", 10);
         if (is_network_configuration) {
             // Iterate over the configuration and remove the keys that are not in applyPairs
             // For avatar in configuration_deserialized
@@ -52,18 +62,21 @@ export async function applyConfiguration(configuration, set_node_id, applyPairs,
     if (is_network_configuration && is_configuration_simplified) {
         // Start fetching datatypes
         const unsimplified_configuration = await zubax_api.unsimplify_configuration(configuration)
-        zubax_api.apply_all_of_configuration(unsimplified_configuration);
+        yukon_state.addLocalMessage("Unsimplified configuration", 10);
+        await zubax_api.apply_all_of_configuration(unsimplified_configuration);
         let interval1 = setInterval(() => update_tables(true), 1000);
         setTimeout(() => clearInterval(interval1), 6000);
     } else if (!is_network_configuration && is_configuration_simplified) {
         const isValidNodeid = potential_node_id > 0 || potential_node_id < 128;
         if (isValidNodeid) {
             console.log("Applying configuration: " + yukon_state.selections.selected_config + " to node " + potential_node_id);
-            zubax_api.apply_configuration_to_node(potential_node_id, JSON.stringify(configuration_deserialized))
+            yukon_state.addLocalMessage("Applying configuration: " + yukon_state.selections.selected_config + " to node " + potential_node_id, 20);
+            await zubax_api.apply_configuration_to_node(potential_node_id, JSON.stringify(configuration_deserialized))
             let interval1 = setInterval(() => update_tables(true), 1000);
             setTimeout(() => clearInterval(interval1), 6000);
         } else if (number_input) {
             console.log("There was no valid node id supplied.");
+            yukon_state.addLocalMessage("There was no valid node id supplied.", 40);
             // Add a small label to the bottom of number_input to indicate that the node id is invalid, color the input red
             number_input.style.borderColor = "red";
             // Remove 3 seconds later
@@ -72,13 +85,15 @@ export async function applyConfiguration(configuration, set_node_id, applyPairs,
                 number_input.style.borderColor = "";
             }, 3000);
         }
+    } else {
+        yukon_state.addLocalMessage("Didn't know what to do with the configuration", 40);
     }
 }
 async function isNetworkConfiguration(yamlOrJSONSerializedConfiguration) {
-    return await zubax_api.is_network_configuration(yamlOrJSONSerializedConfiguration) == "true";
+    return (await zubax_api.is_network_configuration(yamlOrJSONSerializedConfiguration)).trim() == "true";
 }
 async function isSimplifiedConfiguration(yamlOrJSONSerializedConfiguration) {
-    return await zubax_api.is_configuration_simplified(yamlOrJSONSerializedConfiguration) == "true";
+    return (await zubax_api.is_configuration_simplified(yamlOrJSONSerializedConfiguration)).trim() == "true";
 }
 
 async function saveString(string, yukon_state) {
@@ -128,7 +143,7 @@ export async function openFile(yukon_state) {
                 }
             }
         } else {
-            return await JSON.parse(yukon_state.zubax_api.open_file_dialog(), JsonParseHelper);
+            return await yukon_state.zubax_apij.open_file_dialog();
         }
     } catch (e) {
         yukon_state.addLocalMessage("Error opening file: " + e, 40);
@@ -252,12 +267,12 @@ export async function loadConfigurationFromOpenDialog(selectImmediately, yukon_s
     if (!result_dto || result_dto.text == "") {
         return null;
     }
-    yukon_state.addLocalMessage("Configuration imported", 20);
     if (selectImmediately) {
         yukon_state.selections.selected_config = result_dto.name;
     }
     yukon_state.available_configurations[result_dto.name] = result_dto.text;
     await update_available_configurations_list(yukon_state);
+    yukon_state.addLocalMessage("Configuration file added to the list of selectable configurations", 20);
     return result_dto;
 }
 export async function actionApplyConfiguration(selectImmediately, applyToAll, avatar, onlyApplySelected, yukon_state, click_event) {
@@ -296,6 +311,7 @@ export async function actionApplyConfiguration(selectImmediately, applyToAll, av
                 for (const avatar of yukon_state.current_avatars) {
                     applyConfiguration(current_config, parseInt(avatar.node_id, pairs, yukon_state))
                 }
+                addLocalMessage("Applying configuration to all avatars", 20);
             }
         } else {
             console.log("No configuration selected");

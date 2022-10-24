@@ -287,7 +287,9 @@ def cyphal_worker(state: GodState) -> None:
                                 prototype = unexplode_value(prototype_string)
                                 unexploded_value = unexplode_value(register_value, prototype)
                                 state.queues.update_registers.put(
-                                    UpdateRegisterRequest(uuid4(), register_name, unexploded_value, config.node_id)
+                                    UpdateRegisterRequest(
+                                        uuid4(), register_name, unexploded_value, config.node_id, time.time()
+                                    )
                                 )
                             if not at_least_one_register_was_modified:
                                 add_local_message(
@@ -303,7 +305,9 @@ def cyphal_worker(state: GodState) -> None:
                                         value = json.loads(value)
                                     unexploded_value = unexplode_value(value)
                                     state.queues.update_registers.put(
-                                        UpdateRegisterRequest(uuid4(), register_name, unexploded_value, config.node_id)
+                                        UpdateRegisterRequest(
+                                            uuid4(), register_name, unexploded_value, config.node_id, time.time()
+                                        )
                                     )
                     elif config.is_network_config:
                         logger.debug("Setting configuration for all configured nodes")
@@ -317,7 +321,7 @@ def cyphal_worker(state: GodState) -> None:
                                 continue
                             for k, v in register_values_exploded.items():
                                 state.queues.update_registers.put(
-                                    UpdateRegisterRequest(uuid4(), k, unexplode_value(v), int(node_id))
+                                    UpdateRegisterRequest(uuid4(), k, unexplode_value(v), int(node_id), time.time())
                                 )
                     else:
                         raise Exception("Didn't do anything with this configuration")

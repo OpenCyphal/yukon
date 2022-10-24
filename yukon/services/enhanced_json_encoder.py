@@ -2,6 +2,7 @@ import dataclasses
 import json
 from json.encoder import encode_basestring_ascii, encode_basestring, c_make_encoder, _make_iterencode  # type: ignore
 import typing
+from uuid import UUID
 
 INFINITY = float("inf")
 
@@ -10,6 +11,8 @@ class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, o: typing.Any) -> typing.Any:
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
+        if isinstance(o, UUID):
+            return str(o)
         return super().default(o)
 
     def iterencode(self, o: typing.Any, _one_shot: bool = False) -> typing.Any:
@@ -91,6 +94,8 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                 return encode_basestring_ascii(o)
             else:
                 return encode_basestring(o)
+        if isinstance(o, UUID):
+            return str(o)
         # This doesn't pass the iterator directly to ''.join() because the
         # exceptions aren't as detailed.  The list call should be roughly
         # equivalent to the PySequence_Fast that ''.join() would do.

@@ -454,7 +454,7 @@ export function initTransports(container, yukon_state) {
             const udp_iface = containerElem.querySelector('#iUdpIface').value;
             const udp_mtu = containerElem.querySelector('#iUdpMtu').value;
             const node_id = containerElem.querySelector('#iNodeId').value;
-            result = await zubax_api.attach_udp_transport(udp_iface, udp_mtu, node_id);
+            result = await zubax_apij.attach_udp_transport(udp_iface, udp_mtu, node_id);
         } else {
             console.log("CAN");
             let port = "";
@@ -474,7 +474,7 @@ export function initTransports(container, yukon_state) {
             const arb_rate = containerElem.querySelector('#iArbRate').value;
             const node_id = containerElem.querySelector('#iNodeId').value;
             const mtu = containerElem.querySelector('#iMtu').value;
-            result = await zubax_api.attach_transport(port, data_rate, arb_rate, node_id, mtu)
+            result = await zubax_apij.attach_transport(port, data_rate, arb_rate, node_id, mtu)
         }
 
         addLocalMessage("Going to try to attach.", 20)

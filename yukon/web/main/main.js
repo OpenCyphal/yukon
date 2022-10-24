@@ -123,17 +123,14 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         });
         btnSendCommand.addEventListener("click", async function (event) {
             const result = await zubax_api.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
-            if (result.message == undefined) {
-                result.message = "No information.";
-            }
             if (!result.success) {
                 feedbackMessage.classList.remove("success");
                 feedbackMessage.style.display = "block";
-                feedbackMessage.innerHTML = result.message;
+                feedbackMessage.innerHTML = result.message || "No information.";
             } else {
                 feedbackMessage.classList.add("success");
                 feedbackMessage.style.display = "block";
-                feedbackMessage.innerHTML = result.message;
+                feedbackMessage.innerHTML = result.message || "No information.";
             }
 
         });
@@ -268,7 +265,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         const containerElement = container.getElement()[0];
         const registerUpdateLog = document.querySelector("#register-update-log");
         async function fetchRegisterUpdateLog() {
-            const items = JSON.parse((await zubax_api.get_register_update_log_items()), JsonParseHelper);
+            const items = await zubax_apij.get_register_update_log_items();
             registerUpdateLog.innerHTML = "";
             // Add a header for the table
             const header = document.createElement('tr');
@@ -435,7 +432,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             var messagesList = document.querySelector("#messages-list");
             var cbAutoscroll = document.querySelector("#cbAutoscroll");
             if (!messagesList || !cbAutoscroll) { return; }
-            zubax_api.get_messages(lastIndex + 1).then(
+            zubax_apij.get_messages(lastIndex + 1).then(
                 function (messages) {
                     // Clear messages-list
                     if (document.getElementById("cDeleteOldMessages").checked) {
@@ -450,7 +447,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                         }
                     }
                     // Add messages to messages-list
-                    var messagesObject = JSON.parse(messages);
+                    var messagesObject = messages;
                     // Make sure that type of d is array
                     console.assert(messagesObject instanceof Array);
                     for (const el of messagesObject) {
