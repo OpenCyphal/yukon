@@ -269,19 +269,41 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         async function fetchRegisterUpdateLog() {
             const items = await zubax_api.get_register_update_log_items();
             registerUpdateLog.innerHTML = "";
+            // Add a header for the table
+            const header = document.createElement('tr');
+            const header_timestamp = document.createElement('th');
+            header_timestamp.innerHTML = "Previous value";
+            header.appendChild(header_timestamp);
+            const new_value_header = document.createElement('th');
+            new_value_header.innerHTML = "New value";
+            header.appendChild(new_value_header);
+            const request_sent_header = document.createElement('th');
+            request_sent_header.innerHTML = "Request sent";
+            header.appendChild(request_sent_header);
+            const response_received_header = document.createElement('th');
+            response_received_header.innerHTML = "Response received";
+            header.appendChild(response_received_header);
+            const request_success = document.createElement('th');
+            request_success.innerHTML = "Ok?";
+            header.appendChild(request_success);
+            registerUpdateLog.appendChild(header);
             for (const item of items) {
                 // Create fields for new_value, previous_value, request_sent_time, request_received_time
                 const row = registerUpdateLog.insertRow();
-                const new_value_cell = row.insertCell(0);
-                const previous_value_cell = row.insertCell(1);
+                const previous_value_cell = row.insertCell(0);
+                const new_value_cell = row.insertCell(1);
                 const request_sent_time_cell = row.insertCell(2);
-                const request_received_time_cell = row.insertCell(3);
+                const response_received_time_cell = row.insertCell(3);
                 const success = row.insertCell(4);
                 new_value_cell.innerHTML = item.response.value;
                 previous_value_cell.innerHTML = item.previous_value;
                 request_sent_time_cell.innerHTML = item.request_sent_time;
-                request_received_time_cell.innerHTML = item.request_received_time;
-                success.innerHTML = item.response.success;
+                response_received_time_cell.innerHTML = item.response_received_time;
+                if(item.response.success) {
+                    success.innerHTML = "✓";
+                } else {
+                    success.innerHTML = "✗";
+                }
             }
         }
         setInterval(fetchRegisterUpdateLog, 1000);

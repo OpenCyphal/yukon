@@ -15,7 +15,6 @@ from requests.adapters import HTTPAdapter
 import aiohttp
 
 import uavcan
-from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.services.value_utils import explode_value
 from .create_yukon import create_yukon
 
@@ -180,9 +179,9 @@ class TestBackendTestSession:
                 msg.name.name = "analog.rcpwm.deadband"
                 verification_response = await service_client.call(msg)
                 obj = verification_response[0]
-                verification_exploded_value = explode_value(
-                    obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent}
-                )
+                # verification_exploded_value = explode_value(
+                #     obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent}
+                # )
                 # verification_exploded_value_str = json.dumps(verification_exploded_value, cls=EnhancedJSONEncoder)
                 verification_simplified_value = str(explode_value(obj.value, simplify=True))
                 if verification_response is not None:

@@ -13,7 +13,7 @@ import pycyphal
 from pycyphal.application import Node
 from pycyphal.transport.redundant import RedundantTransport
 
-from yukon.domain.update_registe_log_item import UpdateRegisterLogItem
+from yukon.domain.update_register_log_item import UpdateRegisterLogItem
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
 from yukon.domain.message import Message
