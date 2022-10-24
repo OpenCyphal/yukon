@@ -348,7 +348,7 @@ class Api:
         return jsonify(self.state.queues.attach_transport_response.get().to_builtin())
 
     def attach_transport(
-        self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
+            self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()
@@ -459,3 +459,6 @@ class Api:
         return Response(
             response=Dumper().dumps(yaml.load(yaml_in, Loader)), content_type="text/yaml", mimetype="text/yaml"
         )
+
+    # def add_register_update_log_item(self):
+    #     """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
