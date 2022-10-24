@@ -9,7 +9,7 @@ from flask import Flask, jsonify, request
 from flask.blueprints import T_after_request
 from werkzeug.serving import WSGIRequestHandler
 
-from services.enhanced_json_encoder import EnhancedJSONEncoder
+from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.domain.god_state import GodState
 from yukon.services.api import Api
 

@@ -16,7 +16,7 @@ export async function applyConfiguration(configuration, set_node_id, applyPairs,
     let potential_node_id;
     let number_input;
     if (!set_node_id) {
-        number_input = number_input_for_configuration[selected_config];
+        number_input = yukon_state.number_input_for_configuration[yukon_state.selections.selected_config];
         potential_node_id = parseInt(number_input.value);
         yukon_state.addLocalMessage("Node ID was specified as " + potential_node_id, 10);
     } else {
@@ -196,7 +196,7 @@ export async function update_available_configurations_list(yukon_state) {
     var available_configurations_radios = document.querySelector("#available_configurations_radios");
     available_configurations_radios.innerHTML = "";
     let number_input_for_configuration = yukon_state.number_input_for_configuration;
-    let simplified_configurations_flags = {};
+    yukon_state.simplified_configurations_flags = {};
     for (const [file_name, configuration_string] of Object.entries(yukon_state.available_configurations)) {
         // Fill in the available_configurations_radios with radio buttons
         var radio = document.createElement("input");
@@ -224,7 +224,7 @@ export async function update_available_configurations_list(yukon_state) {
         let is_configuration_simplified = await isSimplifiedConfiguration(configuration_string);
         if (is_configuration_simplified) {
             label.innerHTML += " (simplified)";
-            simplified_configurations_flags[file_name] = true;
+            yukon_state.simplified_configurations_flags[file_name] = true;
         }
         // For each key in the conf_deserialized, add a checkbox under the label with the key as the text and id
         let noKeysWereNumbers = true; // This is essentially the same as is_configuration_simplified, but it is determined here locally
@@ -239,6 +239,7 @@ export async function update_available_configurations_list(yukon_state) {
             checkbox.id = key;
             checkbox.checked = true;
             checkbox.onmousedown = function () {
+                yukon_state.addLocalMessage("There isn't actually functionality tied to these checkboxes, yet.", 30);
                 // If the checkbox is checked, add the key to the configuration
                 if (checkbox.checked) {
 

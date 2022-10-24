@@ -39,6 +39,11 @@ logger.setLevel("NOTSET")
 my_os = platform.system()
 
 
+class RegisterDoesNotExistOnNode(Exception):
+    def __init__(self, register_name: str, node_id: int):
+        super().__init__(f"Register {register_name} does not exist on node {node_id}")
+
+
 def cyphal_worker(state: GodState) -> None:
     """It starts the node and keeps adding any transports that are queued for adding"""
 
@@ -218,9 +223,7 @@ def cyphal_worker(state: GodState) -> None:
                                 "Failed to update register {}, it is not mutable".format(register_update.register_name)
                             )
                         if isinstance(access_response.value.empty, uavcan.primitive.Empty_1):
-                            raise NoSuccess(
-                                f"Register {register_update.register_name} does not exist on node {register_update.node_id}."
-                            )
+                            raise RegisterDoesNotExistOnNode(register_update.register_name, register_update.node_id)
                         verification_exploded_value = explode_value(
                             access_response.value,
                             simplify=True,
@@ -262,6 +265,24 @@ def cyphal_worker(state: GodState) -> None:
                             value_before_update,
                         )
                         state.cyphal.register_update_log.append(log_item)
+                        state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
+                        add_local_message(state, str(e), register_update.register_name)
+                    except RegisterDoesNotExistOnNode as e:
+                        response_from_yukon = UpdateRegisterResponse(
+                            register_update.request_id,
+                            register_update.register_name,
+                            register_update.value,
+                            register_update.node_id,
+                            False,
+                            str(e),
+                        )
+                        log_item2: UpdateRegisterLogItem = UpdateRegisterLogItem(
+                            response_from_yukon,
+                            datetime.fromtimestamp(register_update.request_sent_time).strftime("%H:%M:%S.%f"),
+                            response_received_time,
+                            value_before_update,
+                        )
+                        state.cyphal.register_update_log.append(log_item2)
                         state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
                         add_local_message(state, str(e), register_update.register_name)
                 await asyncio.sleep(0.02)
