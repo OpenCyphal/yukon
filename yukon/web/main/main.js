@@ -11,6 +11,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
+    yukon_state.zubax_apij = zubax_apij;
     yukon_state.navigator = window.navigator;
     if (isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_electron();
@@ -48,8 +49,8 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         });
     }
     async function update_avatars_dto() {
-        const text_result = await zubax_api.get_avatars();
-        const obj_result = text_result;
+        const obj_result = await zubax_apij.get_avatars()
+        console.log("Avatars DTO updated.")
         yukon_state.current_avatars = obj_result.avatars;
     }
     function setUpMonitorComponent() {
@@ -59,7 +60,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             update_directed_graph(yukon_state);
         }
 
-        setInterval(get_and_display_avatars, 1000);
+        setInterval(get_and_display_avatars, 3000);
         update_directed_graph(yukon_state);
     }
     function setUpCommandsComponent(container) {
@@ -240,7 +241,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         let isRefreshTextOutAllowed = true;
         async function updateTextOut(refresh_anyway = false) {
             if (!isRefreshTextOutAllowed && !refresh_anyway) { return; }
-            const avatars = await zubax_api.get_avatars()
+            const avatars = await zubax_api.get_avatars();
             const textOut = document.querySelector("#textOut");
             const DTO = JSON.parse(avatars, JsonParseHelper);
             if (DTO.hash != yukon_state.lastHash || refresh_anyway) {
@@ -267,7 +268,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         const containerElement = container.getElement()[0];
         const registerUpdateLog = document.querySelector("#register-update-log");
         async function fetchRegisterUpdateLog() {
-            const items = await zubax_api.get_register_update_log_items();
+            const items = JSON.parse((await zubax_api.get_register_update_log_items()), JsonParseHelper);
             registerUpdateLog.innerHTML = "";
             // Add a header for the table
             const header = document.createElement('tr');

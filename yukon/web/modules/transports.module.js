@@ -30,7 +30,7 @@ export function initTransports(container, yukon_state) {
 
     }
     async function fillSelectionWithSlcan() {
-        const results = await zubax_api.get_slcan_ports();
+        const results = JSON.parse((await zubax_api.get_slcan_ports()), JsonParseHelper);;
         const ports = results.ports;
         const hash = results.hash;
         if (hash !== yukon_state.last_slcan_list_hash) {
