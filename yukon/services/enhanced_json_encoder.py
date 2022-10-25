@@ -4,8 +4,8 @@ from json.encoder import encode_basestring_ascii, encode_basestring, c_make_enco
 import typing
 from uuid import UUID
 
-from domain.attach_transport_response import AttachTransportResponse
-from domain.update_register_log_item import UpdateRegisterLogItem
+from yukon.domain.attach_transport_response import AttachTransportResponse
+from yukon.domain.update_register_log_item import UpdateRegisterLogItem
 from yukon.domain.interface import Interface
 from yukon.domain.detach_transport_response import DetachTransportResponse
 
