@@ -629,7 +629,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                                             type: "component",
                                             componentName: "registerUpdateLogComponent",
                                             isClosable: true,
-                                            title: "Register update logs",
+                                            title: "Register logs",
                                         }
                                     ]
                                 },

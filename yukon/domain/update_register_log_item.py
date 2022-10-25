@@ -14,11 +14,3 @@ class UpdateRegisterLogItem:
     request_sent_time: Optional[str]
     response_received_time: Optional[str]
     previous_value: str
-
-    def to_builtin(self) -> typing.Dict[str, typing.Any]:
-        return {
-            "response": self.response.to_builtin(),
-            "request_sent_time": self.request_sent_time,
-            "response_received_time": self.response_received_time,
-            "previous_value": self.previous_value,
-        }

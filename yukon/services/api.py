@@ -421,8 +421,12 @@ class Api:
         self.state.gui.message_severity = severity
 
     def get_connected_transport_interfaces(self) -> Response:
-        composed_list = [x.to_builtin() for x in self.state.cyphal.transports_list]
-        return jsonify({"interfaces": composed_list, "hash": hash(json.dumps(composed_list, sort_keys=True))})
+        return jsonify(
+            {
+                "interfaces": self.state.cyphal.transports_list,
+                "hash": hash(json.dumps(self.state.cyphal.transports_list, sort_keys=True, cls=EnhancedJSONEncoder)),
+            }
+        )
 
     def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
         send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)

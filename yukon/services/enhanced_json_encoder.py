@@ -4,15 +4,50 @@ from json.encoder import encode_basestring_ascii, encode_basestring, c_make_enco
 import typing
 from uuid import UUID
 
+from domain.attach_transport_response import AttachTransportResponse
+from domain.update_register_log_item import UpdateRegisterLogItem
+from yukon.domain.interface import Interface
+from yukon.domain.detach_transport_response import DetachTransportResponse
+
 INFINITY = float("inf")
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, o: typing.Any) -> typing.Any:
-        if dataclasses.is_dataclass(o):
-            return dataclasses.asdict(o)
         if isinstance(o, UUID):
             return str(o)
+        if isinstance(o, DetachTransportResponse):
+            return {
+                "is_success": o.is_success,
+                "interface_disconnected": o.interface_disconnected,
+                "message": o.message,
+            }
+        if isinstance(o, Interface):
+            return {
+                "iface": o.iface,
+                "mtu": o.mtu,
+                "rate_data": o.rate_data,
+                "rate_arb": o.rate_arb,
+                "is_udp": o.is_udp,
+                "udp_iface": o.udp_iface,
+                "udp_mtu": o.udp_mtu,
+                "hash": str(o.__hash__()),
+            }
+        if isinstance(o, AttachTransportResponse):
+            return {
+                "is_success": o.is_success,
+                "message": o.message,
+                "message_short": o.message_short,
+            }
+        if isinstance(o, UpdateRegisterLogItem):
+            return {
+                "response": o.response,
+                "request_sent_time": o.request_sent_time,
+                "response_received_time": o.response_received_time,
+                "previous_value": o.previous_value,
+            }
+        if dataclasses.is_dataclass(o):
+            return dataclasses.asdict(o)
         return super().default(o)
 
     def iterencode(self, o: typing.Any, _one_shot: bool = False) -> typing.Any:
