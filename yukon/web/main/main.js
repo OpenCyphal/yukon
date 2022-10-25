@@ -1,6 +1,6 @@
 import { make_context_menus } from '../modules/context-menu.module.js';
 import { create_directed_graph, refresh_graph_layout, update_directed_graph } from '../modules/monitor.module.js';
-import { secondsToString, JsonParseHelper, isRunningInElectron, areThereAnyActiveModals } from "../modules/utilities.module.js";
+import { secondsToString, JsonParseHelper, isRunningInElectron, areThereAnyActiveModals, getKnownDatatypes } from "../modules/utilities.module.js";
 import { loadConfigurationFromOpenDialog, return_all_selected_registers_as_yaml } from '../modules/yaml.configurations.module.js';
 import { create_registers_table, update_tables } from '../modules/registers.module.js';
 import { get_all_selected_pairs, unselectAll, selectAll, oneSelectedConstraint, moreThanOneSelectedConstraint } from '../modules/registers.selection.module.js';
@@ -122,15 +122,23 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             disableOrEnableArguments();
         });
         btnSendCommand.addEventListener("click", async function (event) {
-            const result = await zubax_api.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
+            const result = await zubax_apij.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
             if (!result.success) {
                 feedbackMessage.classList.remove("success");
                 feedbackMessage.style.display = "block";
-                feedbackMessage.innerHTML = result.message || "No information.";
+                if(result.message) {
+                    feedbackMessage.innerHTML = result.message;
+                } else {
+                    feedbackMessage.innerHTML = "";
+                }
             } else {
                 feedbackMessage.classList.add("success");
                 feedbackMessage.style.display = "block";
-                feedbackMessage.innerHTML = result.message || "No information.";
+                if(result.message) {
+                    feedbackMessage.innerHTML = result.message;
+                } else {
+                    feedbackMessage.innerHTML = "";
+                }
             }
 
         });
@@ -210,6 +218,21 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         }
         setInterval(syncList, 1143);
     }
+    async function setUpSubscriptionsComponent(container) {
+        const containerElement = container.getElement()[0];
+        const iSelectDatatype = containerElement.querySelector('#iSelectDatatype');
+        const btnRefreshKnownDatatypes = containerElement.querySelector('#btnRefreshKnownDatatypes');
+        btnRefreshKnownDatatypes.addEventListener('click', async () => {
+            const knownDatatypes = getKnownDatatypes(yukon_state);
+            for(const datatype of knownDatatypes) {
+                // Add a new option to the select
+                const option = document.createElement('option');
+                option.value = datatype;
+                option.innerHTML = datatype;
+                iSelectDatatype.appendChild(option);
+            }
+        });
+    }
     async function setUpRegistersComponent(immediateCreateTable) {
         if (immediateCreateTable) {
             await update_avatars_dto();
@@ -269,6 +292,9 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             registerUpdateLog.innerHTML = "";
             // Add a header for the table
             const header = document.createElement('tr');
+            const header_name = document.createElement('th');
+            header_name.innerHTML = "Name";
+            header.appendChild(header_name);
             const header_timestamp = document.createElement('th');
             header_timestamp.innerHTML = "Previous value";
             header.appendChild(header_timestamp);
@@ -288,16 +314,22 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             for (const item of items) {
                 // Create fields for new_value, previous_value, request_sent_time, request_received_time
                 const row = registerUpdateLog.insertRow();
-                const previous_value_cell = row.insertCell(0);
-                const new_value_cell = row.insertCell(1);
-                const request_sent_time_cell = row.insertCell(2);
-                const response_received_time_cell = row.insertCell(3);
-                const success = row.insertCell(4);
-                new_value_cell.innerHTML = item.response.value;
+                const name_value_cell = row.insertCell(0);
+                const previous_value_cell = row.insertCell(1);
+                const new_value_cell = row.insertCell(2);
+                const request_sent_time_cell = row.insertCell(3);
+                const response_received_time_cell = row.insertCell(4);
+                const success = row.insertCell(5);
+                name_value_cell.innerHTML = item.register_name;
+                if(item.response) {
+                    new_value_cell.innerHTML = item.response.value;
+                } else {
+                    new_value_cell.innerHTML = item.previous_value;
+                }
                 previous_value_cell.innerHTML = item.previous_value;
                 request_sent_time_cell.innerHTML = item.request_sent_time;
                 response_received_time_cell.innerHTML = item.response_received_time;
-                if(item.response.success) {
+                if(item.success) {
                     success.innerHTML = "✓";
                 } else {
                     success.innerHTML = "✗";
@@ -582,6 +614,12 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                                             isClosable: true,
                                             title: 'Registers',
                                         },
+                                        {
+                                            type: 'component',
+                                            componentName: 'subsComponent',
+                                            isClosable: true,
+                                            title: 'Subs',
+                                        },
                                     ]
                                 },
                                 {
@@ -766,6 +804,13 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                         const containerElement = container.getElement()[0];
                         containerElementToContainerObjectMap.set(containerElement, container);
                         setUpRegisterUpdateLogComponent.bind(outsideContext)(container);
+                    });
+                });
+                myLayout.registerComponent("subsComponent", function (container, componentState) {
+                    registerComponentAction("../subscriptions.panel.html", "subsComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpSubscriptionsComponent.bind(outsideContext)(container);
                     });
                 });
                 const useSVG = true;

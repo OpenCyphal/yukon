@@ -26,6 +26,27 @@ export function getDictionaryValueFieldName(dictionary) {
         }
     }
 }
+
+export function getKnownDatatypes(yukon_state)
+{
+    let knownDatatypes = [];
+    for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+        let avatar = yukon_state.current_avatars[i];
+        // For each register in registers_exploded
+        for (let register_name in avatar.registers_exploded) {
+            if (register_name.endsWith(".id")) {
+                const register_name_split = register_name.split(".");
+                const link_name = register_name_split[register_name_split.length - 2];
+                const datatype = avatar.registers_exploded.find((a) => a.endsWith(link_name + ".type"));
+                if (datatype) {
+                    knownDatatypes.push(datatype);
+                }
+            }
+        }
+    }
+    return knownDatatypes;
+}
+
 export function isRunningInElectron(yukon_state) {
     const does_navigator_exist = typeof yukon_state.navigator === 'object';
     const is_user_agent_a_string = typeof yukon_state.navigator.userAgent === 'string';

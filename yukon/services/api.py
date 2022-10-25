@@ -1,13 +1,10 @@
-from inspect import getsource
+from datetime import datetime
 import json
-import os
 import re
 import typing
-import webbrowser
 from pathlib import Path
 from time import sleep, monotonic
 import logging
-from zoneinfo import available_timezones
 import yaml
 from uuid import uuid4
 from time import time
@@ -21,6 +18,7 @@ from flask import jsonify, Response
 
 import uavcan
 from yukon.domain.reread_registers_request import RereadRegistersRequest
+from yukon.domain.update_register_log_item import UpdateRegisterLogItem
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
 from yukon.services.get_ports import get_socketcan_ports, get_slcan_ports
 from yukon.services._dumper import Dumper
@@ -31,9 +29,7 @@ from yukon.domain.avatar import Avatar
 from yukon.services.value_utils import unexplode_value, explode_value
 from yukon.domain.god_state import GodState
 from yukon.services.messages_publisher import add_local_message
-from yukon.services.get_electron_path import get_electron_path
 from yukon.domain.command_send_request import CommandSendRequest
-from yukon.domain.command_send_response import CommandSendResponse
 from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
@@ -200,6 +196,23 @@ def make_yaml_string_node_ids_numbers(serialized_conf: str) -> str:
     # Using regex, replace "(\d)": with "\1": to make the node_ids numbers.
     # This is to make the YAML file more readable.
     return re.sub(r"['\"](\d+)['\"]", r"\1", serialized_conf)
+
+
+def add_register_update_log_item(
+    state: GodState, register_name: str, register_value: str, node_id: str, success: bool
+) -> None:
+    """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
+    request_sent_time = datetime.fromtimestamp(time()).strftime("%H:%M:%S.%f")
+    target_avatar = state.avatar.avatars_by_node_id.get(int(node_id))
+    if target_avatar:
+        value_before_update = target_avatar.register_values.get(register_name)
+        if not value_before_update:
+            value_before_update = ""
+    else:
+        value_before_update = ""
+    state.cyphal.register_update_log.append(
+        UpdateRegisterLogItem(None, register_name, request_sent_time, None, value_before_update, success)
+    )
 
 
 class SendingApi:
@@ -465,5 +478,6 @@ class Api:
             response=Dumper().dumps(yaml.load(yaml_in, Loader)), content_type="text/yaml", mimetype="text/yaml"
         )
 
-    # def add_register_update_log_item(self):
-    #     """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
+    def add_register_update_log_item(self, register_name: str, register_value: str, node_id: str, success: str) -> None:
+        """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
+        add_register_update_log_item(self.state, register_name, register_value, node_id, bool(success))

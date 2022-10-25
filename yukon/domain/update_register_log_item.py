@@ -10,7 +10,9 @@ from yukon.domain.update_register_response import UpdateRegisterResponse
 
 @dataclass
 class UpdateRegisterLogItem:
-    response: UpdateRegisterResponse
+    response: Optional[UpdateRegisterResponse]
+    register_name: str
     request_sent_time: Optional[str]
     response_received_time: Optional[str]
-    previous_value: str
+    previous_value: Optional[str]
+    success: bool
