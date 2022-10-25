@@ -205,6 +205,23 @@ def make_yaml_string_node_ids_numbers(serialized_conf: str) -> str:
     return re.sub(r"['\"](\d+)['\"]", r"\1", serialized_conf)
 
 
+def add_register_update_log_item(
+    state: GodState, register_name: str, register_value: str, node_id: str, success: bool
+) -> None:
+    """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
+    request_sent_time = datetime.fromtimestamp(time()).strftime("%H:%M:%S.%f")
+    target_avatar = state.avatar.avatars_by_node_id.get(int(node_id))
+    if target_avatar:
+        value_before_update = target_avatar.register_values.get(register_name)
+        if not value_before_update:
+            value_before_update = ""
+    else:
+        value_before_update = ""
+    state.cyphal.register_update_log.append(
+        UpdateRegisterLogItem(None, register_name, request_sent_time, None, value_before_update, success)
+    )
+
+
 class SendingApi:
     async def send_message(self, message: typing.Any) -> None:
         async with await websockets.connect("ws://localhost:8765/hello") as websocket:
@@ -470,15 +487,4 @@ class Api:
 
     def add_register_update_log_item(self, register_name: str, register_value: str, node_id: str, success: str) -> None:
         """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
-        request_sent_time = datetime.fromtimestamp(time()).strftime("%H:%M:%S.%f")
-        new_value: uavcan.register.Value_1 = unexplode_value(register_value)
-        value_before_update: str = self.state.avatar.avatars_by_node_id[int(node_id)].register_values[register_name]
-        if success.lower().strip() == "true":
-            success_bool = True
-        elif success.lower().strip() == "false":
-            success_bool = False
-        else:
-            raise Exception("Invalid success value")
-        self.state.queues.register_update_log.append(
-            UpdateRegisterLogItem(None, register_name, request_sent_time, None, value_before_update, success_bool)
-        )
+        add_register_update_log_item(self.state, register_name, register_value, node_id, bool(success))

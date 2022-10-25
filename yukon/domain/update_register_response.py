@@ -9,7 +9,7 @@ import uavcan.register
 class UpdateRegisterResponse:
     request_id: UUID
     register_name: str
-    value: str
+    value: uavcan.register.Value_1
     node_id: int
     success: bool
     message: str

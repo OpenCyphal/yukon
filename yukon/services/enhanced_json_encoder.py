@@ -41,13 +41,6 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                 "message": o.message,
                 "message_short": o.message_short,
             }
-        if isinstance(o, UpdateRegisterLogItem):
-            return {
-                "response": o.response,
-                "request_sent_time": o.request_sent_time,
-                "response_received_time": o.response_received_time,
-                "previous_value": o.previous_value,
-            }
         if isinstance(o, uavcan.register.Value_1):
             verification_exploded_value = explode_value(
                 o,
