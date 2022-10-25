@@ -1,3 +1,4 @@
+from datetime import datetime
 from inspect import getsource
 import json
 import os
@@ -11,6 +12,8 @@ from zoneinfo import available_timezones
 import yaml
 from uuid import uuid4
 from time import time
+
+from domain.update_register_log_item import UpdateRegisterLogItem
 
 try:
     from yaml import CLoader as Loader
@@ -465,5 +468,17 @@ class Api:
             response=Dumper().dumps(yaml.load(yaml_in, Loader)), content_type="text/yaml", mimetype="text/yaml"
         )
 
-    # def add_register_update_log_item(self):
-    #     """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
+    def add_register_update_log_item(self, register_name: str, register_value: str, node_id: str, success: str) -> None:
+        """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
+        request_sent_time = datetime.fromtimestamp(time()).strftime("%H:%M:%S.%f")
+        new_value: uavcan.register.Value_1 = unexplode_value(register_value)
+        value_before_update: str = self.state.avatar.avatars_by_node_id[int(node_id)].register_values[register_name]
+        if success.lower().strip() == "true":
+            success_bool = True
+        elif success.lower().strip() == "false":
+            success_bool = False
+        else:
+            raise Exception("Invalid success value")
+        self.state.queues.register_update_log.append(
+            UpdateRegisterLogItem(None, register_name, request_sent_time, None, value_before_update, success_bool)
+        )

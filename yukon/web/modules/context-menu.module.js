@@ -15,6 +15,7 @@ export function make_context_menus(yukon_state) {
                 const cell = elementOpenedOn;
                 // If cell is a th then
                 let pairs = null;
+                let node_id = null;
                 if (cell.tagName == "TH") {
                     // If the cell has class left-side-table-header
                     if (cell.classList.contains("left-side-table-header")) {
@@ -26,7 +27,7 @@ export function make_context_menus(yukon_state) {
                         }, yukon_state);
                     } else {
                         // Get the node_id and register_name from the cell
-                        const node_id = cell.getAttribute("data-node_id");
+                        node_id = cell.getAttribute("data-node_id");
                         pairs = get_all_selected_pairs({
                             "only_of_avatar_of_node_id": node_id,
                             "get_everything": false,
@@ -36,7 +37,7 @@ export function make_context_menus(yukon_state) {
 
                 } else if (cell.tagName == "TD" || cell.tagName == "INPUT") {
                     // Get the node_id and register_name from the cell
-                    const node_id = cell.getAttribute("node_id");
+                    node_id = cell.getAttribute("node_id");
                     const register_name = cell.getAttribute("register_name");
                     pairs = get_all_selected_pairs({
                         "only_of_avatar_of_node_id": false,
@@ -48,8 +49,6 @@ export function make_context_menus(yukon_state) {
                         pairs[node_id][register_name] = true;
                     }
                 }
-                const node_id = cell.getAttribute("node_id");
-                const register_name = cell.getAttribute("register_name");
                 const current_config = yukon_state.available_configurations[yukon_state.selections.selected_config];
                 if (current_config) {
                     applyConfiguration(current_config, parseInt(node_id), pairs, yukon_state);

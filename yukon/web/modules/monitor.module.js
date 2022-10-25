@@ -80,6 +80,10 @@ export function create_directed_graph(yukon_state) {
                         const commandsComponentOuterElement = currentElement.getActiveContentItem().element[0];
                         const nodeIdInput = commandsComponentOuterElement.querySelector("#iNodeId");
                         nodeIdInput.value = evt.target.id();
+                    } else if (currentElement.getActiveContentItem().config.componentName == "subsComponent") {
+                        const commandsComponentOuterElement = currentElement.getActiveContentItem().element[0];
+                        const subjectIdInput = commandsComponentOuterElement.querySelector("#iSubjectId");
+                        subjectIdInput.value = evt.target.id();
                     }
                 } else {
                     for (const contentItem of currentElement.contentItems) {

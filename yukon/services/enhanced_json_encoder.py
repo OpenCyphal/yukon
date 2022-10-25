@@ -4,6 +4,8 @@ from json.encoder import encode_basestring_ascii, encode_basestring, c_make_enco
 import typing
 from uuid import UUID
 
+import uavcan
+from yukon.services.value_utils import explode_value
 from yukon.domain.attach_transport_response import AttachTransportResponse
 from yukon.domain.update_register_log_item import UpdateRegisterLogItem
 from yukon.domain.interface import Interface
@@ -46,6 +48,13 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                 "response_received_time": o.response_received_time,
                 "previous_value": o.previous_value,
             }
+        if isinstance(o, uavcan.register.Value_1):
+            verification_exploded_value = explode_value(
+                o,
+                simplify=True,
+            )
+            verification_exploded_value_str = json.dumps(verification_exploded_value, cls=EnhancedJSONEncoder)
+            return verification_exploded_value_str
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
         return super().default(o)

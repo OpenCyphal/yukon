@@ -12,20 +12,18 @@ from time import sleep, monotonic
 import subprocess
 import mimetypes
 import sentry_sdk
+from yukon.services.cyphal_worker.cyphal_worker import cyphal_worker
+
 from yukon.domain.interface import Interface
-
-from yukon.services.messages_publisher import MessagesPublisher
-from yukon.services.cyphal_worker import cyphal_worker
-from yukon.services.terminate_handler import make_terminate_handler
-
-from yukon.domain.god_state import GodState
-from yukon.sentry_setup import setup_sentry
-from yukon.server import server, make_landing_and_bridge
-from yukon.services.api import Api, SendingApi
-from yukon.services.get_electron_path import get_electron_path
-
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.attach_transport_response import AttachTransportResponse
+from yukon.domain.god_state import GodState
+from yukon.services.messages_publisher import MessagesPublisher
+from yukon.services.terminate_handler import make_terminate_handler
+from yukon.services.api import Api, SendingApi
+from yukon.services.get_electron_path import get_electron_path
+from yukon.sentry_setup import setup_sentry
+from yukon.server import server, make_landing_and_bridge
 
 mimetypes.add_type("text/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
