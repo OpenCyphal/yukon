@@ -69,14 +69,18 @@ def cyphal_worker(state: GodState) -> None:
                             if state.cyphal.already_used_transport_interfaces.get(atr.requested_interface.iface):
                                 raise Exception("Interface already in use")
                         new_transport = make_transport(atr.get_registry())
-                        if atr.requested_interface.is_udp and os.environ.get("YUKON_IS_UDP_FAULTY"):
-                            new_transport = FaultyTransport(new_transport)
-                            new_transport.faulty = True
-
+                        try:
+                            if atr.requested_interface.is_udp and os.environ.get("YUKON_IS_UDP_FAULTY"):
+                                new_transport = FaultyTransport(new_transport)
+                                new_transport.faulty = True
+                            state.cyphal.pseudo_transport.attach_inferior(new_transport)
+                        except Exception:
+                            new_transport.close()
+                            state.cyphal.pseudo_transport.detach_inferior(new_transport)
+                            raise
                         state.cyphal.inferior_transports_by_interface_hashes[
                             str(hash(atr.requested_interface))
                         ] = new_transport
-                        state.cyphal.pseudo_transport.attach_inferior(new_transport)
                         attach_transport_response = AttachTransportResponse(True, atr.requested_interface.iface)
                         state.cyphal.transports_list.append(atr.requested_interface)
                         state.queues.attach_transport_response.put(attach_transport_response)

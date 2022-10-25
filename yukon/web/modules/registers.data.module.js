@@ -39,8 +39,17 @@ export async function update_register_value(register_name, register_value, node_
                 return;
             }
             unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"] = register_values;
+        } else if (typeof unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"][0] == "string") {
+            // Split register_value by comma and convert to array of numbers
+            // Remove square brackets
+            register_value = register_value.replace("[", "").replace("]", "");
+            let register_values = register_value.split(",").map(Number);
+            unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"] = register_values;
         } else {
-            yukon_state.addLocalMessage("Support for this datatype hasn't been implemented in Yukon yet.")
+            yukon_state.addLocalMessage("Support for this datatype hasn't been implemented in Yukon yet.", 40)
+            yukon_state.addLocalMessage("The type is " + typeof unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"][0], 40);
+            // And the string representation is
+            yukon_state.addLocalMessage("The string representation is " + unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"][0], 40);
             console.error("Support for this datatype hasn't been implemented in Yukon yet.")
         }
     } else {

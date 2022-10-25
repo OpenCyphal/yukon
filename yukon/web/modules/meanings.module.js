@@ -23,18 +23,23 @@ export const meanings = {
     8174: "OutgoingPacket (udp)",
 }
 
-export function getConfiguredSubjectServiceName(intId, yukon_state) {
-    let possibleRegisterNames = [];
+export function getLinkInfo(subject_id, node_id, yukon_state) {
+    let infos = [];
     for (var i = 0; i < yukon_state.current_avatars.length; i++) {
         const avatar = yukon_state.current_avatars[i];
-        const explodedRegistersKeys = Object.keys(avatar.registers_values);
-        for (var j = 0; j < explodedRegistersKeys.length; j++) {
-            const register_name = explodedRegistersKeys[j];
-            const value = avatar.registers_values[register_name];
-            if (parseInt(value) == intId && register_name.includes(".id")) {
-                possibleRegisterNames.push(register_name);
+        if(avatar.node_id == node_id) {
+            const explodedRegistersKeys = Object.keys(avatar.registers_values);
+            for (var j = 0; j < explodedRegistersKeys.length; j++) {
+                const register_name = explodedRegistersKeys[j];
+                const register_name_split = register_name.split(".");
+                const link_name = register_name_split[register_name_split.length - 2];
+                const value = avatar.registers_values[register_name];
+                if (parseInt(value) == subject_id && register_name.endsWith(".id")) {
+                    const datatype = explodedRegistersKeys.find((a) => a.endsWith(link_name + ".type"));
+                    infos.push({name: link_name, type: datatype});
+                }
             }
         }
     }
-    return Array.from(new Set(possibleRegisterNames));
+    return Array.from(new Set(infos));
 }
