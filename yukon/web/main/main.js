@@ -11,6 +11,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
+    yukon_state.zubax_apij = zubax_apij;
     yukon_state.navigator = window.navigator;
     if (isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_electron();
@@ -48,8 +49,8 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         });
     }
     async function update_avatars_dto() {
-        const text_result = await zubax_api.get_avatars();
-        const obj_result = text_result;
+        const obj_result = await zubax_apij.get_avatars()
+        console.log("Avatars DTO updated.")
         yukon_state.current_avatars = obj_result.avatars;
     }
     function setUpMonitorComponent() {
@@ -59,7 +60,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             update_directed_graph(yukon_state);
         }
 
-        setInterval(get_and_display_avatars, 1000);
+        setInterval(get_and_display_avatars, 3000);
         update_directed_graph(yukon_state);
     }
     function setUpCommandsComponent(container) {
@@ -122,17 +123,14 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         });
         btnSendCommand.addEventListener("click", async function (event) {
             const result = await zubax_api.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
-            if (result.message == undefined) {
-                result.message = "No information.";
-            }
             if (!result.success) {
                 feedbackMessage.classList.remove("success");
                 feedbackMessage.style.display = "block";
-                feedbackMessage.innerHTML = result.message;
+                feedbackMessage.innerHTML = result.message || "No information.";
             } else {
                 feedbackMessage.classList.add("success");
                 feedbackMessage.style.display = "block";
-                feedbackMessage.innerHTML = result.message;
+                feedbackMessage.innerHTML = result.message || "No information.";
             }
 
         });
@@ -240,7 +238,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         let isRefreshTextOutAllowed = true;
         async function updateTextOut(refresh_anyway = false) {
             if (!isRefreshTextOutAllowed && !refresh_anyway) { return; }
-            const avatars = await zubax_api.get_avatars()
+            const avatars = await zubax_api.get_avatars();
             const textOut = document.querySelector("#textOut");
             const DTO = JSON.parse(avatars, JsonParseHelper);
             if (DTO.hash != yukon_state.lastHash || refresh_anyway) {
@@ -267,7 +265,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
         const containerElement = container.getElement()[0];
         const registerUpdateLog = document.querySelector("#register-update-log");
         async function fetchRegisterUpdateLog() {
-            const items = await zubax_api.get_register_update_log_items();
+            const items = await zubax_apij.get_register_update_log_items();
             registerUpdateLog.innerHTML = "";
             // Add a header for the table
             const header = document.createElement('tr');
@@ -434,7 +432,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             var messagesList = document.querySelector("#messages-list");
             var cbAutoscroll = document.querySelector("#cbAutoscroll");
             if (!messagesList || !cbAutoscroll) { return; }
-            zubax_api.get_messages(lastIndex + 1).then(
+            zubax_apij.get_messages(lastIndex + 1).then(
                 function (messages) {
                     // Clear messages-list
                     if (document.getElementById("cDeleteOldMessages").checked) {
@@ -449,7 +447,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                         }
                     }
                     // Add messages to messages-list
-                    var messagesObject = JSON.parse(messages);
+                    var messagesObject = messages;
                     // Make sure that type of d is array
                     console.assert(messagesObject instanceof Array);
                     for (const el of messagesObject) {
@@ -631,7 +629,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                                             type: "component",
                                             componentName: "registerUpdateLogComponent",
                                             isClosable: true,
-                                            title: "Register update logs",
+                                            title: "Register logs",
                                         }
                                     ]
                                 },

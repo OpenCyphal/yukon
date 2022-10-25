@@ -2,12 +2,50 @@ import dataclasses
 import json
 from json.encoder import encode_basestring_ascii, encode_basestring, c_make_encoder, _make_iterencode  # type: ignore
 import typing
+from uuid import UUID
+
+from yukon.domain.attach_transport_response import AttachTransportResponse
+from yukon.domain.update_register_log_item import UpdateRegisterLogItem
+from yukon.domain.interface import Interface
+from yukon.domain.detach_transport_response import DetachTransportResponse
 
 INFINITY = float("inf")
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, o: typing.Any) -> typing.Any:
+        if isinstance(o, UUID):
+            return str(o)
+        if isinstance(o, DetachTransportResponse):
+            return {
+                "is_success": o.is_success,
+                "interface_disconnected": o.interface_disconnected,
+                "message": o.message,
+            }
+        if isinstance(o, Interface):
+            return {
+                "iface": o.iface,
+                "mtu": o.mtu,
+                "rate_data": o.rate_data,
+                "rate_arb": o.rate_arb,
+                "is_udp": o.is_udp,
+                "udp_iface": o.udp_iface,
+                "udp_mtu": o.udp_mtu,
+                "hash": str(o.__hash__()),
+            }
+        if isinstance(o, AttachTransportResponse):
+            return {
+                "is_success": o.is_success,
+                "message": o.message,
+                "message_short": o.message_short,
+            }
+        if isinstance(o, UpdateRegisterLogItem):
+            return {
+                "response": o.response,
+                "request_sent_time": o.request_sent_time,
+                "response_received_time": o.response_received_time,
+                "previous_value": o.previous_value,
+            }
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
         return super().default(o)
@@ -91,6 +129,8 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                 return encode_basestring_ascii(o)
             else:
                 return encode_basestring(o)
+        if isinstance(o, UUID):
+            return str(o)
         # This doesn't pass the iterator directly to ''.join() because the
         # exceptions aren't as detailed.  The list call should be roughly
         # equivalent to the PySequence_Fast that ''.join() would do.

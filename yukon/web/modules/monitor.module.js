@@ -1,6 +1,6 @@
 import { secondsToString } from "./utilities.module.js";
 import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
-import { meanings, getConfiguredSubjectServiceName } from "./meanings.module.js";
+import { meanings, getLinkInfo } from "./meanings.module.js";
 export function create_directed_graph(yukon_state) {
     cytoscape.use(cytoscapeKlay);
     let my_graph = cytoscape({
@@ -109,12 +109,12 @@ export function create_directed_graph(yukon_state) {
             createMonitorPopup(assembled_text, yukon_state);
             return;
         }
-        const possibleAvailableConfiguredMeaning = getConfiguredSubjectServiceName(parseInt(node.id()), yukon_state);
-        if (possibleAvailableConfiguredMeaning) {
-            const assembled_text = possibleAvailableConfiguredMeaning;
-            createMonitorPopup(assembled_text, yukon_state);
-            return;
-        }
+//        const linkInfo = getLinkInfo(parseInt(node.id()), yukon_state);
+//        if (linkInfo.name || linkInfo.type) {
+//            const assembled_text = "Link name: " + linkInfo.name + "\n" + "Type: " + linkInfo.type;
+//            createMonitorPopup(assembled_text, yukon_state);
+//            return;
+//        }
     });
     my_graph.on('mouseout', 'node', function (evt) {
         var node = evt.target;
@@ -268,7 +268,17 @@ export function update_directed_graph(yukon_state) {
     for (const avatar of yukon_state.current_avatars) {
         for (const sub of avatar.ports.sub) {
             if (available_publishers[sub]) {
-                my_graph.add([{ data: { source: sub, target: avatar.node_id, label: "A nice label" } }]);
+                let assembled_text = "link";
+                const linkInfos = getLinkInfo(parseInt(sub), avatar.node_id, yukon_state);
+                if (linkInfos.length > 0) {
+                    assembled_text = "Link name: " + linkInfos[0].name + "\n" + "Type: " + linkInfos[0].type;
+                    my_graph.add([{ data: { id: avatar.node_id + "" + sub, label: assembled_text } }]);
+                    my_graph.add([{ data: { source: sub, target: avatar.node_id + "" + sub, label: "A nice label" } }]);
+                    my_graph.add([{ data: { source: avatar.node_id + "" + sub, target: avatar.node_id, label: "A nice label" } }]);
+                } else {
+                    my_graph.add([{ data: { source: sub, target: avatar.node_id, label: "A nice label" } }])
+                }
+
             }
         }
         for (const cln of avatar.ports.cln) {
@@ -277,5 +287,6 @@ export function update_directed_graph(yukon_state) {
             }
         }
     }
+
     refresh_graph_layout(my_graph);
 }

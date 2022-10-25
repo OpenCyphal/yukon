@@ -39,6 +39,11 @@ logger.setLevel("NOTSET")
 my_os = platform.system()
 
 
+class RegisterDoesNotExistOnNode(Exception):
+    def __init__(self, register_name: str, node_id: int):
+        super().__init__(f"Register {register_name} does not exist on node {node_id}")
+
+
 def cyphal_worker(state: GodState) -> None:
     """It starts the node and keeps adding any transports that are queued for adding"""
 
@@ -64,14 +69,18 @@ def cyphal_worker(state: GodState) -> None:
                             if state.cyphal.already_used_transport_interfaces.get(atr.requested_interface.iface):
                                 raise Exception("Interface already in use")
                         new_transport = make_transport(atr.get_registry())
-                        if atr.requested_interface.is_udp and os.environ.get("YUKON_IS_UDP_FAULTY"):
-                            new_transport = FaultyTransport(new_transport)
-                            new_transport.faulty = True
-
+                        try:
+                            if atr.requested_interface.is_udp and os.environ.get("YUKON_IS_UDP_FAULTY"):
+                                new_transport = FaultyTransport(new_transport)
+                                new_transport.faulty = True
+                            state.cyphal.pseudo_transport.attach_inferior(new_transport)
+                        except Exception:
+                            new_transport.close()
+                            state.cyphal.pseudo_transport.detach_inferior(new_transport)
+                            raise
                         state.cyphal.inferior_transports_by_interface_hashes[
                             str(hash(atr.requested_interface))
                         ] = new_transport
-                        state.cyphal.pseudo_transport.attach_inferior(new_transport)
                         attach_transport_response = AttachTransportResponse(True, atr.requested_interface.iface)
                         state.cyphal.transports_list.append(atr.requested_interface)
                         state.queues.attach_transport_response.put(attach_transport_response)
@@ -218,9 +227,7 @@ def cyphal_worker(state: GodState) -> None:
                                 "Failed to update register {}, it is not mutable".format(register_update.register_name)
                             )
                         if isinstance(access_response.value.empty, uavcan.primitive.Empty_1):
-                            raise NoSuccess(
-                                f"Register {register_update.register_name} does not exist on node {register_update.node_id}."
-                            )
+                            raise RegisterDoesNotExistOnNode(register_update.register_name, register_update.node_id)
                         verification_exploded_value = explode_value(
                             access_response.value,
                             simplify=True,
@@ -264,6 +271,24 @@ def cyphal_worker(state: GodState) -> None:
                         state.cyphal.register_update_log.append(log_item)
                         state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
                         add_local_message(state, str(e), register_update.register_name)
+                    except RegisterDoesNotExistOnNode as e:
+                        response_from_yukon = UpdateRegisterResponse(
+                            register_update.request_id,
+                            register_update.register_name,
+                            register_update.value,
+                            register_update.node_id,
+                            False,
+                            str(e),
+                        )
+                        log_item2: UpdateRegisterLogItem = UpdateRegisterLogItem(
+                            response_from_yukon,
+                            datetime.fromtimestamp(register_update.request_sent_time).strftime("%H:%M:%S.%f"),
+                            response_received_time,
+                            value_before_update,
+                        )
+                        state.cyphal.register_update_log.append(log_item2)
+                        state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
+                        add_local_message(state, str(e), register_update.register_name)
                 await asyncio.sleep(0.02)
                 if not state.queues.apply_configuration.empty():
                     config = state.queues.apply_configuration.get_nowait()
@@ -287,7 +312,9 @@ def cyphal_worker(state: GodState) -> None:
                                 prototype = unexplode_value(prototype_string)
                                 unexploded_value = unexplode_value(register_value, prototype)
                                 state.queues.update_registers.put(
-                                    UpdateRegisterRequest(uuid4(), register_name, unexploded_value, config.node_id)
+                                    UpdateRegisterRequest(
+                                        uuid4(), register_name, unexploded_value, config.node_id, time.time()
+                                    )
                                 )
                             if not at_least_one_register_was_modified:
                                 add_local_message(
@@ -303,7 +330,9 @@ def cyphal_worker(state: GodState) -> None:
                                         value = json.loads(value)
                                     unexploded_value = unexplode_value(value)
                                     state.queues.update_registers.put(
-                                        UpdateRegisterRequest(uuid4(), register_name, unexploded_value, config.node_id)
+                                        UpdateRegisterRequest(
+                                            uuid4(), register_name, unexploded_value, config.node_id, time.time()
+                                        )
                                     )
                     elif config.is_network_config:
                         logger.debug("Setting configuration for all configured nodes")
@@ -317,7 +346,7 @@ def cyphal_worker(state: GodState) -> None:
                                 continue
                             for k, v in register_values_exploded.items():
                                 state.queues.update_registers.put(
-                                    UpdateRegisterRequest(uuid4(), k, unexplode_value(v), int(node_id))
+                                    UpdateRegisterRequest(uuid4(), k, unexplode_value(v), int(node_id), time.time())
                                 )
                     else:
                         raise Exception("Didn't do anything with this configuration")
