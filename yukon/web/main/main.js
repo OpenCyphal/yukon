@@ -122,15 +122,23 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             disableOrEnableArguments();
         });
         btnSendCommand.addEventListener("click", async function (event) {
-            const result = await zubax_api.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
+            const result = await zubax_apij.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
             if (!result.success) {
                 feedbackMessage.classList.remove("success");
                 feedbackMessage.style.display = "block";
-                feedbackMessage.innerHTML = result.message || "No information.";
+                if(result.message) {
+                    feedbackMessage.innerHTML = result.message;
+                } else {
+                    feedbackMessage.innerHTML = "";
+                }
             } else {
                 feedbackMessage.classList.add("success");
                 feedbackMessage.style.display = "block";
-                feedbackMessage.innerHTML = result.message || "No information.";
+                if(result.message) {
+                    feedbackMessage.innerHTML = result.message;
+                } else {
+                    feedbackMessage.innerHTML = "";
+                }
             }
 
         });

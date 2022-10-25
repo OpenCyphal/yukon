@@ -35,10 +35,10 @@ async def do_send_command_work(state: GodState) -> None:
                 )
                 msg = uavcan.node.ExecuteCommand_1_1.Request()
                 msg.command = int(send_command_request.command_id)
-                responseTuple = await service_client.call(msg)
-                if responseTuple:
+                response_tuple = await service_client.call(msg)
+                if response_tuple:
                     stop_retry = True
-                    response = responseTuple[0]
+                    response = response_tuple[0]
                     if response.status == 1:
                         message = "Device responds: failure"
                     elif response.status == 2:
