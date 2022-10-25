@@ -1,4 +1,4 @@
-from domain.detach_transport_response import DetachTransportResponse
+from yukon.domain.detach_transport_response import DetachTransportResponse
 from yukon.domain.god_state import GodState
 
 

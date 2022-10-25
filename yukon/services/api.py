@@ -1,19 +1,13 @@
 from datetime import datetime
-from inspect import getsource
 import json
-import os
 import re
 import typing
-import webbrowser
 from pathlib import Path
 from time import sleep, monotonic
 import logging
-from zoneinfo import available_timezones
 import yaml
 from uuid import uuid4
 from time import time
-
-from domain.update_register_log_item import UpdateRegisterLogItem
 
 try:
     from yaml import CLoader as Loader
@@ -24,6 +18,7 @@ from flask import jsonify, Response
 
 import uavcan
 from yukon.domain.reread_registers_request import RereadRegistersRequest
+from yukon.domain.update_register_log_item import UpdateRegisterLogItem
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
 from yukon.services.get_ports import get_socketcan_ports, get_slcan_ports
 from yukon.services._dumper import Dumper
@@ -34,9 +29,7 @@ from yukon.domain.avatar import Avatar
 from yukon.services.value_utils import unexplode_value, explode_value
 from yukon.domain.god_state import GodState
 from yukon.services.messages_publisher import add_local_message
-from yukon.services.get_electron_path import get_electron_path
 from yukon.domain.command_send_request import CommandSendRequest
-from yukon.domain.command_send_response import CommandSendResponse
 from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
