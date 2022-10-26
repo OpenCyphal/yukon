@@ -58,3 +58,34 @@ export function isRunningInElectron(yukon_state) {
 export function areThereAnyActiveModals() {
     return document.querySelectorAll('#modal').length > 0
 }
+
+export function waitForElm(selector, timeOutMilliSeconds) {
+    return new Promise(resolve => {
+        let timeOutTimeout
+        if (timeOutMilliSeconds) {
+            timeOutTimeout = setTimeout(() => {
+                console.error("Timeout waiting for element: " + selector);
+                resolve(null);
+            }, timeOutMilliSeconds);
+        }
+        if (document.querySelector(selector)) {
+            return resolve(document.querySelector(selector));
+        }
+
+        const observer = new MutationObserver(mutations => {
+            if (document.querySelector(selector)) {
+                if (timeOutTimeout) {
+                    clearTimeout(timeOutTimeout);
+                }
+                resolve(document.querySelector(selector));
+                observer.disconnect();
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+    });
+}

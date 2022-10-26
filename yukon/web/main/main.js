@@ -1,223 +1,44 @@
 import { make_context_menus } from '../modules/context-menu.module.js';
 import { create_directed_graph, refresh_graph_layout, update_directed_graph } from '../modules/monitor.module.js';
-import { secondsToString, JsonParseHelper, isRunningInElectron, areThereAnyActiveModals, getKnownDatatypes } from "../modules/utilities.module.js";
+import { secondsToString, JsonParseHelper, isRunningInElectron, areThereAnyActiveModals, getKnownDatatypes, waitForElm } from "../modules/utilities.module.js";
 import { loadConfigurationFromOpenDialog, return_all_selected_registers_as_yaml } from '../modules/yaml.configurations.module.js';
 import { create_registers_table, update_tables } from '../modules/registers.module.js';
 import { get_all_selected_pairs, unselectAll, selectAll, oneSelectedConstraint, moreThanOneSelectedConstraint } from '../modules/registers.selection.module.js';
 import { rereadPairs } from "../modules/registers.data.module.js"
 import { openFile } from "../modules/yaml.configurations.module.js"
-import { initTransports } from "../modules/transports.module.js"
+import { initTransports } from "../modules/panels/transports.module.js"
 import { copyTextToClipboard } from "../modules/copy.module.js"
+import { setUpStatusComponent } from "../modules/panels/status.module.js"
+import { setUpTransportsListComponent } from "../modules/panels/transports-list.module.js"
+import { setUpCommandsComponent } from "../modules/panels/commands.module.js"
+import { update_avatars_dto } from "../modules/data.module.js"
+import { setUpMessagesComponent } from "../modules/panels/messages.module.js"
+import { setUpRegisterUpdateLogComponent } from "../modules/panels/register_update_log.module.js"
+import { layout_config } from "../modules/panels/_layout_config.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
     yukon_state.zubax_apij = zubax_apij;
+    yukon_state.autosize = autosize;
     yukon_state.navigator = window.navigator;
+    yukon_state.jsyaml = jsyaml;
     if (isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_electron();
     } else {
         zubax_api.announce_running_in_browser();
     }
-    function waitForElm(selector, timeOutMilliSeconds) {
-        return new Promise(resolve => {
-            let timeOutTimeout
-            if (timeOutMilliSeconds) {
-                timeOutTimeout = setTimeout(() => {
-                    console.error("Timeout waiting for element: " + selector);
-                    resolve(null);
-                }, timeOutMilliSeconds);
-            }
-            if (document.querySelector(selector)) {
-                return resolve(document.querySelector(selector));
-            }
 
-            const observer = new MutationObserver(mutations => {
-                if (document.querySelector(selector)) {
-                    if (timeOutTimeout) {
-                        clearTimeout(timeOutTimeout);
-                    }
-                    resolve(document.querySelector(selector));
-                    observer.disconnect();
-                }
-            });
-
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
-
-        });
-    }
-    async function update_avatars_dto() {
-        const obj_result = await zubax_apij.get_avatars()
-        console.log("Avatars DTO updated.")
-        yukon_state.current_avatars = obj_result.avatars;
-    }
     function setUpMonitorComponent() {
         yukon_state.my_graph = create_directed_graph(yukon_state);
         async function get_and_display_avatars() {
-            await update_avatars_dto();
+            await update_avatars_dto(yukon_state);
             update_directed_graph(yukon_state);
         }
 
         setInterval(get_and_display_avatars, 3000);
         update_directed_graph(yukon_state);
     }
-    function setUpCommandsComponent(container) {
-        const containerElement = container.getElement()[0];
-        const iNodeId = containerElement.querySelector("#iNodeId");
-        const iCommandId = containerElement.querySelector("#iCommandId");
-        const sCommands = containerElement.querySelector("#sCommands");
-        const iCommandArgument = containerElement.querySelector("#iCommandArgument");
-        const btnSendCommand = containerElement.querySelector("#btnSendCommand");
-        const feedbackMessage = containerElement.querySelector(".feedback-message");
-        sCommands.addEventListener("change", function (event) {
-            // Get the selected option and take the attribute data-command-id from it
-            const selectedOptionValue = sCommands.value;
-            let selectedOptionElement = null;
-            // For every child of sCommands that is an OPTION element
-            for (let i = 0; i < sCommands.childNodes.length; i++) {
-                const element = sCommands.childNodes[i];
-                if (element.value == selectedOptionValue) {
-                    selectedOptionElement = element;
-                    break;
-                }
-            }
-            if (selectedOptionElement) {
-                if (selectedOptionElement.getAttribute("data-has-arguments") == "true") {
-                    iCommandArgument.removeAttribute("disabled")
-                } else {
-                    iCommandArgument.setAttribute("disabled", "")
-                }
-                iCommandId.value = selectedOptionElement.getAttribute("data-command-id");
-            } else {
-                console.error("Didn't find the element for " + selectedOptionValue);
-            }
-        });
-        function disableOrEnableArguments() {
-            const children = sCommands.children;
-            let matchedAny = false;
-            for (let i = 0; i < children.length; i++) {
-                const child = children[i];
-                // If the tag of the child element is option
-                if (child.tagName == "OPTION") {
-                    if (child.getAttribute("data-command-id") === iCommandId.value) {
-                        matchedAny = true;
-                        if (child.getAttribute("data-has-arguments") == "true") {
-                            iCommandArgument.removeAttribute("disabled")
-                        } else {
-                            iCommandArgument.setAttribute("disabled", "")
-                        }
-                        break;
-                    }
-                }
-            }
-            if (!matchedAny) {
-                iCommandArgument.removeAttribute("disabled");
-            }
-        }
-        // When the input text in iCommandId is changed, see if the id corresponds to any of the command-ids specified in data-command-ids of any of the options in sCommand
-        iCommandId.addEventListener("input", function (event) {
-            // For all children of sCommands that are options
-            disableOrEnableArguments();
-        });
-        btnSendCommand.addEventListener("click", async function (event) {
-            const result = await zubax_apij.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
-            if (!result.success) {
-                feedbackMessage.classList.remove("success");
-                feedbackMessage.style.display = "block";
-                if(result.message) {
-                    feedbackMessage.innerHTML = result.message;
-                } else {
-                    feedbackMessage.innerHTML = "";
-                }
-            } else {
-                feedbackMessage.classList.add("success");
-                feedbackMessage.style.display = "block";
-                if(result.message) {
-                    feedbackMessage.innerHTML = result.message;
-                } else {
-                    feedbackMessage.innerHTML = "";
-                }
-            }
 
-        });
-    }
-    function setUpStatusComponent() {
-        async function update_avatars_table() {
-            await update_avatars_dto();
-            var table_body = document.querySelector('#avatars_table tbody');
-            table_body.innerHTML = "";
-            if (yukon_state.current_avatars.length == 0) {
-                table_body.innerHTML = "No data, connect a transport from the panel on the right side."
-                return;
-            }
-            // Take every avatar from yukon_state.current_avatars and make a row in the table
-            for (var i = 0; i < yukon_state.current_avatars.length; i++) {
-                const row = table_body.insertRow(i);
-                const node_id = row.insertCell(0);
-                node_id.innerHTML = yukon_state.current_avatars[i].node_id;
-                const name = row.insertCell(1);
-                name.innerHTML = yukon_state.current_avatars[i].name || "No name";
-                // Insert cells for pub, sub, cln and srv
-                const sub_cell = row.insertCell(2);
-                const pub_cell = row.insertCell(3);
-                const cln_cell = row.insertCell(4);
-                const srv_cell = row.insertCell(5);
-                const health_cell = row.insertCell(6);
-                const software_version_cell = row.insertCell(7);
-                const hardware_version_cell = row.insertCell(8);
-                const uptime_cell = row.insertCell(9);
-                if (!yukon_state.current_avatars[i].ports) { continue; }
-                pub_cell.innerHTML = yukon_state.current_avatars[i].ports.pub.toString();
-                if (yukon_state.current_avatars[i].ports.sub.length == 8192) {
-                    sub_cell.innerHTML = "All";
-                } else {
-                    sub_cell.innerHTML = yukon_state.current_avatars[i].ports.sub.toString();
-                }
-                cln_cell.innerHTML = yukon_state.current_avatars[i].ports.cln.toString();
-                srv_cell.innerHTML = yukon_state.current_avatars[i].ports.srv.toString();
-                health_cell.innerHTML = yukon_state.current_avatars[i].last_heartbeat.health_text;
-                software_version_cell.innerHTML = yukon_state.current_avatars[i].versions.software_version;
-                hardware_version_cell.innerHTML = yukon_state.current_avatars[i].versions.hardware_version;
-                uptime_cell.innerHTML = secondsToString(yukon_state.current_avatars[i].last_heartbeat.uptime);
-            }
-        }
-        setInterval(update_avatars_table, 955);
-    }
-
-    function setUpTransportsListComponent() {
-        let lastTransportsListHash = 0;
-        async function syncList() {
-            const transportsList = document.querySelector('#transports_list');
-            const received_transport_interfaces_string = await zubax_api.get_connected_transport_interfaces();
-            const received_transport_interfaces_object = JSON.parse(received_transport_interfaces_string, JsonParseHelper);
-            if (received_transport_interfaces_object.hash == lastTransportsListHash) {
-                return;
-            }
-            transportsList.innerHTML = "";
-            lastTransportsListHash = received_transport_interfaces_object.hash;
-            const received_transport_interfaces = received_transport_interfaces_object.interfaces;
-            for (const _interface of received_transport_interfaces) {
-                const transport_interface = document.createElement('div');
-                transport_interface.classList.add('transport_interface');
-                // Add a div for the name of the interface
-                const name = document.createElement('P');
-                name.innerHTML = JSON.stringify(_interface);
-                transport_interface.appendChild(name);
-                // Add a button to remove the interface
-                const remove_button = document.createElement('button');
-                remove_button.innerHTML = "Remove";
-                remove_button.addEventListener('click', async () => {
-                    await zubax_api.detach_transport(_interface.hash);
-                    await syncList();
-                });
-                transport_interface.appendChild(remove_button);
-                transportsList.appendChild(transport_interface);
-            }
-        }
-        setInterval(syncList, 1143);
-    }
     async function setUpSubscriptionsComponent(container) {
         const containerElement = container.getElement()[0];
         const iSelectDatatype = containerElement.querySelector('#iSelectDatatype');
@@ -235,11 +56,11 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
     }
     async function setUpRegistersComponent(immediateCreateTable) {
         if (immediateCreateTable) {
-            await update_avatars_dto();
+            await update_avatars_dto(yukon_state);
             update_tables(true);
         }
         setInterval(async () => {
-            await update_avatars_dto();
+            await update_avatars_dto(yukon_state);
             update_tables();
         }, 893);
         var timer = null;
@@ -257,432 +78,12 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             loadConfigurationFromOpenDialog(false, yukon_state, click_event)
         });
     }
-    function setUpDebugTextOutComponent() {
-        let isRefreshTextOutAllowed = true;
-        async function updateTextOut(refresh_anyway = false) {
-            if (!isRefreshTextOutAllowed && !refresh_anyway) { return; }
-            const avatars = await zubax_api.get_avatars();
-            const textOut = document.querySelector("#textOut");
-            const DTO = JSON.parse(avatars, JsonParseHelper);
-            if (DTO.hash != yukon_state.lastHash || refresh_anyway) {
-                yukon_state.lastHash = DTO.hash;
-                textOut.innerHTML = JSON.stringify(DTO.avatars, null, 4)
-            }
-            // Parse avatars as json
-        }
-        setInterval(updateTextOut, 1000);
-        const cbStopTextOutRefresh = document.querySelector("#cbStopTextOutRefresh");
-        cbStopTextOutRefresh.addEventListener("change", () => {
-            if (cbStopTextOutRefresh.checked) {
-                isRefreshTextOutAllowed = false;
-            } else {
-                isRefreshTextOutAllowed = true;
-            }
-        });
-        const btnRefreshTextOut = document.querySelector("#btnRefreshTextOut");
-        btnRefreshTextOut.addEventListener("click", async () => {
-            await updateTextOut(true);
-        });
-    }
-    async function setUpRegisterUpdateLogComponent(container) {
-        const containerElement = container.getElement()[0];
-        const registerUpdateLog = document.querySelector("#register-update-log");
-        async function fetchRegisterUpdateLog() {
-            const items = await zubax_apij.get_register_update_log_items();
-            registerUpdateLog.innerHTML = "";
-            // Add a header for the table
-            const header = document.createElement('tr');
-            const header_name = document.createElement('th');
-            header_name.innerHTML = "Name";
-            header.appendChild(header_name);
-            const header_timestamp = document.createElement('th');
-            header_timestamp.innerHTML = "Previous value";
-            header.appendChild(header_timestamp);
-            const new_value_header = document.createElement('th');
-            new_value_header.innerHTML = "New value";
-            header.appendChild(new_value_header);
-            const request_sent_header = document.createElement('th');
-            request_sent_header.innerHTML = "Request sent";
-            header.appendChild(request_sent_header);
-            const response_received_header = document.createElement('th');
-            response_received_header.innerHTML = "Response received";
-            header.appendChild(response_received_header);
-            const request_success = document.createElement('th');
-            request_success.innerHTML = "Ok?";
-            header.appendChild(request_success);
-            registerUpdateLog.appendChild(header);
-            for (const item of items) {
-                // Create fields for new_value, previous_value, request_sent_time, request_received_time
-                const row = registerUpdateLog.insertRow();
-                const name_value_cell = row.insertCell(0);
-                const previous_value_cell = row.insertCell(1);
-                const new_value_cell = row.insertCell(2);
-                const request_sent_time_cell = row.insertCell(3);
-                const response_received_time_cell = row.insertCell(4);
-                const success = row.insertCell(5);
-                name_value_cell.innerHTML = item.register_name;
-                if(item.response) {
-                    new_value_cell.innerHTML = item.response.value;
-                } else {
-                    new_value_cell.innerHTML = item.previous_value;
-                }
-                previous_value_cell.innerHTML = item.previous_value;
-                request_sent_time_cell.innerHTML = item.request_sent_time;
-                response_received_time_cell.innerHTML = item.response_received_time;
-                if(item.success) {
-                    success.innerHTML = "✓";
-                } else {
-                    success.innerHTML = "✗";
-                }
-            }
-        }
-        setInterval(fetchRegisterUpdateLog, 1000);
-    }
-    async function setUpMessagesComponent(container) {
-        const containerElement = container.getElement()[0];
-        var messagesList = document.querySelector("#messages-list");
-        const optionsPanel = await waitForElm(".options-panel");
-        function setDisplayState() {
-            if (containerElement.getAttribute("data-isexpanded")) {
-                containerElement.scrollTop = 0;
-                if (typeof cbAutoscroll !== "undefined") {
-                    cbAutoscroll.checked = false;
-                }
-                optionsPanel.style.display = "block";
-            } else {
-                if (typeof cbAutoscroll !== "undefined") {
-                    cbAutoscroll.checked = true;
-                    containerElement.scrollTop = containerElement.scrollHeight;
-                }
-                optionsPanel.style.display = "none";
-            }
-        }
-        setDisplayState();
-        const observer = new MutationObserver(function (mutations) {
-            mutations.forEach(function (mutation) {
-                if (mutation.type === "attributes") {
-                    if (mutation.attributeName === "data-isexpanded") {
-                        // Toggle visibility of options panel
-                        setDisplayState();
-                    }
-                }
-            });
-        });
 
-        observer.observe(containerElement, {
-            attributes: true //configure it to listen to attribute changes
-        });
-        var cbShowTimestamp = await waitForElm('#cbShowTimestamp');
-        const sLogLevel = document.querySelector("#sLogLevel");
-        sLogLevel.addEventListener("change", async () => {
-            await zubax_api.set_log_level(sLogLevel.value);
-        });
-        cbShowTimestamp.addEventListener('change', function () {
-            if (cbShowTimestamp.checked) {
-                // For every message, add a timestamp to the message, use a for each loop
-                for (const message of messagesList.children) {
-                    message.setAttribute("title", message.getAttribute("timeStampReadable"));
-                }
-            } else {
-                // Remove the timestamp from every message
-                for (const message of messagesList.children) {
-                    message.removeAttribute("title");
-                }
-            }
-        });
-        var messagesList = document.querySelector("#messages-list");
-        let messagesListWidth = messagesList.getBoundingClientRect().width
-        console.log("Messages javascript is ready");
-        var lastIndex = -1;
-        var messagesList = await waitForElm("#messages-list");
-        var cbAutoscroll = await waitForElm("#cbAutoscroll");
-        function showAllMessages() {
-            var messagesList = document.querySelector("#messages-list");
-            if (!messagesList) { return; }
-            // For each message in messagesList
-            for (const child of messagesList.children) {
-                child.style.display = "block";
-            }
-        }
-        function applyExcludingTextFilterToMessage() {
-            var messagesList = document.querySelector("#messages-list");
-            var taExcludedKeywords = document.getElementById("taExcludedKeywords");
-            var excludedKeywords = taExcludedKeywords.value.split("\n");
-            for (const child of messagesList.children) {
-                // For every excluded keyword in the list, hide the message if it contains the keyword
-                for (const keyword of excludedKeywords) {
-                    // If keyword is empty then continue
-                    if (keyword == "") {
-                        continue;
-                    }
-                    if (child.innerHTML.includes(keyword)) {
-                        child.style.display = "none";
-                        break;
-                    }
-                }
-            }
-        }
-        function applyTextFilterToMessages() {
-            // Get the filter text from iTextFilter and save it in a variable
-            var iTextFilter = document.getElementById("iTextFilter");
-            var messagesList = document.querySelector("#messages-list");
-            var textFilter = iTextFilter.value;
-            for (const child of messagesList.children) {
-                // Hide all messages that do not contain the filter text
-                if (!child.innerHTML.includes(textFilter)) {
-                    child.style.display = "none";
-                }
-            }
-        }
-        function timeSince(date) {
-            var seconds = Math.floor(((new Date().getTime() / 1000) - date))
-
-            var interval = seconds / 31536000;
-
-            if (interval >= 1) {
-                return Math.floor(interval) + " years";
-            }
-            interval = seconds / 2592000;
-            if (interval >= 1) {
-                return Math.floor(interval) + " months";
-            }
-            interval = seconds / 86400;
-            if (interval >= 1) {
-                return Math.floor(interval) + " days";
-            }
-            interval = seconds / 3600;
-            if (interval >= 1) {
-                return Math.floor(interval) + " hours";
-            }
-            interval = seconds / 60;
-            if (interval >= 1) {
-                return Math.floor(interval) + " minutes";
-            }
-            return Math.floor(seconds) + " seconds";
-        }
-        function update_messages() {
-            var messagesList = document.querySelector("#messages-list");
-            var cbAutoscroll = document.querySelector("#cbAutoscroll");
-            if (!messagesList || !cbAutoscroll) { return; }
-            zubax_apij.get_messages(lastIndex + 1).then(
-                function (messages) {
-                    // Clear messages-list
-                    if (document.getElementById("cDeleteOldMessages").checked) {
-                        for (const child of messagesList.children) {
-                            if (child && child.getAttribute("timestamp")) {
-                                var timestamp = child.getAttribute("timestamp");
-                                // if timestamp is older than 10 seconds, remove it
-                                if (new Date().getTime() - timestamp > 10000) {
-                                    messagesList.removeChild(child);
-                                }
-                            }
-                        }
-                    }
-                    // Add messages to messages-list
-                    var messagesObject = messages;
-                    // Make sure that type of d is array
-                    console.assert(messagesObject instanceof Array);
-                    for (const el of messagesObject) {
-                        var li = document.createElement("textarea");
-                        li.innerHTML = el.message;
-                        if (el.severity_nr >= 50) {
-                            // Is bad
-                            li.style.color = "red";
-                            li.style["background-color"] = "rgba(255, 0, 0, 0.1)";
-                            li.style["font-weight"] = "bold";
-                        } else if (el.severity_nr >= 40) { // Error 
-                            li.style.color = "red";
-                        } else if (el.severity_nr == 30) {
-                            li.style.color = "orange";
-                        }
-                        // Set an attribute on the list element with current timestamp
-                        autosize(li);
-                        if (el.internal) {
-                            li.style.backgroundColor = "lightgreen !important";
-                        }
-                        li.setAttribute("timestamp", el.timestamp);
-                        li.setAttribute("spellcheck", "false");
-                        var date1 = new Date(el.timestamp);
-                        li.setAttribute("timeStampReadable", date1.toLocaleTimeString() + " " + date1.getMilliseconds() + "ms");
-                        // If el is the last in d
-                        if (messagesObject.indexOf(el) == messagesObject.length - 1) {
-                            // Scroll to bottom of messages-list
-                            setTimeout(function () {
-                                var iAutoscrollFilter = document.getElementById("iAutoscrollFilter");
-                                if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
-                                    containerElement.scrollTop = containerElement.scrollHeight;
-                                }
-                            }, 50);
-                            lastIndex = el.index;
-                        }
-                        messagesList.appendChild(li);
-                    }
-                    showAllMessages();
-                    applyExcludingTextFilterToMessage();
-                    applyTextFilterToMessages();
-                }
-            );
-        }
-
-        // Call update_messages every second
-        setInterval(update_messages, 656);
-        // btnTextOutput.addEventListener('click', function () {
-        //     var textOut = document.querySelector("#textOut");
-        //     autosize.update(textOut);
-        // });
-        // var tabTextOut = document.querySelector("#tabTextOut");
-        // window.addEventListener('mouseup', function () {
-        //     if (tabTextOut.classList.contains("is-active")) {
-        //         var textOut = document.querySelector("#textOut");
-        //         autosize.update(textOut);
-        //     }
-        // });
-
-        // Run applyTextFilterToMessages() when there is a change in the filter text after the input has
-        // stopped for 0.5 seconds
-        var iTextFilter = document.getElementById("iTextFilter");
-        var taExcludedKeywords = document.getElementById("taExcludedKeywords");
-        var timer = null;
-        cbAutoscroll.addEventListener('change', function () {
-            if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
-                messagesList.scrollTop = messagesList.scrollHeight;
-            }
-        });
-        iTextFilter.addEventListener("input", function () {
-            if (timer) {
-                clearTimeout(timer);
-            }
-            timer = setTimeout(function () {
-                applyTextFilterToMessages();
-            }, 500);
-        });
-        var timer2 = null;
-        taExcludedKeywords.addEventListener("input", function () {
-            if (timer2) {
-                clearTimeout(timer2);
-            }
-            timer2 = setTimeout(function () {
-                applyExcludingTextFilterToMessage();
-            }, 1000);
-        });
-
-        var textOut = document.querySelector("#textOut");
-        autosize(textOut);
-        var messagesList = document.querySelector("#messages-list");
-        // On resize event
-        addLocalMessage("Found messageList", 10);
-        // at interval of 3 seconds
-        messagesListWidth = messagesList.getBoundingClientRect().width;
-
-        setInterval(function () {
-            var messagesList = document.querySelector("#messages-list");
-            if (!messagesList) { return; }
-            let currentWidth = messagesList.getBoundingClientRect().width;
-            if (currentWidth != messagesListWidth) {
-                messagesListWidth = currentWidth;
-                for (const child of messagesList.children) {
-                    autosize.update(child);
-                }
-            }
-        }, 500);
-    }
     yukon_state.addLocalMessage = function (message, severity) {
         zubax_api.add_local_message(message, severity);
     }
     const addLocalMessage = yukon_state.addLocalMessage;
     async function doStuffWhenReady() {
-        var config = {
-            content: [
-                {
-                    type: 'row',
-                    content: [
-                        {
-                            type: "column",
-                            content: [
-                                {
-                                    type: 'stack',
-                                    content: [
-                                        {
-                                            type: 'component',
-                                            componentName: 'monitorComponent',
-                                            isClosable: true,
-                                            title: 'Monitor',
-                                        },
-                                        {
-                                            type: 'component',
-                                            componentName: 'registersComponent',
-                                            isClosable: true,
-                                            title: 'Registers',
-                                        },
-                                        {
-                                            type: 'component',
-                                            componentName: 'subsComponent',
-                                            isClosable: true,
-                                            title: 'Subs',
-                                        },
-                                    ]
-                                },
-                                {
-                                    type: "stack",
-                                    content: [
-                                        {
-                                            type: 'component',
-                                            componentName: 'messagesComponent',
-                                            isClosable: true,
-                                            doesRequireSettingsButton: true,
-                                            title: 'Messages',
-                                        },
-                                        {
-                                            type: 'component',
-                                            height: 15,
-                                            componentName: 'statusComponent',
-                                            isClosable: true,
-                                            title: 'Status',
-                                        }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            type: 'column',
-                            width: 30,
-                            content: [
-                                {
-                                    type: 'stack',
-                                    activeItemIndex: 0,
-                                    content: [
-                                        {
-                                            type: "component",
-                                            componentName: "transportsComponent",
-                                            isClosable: true,
-                                            title: "Transports",
-                                        },
-                                        {
-                                            type: "component",
-                                            componentName: "commandsComponent",
-                                            isClosable: true,
-                                            title: "Commands",
-                                        },
-                                        {
-                                            type: "component",
-                                            componentName: "registerUpdateLogComponent",
-                                            isClosable: true,
-                                            title: "Register logs",
-                                        }
-                                    ]
-                                },
-                                {
-                                    type: "component",
-                                    componentName: "transportsListComponent",
-                                    isClosable: true,
-                                    title: "Transports list",
-                                },
-                            ]
-                        }
-                    ]
-                }
-            ]
-        };
         function dynamicallyLoadHTML(path, container, callback, callback_delay) {
             var xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function () {
@@ -748,7 +149,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                 requiredTimeout = 3;
             }
             setTimeout(function () {
-                yukon_state.myLayout = new GoldenLayout(config, document.querySelector("#layout"));
+                yukon_state.myLayout = new GoldenLayout(layout_config, document.querySelector("#layout"));
                 var myLayout = yukon_state.myLayout;
                 myLayout.registerComponent('registersComponent', function (container, componentState) {
                     registerComponentAction("../registers.panel.html", "registersComponent", container, () => {
@@ -761,7 +162,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                     registerComponentAction("../status.panel.html", "statusComponent", container, () => {
                         const containerElement = container.getElement()[0];
                         containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpStatusComponent.bind(outsideContext)();
+                        setUpStatusComponent.bind(outsideContext)(yukon_state);
                     });
                 });
                 myLayout.registerComponent('monitorComponent', function (container, componentState) {
@@ -775,7 +176,7 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                     registerComponentAction("../messages.panel.html", "messagesComponent", container, () => {
                         const containerElement = container.getElement()[0];
                         containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpMessagesComponent.bind(outsideContext)(container);
+                        setUpMessagesComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 myLayout.registerComponent('transportsComponent', function (container, componentState) {
@@ -789,21 +190,21 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
                     registerComponentAction("../transports_list.panel.html", "transportsListComponent", container, () => {
                         const containerElement = container.getElement()[0];
                         containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpTransportsListComponent.bind(outsideContext)();
+                        setUpTransportsListComponent.bind(outsideContext)(yukon_state);
                     });
                 });
                 myLayout.registerComponent("commandsComponent", function (container, componentState) {
                     registerComponentAction("../commands.panel.html", "transportsListComponent", container, () => {
                         const containerElement = container.getElement()[0];
                         containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpCommandsComponent.bind(outsideContext)(container);
+                        setUpCommandsComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 myLayout.registerComponent("registerUpdateLogComponent", function (container, componentState) {
                     registerComponentAction("../register_update_log.html", "registerUpdateLogComponent", container, () => {
                         const containerElement = container.getElement()[0];
                         containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpRegisterUpdateLogComponent.bind(outsideContext)(container);
+                        setUpRegisterUpdateLogComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 myLayout.registerComponent("subsComponent", function (container, componentState) {
@@ -981,9 +382,6 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             });
         }
         let containerElementToContainerObjectMap = new WeakMap();
-
-        yukon_state.zubax_api = zubax_api;
-        yukon_state.jsyaml = jsyaml;
         let lastInternalMessageIndex = -1;
         yukon_state.selectingTableCellsIsDisabledStyle = document.createElement('style');
         yukon_state.selectingTableCellsIsDisabledStyle.innerHTML = `
@@ -1227,15 +625,6 @@ import { copyTextToClipboard } from "../modules/copy.module.js"
             );
         }
         setInterval(fetchAndHandleInternalMessages, 1000);
-
-        function setTableCellSelectability(selectable) {
-            for (var i = 1; i < registers_table.rows.length; i++) {
-                for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
-                    let table_cell = registers_table.rows[i].cells[j]
-                    table_cell.style["user-select"] = "none";
-                }
-            }
-        }
 
         function serialize_configuration_of_all_avatars() {
             var configuration = {};
