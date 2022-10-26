@@ -14,6 +14,10 @@ var yukon_state = {
     "simplified_configurations_flags": {}, // The key is the file_name and true is is simplified
     "zubax_api": null,
     "pressedKeys": {},
+    // Key is subject_id concatenated with datatype, value is an object
+    // The value object contains { messages: [], counter: 0}
+    "subscriptions": {},
+
     "existingHashesSet": {
     },
     "last_slcan_list_hash": null,

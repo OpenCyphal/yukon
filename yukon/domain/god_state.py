@@ -13,6 +13,7 @@ import pycyphal
 from pycyphal.application import Node
 from pycyphal.transport.redundant import RedundantTransport
 
+from yukon.domain.subscribe_response import SubscribeResponse
 from yukon.domain.subscribe_request import SubscribeRequest
 from yukon.domain.update_register_log_item import UpdateRegisterLogItem
 from yukon.domain.reread_registers_request import RereadRegistersRequest
@@ -60,7 +61,8 @@ class QueuesState:
     update_registers: Queue[UpdateRegisterRequest] = field(default_factory=Queue)
     update_registers_response: Dict[UUID, UpdateRegisterResponse] = field(default_factory=dict)
     subscribe_requests: Queue[SubscribeRequest] = field(default_factory=Queue)
-    subscribe_requests_responses: Queue[str] = field(default_factory=Queue)
+    subscribe_requests_responses: Queue[SubscribeResponse] = field(default_factory=Queue)
+    subscribe_messages_queues: typing.Dict[SubscribeRequest, Queue[typing.Any]] = field(default_factory=Queue)
     unsubscribe_requests: Queue[int] = field(default_factory=Queue)
     unsubscribe_requests_responses: Queue[str] = field(default_factory=Queue)
     apply_configuration: Queue[ApplyConfigurationRequest] = field(default_factory=Queue)

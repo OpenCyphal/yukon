@@ -58,7 +58,7 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
         btnSubscribeToSubject.addEventListener('click', async () => {
             const selectedDatatype = iSelectDatatype.value;
             const subscription = await zubax_apij.subscribe(iSubjectId.value, selectedDatatype);
-
+            yukon_state.subscriptions[toString(subscription.subject_id) + ":" + subscription.datatype] = [];
         });
     }
     async function setUpRegistersComponent(immediateCreateTable) {
