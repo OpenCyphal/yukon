@@ -9,6 +9,8 @@ import yaml
 from uuid import uuid4
 from time import time
 
+from yukon.domain.subscribe_request import SubscribeRequest
+
 try:
     from yaml import CLoader as Loader
 except ImportError:
@@ -481,3 +483,6 @@ class Api:
     def add_register_update_log_item(self, register_name: str, register_value: str, node_id: str, success: str) -> None:
         """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
         add_register_update_log_item(self.state, register_name, register_value, node_id, bool(success))
+
+    def subscribe(self, subject_id: str, datatype: str) -> None:
+        self.state.queues.subscribe_requests.put(SubscribeRequest(int(subject_id), datatype))

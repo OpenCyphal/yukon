@@ -43,6 +43,8 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
         const containerElement = container.getElement()[0];
         const iSelectDatatype = containerElement.querySelector('#iSelectDatatype');
         const btnRefreshKnownDatatypes = containerElement.querySelector('#btnRefreshKnownDatatypes');
+        const iSubjectId = containerElement.querySelector('#iSubjectId');
+        const btnSubscribeToSubject = containerElement.querySelector('#btnSubscribeToSubject');
         btnRefreshKnownDatatypes.addEventListener('click', async () => {
             const knownDatatypes = getKnownDatatypes(yukon_state);
             for(const datatype of knownDatatypes) {
@@ -52,6 +54,11 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                 option.innerHTML = datatype;
                 iSelectDatatype.appendChild(option);
             }
+        });
+        btnSubscribeToSubject.addEventListener('click', async () => {
+            const selectedDatatype = iSelectDatatype.value;
+            const subscription = await zubax_apij.subscribe(iSubjectId.value, selectedDatatype);
+
         });
     }
     async function setUpRegistersComponent(immediateCreateTable) {

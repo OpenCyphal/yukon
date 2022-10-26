@@ -15,7 +15,7 @@ export function create_directed_graph(yukon_state) {
                     'label': 'data(label)',
                     'text-valign': 'center',
                     'text-halign': 'center',
-                    'width': '250px',
+                    'width': '350px',
                     'height': '65px',
                     'background-color': '#e00000',
                     'shape': 'cut-rectangle',
@@ -37,6 +37,15 @@ export function create_directed_graph(yukon_state) {
                     'background-color': '#A6E1FA',
                     'width': '70px',
                     'height': '70px',
+                    'shape': 'square'
+                }
+            },
+            {
+                selector: 'node[?link]',
+                style: {
+                    'background-color': '#E6E1FA',
+                    'width': '450px',
+                    'height': '65px',
                     'shape': 'square'
                 }
             },
@@ -113,12 +122,15 @@ export function create_directed_graph(yukon_state) {
             createMonitorPopup(assembled_text, yukon_state);
             return;
         }
-//        const linkInfo = getLinkInfo(parseInt(node.id()), yukon_state);
-//        if (linkInfo.name || linkInfo.type) {
-//            const assembled_text = "Link name: " + linkInfo.name + "\n" + "Type: " + linkInfo.type;
-//            createMonitorPopup(assembled_text, yukon_state);
-//            return;
-//        }
+        const linkInfos = getLinkInfo(parseInt(node.id()), null, yukon_state);
+        if (linkInfos.length > 0) {
+            let assembled_text = "";
+            for(const linkInfo of linkInfos) {
+                assembled_text += "Link name: " + linkInfo.name + "</br>" + "Type: " + linkInfo.type + "</br>";
+            }
+            createMonitorPopup(assembled_text, yukon_state);
+            return;
+        }
     });
     my_graph.on('mouseout', 'node', function (evt) {
         var node = evt.target;
@@ -276,7 +288,7 @@ export function update_directed_graph(yukon_state) {
                 const linkInfos = getLinkInfo(parseInt(sub), avatar.node_id, yukon_state);
                 if (linkInfos.length > 0) {
                     assembled_text = "Link name: " + linkInfos[0].name + "\n" + "Type: " + linkInfos[0].type;
-                    my_graph.add([{ data: { id: avatar.node_id + "" + sub, label: assembled_text } }]);
+                    my_graph.add([{ data: { "link": true, id: avatar.node_id + "" + sub, label: assembled_text } }]);
                     my_graph.add([{ data: { source: sub, target: avatar.node_id + "" + sub, label: "A nice label" } }]);
                     my_graph.add([{ data: { source: avatar.node_id + "" + sub, target: avatar.node_id, label: "A nice label" } }]);
                 } else {

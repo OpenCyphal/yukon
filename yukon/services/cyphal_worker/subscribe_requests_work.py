@@ -1,4 +1,10 @@
+import traceback
+import typing
+
 import uavcan
+from yukon.services.messages_publisher import add_local_message
+from yukon.services.dtype_loader import load_dtype
+from yukon.domain.subscribe_request import SubscribeRequest
 from yukon.domain.god_state import GodState
 
 
@@ -6,7 +12,19 @@ async def do_subscribe_requests_work(state: GodState) -> None:
     if not state.queues.subscribe_requests.empty():
         try:
             subscribe_request = state.queues.subscribe_requests.get_nowait()
-            state.cyphal.local_node.make_subscriber(uavcan.si.unit.temperature.Scalar_1, "temperature_setpoint")
-            state.queues.subscribe_requests_responses.put("Subscribed to " + str(subscribe_request.subject))
+            new_subscriber = state.cyphal.local_node.make_subscriber(
+                load_dtype(subscribe_request.datatype), subscribe_request.subject_id
+            )
+            state.cyphal.subscribers_by_subscribe_request[subscribe_request] = new_subscriber
+
+            def callback(msg: typing.Any, metadata: typing.Any) -> None:
+                add_local_message(state, repr(msg), 20, subscribe_request.subject_id)
+
+            new_subscriber.receive_in_background(callback)
+            state.queues.subscribe_requests_responses.put("Subscribed to " + str(subscribe_request.subject_id))
         except Exception as e:
-            state.queues.subscribe_responses.put(str(e))
+            tb = traceback.format_exc()
+            add_local_message(state, tb, 40)
+            state.queues.subscribe_requests_responses.put(tb)
+        else:
+            add_local_message(state, "Subscribed to " + str(subscribe_request.subject_id), 20)

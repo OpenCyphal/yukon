@@ -44,6 +44,8 @@ export function getKnownDatatypes(yukon_state)
             }
         }
     }
+    // Remove duplicates
+    knownDatatypes = Array.from(new Set(knownDatatypes));
     return knownDatatypes;
 }
 
