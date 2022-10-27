@@ -64,7 +64,7 @@ class QueuesState:
     update_registers_response: Dict[UUID, UpdateRegisterResponse] = field(default_factory=dict)
     subscribe_requests: Queue[SubscribeRequest] = field(default_factory=Queue)
     subscribe_requests_responses: Queue[SubscribeResponse] = field(default_factory=Queue)
-    subscribed_messages: typing.Dict[SubjectSpecifier, MessagesStore] = field(default_factory=Queue)
+    subscribed_messages: typing.Dict[SubjectSpecifier, MessagesStore] = field(default_factory=dict)
     unsubscribe_requests: Queue[int] = field(default_factory=Queue)
     unsubscribe_requests_responses: Queue[str] = field(default_factory=Queue)
     apply_configuration: Queue[ApplyConfigurationRequest] = field(default_factory=Queue)

@@ -78,11 +78,11 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             _encoder = encode_basestring
 
         def floatstr(
-                o: typing.Any,
-                allow_nan: bool = self.allow_nan,
-                _repr: typing.Any = float.__repr__,
-                _inf: typing.Any = INFINITY,
-                _neginf: typing.Any = -INFINITY,
+            o: typing.Any,
+            allow_nan: bool = self.allow_nan,
+            _repr: typing.Any = float.__repr__,
+            _inf: typing.Any = INFINITY,
+            _neginf: typing.Any = -INFINITY,
         ) -> typing.Any:
             # Check for specials.  Note that this type of test is processor
             # and/or platform-specific, so do tests which don't depend on the
