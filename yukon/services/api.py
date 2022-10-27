@@ -1,14 +1,24 @@
+import copy
+import importlib
+import importlib.util
+import inspect
+import os
+import sys
 from datetime import datetime
 import json
 import re
 import typing
 from pathlib import Path
+from queue import Queue
 from time import sleep, monotonic
 import logging
+
+import pycyphal
 import yaml
 from uuid import uuid4
 from time import time
 
+from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
 from yukon.domain.subject_specifier import SubjectSpecifier
 from yukon.domain.subscribe_request import SubscribeRequest
 
@@ -498,7 +508,56 @@ class Api:
     def fetch_messages_for_subscription_specifiers(self, specifiers: str) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
         specifiers = json.loads(specifiers)
+        dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers]
         mapping = {}
-        for key in self.state.queues.subscribe_messages_queues:
-            if key in specifiers:
-                assert isinstance(key, SubjectSpecifier)
+        for specifier, messages_store in self.state.queues.subscribed_messages.items():
+            for dto in dtos:
+                if dto.does_equal_specifier(specifier):
+                    mapping[str(dto)] = copy.deepcopy(messages_store.messages[dto.counter:])
+                    break
+        # This jsonify is why I made sure to set up the JSON encoder for dsdl
+        return jsonify(mapping)
+
+    def get_known_datatypes_from_dsdl(self):
+        # iterate through the paths in PYTHONPATH
+        dsdl_folders = []
+        # If the CYPHAL_PATH environment variable is set, add the value of that to the list of dsdl_folders
+        if "CYPHAL_PATH" in os.environ:
+            dsdl_folders.append(Path(os.environ["CYPHAL_PATH"]))
+        for path in sys.path:
+            # if the path contains .compiled (which is our dsdl folder) then
+            if ".compiled" in path:
+                dsdl_folders.append(Path(path))
+        for dsdl_folder in dsdl_folders:
+
+            # Recursively iterate through the package and find all the classes that contain _serialize_ or _FIXED_PORT_ID_
+
+def get_datatypes_from_packages_directory_path(path: Path) -> typing.List[str]:
+    """The path is to a folder like .compiled which contains dsdl packages"""
+    for package_folder in list(next(os.walk(path))[1]):
+        sys.path.append(str(package_folder.absolute()))
+        package = importlib.import_module(package_folder.name)
+        pycyphal.util.import_submodules(package)
+        sys.path.remove(str(package_folder.absolute()))
+        datatypes = []
+        queue = Queue()
+        for name, module_or_class in inspect.getmembers(package,
+                                                        lambda x: inspect.ismodule(x) or inspect.isclass(x)):
+            queue.put((name, module_or_class))
+        counter = 0
+        while not queue.empty():
+            print(counter)
+            counter += 1
+            name, module_or_class = queue.get()
+            tuples = inspect.getmembers(module_or_class, lambda x: inspect.ismodule(x) or inspect.isclass(x))
+            for _tuple in tuples:
+                queue.put(_tuple)
+            if inspect.isclass(module_or_class):
+                _class = module_or_class
+                raw_members = inspect.getmembers(_class, inspect.ismethod)
+                if len(raw_members) > 0:
+                    method_names, methods = list(zip(*raw_members))
+                    print(method_names)
+                    if "_serialize_" in method_names or "_FIXED_PORT_ID_" in method_names:
+                        datatypes.append(_class.__name__)
+        return datatypes
