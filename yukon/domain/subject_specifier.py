@@ -6,8 +6,9 @@ class SubjectSpecifier:
     subject_id: int
     datatype: str
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, subject_id: int = 0, datatype: str = "") -> None:
+        self.subject_id = subject_id
+        self.datatype = datatype
 
     @staticmethod
     def from_string(string: str) -> "SubjectSpecifier":

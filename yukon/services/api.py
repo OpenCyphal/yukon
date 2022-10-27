@@ -497,13 +497,13 @@ class Api:
         add_register_update_log_item(self.state, register_name, register_value, node_id, bool(success))
 
     def subscribe(self, subject_id: str, datatype: str) -> Response:
-        self.state.queues.subscribe_requests.put(SubscribeRequest(int(subject_id), datatype))
+        self.state.queues.subscribe_requests.put(SubscribeRequest(SubjectSpecifier(int(subject_id), datatype)))
         while True:
-            if self.state.queues.subscribe_responses.empty():
+            if self.state.queues.subscribe_requests_responses.empty():
                 sleep(0.1)
             else:
                 break
-        subscribe_response = self.state.queues.subscribe_responses.get()
+        subscribe_response = self.state.queues.subscribe_requests_responses.get()
         return jsonify(subscribe_response)
 
     def fetch_messages_for_subscription_specifiers(self, specifiers: str) -> Response:
