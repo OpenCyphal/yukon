@@ -11,7 +11,10 @@ import pycyphal
 
 def get_datatypes_from_packages_directory_path(path: Path) -> typing.List[str]:
     """The path is to a folder like .compiled which contains dsdl packages"""
-    datatypes = []
+    return_object = {
+        "fixed_id_messages": {},
+        "variable_id_messages": [],
+    }
     for package_folder_str in list(next(os.walk(path))[1]):
         package_folder = (path / package_folder_str).absolute()
         sys.path.append(str(package_folder.absolute()))
@@ -33,13 +36,12 @@ def get_datatypes_from_packages_directory_path(path: Path) -> typing.List[str]:
                     queue.put(element[1])
                 if inspect.isclass(module_or_class):
                     _class = module_or_class
-                    if hasattr(_class, "_serialize_") or hasattr(_class, "_FIXED_PORT_ID_"):
-                        datatypes.append(_class.__name__)
+                    if hasattr(_class, "_FIXED_PORT_ID_"):
+                        return_object["fixed_id_messages"][str(_class._FIXED_PORT_ID_)] = _class.__name__
+                    elif hasattr(_class, "_serialize_"):
+                        return_object["variable_id_messages"].append(_class.__name__)
         except Empty:
             pass
     # Deduplicate datatypes
-    datatypes = list(set(datatypes))
-    return datatypes
-
-
-print(get_datatypes_from_packages_directory_path(Path(r"""C:\Users\silver\zubax\yukon\.compiled""")))
+    return_object["variable_id_messages"] = list(set(return_object["variable_id_messages"]))
+    return return_object

@@ -1,6 +1,25 @@
-<p>Here you can subscribe to things and see the latest values of your subscriptions.</p>
-<input type="text" id="iSubjectId" placeholder="Subject ID">
-<select id="iSelectDatatype">
-</select>
-<button id="btnRefreshKnownDatatypes">Refresh known datatypes</button>
-<button id="btnSubscribeToSubject">Subscribe</button>
+<div class="container" id="SubscriptionsDiv">
+    <p>Here you can subscribe to things and see the latest values of your subscriptions.</p>
+    <input type="text" id="iSubjectId" placeholder="Subject ID">
+    <div class="">
+        <input type="radio" id="rbUseSelectAdvertised" name="rbUseSelect">
+        <label for="rbUseSelectAdvertised">Select any datatype advertised in .type registers</label>
+        <select id="iSelectDatatype" style="display:block; margin: 0.5em">
+        </select>
+    </div>
+    <div class="">
+        <input type="radio" id="rbUseSelectFixedId" name="rbUseSelect" value="true" checked>
+        <label for="rbUseSelectFixedId">Select a fixed ID message type</label>
+        <select id="iSelectFixedIdMessageType" style="display:block; margin: 0.5em">
+        </select>
+    </div>
+    <div class="">
+        <input type="radio" id="rbUseAny" name="rbUseSelect">
+        <label for="rbUseAny">Select any found DSDL datatype</label>
+        <select id="iSelectAny" style="display:block; margin: 0.5em">
+        </select>
+    </div>
+
+    <button id="btnRefreshKnownDatatypes">Refresh known datatypes</button>
+    <button id="btnSubscribeToSubject">Subscribe</button>
+</div>

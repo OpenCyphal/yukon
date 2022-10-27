@@ -18,6 +18,7 @@ import yaml
 from uuid import uuid4
 from time import time
 
+from services.utils import get_datatypes_from_packages_directory_path
 from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
 from yukon.domain.subject_specifier import SubjectSpecifier
 from yukon.domain.subscribe_request import SubscribeRequest
@@ -212,7 +213,7 @@ def make_yaml_string_node_ids_numbers(serialized_conf: str) -> str:
 
 
 def add_register_update_log_item(
-    state: GodState, register_name: str, register_value: str, node_id: str, success: bool
+        state: GodState, register_name: str, register_value: str, node_id: str, success: bool
 ) -> None:
     """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
     request_sent_time = datetime.fromtimestamp(time()).strftime("%H:%M:%S.%f")
@@ -376,7 +377,7 @@ class Api:
         return jsonify(self.state.queues.attach_transport_response.get())
 
     def attach_transport(
-        self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
+            self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()
@@ -513,7 +514,7 @@ class Api:
         for specifier, messages_store in self.state.queues.subscribed_messages.items():
             for dto in dtos:
                 if dto.does_equal_specifier(specifier):
-                    mapping[str(dto)] = copy.deepcopy(messages_store.messages[dto.counter :])
+                    mapping[str(dto)] = copy.deepcopy(messages_store.messages[dto.counter:])
                     break
         # This jsonify is why I made sure to set up the JSON encoder for dsdl
         return jsonify(mapping)
@@ -528,6 +529,6 @@ class Api:
             # if the path contains .compiled (which is our dsdl folder) then
             if ".compiled" in path:
                 dsdl_folders.append(Path(path))
+                break
         for dsdl_folder in dsdl_folders:
-            pass
-        return Response()
+            return jsonify(get_datatypes_from_packages_directory_path(dsdl_folder))

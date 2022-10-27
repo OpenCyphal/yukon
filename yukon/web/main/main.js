@@ -45,7 +45,14 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
         const btnRefreshKnownDatatypes = containerElement.querySelector('#btnRefreshKnownDatatypes');
         const iSubjectId = containerElement.querySelector('#iSubjectId');
         const btnSubscribeToSubject = containerElement.querySelector('#btnSubscribeToSubject');
+        const iSelectAny = containerElement.querySelector('#iSelectAny');
+        const iSelectFixedIdMessageType = containerElement.querySelector('#iSelectFixedIdMessageType');
+
         btnRefreshKnownDatatypes.addEventListener('click', async () => {
+            iSelectDatatype.innerHTML = '';
+            iSelectAny.innerHTML = '';
+            iSelectFixedIdMessageType.innerHTML = '';
+
             const knownDatatypes = getKnownDatatypes(yukon_state);
             for(const datatype of knownDatatypes) {
                 // Add a new option to the select
@@ -53,6 +60,22 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                 option.value = datatype;
                 option.innerHTML = datatype;
                 iSelectDatatype.appendChild(option);
+            }
+            const response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
+            for(const id in response["fixed_id_messages"]) {
+                const datatype = response["fixed_id_messages"][id];
+                // Add a new option to the select
+                const option = document.createElement('option');
+                option.value = datatype + "(" + id + ")";
+                option.innerHTML = datatype;
+                iSelectFixedIdMessageType.appendChild(option);
+            }
+            for(const datatype of response["variable_id_messages"]) {
+                // Add a new option to the select
+                const option = document.createElement('option');
+                option.value = datatype;
+                option.innerHTML = datatype;
+                iSelectAny.appendChild(option);
             }
         });
         btnSubscribeToSubject.addEventListener('click', async () => {

@@ -47,6 +47,11 @@ to connect to your computer.
 
     yakut compile -O.compiled demos\sirius_cyber_corp
 
+* On every OS: Build a dsdl namespace for anything (like zubax_dsdl), all on one line
+
+      yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
+      zubax_dsdl\zubax zubax_dsdl\zubax_internet
+
 * On every OS: How to run the application from vscode, using the buttons
 
 CREATE a .env file in the root of the project with the following content (; separator on Windows):
