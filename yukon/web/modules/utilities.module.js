@@ -33,17 +33,19 @@ export function getKnownDatatypes(yukon_state)
     for (var i = 0; i < yukon_state.current_avatars.length; i++) {
         let avatar = yukon_state.current_avatars[i];
         // For each register in registers_exploded
-        for (let register_name in avatar.registers_exploded) {
+        for (let register_name in avatar.registers_values) {
             if (register_name.endsWith(".id")) {
                 const register_name_split = register_name.split(".");
                 const link_name = register_name_split[register_name_split.length - 2];
-                const datatype = avatar.registers_exploded.find((a) => a.endsWith(link_name + ".type"));
-                if (datatype) {
-                    knownDatatypes.push(datatype);
+                const datatype_register_name = Object.keys(avatar.registers_values).find((a) => a.endsWith(link_name + ".type"));
+                if (datatype_register_name) {
+                    knownDatatypes.push(avatar.registers_values[datatype_register_name]);
                 }
             }
         }
     }
+    // Remove duplicates
+    knownDatatypes = Array.from(new Set(knownDatatypes));
     return knownDatatypes;
 }
 

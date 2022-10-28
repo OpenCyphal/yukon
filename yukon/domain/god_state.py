@@ -13,6 +13,10 @@ import pycyphal
 from pycyphal.application import Node
 from pycyphal.transport.redundant import RedundantTransport
 
+from yukon.domain.messages_store import MessagesStore
+from yukon.domain.subject_specifier import SubjectSpecifier
+from yukon.domain.subscribe_response import SubscribeResponse
+from yukon.domain.subscribe_request import SubscribeRequest
 from yukon.domain.update_register_log_item import UpdateRegisterLogItem
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
@@ -58,8 +62,9 @@ class QueuesState:
     detach_transport: Queue[int] = field(default_factory=Queue)
     update_registers: Queue[UpdateRegisterRequest] = field(default_factory=Queue)
     update_registers_response: Dict[UUID, UpdateRegisterResponse] = field(default_factory=dict)
-    subscribe_requests: Queue[int] = field(default_factory=Queue)
-    subscribe_requests_responses: Queue[str] = field(default_factory=Queue)
+    subscribe_requests: Queue[SubscribeRequest] = field(default_factory=Queue)
+    subscribe_requests_responses: Queue[SubscribeResponse] = field(default_factory=Queue)
+    subscribed_messages: typing.Dict[SubjectSpecifier, MessagesStore] = field(default_factory=dict)
     unsubscribe_requests: Queue[int] = field(default_factory=Queue)
     unsubscribe_requests_responses: Queue[str] = field(default_factory=Queue)
     apply_configuration: Queue[ApplyConfigurationRequest] = field(default_factory=Queue)
@@ -108,6 +113,9 @@ class CyphalState:
     already_used_transport_interfaces: Dict[str, int] = field(default_factory=dict)
     faulty_transport: Optional[FaultyTransport] = field(default_factory=none_factory)
     register_update_log: typing.List[UpdateRegisterLogItem] = field(default_factory=list)
+    subscribers_by_subscribe_request: Dict[SubscribeRequest, pycyphal.presentation.Subscriber] = field(
+        default_factory=dict
+    )
 
 
 @dataclass

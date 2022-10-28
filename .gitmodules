@@ -1,0 +1,3 @@
+[submodule "zubax_dsdl"]
+	path = zubax_dsdl
+	url = git@github.com:Zubax/zubax_dsdl.git

@@ -1,6 +1,46 @@
-<p>Here you can subscribe to things and see the latest values of your subscriptions.</p>
-<input type="text" id="iSubjectId" placeholder="Subject ID">
-<select id="iSelectDatatype">
-</select>
-<button id="btnRefreshKnownDatatypes">Refresh known datatypes</button>
-<button id="btnSubscribeToSubject">Subscribe</button>
+<div class="container" id="SubscriptionsDiv">
+    <p>Manage subscriptions</p>
+
+
+    <label for="rbUseSelectAdvertised">Select any datatype advertised in .type registers</label>
+    <div class="mb-3 input-group">
+        <div class="input-group-text">
+            <input class="form-check-input mt-0" type="radio" value=""
+                aria-label="Radio button for following text input" id="rbUseSelectAdvertised" name="rbUseSelect">
+        </div>
+        <select id="iSelectDatatype" class="form-select"></select>
+        <button class="btn btn-outline-secondary" type="button" id="btnRefresh1">Refresh</button>
+    </div>
+    <label for="rbUseSelectFixedId">Select a fixed ID message type</label>
+    <div class="mb-3 input-group">
+        <div class="input-group-text">
+            <input class="form-check-input mt-0" type="radio" value=""
+                aria-label="Radio button for following text input" id="rbUseSelectFixedId" name="rbUseSelect">
+        </div>
+        <input type="text" class="form-control" placeholder="Optional nid filter"
+            title="Optional filter that will only show messages from this node id, this filter can be modified and doesn't affect the subscription"
+            aria-label="Node id" id="iFixedIdSubscriptionNodeId">
+        <select id="iSelectFixedIdMessageType" class="form-select"></select>
+        <button class="btn btn-outline-secondary" type="button" id="btnRefresh2">Refresh</button>
+    </div>
+    <label for="rbUseSelectAny">Select any found DSDL datatype</label>
+    <div class="mb-3 input-group">
+        <div class="input-group-text">
+            <input class="form-check-input mt-0" type="radio" value=""
+                aria-label="Radio button for following text input" id="rbUseSelectAny" name="rbUseSelect">
+        </div>
+        <select id="iSelectAny" class="form-select"></select>
+        <button class="btn btn-outline-secondary" type="button" id="btnRefresh3">Refresh</button>
+    </div>
+
+    <div class="mb-3 input-group">
+        <input type="text" class="form-control" placeholder="Subject ID" aria-label="Example text with button addon"
+            aria-describedby="button-addon1" id="iSubjectId">
+        <button class="btn btn-outline-primary" type="button" id="btnSubscribeToSubject">Subscribe</button>
+    </div>
+
+    <div class="mb-3 card" id="divMessagesHere">
+        <h5 class="card-header">Existing subscriptions</h5>
+    </div>
+
+</div>

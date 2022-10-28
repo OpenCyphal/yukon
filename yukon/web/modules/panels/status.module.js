@@ -1,4 +1,5 @@
 import { update_avatars_dto } from '../data.module.js'
+import { secondsToString } from "../utilities.module.js";
 
 export function setUpStatusComponent(yukon_state) {
         async function update_avatars_table() {

@@ -1,13 +1,28 @@
+import copy
+import importlib
+import importlib.util
+import inspect
+import os
+import sys
 from datetime import datetime
 import json
 import re
 import typing
 from pathlib import Path
+from queue import Queue
 from time import sleep, monotonic
 import logging
+
+import pycyphal
 import yaml
 from uuid import uuid4
 from time import time
+
+from yukon.domain.unsubscribe_request import UnsubscribeRequest
+from yukon.services.utils import get_datatypes_from_packages_directory_path
+from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
+from yukon.domain.subject_specifier import SubjectSpecifier
+from yukon.domain.subscribe_request import SubscribeRequest
 
 try:
     from yaml import CLoader as Loader
@@ -481,3 +496,54 @@ class Api:
     def add_register_update_log_item(self, register_name: str, register_value: str, node_id: str, success: str) -> None:
         """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
         add_register_update_log_item(self.state, register_name, register_value, node_id, bool(success))
+
+    def subscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
+        if subject_id:
+            subject_id = int(subject_id)
+        self.state.queues.subscribe_requests.put(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
+        while True:
+            if self.state.queues.subscribe_requests_responses.empty():
+                sleep(0.1)
+            else:
+                break
+        subscribe_response = self.state.queues.subscribe_requests_responses.get()
+        return jsonify(subscribe_response)
+
+    def unsubscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
+        if subject_id:
+            subject_id = int(subject_id)
+        self.state.queues.unsubscribe_requests.put(UnsubscribeRequest(SubjectSpecifier(subject_id, datatype)))
+        while True:
+            if self.state.queues.unsubscribe_requests_responses.empty():
+                sleep(0.1)
+            else:
+                break
+        unsubscribe_response = self.state.queues.unsubscribe_requests_responses.get()
+        return jsonify(unsubscribe_response)
+
+    def fetch_messages_for_subscription_specifiers(self, specifiers: str) -> Response:
+        """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
+        specifiers_object = json.loads(specifiers)
+        dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
+        mapping = {}
+        for specifier, messages_store in self.state.queues.subscribed_messages.items():
+            for dto in dtos:
+                if dto.does_equal_specifier(specifier):
+                    mapping[str(dto)] = messages_store.messages[dto.counter :]
+                    break
+        # This jsonify is why I made sure to set up the JSON encoder for dsdl
+        return jsonify(mapping)
+
+    def get_known_datatypes_from_dsdl(self) -> Response:
+        # iterate through the paths in PYTHONPATH
+        dsdl_folders = []
+        # If the CYPHAL_PATH environment variable is set, add the value of that to the list of dsdl_folders
+        if "CYPHAL_PATH" in os.environ:
+            dsdl_folders.append(Path(os.environ["CYPHAL_PATH"]))
+        for path in sys.path:
+            # if the path contains .compiled (which is our dsdl folder) then
+            if ".compiled" in path:
+                dsdl_folders.append(Path(path))
+                break
+        for dsdl_folder in dsdl_folders:
+            return jsonify(get_datatypes_from_packages_directory_path(dsdl_folder))

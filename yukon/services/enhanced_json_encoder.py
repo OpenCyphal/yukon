@@ -4,6 +4,8 @@ from json.encoder import encode_basestring_ascii, encode_basestring, c_make_enco
 import typing
 from uuid import UUID
 
+import pycyphal
+
 import uavcan
 from yukon.services.value_utils import explode_value
 from yukon.domain.attach_transport_response import AttachTransportResponse
@@ -48,8 +50,12 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             )
             verification_exploded_value_str = json.dumps(verification_exploded_value, cls=EnhancedJSONEncoder)
             return verification_exploded_value_str
+        # If the object contains a _serialize_ method then
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
+        if hasattr(o, "_serialize_"):
+            pycyphal.dsdl.to_builtin(o)
+
         return super().default(o)
 
     def iterencode(self, o: typing.Any, _one_shot: bool = False) -> typing.Any:
