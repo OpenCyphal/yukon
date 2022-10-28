@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 import pycyphal
 
-from domain.message_carrier import MessageCarrier
+from yukon.domain.message_carrier import MessageCarrier
 
 
 @dataclass
