@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import traceback
 import typing
 
 from inspect import signature
@@ -63,7 +64,9 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
                 return '["the API method returns None"]'
             return response
         except Exception as e:  # pylint: disable=broad-except
+            tb = traceback.format_exc()
             logger.exception("So something went wrong with calling the method %s", path)
 
-            logger.error("About the error %s", json.dumps(_object["arguments"]))
-            return jsonify({"error": str(e)})
+            logger.error("Arguments used calling the API %s", json.dumps(_object["arguments"]))
+            logger.critical(tb)
+            return jsonify({"error": tb})

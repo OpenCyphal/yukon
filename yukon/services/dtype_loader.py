@@ -51,8 +51,6 @@ def load_dtype(name: str, allow_minor_version_mismatch: bool = False) -> Type[An
 
 
 def _load(name_components: list[str], major: int | None, minor: int | None) -> Type[Any]:
-    from yakut.cmd.compile import make_usage_suggestion
-
     namespaces, short_name = name_components[:-1], name_components[-1]
     try:
         mod = None
@@ -63,7 +61,7 @@ def _load(name_components: list[str], major: int | None, minor: int | None) -> T
             except ImportError:  # We seem to have hit a reserved word; try with an underscore.
                 mod = importlib.import_module(name + "_")
     except ImportError as ex:
-        raise NotFoundError(make_usage_suggestion(namespaces[0])) from ex
+        raise ex
     assert mod
     matches = sorted(
         (
@@ -73,7 +71,7 @@ def _load(name_components: list[str], major: int | None, minor: int | None) -> T
                 short_name.lower() == x.group(1).lower()
                 and (major is None or int(x.group(2)) == major)
                 and (minor is None or int(x.group(3)) == minor)
-            )
+        )
         ),
         reverse=True,
     )

@@ -53,6 +53,18 @@ datas = [("yukon", "."), (".electron", "electron")]
 if my_os == "Linux":
     datas += [("venv/lib/python3.10/site-packages/libpcap", "libpcap")]
 
+if my_os == "Linux":
+    datas += [("venv/lib/python3.10/site-packages/pydsdl", "pydsdl")]
+elif my_os == "Windows":
+    datas += [("venv\\Lib\\site-packages\\pydsdl", "pydsdl")]
+
+if my_os == "Linux":
+    datas += [("venv/lib/python3.10/site-packages/nunavut", "nunavut")]
+elif my_os == "Windows":
+    datas += [("venv\\Lib\\site-packages\\nunavut", "nunavut")]
+
+datas += [(".compiled", ".compiled")]
+
 
 def detect_hidden_imports() -> typing.List[str]:
     """
@@ -102,10 +114,10 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     name=name,
-    debug=True,
+    debug=False,
     strip=False,
     upx=False,
     runtime_tmpdir=None,
-    console=True,
+    console=False,
     icon="icon_128_128.png",
 )
