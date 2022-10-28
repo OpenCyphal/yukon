@@ -5,13 +5,16 @@ import sys
 import typing
 from pathlib import Path
 from queue import Queue, Empty
+import logging
 
 import pycyphal
 
+logger = logging.getLogger(__name__)
 
-def get_datatypes_from_packages_directory_path(path: Path) -> typing.List[str]:
+
+def get_datatypes_from_packages_directory_path(path: Path) -> typing.Any:
     """The path is to a folder like .compiled which contains dsdl packages"""
-    return_object = {
+    return_object: typing.Any = {
         "fixed_id_messages": {},
         "variable_id_messages": [],
     }
@@ -36,10 +39,18 @@ def get_datatypes_from_packages_directory_path(path: Path) -> typing.List[str]:
                     queue.put(element[1])
                 if inspect.isclass(module_or_class):
                     _class = module_or_class
+                    try:
+                        model = pycyphal.dsdl.get_model(_class)
+                    except Exception:
+                        logger.exception("Failed to get model for %s", _class)
+                        continue
                     if hasattr(_class, "_FIXED_PORT_ID_"):
-                        return_object["fixed_id_messages"][str(_class._FIXED_PORT_ID_)] = _class.__name__
+                        return_object["fixed_id_messages"][str(_class._FIXED_PORT_ID_)] = {
+                            "short_name": _class.__name__,
+                            "full_name": model.full_name,
+                        }
                     elif hasattr(_class, "_serialize_"):
-                        return_object["variable_id_messages"].append(_class.__name__)
+                        return_object["variable_id_messages"].append(model.full_name)
         except Empty:
             pass
     # Deduplicate datatypes

@@ -1,8 +1,9 @@
+import typing
 from yukon.domain.subject_specifier import SubjectSpecifier
 
 
 class SubjectSpecifierDto:
-    subject_id: int
+    subject_id: typing.Optional[int]
     datatype: str
     counter: int
 
@@ -19,7 +20,10 @@ class SubjectSpecifierDto:
     def from_string(string: str) -> "SubjectSpecifierDto":
         split_values = string.split(":")
         specifier = SubjectSpecifierDto()
-        specifier.subject_id = int(split_values[0])
+        if split_values[0] == "null":
+            specifier.subject_id = None
+        else:
+            specifier.subject_id = int(split_values[0])
         specifier.datatype = split_values[1]
         specifier.counter = int(split_values[2])
         return specifier

@@ -91,8 +91,16 @@ export function create_directed_graph(yukon_state) {
                         nodeIdInput.value = evt.target.id();
                     } else if (currentElement.getActiveContentItem().config.componentName == "subsComponent") {
                         const commandsComponentOuterElement = currentElement.getActiveContentItem().element[0];
-                        const subjectIdInput = commandsComponentOuterElement.querySelector("#iSubjectId");
-                        subjectIdInput.value = evt.target.id();
+                        const iFixedIdSubscriptionNodeId = commandsComponentOuterElement.querySelector('#iFixedIdSubscriptionNodeId');
+                        const rbUseSelectFixedId = commandsComponentOuterElement.querySelector('#rbUseSelectFixedId');
+                        // IF rbUseSelectFixedId is checked then set the value of iFixedIdSubscriptionNodeId to the id of the clicked node
+                        if (rbUseSelectFixedId.checked) {
+                            iFixedIdSubscriptionNodeId.value = evt.target.id();
+                        } else {
+                            const subjectIdInput = commandsComponentOuterElement.querySelector("#iSubjectId");
+                            subjectIdInput.value = evt.target.id();
+                        }
+
                     }
                 } else {
                     for (const contentItem of currentElement.contentItems) {
@@ -125,7 +133,7 @@ export function create_directed_graph(yukon_state) {
         const linkInfos = getLinkInfo(parseInt(node.id()), null, yukon_state);
         if (linkInfos.length > 0) {
             let assembled_text = "";
-            for(const linkInfo of linkInfos) {
+            for (const linkInfo of linkInfos) {
                 assembled_text += "Link name: " + linkInfo.name + "</br>" + "Type: " + linkInfo.type + "</br>";
             }
             createMonitorPopup(assembled_text, yukon_state);

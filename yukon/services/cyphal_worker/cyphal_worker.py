@@ -3,6 +3,7 @@ import logging
 
 from pycyphal.application import make_node, NodeInfo
 
+from yukon.services.cyphal_worker.unsubscribe_requests_work import do_unsubscribe_requests_work
 from yukon.services.cyphal_worker.detach_transport_work import do_detach_transport_work
 from yukon.services.cyphal_worker.subscribe_requests_work import do_subscribe_requests_work
 from yukon.services.cyphal_worker.reread_register_names_work import do_reread_register_names_work
@@ -38,6 +39,8 @@ def cyphal_worker(state: GodState) -> None:
                 await do_detach_transport_work(state)
                 await asyncio.sleep(0.02)
                 await do_subscribe_requests_work(state)
+                await asyncio.sleep(0.02)
+                await do_unsubscribe_requests_work(state)
                 await asyncio.sleep(0.02)
                 await do_update_register_work(state)
                 await asyncio.sleep(0.02)

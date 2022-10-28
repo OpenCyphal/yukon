@@ -1,12 +1,13 @@
+import typing
 from dataclasses import dataclass
 
 
 @dataclass
 class SubjectSpecifier:
-    subject_id: int
+    subject_id: typing.Optional[int]
     datatype: str
 
-    def __init__(self, subject_id: int = 0, datatype: str = "") -> None:
+    def __init__(self, subject_id: typing.Optional[int] = None, datatype: str = "") -> None:
         self.subject_id = subject_id
         self.datatype = datatype
 

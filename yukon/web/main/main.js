@@ -46,8 +46,74 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
         const btnSubscribeToSubject = containerElement.querySelector('#btnSubscribeToSubject');
         const iSelectAny = containerElement.querySelector('#iSelectAny');
         const iSelectFixedIdMessageType = containerElement.querySelector('#iSelectFixedIdMessageType');
+        const iFixedIdSubscriptionNodeId = containerElement.querySelector('#iFixedIdSubscriptionNodeId');
         const divMessagesHere = containerElement.querySelector('#divMessagesHere');
+        const btnRefresh1 = containerElement.querySelector('#btnRefresh1');
+        const btnRefresh2 = containerElement.querySelector('#btnRefresh2');
+        const btnRefresh3 = containerElement.querySelector('#btnRefresh3');
+        const rbUseSelectAdvertised = containerElement.querySelector('#rbUseSelectAdvertised');
+        const rbUseSelectFixedId = containerElement.querySelector('#rbUseSelectFixedId');
+        const rbUseSelectAny = containerElement.querySelector('#rbUseSelectAny');
+        function getCurrentDesiredDatatype() {
+            if (rbUseSelectAdvertised.checked) {
+                return iSelectDatatype.value;
+            } else if (rbUseSelectFixedId.checked) {
+                return iSelectFixedIdMessageType.value;
+            } else if (rbUseSelectAny.checked) {
+                return iSelectAny.value;
+            } else {
+                return null;
+            }
+        }
+        // If any of the rbUseSelect* radio buttons is clicked, we need to disabled the other two
+        // and enable the one that was clicked.
+        const rbUseSelectAdvertisedClickHandler = () => {
+            iSelectDatatype.disabled = false;
+            iSubjectId.disabled = false;
+            iSelectAny.disabled = true;
+            iSelectFixedIdMessageType.disabled = true;
+            iFixedIdSubscriptionNodeId.disabled = true;
+        };
+        const rbUseSelectFixedIdClickHandler = () => {
+            iSelectDatatype.disabled = true;
+            iSubjectId.disabled = true;
+            iSelectAny.disabled = true;
+            iSelectFixedIdMessageType.disabled = false;
+            iFixedIdSubscriptionNodeId.disabled = false;
+        };
+        const rbUseSelectAnyClickHandler = () => {
+            iSelectDatatype.disabled = true;
+            iSubjectId.disabled = false;
+            iSelectAny.disabled = false;
+            iSelectFixedIdMessageType.disabled = true;
+            iFixedIdSubscriptionNodeId.disabled = true;
+        };
+        rbUseSelectAdvertised.addEventListener('click', rbUseSelectAdvertisedClickHandler);
+        rbUseSelectFixedId.addEventListener('click', rbUseSelectFixedIdClickHandler);
+        rbUseSelectAny.addEventListener('click', rbUseSelectAnyClickHandler);
+
+        // When the rbUseSelectFixedId radio button is clicked, we need to unhide 
+
+        btnRefresh1.addEventListener('click', refreshKnownDatatypes);
+        btnRefresh2.addEventListener('click', refreshKnownDatatypes);
+        btnRefresh3.addEventListener('click', refreshKnownDatatypes);
         async function refreshKnownDatatypes() {
+            // Flash all buttons btnRefresh1, btnRefresh2, btnRefresh3 with text "Refreshing..."
+            const btns = [btnRefresh1, btnRefresh2, btnRefresh3];
+            btns.forEach(btn => {
+                btn.innerHTML = 'Refreshing...';
+                btn.disabled = true;
+                // If the buttons are still disabled after 5 seconds, we assume that the refresh failed.
+                setTimeout(() => {
+                    if (btn.disabled) {
+                        btn.innerHTML = 'Refresh failed';
+                        setTimeout(() => {
+                            btn.innerHTML = 'Refresh';
+                            btn.disabled = false;
+                        }, 1200);
+                    }
+                }, 3000);
+            });
             const knownDatatypes = getKnownDatatypes(yukon_state);
             const response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
             iSelectDatatype.innerHTML = '';
@@ -61,11 +127,12 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                 iSelectDatatype.appendChild(option);
             }
             for (const id in response["fixed_id_messages"]) {
-                const datatype = response["fixed_id_messages"][id];
+                const datatype_short = response["fixed_id_messages"][id]["short_name"];
+                const datatype_full = response["fixed_id_messages"][id]["full_name"];
                 // Add a new option to the select
                 const option = document.createElement('option');
-                option.value = datatype + "(" + id + ")";
-                option.innerHTML = datatype;
+                option.innerHTML = datatype_short + "(" + id + ")";
+                option.value = datatype_full;
                 iSelectFixedIdMessageType.appendChild(option);
             }
             for (const datatype of response["variable_id_messages"]) {
@@ -75,11 +142,33 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                 option.innerHTML = datatype;
                 iSelectAny.appendChild(option);
             }
+            btns.forEach(btn => {
+                btn.innerHTML = 'Refreshed';
+                btn.disabled = true;
+            });
+            setTimeout(() => {
+                btns.forEach(btn => {
+                    btn.innerHTML = 'Refresh';
+                    btn.disabled = false;
+                });
+            }, 1200);
         }
         setTimeout(refreshKnownDatatypes, 3000);
         btnSubscribeToSubject.addEventListener('click', async () => {
-            const selectedDatatype = iSelectDatatype.value;
-            const subscription = await zubax_apij.subscribe(iSubjectId.value, selectedDatatype);
+            const selectedDatatype = getCurrentDesiredDatatype();
+            if (!selectedDatatype) {
+                // Flash the btnSubscribeToSubject red without using bootstrap
+                btnSubscribeToSubject.style.backgroundColor = "red";
+                setTimeout(() => {
+                    btnSubscribeToSubject.style.backgroundColor = "";
+                }, 1000);
+                return;
+            }
+            let desiredSubjectIdValue = iSubjectId.value;
+            if (desiredSubjectIdValue == "") {
+                desiredSubjectIdValue = null;
+            }
+            const subscription = await zubax_apij.subscribe(desiredSubjectIdValue, selectedDatatype);
             if (!subscription || !subscription.success) {
                 // Flash the btnSubscribeToSubject red without using bootstrap
                 btnSubscribeToSubject.style.backgroundColor = "red";
@@ -127,9 +216,9 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
             divLatestMessage.appendChild(pLatestMessage);
             div.appendChild(divLatestMessage);
             async function fetch() {
-                const full_specifiers = [subscription.subject_id + ":" + selectedDatatype + ":" + current_messages.length];
+                const full_specifiers = [desiredSubjectIdValue + ":" + selectedDatatype + ":" + current_messages.length];
                 const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
-                const messages = result[full_specifiers[0]]
+                const messages = result[Object.keys(result)[0]]
                 for (const message of messages) {
                     current_messages.push(message);
                 }

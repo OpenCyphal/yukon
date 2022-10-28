@@ -18,6 +18,7 @@ import yaml
 from uuid import uuid4
 from time import time
 
+from domain.unsubscribe_request import UnsubscribeRequest
 from services.utils import get_datatypes_from_packages_directory_path
 from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
 from yukon.domain.subject_specifier import SubjectSpecifier
@@ -496,8 +497,10 @@ class Api:
         """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
         add_register_update_log_item(self.state, register_name, register_value, node_id, bool(success))
 
-    def subscribe(self, subject_id: str, datatype: str) -> Response:
-        self.state.queues.subscribe_requests.put(SubscribeRequest(SubjectSpecifier(int(subject_id), datatype)))
+    def subscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
+        if subject_id:
+            subject_id = int(subject_id)
+        self.state.queues.subscribe_requests.put(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
         while True:
             if self.state.queues.subscribe_requests_responses.empty():
                 sleep(0.1)
@@ -505,6 +508,18 @@ class Api:
                 break
         subscribe_response = self.state.queues.subscribe_requests_responses.get()
         return jsonify(subscribe_response)
+
+    def unsubscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
+        if subject_id:
+            subject_id = int(subject_id)
+        self.state.queues.unsubscribe_requests.put(UnsubscribeRequest(SubjectSpecifier(subject_id, datatype)))
+        while True:
+            if self.state.queues.unsubscribe_requests_responses.empty():
+                sleep(0.1)
+            else:
+                break
+        unsubscribe_response = self.state.queues.unsubscribe_requests_responses.get()
+        return jsonify(unsubscribe_response)
 
     def fetch_messages_for_subscription_specifiers(self, specifiers: str) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
