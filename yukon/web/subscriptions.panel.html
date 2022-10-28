@@ -1,7 +1,11 @@
 <div class="container" id="SubscriptionsDiv">
     <p>Manage subscriptions</p>
-
-
+    <label for="rbUseSelectAdvertised">Maximum age, before message gets garbage collected</label>
+    <div class="mb-3 input-group">
+        <input class="form-control" type="number" value="50" id="iMaxAge">
+        <span class="input-group-text">seconds</span>
+        <button class=" btn btn-outline-secondary" type="button" id="btnSetMaxAge">Set</button>
+    </div>
     <label for="rbUseSelectAdvertised">Select any datatype advertised in .type registers</label>
     <div class="mb-3 input-group">
         <div class="input-group-text">

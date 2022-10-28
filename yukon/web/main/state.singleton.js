@@ -22,7 +22,7 @@ var yukon_state = {
     },
     "last_slcan_list_hash": null,
     "last_socketcan_list_hash": null,
-    "is_currently_restoring_default_layout": true,
+    "is_currently_restoring_default_layout": false,
     "settings": {
         "showAlotOfButtons": false,
         "showDoubleRowHeadersFromCount": 6,

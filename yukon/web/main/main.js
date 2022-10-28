@@ -91,6 +91,7 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
         rbUseSelectAdvertised.addEventListener('click', rbUseSelectAdvertisedClickHandler);
         rbUseSelectFixedId.addEventListener('click', rbUseSelectFixedIdClickHandler);
         rbUseSelectAny.addEventListener('click', rbUseSelectAnyClickHandler);
+        rbUseSelectAdvertised.click();
 
         // When the rbUseSelectFixedId radio button is clicked, we need to unhide 
 
@@ -188,7 +189,11 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
             // Add a h5/
             const h5 = document.createElement('h5');
             h5.classList.add('card-header');
-            h5.innerHTML = "A subscription to " + subscription.subject_id;
+            if (subscription.subject_id == null) {
+                h5.innerHTML = "A subscription to " + subscription.datatype;
+            } else {
+                h5.innerHTML = "A subscription to " + subscription.subject_id;
+            }
             div.appendChild(h5);
             // Add another div in div, to display the latest message
             /*
@@ -206,7 +211,11 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
             // Add an h5 with subject_id and datatype
             const h5LatestMessage = document.createElement('h5');
             h5LatestMessage.classList.add('card-title');
-            h5LatestMessage.innerHTML = subscription.subject_id + ":" + subscription.datatype;
+            if (subscription.subject_id == null) {
+                h5LatestMessage.innerHTML = subscription.datatype;
+            } else {
+                h5LatestMessage.innerHTML = subscription.subject_id + ":" + subscription.datatype;
+            }
             divLatestMessage.appendChild(h5LatestMessage);
             // Add a p with the latest message
             const pLatestMessage = document.createElement('p');
@@ -489,10 +498,10 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
             e.preventDefault();
             e.stopPropagation();
             yukon_state.is_currently_restoring_default_layout = true;
-            initalizeLayout();
             setTimeout(function () {
                 yukon_state.is_currently_restoring_default_layout = false;
             }, 3000);
+            initalizeLayout();
         });
         const btnShowHideToolbar = document.getElementById('btnShowHideToolbar');
         btnShowHideToolbar.addEventListener('click', function () {

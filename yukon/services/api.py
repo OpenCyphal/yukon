@@ -299,7 +299,7 @@ class Api:
         request = ApplyConfigurationRequest(None, configuration, is_network_configuration(configuration))
         self.state.queues.apply_configuration.put(request)
 
-    def simplify_configuration(self, configuration: str) -> str:
+    def simplify_configuration(self, configuration: str) -> Response:
         if isinstance(configuration, str):
             # if the first character in deserialize_conf is a {, then it is a JSON string.
             if configuration[0] == "{":
@@ -308,8 +308,9 @@ class Api:
                 deserialized_conf = yaml.load(configuration, Loader=Loader)
         else:
             deserialized_conf = configuration
-        simplified_configuration_string = simplify_configuration(deserialized_conf)
-        return simplified_configuration_string
+        # I refused to change the API of simplify_configuration, so I have to reparse it in jsonify
+        # jsonify uses the correct JSON dumper
+        return jsonify(json.loads(simplify_configuration(deserialized_conf)))
 
     def unsimplify_configuration(self, configuration: str) -> Response:
         if isinstance(configuration, str):
@@ -489,9 +490,8 @@ class Api:
         self.state.gui.gui_running = False
 
     def yaml_to_yaml(self, yaml_in: str) -> Response:
-        return Response(
-            response=Dumper().dumps(yaml.load(yaml_in, Loader)), content_type="text/yaml", mimetype="text/yaml"
-        )
+        text_response = Dumper().dumps(yaml.load(yaml_in, Loader))
+        return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
 
     def add_register_update_log_item(self, register_name: str, register_value: str, node_id: str, success: str) -> None:
         """This is useful to report failed user interactions which resulted in invalid requests to update registers."""

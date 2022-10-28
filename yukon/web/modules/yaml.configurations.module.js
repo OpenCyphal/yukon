@@ -171,8 +171,7 @@ export async function return_all_selected_registers_as_yaml(pairs, yukon_state) 
     let json_string = JSON.stringify(pairs_object);
     var yaml_string = await serverFormatYaml(pairs_object);
     if (yukon_state.settings.simplifyRegisters) {
-        const simplified_json_string = await zubax_api.simplify_configuration(json_string)
-        let intermediary_structure = JSON.parse(simplified_json_string, JsonParseHelper);
+        let intermediary_structure = await zubax_apij.simplify_configuration(json_string)
         if (contains_single_node && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
             intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
         }
