@@ -7,25 +7,31 @@ export const layout_config = {
                     type: "column",
                     content: [
                         {
-                            type: 'stack',
+                            type: 'row',
                             content: [
                                 {
-                                    type: 'component',
-                                    componentName: 'monitorComponent',
-                                    isClosable: true,
-                                    title: 'Monitor',
-                                },
-                                {
-                                    type: 'component',
-                                    componentName: 'registersComponent',
-                                    isClosable: true,
-                                    title: 'Registers',
+                                    type: 'stack',
+                                    content: [
+                                        {
+                                            type: 'component',
+                                            componentName: 'monitorComponent',
+                                            isClosable: true,
+                                            title: 'Monitor',
+                                        },
+                                        {
+                                            type: 'component',
+                                            componentName: 'registersComponent',
+                                            isClosable: true,
+                                            title: 'Registers',
+                                        },
+                                    ]
                                 },
                                 {
                                     type: 'component',
                                     componentName: 'subsComponent',
                                     isClosable: true,
                                     title: 'Subs',
+                                    width: 30,
                                 },
                             ]
                         },
@@ -46,7 +52,8 @@ export const layout_config = {
                                     isClosable: true,
                                     title: 'Status',
                                 }
-                            ]
+                            ],
+                            height: 15,
                         }
                     ]
                 },

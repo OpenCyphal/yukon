@@ -1,7 +1,5 @@
 import traceback
 import typing
-from queue import Queue
-from uuid import uuid4
 import pycyphal.dsdl
 
 import uavcan
@@ -10,7 +8,6 @@ from domain.messages_store import MessagesStore
 from yukon.domain.subscribe_response import SubscribeResponse
 from yukon.services.messages_publisher import add_local_message
 from yukon.services.dtype_loader import load_dtype
-from yukon.domain.subscribe_request import SubscribeRequest
 from yukon.domain.god_state import GodState
 
 
@@ -18,6 +15,8 @@ async def do_subscribe_requests_work(state: GodState) -> None:
     if not state.queues.subscribe_requests.empty():
         subscribe_request = state.queues.subscribe_requests.get_nowait()
         try:
+            if subscribe_request.specifier.subject_id == "":
+                raise Exception("Subject ID is empty")
             new_subscriber = state.cyphal.local_node.make_subscriber(
                 load_dtype(subscribe_request.specifier.datatype), subscribe_request.specifier.subject_id
             )
@@ -26,7 +25,7 @@ async def do_subscribe_requests_work(state: GodState) -> None:
             def callback(msg: typing.Any, metadata: pycyphal.transport.TransferFrom) -> None:
                 messages_store = state.queues.subscribed_messages.get(subscribe_request.specifier)
                 if messages_store:
-                    message_carrier = MessageCarrier(pycyphal.dsdl.to_builtin(msg), metadata, messages_store.counter)
+                    message_carrier = MessageCarrier(pycyphal.dsdl.to_builtin(msg), None, messages_store.counter)
                     messages_store.counter += 1
                     messages_store.messages.append(message_carrier)
                 add_local_message(state, repr(msg), 20, subscribe_request.specifier.subject_id)

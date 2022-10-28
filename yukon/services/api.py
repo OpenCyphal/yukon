@@ -508,13 +508,13 @@ class Api:
 
     def fetch_messages_for_subscription_specifiers(self, specifiers: str) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
-        specifiers = json.loads(specifiers)
-        dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers]
+        specifiers_object = json.loads(specifiers)
+        dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
         mapping = {}
         for specifier, messages_store in self.state.queues.subscribed_messages.items():
             for dto in dtos:
                 if dto.does_equal_specifier(specifier):
-                    mapping[str(dto)] = copy.deepcopy(messages_store.messages[dto.counter:])
+                    mapping[str(dto)] = messages_store.messages[dto.counter:]
                     break
         # This jsonify is why I made sure to set up the JSON encoder for dsdl
         return jsonify(mapping)
