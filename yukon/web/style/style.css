@@ -186,9 +186,11 @@ body {
 
 #layout {
     display: block;
-    flex-grow: 4;
-    flex-shrink: 1;
-    width: 100%;
+    height: calc(100%);
+}
+
+#toolbar.shown ~ #layout {
+    height: calc(100% - 1.8em);
 }
 
 #toolbar {

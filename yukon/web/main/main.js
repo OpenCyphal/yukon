@@ -525,7 +525,12 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
             }
             setTimeout(function () {
                 yukon_state.myLayout.updateSize();
-            }, 50);
+                console.log("Updated layout size")
+            }, 60);
+        });
+        const btnUpdateLayoutSize = document.getElementById('btnUpdateLayoutSize');
+        btnUpdateLayoutSize.addEventListener('click', function () {
+            yukon_state.myLayout.updateSize();
         });
         window.addEventListener("resize", () => {
             console.log("resize event");

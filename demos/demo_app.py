@@ -8,10 +8,13 @@ import pathlib
 import asyncio
 import logging
 import pycyphal
+import time
+import random
 
 # DSDL files are automatically compiled by pycyphal import hook from sources pointed by CYPHAL_PATH env variable.
 import sirius_cyber_corp  # This is our vendor-specific root namespace. Custom data types.
 import pycyphal.application  # This module requires the root namespace "uavcan" to be transcompiled.
+from pycyphal.application.register import ValueProxy, Real32
 
 # Import other namespaces we're planning to use. Nested namespaces are not auto-imported, so in order to reach,
 # say, "uavcan.node.Heartbeat", you have to "import uavcan.node".
@@ -20,11 +23,34 @@ import uavcan.si.sample.temperature  # noqa
 import uavcan.si.unit.temperature  # noqa
 import uavcan.si.unit.voltage  # noqa
 
+handler = logging.StreamHandler(sys.stderr)
+logger = logging.getLogger(__name__)
+log_format = '%(name)s - %(levelname)s - %(message)s'
+formatter = logging.Formatter(log_format)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+
+# Make a new task to publish a random temperature measurement
+# using await self._pub_v_cmd.publish(uavcan.si.unit.voltage.Scalar_1(voltage_output))
+# it should publish a random float between 0 and 20
+async def publish_temperature_measurement(publisher):
+    # print("Starting temperature measurement publisher", file=sys.stderr)
+    try:
+        while True:
+            # logger.info("Publishing temperature measurement")
+            await asyncio.sleep(1)
+            random_float = 20 * random.random()
+            await publisher.publish(uavcan.si.sample.temperature.Scalar_1(uavcan.time.SynchronizedTimestamp_1_0(time.monotonic()), random_float))
+            # print(f"Published random temperature measurement: {random_float}", file=sys.stderr)
+    except:
+        logger.exception("Exception in temperature measurement publisher")
+        raise
+
+
 class DemoApp:
     REGISTER_FILE = "demo_app.db"
     """
-    In this case the register file is not used, but it is possible to use it to store the state of the application.
-    
     The register file stores configuration parameters of the local application/node. The registers can be modified
     at launch via environment variables and at runtime via RPC-service "uavcan.register.Access".
     The file will be created automatically if it doesn't exist.
@@ -33,19 +59,16 @@ class DemoApp:
     def __init__(self) -> None:
         # Add the node id from its environment variable to the REGISTER_FILE filename
         # so that each node has its own register file.
-
+        self.REGISTER_FILE = pathlib.Path(self.REGISTER_FILE).with_name(f"{os.environ.get('UAVCAN__NODE__ID', '0')}_{self.REGISTER_FILE}")
         node_info = uavcan.node.GetInfo_1.Response(
             software_version=uavcan.node.Version_1(major=1, minor=0),
             name="org.opencyphal.pycyphal.demo.demo_app",
         )
-
-        registry = pycyphal.application.make_registry(":memory:", environment_variables=os.environ)
-
         # The Node class is basically the central part of the library -- it is the bridge between the application and
         # the UAVCAN network. Also, it implements certain standard application-layer functions, such as publishing
         # heartbeats and port introspection messages, responding to GetInfo, serving the register API, etc.
         # The register file stores the configuration parameters of our node (you can inspect it using SQLite Browser).
-        self._node = pycyphal.application.make_node(node_info, registry)
+        self._node = pycyphal.application.make_node(node_info, self.REGISTER_FILE)
 
         # Published heartbeat fields can be configured as follows.
         self._node.heartbeat_publisher.mode = uavcan.node.Mode_1.OPERATIONAL  # type: ignore
@@ -62,12 +85,13 @@ class DemoApp:
         # We subscribe to the temperature setpoint, temperature measurement (process variable), and publish voltage.
         # The corresponding registers are "uavcan.sub.temperature_measurement.id" and "uavcan.pub.heater_voltage.id".
         self._sub_t_pv = self._node.make_subscriber(uavcan.si.sample.temperature.Scalar_1, "temperature_measurement")
+        self._pub_t_pv = self._node.make_publisher(uavcan.si.sample.temperature.Scalar_1, "temperature_measurement")
         self._pub_v_cmd = self._node.make_publisher(uavcan.si.unit.voltage.Scalar_1, "heater_voltage")
 
         # Create an RPC-server. The service-ID is read from standard register "uavcan.srv.least_squares.id".
         # This service is optional: if the service-ID is not specified, we simply don't provide it.
         try:
-            srv_least_sq = self._node.get_server(sirius_cyber_corp.PerformLinearLeastSquaresFit_1_0, "least_squares")
+            srv_least_sq = self._node.get_server(sirius_cyber_corp.PerformLinearLeastSquaresFit_1, "least_squares")
             srv_least_sq.serve_in_background(self._serve_linear_least_squares)
         except pycyphal.application.register.MissingRegisterError:
             logging.info("The least squares service is disabled by configuration")
@@ -81,9 +105,9 @@ class DemoApp:
 
     @staticmethod
     async def _serve_linear_least_squares(
-        request: sirius_cyber_corp.PerformLinearLeastSquaresFit_1_0.Request,
+        request: sirius_cyber_corp.PerformLinearLeastSquaresFit_1.Request,
         metadata: pycyphal.presentation.ServiceRequestMetadata,
-    ) -> sirius_cyber_corp.PerformLinearLeastSquaresFit_1_0.Response:
+    ) -> sirius_cyber_corp.PerformLinearLeastSquaresFit_1.Response:
         logging.info("Least squares request %s from node %d", request, metadata.client_node_id)
         sum_x = sum(map(lambda p: p.x, request.points))  # type: ignore
         sum_y = sum(map(lambda p: p.y, request.points))  # type: ignore
@@ -95,7 +119,7 @@ class DemoApp:
         except ZeroDivisionError:
             slope = float("nan")
             y_intercept = float("nan")
-        return sirius_cyber_corp.PerformLinearLeastSquaresFit_1_0.Response(slope=slope, y_intercept=y_intercept)
+        return sirius_cyber_corp.PerformLinearLeastSquaresFit_1.Response(slope=slope, y_intercept=y_intercept)
 
     @staticmethod
     async def _serve_execute_command(
@@ -129,6 +153,28 @@ class DemoApp:
         # Since they are computed at every invocation, they are never stored in the register file.
         self._node.registry["thermostat.error"] = lambda: temperature_error
         self._node.registry["thermostat.setpoint"] = lambda: temperature_setpoint
+        self._node.registry.setdefault("an.array.register", ValueProxy(Real32([0.04, 0.03, 0.02, 0.01, 0])))
+        self._node.registry.setdefault("a.nan.register", ValueProxy(Real32([None])))
+
+        def _handle_task_result(_task: asyncio.Task):
+            try:
+                _task.result()
+            except asyncio.CancelledError:
+                pass  # Task cancellation should not be logged as an error.
+            except Exception:  # pylint: disable=broad-except
+                logging.exception('Exception raised by task = %r', _task)
+
+        async def updater():
+            while True:
+                self._node.registry.setdefault("time.in.nice.format", ValueProxy(Real32(time.monotonic())))
+                self._node.registry["time.in.nice.format"] = ValueProxy(Real32(time.monotonic()))
+                await asyncio.sleep(0.2)
+        updater_task = asyncio.create_task(updater())
+        updater_task.add_done_callback(_handle_task_result)
+
+        task = asyncio.create_task(publish_temperature_measurement(self._pub_t_pv))
+
+        task.add_done_callback(_handle_task_result)
 
         # Read application settings from the registry. The defaults will be used only if a new register file is created.
         gain_p, gain_i, gain_d = self._node.registry.setdefault("thermostat.pid.gains", [0.12, 0.18, 0.01]).floats
@@ -161,12 +207,4 @@ async def main() -> None:
         app.close()
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except Exception as ex:
-        # If the exception text contains Hipp  hooreeey! The transport is closed, then ignore it and don't log it
-        if ex.args and "Hipp  hooreeey! The transport is closed" not in ex.args[0]:
-            logging.exception("Unhandled exception")
-            sys.exit(1)
-        else:
-            logging.info("Exception ignored")
+    asyncio.run(main())
