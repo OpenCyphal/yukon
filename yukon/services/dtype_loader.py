@@ -71,7 +71,7 @@ def _load(name_components: list[str], major: int | None, minor: int | None) -> T
                 short_name.lower() == x.group(1).lower()
                 and (major is None or int(x.group(2)) == major)
                 and (minor is None or int(x.group(3)) == minor)
-        )
+            )
         ),
         reverse=True,
     )
