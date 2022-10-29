@@ -121,72 +121,65 @@ export async function setUpMessagesComponent(container, yukon_state) {
             }
             return Math.floor(seconds) + " seconds";
         }
-        function update_messages() {
+        async function update_messages() {
             var messagesList = document.querySelector("#messages-list");
             var cbAutoscroll = document.querySelector("#cbAutoscroll");
             if (!messagesList || !cbAutoscroll) { return; }
-            zubax_apij.get_messages(lastIndex + 1).then(
-                function (messages) {
-                    // Clear messages-list
-                    if (document.getElementById("cDeleteOldMessages").checked) {
-                        for (const child of messagesList.children) {
-                            if (child && child.getAttribute("timestamp")) {
-                                var timestamp = child.getAttribute("timestamp");
-                                // if timestamp is older than 10 seconds, remove it
-                                if (new Date().getTime() - timestamp > 10000) {
-                                    messagesList.removeChild(child);
-                                }
-                            }
+            const messages = await zubax_apij.get_messages(lastIndex + 1);
+            // Clear messages-list
+            if (document.getElementById("cDeleteOldMessages").checked) {
+                for (const child of messagesList.children) {
+                    if (child && child.getAttribute("timestamp")) {
+                        var timestamp = child.getAttribute("timestamp");
+                        // if timestamp is older than 10 seconds, remove it
+                        if (new Date().getTime() - timestamp > 10000) {
+                            messagesList.removeChild(child);
                         }
                     }
-                    // Add messages to messages-list
-                    var messagesObject = messages;
-                    // Make sure that type of d is array
-                    console.assert(messagesObject instanceof Array);
-                    for (const el of messagesObject) {
-                        var li = document.createElement("textarea");
-                        li.innerHTML = el.message;
-                        if (el.severity_nr >= 50) {
-                            // Is bad
-                            li.style.color = "red";
-                            li.style["background-color"] = "rgba(255, 0, 0, 0.1)";
-                            li.style["font-weight"] = "bold";
-                        } else if (el.severity_nr >= 40) { // Error
-                            li.style.color = "red";
-                        } else if (el.severity_nr == 30) {
-                            li.style.color = "orange";
-                        }
-                        // Set an attribute on the list element with current timestamp
-
-                        if (el.internal) {
-                            li.style.backgroundColor = "lightgreen !important";
-                        }
-                        li.setAttribute("timestamp", el.timestamp);
-                        li.setAttribute("spellcheck", "false");
-                        var date1 = new Date(el.timestamp);
-                        li.setAttribute("timeStampReadable", date1.toLocaleTimeString() + " " + date1.getMilliseconds() + "ms");
-                        // If el is the last in d
-                        if (messagesObject.indexOf(el) == messagesObject.length - 1) {
-                            // Scroll to bottom of messages-list
-                            setTimeout(function () {
-                                var iAutoscrollFilter = document.getElementById("iAutoscrollFilter");
-                                if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
-                                    containerElement.scrollTop = containerElement.scrollHeight;
-                                }
-                            }, 50);
-                            lastIndex = el.index;
-                        }
-                        messagesList.appendChild(li);
-                        yukon_state.autosize(li);
-                        setTimeout(function() {
-                            yukon_state.autosize.update(li);
-                        }, 1000)
-                    }
-                    showAllMessages();
-                    applyExcludingTextFilterToMessage();
-                    applyTextFilterToMessages();
                 }
-            );
+            }
+            // Add messages to messages-list
+            var messagesObject = messages;
+            // Make sure that type of d is array
+            console.assert(messagesObject instanceof Array);
+            for (const el of messagesObject) {
+                const li = document.createElement("div");
+                li.classList.add("messageElement");
+                const date1 = new Date(el.timestamp);
+                const readableTimestamp = date1.toISOString();
+                li.innerHTML = readableTimestamp + " " + el.module + " " + el.message;
+                if (el.severity_number >= 50) {
+                    // Is bad
+                    li.style.color = "red";
+                    li.style["background-color"] = "rgba(255, 0, 0, 0.1)";
+                    li.style["font-weight"] = "bold";
+                } else if (el.severity_number >= 40) { // Error
+                    li.style.color = "red";
+                } else if (el.severity_number == 30) {
+                    li.style.color = "orange";
+                }
+                // Set an attribute on the list element with current timestamp
+
+                li.setAttribute("timestamp", el.timestamp);
+                li.setAttribute("spellcheck", "false");
+                
+                li.setAttribute("timeStampReadable", readableTimestamp);
+                // If el is the last in d
+                if (messagesObject.indexOf(el) == messagesObject.length - 1) {
+                    // Scroll to bottom of messages-list
+                    setTimeout(function () {
+                        var iAutoscrollFilter = document.getElementById("iAutoscrollFilter");
+                        if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
+                            containerElement.scrollTop = containerElement.scrollHeight;
+                        }
+                    }, 50);
+                    lastIndex = el.index_nr;
+                }
+                messagesList.appendChild(li);
+            }
+            showAllMessages();
+            applyExcludingTextFilterToMessage();
+            applyTextFilterToMessages();
         }
 
         // Call update_messages every second

@@ -427,9 +427,7 @@ class Api:
         self.state.avatar.hide_yakut_avatar = True
 
     def get_messages(self, since_index: int = 0) -> Response:
-        my_list = [
-            x.asdict() for x in list(self.state.queues.messages.queue) if not since_index or x.index_nr >= since_index
-        ]
+        my_list = [x for x in list(self.state.queues.messages.queue) if not since_index or x.index_nr >= since_index]
         return jsonify(my_list)
 
     def get_avatars(self) -> typing.Any:

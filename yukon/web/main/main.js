@@ -587,7 +587,6 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
             });
         }
         let containerElementToContainerObjectMap = new WeakMap();
-        let lastInternalMessageIndex = -1;
         yukon_state.selectingTableCellsIsDisabledStyle = document.createElement('style');
         yukon_state.selectingTableCellsIsDisabledStyle.innerHTML = `
         .table-cell {
@@ -803,33 +802,6 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                 }
             }
         }
-        function fetchAndHandleInternalMessages() {
-            zubax_api.get_messages(lastInternalMessageIndex + 1).then(
-                function (received_messages) {
-                    let deserialized_messages = JSON.parse(received_messages, JsonParseHelper);
-                    // if deserialized_messages is empty then return
-                    if (deserialized_messages.length == 0) {
-                        return;
-                    }
-                    for (const message in deserialized_messages) {
-                        if (message.internal) {
-                            if (message.message.includes("is not mutable")) {
-                                addLocalMessage(message.message, 40);
-                            } else if (message.message.includes("does not exist on node")) {
-                                addLocalMessage(message.message, 40);
-                                markCellWithMessage(findTableCell(message.arguments[0], message.arguments[1]), "This node has no such register but you tried to set it.", 3000);
-                            } else if (message.message.includes("was supplied the wrong value.")) {
-                                markCellWithMessage();
-                            } else {
-                                addLocalMessage("Internal message: " + message.message, 10);
-                            }
-                        }
-                    }
-                    lastInternalMessageIndex = deserialized_messages[deserialized_messages.length - 1].index || -1;
-                }
-            );
-        }
-        setInterval(fetchAndHandleInternalMessages, 1000);
 
         function serialize_configuration_of_all_avatars() {
             var configuration = {};

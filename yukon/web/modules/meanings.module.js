@@ -9,7 +9,7 @@ export const meanings = {
     8184: "Record (diagnostic)",
     405: "GetInfo (about a file)",
     406: "List (files)",
-    407: "Modify ( a file)",
+    407: "Modify (a file)",
     408: "Read (a file)",
     409: "Write (a file)",
     8165: "NodeIDAllocationData.2.0",
