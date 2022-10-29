@@ -145,9 +145,7 @@ export async function setUpMessagesComponent(container, yukon_state) {
             for (const el of messagesObject) {
                 const li = document.createElement("div");
                 li.classList.add("messageElement");
-                const date1 = new Date(el.timestamp);
-                const readableTimestamp = date1.toISOString();
-                li.innerHTML = readableTimestamp + " " + el.module + " " + el.message;
+                li.innerHTML = el.timestamp + " " + el.module + " " + el.message;
                 if (el.severity_number >= 50) {
                     // Is bad
                     li.style.color = "red";
@@ -163,7 +161,7 @@ export async function setUpMessagesComponent(container, yukon_state) {
                 li.setAttribute("timestamp", el.timestamp);
                 li.setAttribute("spellcheck", "false");
                 
-                li.setAttribute("timeStampReadable", readableTimestamp);
+                li.setAttribute("timeStampReadable", el.timestamp);
                 // If el is the last in d
                 if (messagesObject.indexOf(el) == messagesObject.length - 1) {
                     // Scroll to bottom of messages-list

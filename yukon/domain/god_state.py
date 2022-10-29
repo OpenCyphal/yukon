@@ -27,7 +27,7 @@ from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.UID import UID
 from yukon.domain.avatar import Avatar
 from yukon.domain.interface import Interface
-from yukon.domain.note_state import NodeState
+from yukon.domain.node_state import NodeState
 from yukon.domain.update_register_request import UpdateRegisterRequest
 from yukon.domain.update_register_response import UpdateRegisterResponse
 from yukon.services.faulty_transport import FaultyTransport

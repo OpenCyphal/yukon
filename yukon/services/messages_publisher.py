@@ -1,3 +1,4 @@
+import datetime
 import logging
 import time
 
@@ -57,7 +58,7 @@ class MessagesPublisher(logging.Handler):
                 return
         new_message = Message(
             record.getMessage(),
-            record.created,
+            datetime.datetime.fromtimestamp(record.created).strftime("%0y%0m%0d_%0H%0M%0S:%f"),
             self._state.queues.message_queue_counter,
             severity_number=record.levelno,
             severity_text=record.levelname,
@@ -70,6 +71,11 @@ def add_local_message(state: GodState, text: str, severity: int, *args: typing.L
     state.queues.message_queue_counter += 1
     state.queues.messages.put(
         Message(
-            text, time.monotonic(), state.queues.message_queue_counter, severity, get_level_name(severity), __name__
+            text,
+            datetime.datetime.now().strftime("%0y%0m%0d_%0H%0M%0S:%f"),
+            state.queues.message_queue_counter,
+            severity,
+            get_level_name(severity),
+            __name__,
         )
     )
