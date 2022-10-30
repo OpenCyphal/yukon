@@ -58,7 +58,7 @@ class MessagesPublisher(logging.Handler):
                 return
         new_message = Message(
             record.getMessage(),
-            datetime.datetime.fromtimestamp(record.created).strftime("%0y%0m%0d_%0H%0M%0S:%f"),
+            datetime.datetime.fromtimestamp(record.created).strftime("%y%m%d_%H%M%S"),
             self._state.queues.message_queue_counter,
             severity_number=record.levelno,
             severity_text=record.levelname,
@@ -72,7 +72,7 @@ def add_local_message(state: GodState, text: str, severity: int, *args: typing.L
     state.queues.messages.put(
         Message(
             text,
-            datetime.datetime.now().strftime("%0y%0m%0d_%0H%0M%0S:%f"),
+            datetime.datetime.now().strftime("%y%m%d_%H%M%S"),
             state.queues.message_queue_counter,
             severity,
             get_level_name(severity),
