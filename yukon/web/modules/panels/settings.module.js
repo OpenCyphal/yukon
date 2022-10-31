@@ -29,7 +29,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                     properties: ["openDirectory"],
                 });
             }
-            if (path !== "") {
+            if (path) {
                 pathInput.value = path;
                 settings["value"] = path;
             }
@@ -106,7 +106,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             return;
         }
         if (settings["__type__"] === "dirpath" || settings["__type__"] === "filepath") {
-            createPathDiv(settings, parentDiv, parentSettings, settings["__type__"]);
+            createPathDiv(settings, parentDiv, parentSettings, null, settings["__type__"]);
             return;
         }
         for (const [key, value] of Object.entries(settings)) {

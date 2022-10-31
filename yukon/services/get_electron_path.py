@@ -1,12 +1,16 @@
+import logging
 import sys
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def get_electron_path() -> Path:
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         root_path = Path(sys._MEIPASS).absolute() / "yukon"  # type: ignore # pylint: disable=protected-access
     else:
-        print("running in a normal Python process")
+        logger.debug("running in a normal Python process")
         root_path = Path(__file__).absolute().parent.parent
 
     # if platform is windows

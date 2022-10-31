@@ -17,7 +17,6 @@ from yukon.services.api import Api
 if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     root_path = sys._MEIPASS  # type: ignore # pylint: disable=protected-access
 else:
-    print("running in a normal Python process")
     root_path = os.path.dirname(os.path.abspath(__file__))
 gui_dir = os.path.join(root_path, "web")  # development path
 

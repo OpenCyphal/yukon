@@ -38,7 +38,6 @@ logger.setLevel("INFO")
 if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     root_path = sys._MEIPASS  # type: ignore # pylint: disable=protected-access
 else:
-    print("running in a normal Python process")
     root_path = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -47,13 +46,14 @@ def run_electron(state: GodState) -> None:
     while not state.gui.is_port_decided:
         sleep(1)
     exe_path = get_electron_path()
-    electron_logger = logging.getLogger("electronJS")
+    electron_logger = logger.getChild("electronJS")
     electron_logger.setLevel("DEBUG")
+    electron_logger.addHandler(state.messages_publisher)
+    exit_code = 0
     # Use subprocess to run the exe
     try:
         # Keeping reading the stdout and stderr, look for the string electron: symbol lookup error
         os.environ["YUKON_SERVER_PORT"] = str(state.gui.server_port)
-        logger.info("YUKON_SERVER_PORT=%s", os.environ["YUKON_SERVER_PORT"])
         print(root_path)
         with subprocess.Popen(
                 [exe_path, Path(root_path) / "electron/main.js"],
@@ -62,21 +62,35 @@ def run_electron(state: GodState) -> None:
                 universal_newlines=True,
                 env=os.environ,
         ) as p:
-            while p.poll() is None:
-                line1 = p.stdout.readline()  # type: ignore
-                line2 = p.stderr.readline()  # type: ignore
-                if (
-                        (line1 and "electron: symbol lookup error" in line1)
-                        or line2
-                        and ("electron: symbol lookup error" in line2)
-                ):
-                    electron_logger.error("There was an error while trying to run the electron app")
-                    exit_code = 1
-                    break
-                if line1:
-                    electron_logger.info(line1)
-                if line2:
-                    electron_logger.error(line2)
+            def receive_stdout():
+                nonlocal exit_code
+                while p.poll() is None:
+                    line1 = p.stdout.readline()  # type: ignore
+                    if line1:
+                        if "electron: symbol lookup error" in line1:
+                            electron_logger.error("There was an error while trying to run the electron app")
+                            exit_code = 1
+                            break
+                        electron_logger.info(line1)
+
+            def receive_stderr():
+                nonlocal exit_code
+                while p.poll() is None:
+                    line2 = p.stderr.readline()
+                    logger.warning("got one from electron")
+                    if line2:
+                        electron_logger.error(line2)
+                        if "electron: symbol lookup error" in line2:
+                            electron_logger.error("There was an error while trying to run the electron app")
+                            exit_code = 1
+                            break
+
+            stdout_thread = threading.Thread(target=receive_stdout, daemon=True)
+            stdout_thread.start()
+            stderr_thread = threading.Thread(target=receive_stderr, daemon=True)
+            stderr_thread.start()
+            stderr_thread.join()
+            stdout_thread.join()
             if p.returncode is not None:
                 exit_code = p.returncode
 
@@ -126,11 +140,11 @@ def set_logging_levels() -> None:
 
 def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     set_logging_levels()
-    messages_publisher = MessagesPublisher(state)
-    messages_publisher.setLevel(logging.NOTSET)
+    state.messages_publisher = MessagesPublisher(state)
+    state.messages_publisher.setLevel(logging.NOTSET)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    messages_publisher.setFormatter(formatter)
-    logger.addHandler(messages_publisher)
+    state.messages_publisher.setFormatter(formatter)
+    logger.addHandler(state.messages_publisher)
     make_landing_and_bridge(state, api)
 
     cyphal_worker_thread = threading.Thread(target=cyphal_worker, args=[state])

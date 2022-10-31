@@ -44,8 +44,15 @@ app.on('window-all-closed', () => {
     }
 })
 
-async function handlePathOpen(properties) {
+async function handlePathOpen(_, properties) {
     const { canceled, filePaths } = await dialog.showOpenDialog(properties);
+    console.log("I don't want to open anything!")
+    console.log("The properties are: " + properties);
+    // List the own properties of properties
+    for (const property in properties) {
+        console.log("Property: " + property);
+    }
+
     if (canceled) {
         return;
     } else {

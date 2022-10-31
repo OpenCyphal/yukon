@@ -21,7 +21,7 @@ from uavcan.register import List_1
 
 
 async def get_register_value(
-    state: GodState, node_id: int, register_name: str, is_reread: typing.Optional[bool] = None
+        state: GodState, node_id: int, register_name: str, is_reread: typing.Optional[bool] = None
 ) -> typing.Any:
     current_avatar = state.avatar.avatars_by_node_id.get(node_id)
     if not current_avatar:
@@ -55,7 +55,7 @@ async def get_register_value(
 
 
 async def get_register_names(
-    state: GodState, node_id: int, new_avatar: Avatar, is_reread: typing.Optional[bool] = None
+        state: GodState, node_id: int, new_avatar: Avatar, is_reread: typing.Optional[bool] = None
 ) -> None:
     register_values: typing.Any = {}
     counter = 0
@@ -86,10 +86,10 @@ async def get_register_names(
 
 
 def make_handler_for_node_detected(
-    state: GodState, iface: Iface
+        state: GodState, iface: Iface
 ) -> typing.Callable[[int, typing.Optional[Entry], typing.Optional[Entry]], None]:
     def handle_getinfo_handler_format(
-        node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
+            node_id: int, previous_entry: typing.Optional[Entry], next_entry: typing.Optional[Entry]
     ) -> None:
         logger.debug("Some hearbeat was probably received")
         if next_entry and next_entry.info is None:
@@ -127,7 +127,7 @@ def make_handler_for_node_detected(
 
 
 def make_tracers_trackers(state: GodState) -> None:
-    print("Trackers and tracers are being set up")
+    logger.debug("Trackers and tracers are being set up")
     state.cyphal.tracer = state.cyphal.local_node.presentation.transport.make_tracer()
     state.cyphal.tracker = NodeTracker(state.cyphal.local_node)
     iface = Iface(state.cyphal.local_node)

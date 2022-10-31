@@ -13,6 +13,7 @@ import pycyphal
 from pycyphal.application import Node
 from pycyphal.transport.redundant import RedundantTransport
 
+from services.messages_publisher import MessagesPublisher
 from yukon.domain.messages_store import MessagesStore
 from yukon.domain.subject_specifier import SubjectSpecifier
 from yukon.domain.subscribe_response import SubscribeResponse
@@ -148,4 +149,5 @@ class GodState:
                                                "name": "Save location (nice!)"
                                                },
                          }}
+        self.messages_publisher: Optional[MessagesPublisher] = field(default_factory=none_factory)
         self.api = None
