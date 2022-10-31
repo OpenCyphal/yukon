@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const process = require('process');
 const path = require('path')
 const http = require('http');
@@ -15,30 +15,40 @@ function createWindow() {
     })
     // Send a GET request to http://locahost:5000/api/announce_running_in_electron
     // to announce that the app is running in electron
-    http.get('http://localhost:5000/api/announce_running_in_electron', (resp) => {});
+    http.get('http://localhost:5000/api/announce_running_in_electron', (resp) => { });
     // Get the environment variable YUKON_SERVER_PORT
     const yukon_server_port = process.env.YUKON_SERVER_PORT;
     const url = `http://localhost:${yukon_server_port}/main/main.html`
     console.log("Yukon server port: " + process.env.YUKON_SERVER_PORT);
     console.log("Yukon server URL: " + url);
     // Add the port to the loadURL below
-    win.loadURL(url)
+    win.loadURL(url);
     win.maximize();
 }
 
 app.whenReady().then(() => {
-    createWindow()
+    ipcMain.handle('dialog:openFile', handleFileOpen);
+    createWindow();
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow()
+            createWindow();
         }
     })
 })
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-        http.get('http://localhost:5000/api/close_yukon', (resp) => {});
-        app.quit()
+        http.get('http://localhost:5000/api/close_yukon', (resp) => { });
+        app.quit();
     }
 })
+
+async function handleFileOpen(properties) {
+    const { canceled, filePaths } = await dialog.showOpenDialog(properties);
+    if (canceled) {
+        return;
+    } else {
+        return filePaths[0];
+    }
+}

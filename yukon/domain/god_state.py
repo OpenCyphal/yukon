@@ -135,14 +135,16 @@ class GodState:
         self.cyphal = CyphalState()
         self.avatar = AvatarState()
         self.allocation = AllocationState()
-        self.settings = {"dsdl_directories": ["/good/place/to/hide/dsdl", "another/good/path", "/there/are/places"],
+        self.settings = {"dsdl_directories": [{"__type__": "path",
+                                               "value": ""}],
                          "ui_settings": {
                              "Save location": {"__type__": "radio",
                                                "values": [
-                                                   "Cloud", "Computer", "Device", "Mobile phone"
+                                                   "Cloud", {"value": "Computer", "description": "Your pc pretty much"},
+                                                   "Device", "Mobile phone"
                                                ],
                                                "chosen_value": "Cloud",
                                                "name": "Save location (nice!)"
-                                               }
+                                               },
                          }}
         self.api = None
