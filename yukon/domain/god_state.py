@@ -135,8 +135,9 @@ class GodState:
         self.cyphal = CyphalState()
         self.avatar = AvatarState()
         self.allocation = AllocationState()
-        self.settings = {"dsdl_directories": [{"__type__": "path",
+        self.settings = {"dsdl_directories": [{"__type__": "dirpath",
                                                "value": ""}],
+                         "some_files": [{"__type__": "filepath", "value": ""}],
                          "ui_settings": {
                              "Save location": {"__type__": "radio",
                                                "values": [

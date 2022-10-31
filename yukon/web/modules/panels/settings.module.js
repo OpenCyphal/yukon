@@ -2,7 +2,9 @@ export async function setUpSettingsComponent(container, yukon_state) {
     const containerElement = container.getElement()[0];
     let settings = await yukon_state.zubax_apij.get_settings();
     const settingsDiv = containerElement.querySelector("#settings-div")
-    function createPathDiv(settings, parentDiv, parentSettings, key_name) {
+    const settingsDebugDiv = containerElement.querySelector("#settings-debug-div");
+
+    function createPathDiv(settings, parentDiv, parentSettings, key_name, __type__) {
         // Make an input element to store the path in settings["value"], and a button to open the file dialog
         const pathDiv = document.createElement("div");
         pathDiv.classList.add("path-div");
@@ -17,8 +19,20 @@ export async function setUpSettingsComponent(container, yukon_state) {
         pathButton.classList.add("path-button");
         pathButton.innerText = "Browse";
         pathButton.addEventListener("click", async function () {
-            const filePath = await window.electronAPI.openFile();
-            pathInput.value = filePath;
+            let path = "";
+            if (__type__ === "filepath") {
+                path = await window.electronAPI.openPath({
+                    properties: ["openFile"],
+                });
+            } else if (__type__ === "dirpath") {
+                path = await window.electronAPI.openPath({
+                    properties: ["openDirectory"],
+                });
+            }
+            if (path !== "") {
+                pathInput.value = path;
+                settings["value"] = path;
+            }
         });
         pathDiv.style.width = "100%";
         pathDiv.appendChild(pathInput);
@@ -91,8 +105,8 @@ export async function setUpSettingsComponent(container, yukon_state) {
             createRadioDiv(settings, parentDiv);
             return;
         }
-        if (settings["__type__"] === "path") {
-            createPathDiv(settings, parentDiv, parentSettings);
+        if (settings["__type__"] === "dirpath" || settings["__type__"] === "filepath") {
+            createPathDiv(settings, parentDiv, parentSettings, settings["__type__"]);
             return;
         }
         for (const [key, value] of Object.entries(settings)) {
@@ -274,7 +288,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             btnAddString.classList.add("btn-primary");
             btnAddString.innerText = "Add path";
             btnAddString.addEventListener("click", function () {
-                settings.push({ "__type__": "path", "value": "" });
+                settings.push({ "__type__": "dirpath", "value": "" });
                 parentDiv.innerHTML = "";
                 createSettingsDiv(settings, parentDiv, parentSettings, null);
             });
@@ -285,4 +299,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
         }
     }
     createSettingsDiv(settings, settingsDiv, null, null)
+    setInterval(function () {
+        settingsDebugDiv.innerHTML = JSON.stringify(settings, null, 2);
+    }, 1000);
 }

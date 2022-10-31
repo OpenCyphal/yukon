@@ -27,7 +27,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-    ipcMain.handle('dialog:openFile', handleFileOpen);
+    ipcMain.handle('dialog:openPath', handlePathOpen);
     createWindow();
 
     app.on('activate', () => {
@@ -44,7 +44,7 @@ app.on('window-all-closed', () => {
     }
 })
 
-async function handleFileOpen(properties) {
+async function handlePathOpen(properties) {
     const { canceled, filePaths } = await dialog.showOpenDialog(properties);
     if (canceled) {
         return;
