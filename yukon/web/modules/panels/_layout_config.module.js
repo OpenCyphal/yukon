@@ -24,6 +24,12 @@ export const layout_config = {
                                             isClosable: true,
                                             title: 'Registers',
                                         },
+                                        {
+                                            type: 'component',
+                                            componentName: 'settingsComponent',
+                                            isClosable: true,
+                                            title: 'Settings',
+                                        },
                                     ]
                                 },
                                 {

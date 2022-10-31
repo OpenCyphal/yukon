@@ -1,6 +1,6 @@
 import { make_context_menus } from '../modules/context-menu.module.js';
-import { create_directed_graph, refresh_graph_layout, update_directed_graph } from '../modules/monitor.module.js';
-import { secondsToString, JsonParseHelper, isRunningInElectron, areThereAnyActiveModals, getKnownDatatypes, waitForElm } from "../modules/utilities.module.js";
+import { create_directed_graph, update_directed_graph } from '../modules/monitor.module.js';
+import { isRunningInElectron, areThereAnyActiveModals } from "../modules/utilities.module.js";
 import { loadConfigurationFromOpenDialog, return_all_selected_registers_as_yaml } from '../modules/yaml.configurations.module.js';
 import { create_registers_table, update_tables } from '../modules/registers.module.js';
 import { get_all_selected_pairs, unselectAll, selectAll, oneSelectedConstraint, moreThanOneSelectedConstraint } from '../modules/registers.selection.module.js';
@@ -14,6 +14,7 @@ import { setUpCommandsComponent } from "../modules/panels/commands.module.js"
 import { update_avatars_dto } from "../modules/data.module.js"
 import { setUpMessagesComponent } from "../modules/panels/messages.module.js"
 import { setUpRegisterUpdateLogComponent } from "../modules/panels/register_update_log.module.js"
+import { setUpSubscriptionsComponent } from "../modules/panels/subscriptions.module.js"
 import { layout_config } from "../modules/panels/_layout_config.module.js"
 
 (async function () {
@@ -39,221 +40,7 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
         update_directed_graph(yukon_state);
     }
 
-    async function setUpSubscriptionsComponent(container) {
-        const containerElement = container.getElement()[0];
-        const iSelectDatatype = containerElement.querySelector('#iSelectDatatype');
-        const iSubjectId = containerElement.querySelector('#iSubjectId');
-        const btnSubscribeToSubject = containerElement.querySelector('#btnSubscribeToSubject');
-        const iSelectAny = containerElement.querySelector('#iSelectAny');
-        const iSelectFixedIdMessageType = containerElement.querySelector('#iSelectFixedIdMessageType');
-        const iFixedIdSubscriptionNodeId = containerElement.querySelector('#iFixedIdSubscriptionNodeId');
-        const divMessagesHere = containerElement.querySelector('#divMessagesHere');
-        const btnRefresh1 = containerElement.querySelector('#btnRefresh1');
-        const btnRefresh2 = containerElement.querySelector('#btnRefresh2');
-        const btnRefresh3 = containerElement.querySelector('#btnRefresh3');
-        const rbUseSelectAdvertised = containerElement.querySelector('#rbUseSelectAdvertised');
-        const rbUseSelectFixedId = containerElement.querySelector('#rbUseSelectFixedId');
-        const rbUseSelectAny = containerElement.querySelector('#rbUseSelectAny');
-        function getCurrentDesiredDatatype() {
-            if (rbUseSelectAdvertised.checked) {
-                return iSelectDatatype.value;
-            } else if (rbUseSelectFixedId.checked) {
-                return iSelectFixedIdMessageType.value;
-            } else if (rbUseSelectAny.checked) {
-                return iSelectAny.value;
-            } else {
-                return null;
-            }
-        }
-        // If any of the rbUseSelect* radio buttons is clicked, we need to disabled the other two
-        // and enable the one that was clicked.
-        const rbUseSelectAdvertisedClickHandler = () => {
-            iSelectDatatype.disabled = false;
-            iSubjectId.disabled = false;
-            iSelectAny.disabled = true;
-            iSelectFixedIdMessageType.disabled = true;
-            iFixedIdSubscriptionNodeId.disabled = true;
-        };
-        const rbUseSelectFixedIdClickHandler = () => {
-            iSelectDatatype.disabled = true;
-            iSubjectId.disabled = true;
-            iSelectAny.disabled = true;
-            iSelectFixedIdMessageType.disabled = false;
-            iFixedIdSubscriptionNodeId.disabled = false;
-        };
-        const rbUseSelectAnyClickHandler = () => {
-            iSelectDatatype.disabled = true;
-            iSubjectId.disabled = false;
-            iSelectAny.disabled = false;
-            iSelectFixedIdMessageType.disabled = true;
-            iFixedIdSubscriptionNodeId.disabled = true;
-        };
-        rbUseSelectAdvertised.addEventListener('click', rbUseSelectAdvertisedClickHandler);
-        rbUseSelectFixedId.addEventListener('click', rbUseSelectFixedIdClickHandler);
-        rbUseSelectAny.addEventListener('click', rbUseSelectAnyClickHandler);
-        rbUseSelectAdvertised.click();
 
-        // When the rbUseSelectFixedId radio button is clicked, we need to unhide 
-
-        btnRefresh1.addEventListener('click', refreshKnownDatatypes);
-        btnRefresh2.addEventListener('click', refreshKnownDatatypes);
-        btnRefresh3.addEventListener('click', refreshKnownDatatypes);
-        async function refreshKnownDatatypes() {
-            // Flash all buttons btnRefresh1, btnRefresh2, btnRefresh3 with text "Refreshing..."
-            const btns = [btnRefresh1, btnRefresh2, btnRefresh3];
-            btns.forEach(btn => {
-                btn.innerHTML = 'Refreshing...';
-                btn.disabled = true;
-                // If the buttons are still disabled after 5 seconds, we assume that the refresh failed.
-                setTimeout(() => {
-                    if (btn.disabled) {
-                        btn.innerHTML = 'Refresh failed';
-                        setTimeout(() => {
-                            btn.innerHTML = 'Refresh';
-                            btn.disabled = false;
-                        }, 1200);
-                    }
-                }, 3000);
-            });
-            const knownDatatypes = getKnownDatatypes(yukon_state);
-            const response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
-            iSelectDatatype.innerHTML = '';
-            iSelectAny.innerHTML = '';
-            iSelectFixedIdMessageType.innerHTML = '';
-            for (const datatype of knownDatatypes) {
-                // Add a new option to the select
-                const option = document.createElement('option');
-                option.value = datatype;
-                option.innerHTML = datatype;
-                iSelectDatatype.appendChild(option);
-            }
-            for (const id in response["fixed_id_messages"]) {
-                const datatype_short = response["fixed_id_messages"][id]["short_name"];
-                const datatype_full = response["fixed_id_messages"][id]["full_name"];
-                // Add a new option to the select
-                const option = document.createElement('option');
-                option.innerHTML = datatype_short + "(" + id + ")";
-                option.value = datatype_full;
-                iSelectFixedIdMessageType.appendChild(option);
-            }
-            for (const datatype of response["variable_id_messages"]) {
-                // Add a new option to the select
-                const option = document.createElement('option');
-                option.value = datatype;
-                option.innerHTML = datatype;
-                iSelectAny.appendChild(option);
-            }
-            btns.forEach(btn => {
-                btn.innerHTML = 'Refreshed';
-                btn.disabled = true;
-            });
-            setTimeout(() => {
-                btns.forEach(btn => {
-                    btn.innerHTML = 'Refresh';
-                    btn.disabled = false;
-                });
-            }, 1200);
-        }
-        setTimeout(refreshKnownDatatypes, 3000);
-        btnSubscribeToSubject.addEventListener('click', async () => {
-            const selectedDatatype = getCurrentDesiredDatatype();
-            if (!selectedDatatype) {
-                // Flash the btnSubscribeToSubject red without using bootstrap
-                btnSubscribeToSubject.style.backgroundColor = "red";
-                setTimeout(() => {
-                    btnSubscribeToSubject.style.backgroundColor = "";
-                }, 1000);
-                return;
-            }
-            let desiredSubjectIdValue = iSubjectId.value;
-            if (desiredSubjectIdValue == "") {
-                desiredSubjectIdValue = null;
-            }
-            const subscription = await zubax_apij.subscribe(desiredSubjectIdValue, selectedDatatype);
-            if (!subscription || !subscription.success) {
-                // Flash the btnSubscribeToSubject red without using bootstrap
-                btnSubscribeToSubject.style.backgroundColor = "red";
-                setTimeout(() => {
-                    btnSubscribeToSubject.style.backgroundColor = "";
-                }, 1000);
-                return;
-            }
-            yukon_state.subscriptions[subscription.subject_id + ":" + subscription.datatype] = [];
-            const current_messages = yukon_state.subscriptions[subscription.subject_id + ":" + subscription.datatype];
-            // Add a div to the parent of btnSubscribeToSubject
-            const div = document.createElement('div');
-            div.classList.add('card');
-            div.classList.add('m-1');
-            div.id = "divSubscription" + subscription.subject_id + ":" + subscription.datatype;
-            divMessagesHere.appendChild(div);
-            // Add a h5/
-            const h5 = document.createElement('h5');
-            h5.classList.add('card-header');
-            if (subscription.subject_id == null) {
-                h5.innerHTML = "A subscription to " + subscription.datatype;
-            } else {
-                h5.innerHTML = "A subscription to " + subscription.subject_id;
-            }
-            div.appendChild(h5);
-            // Add another div in div, to display the latest message
-            /*
-                <div class="card">
-                    <h5 class="card-header">Featured</h5>
-                    <div class="card-body">
-                        <h5 class="card-title">Special title treatment</h5>
-                        <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
-                        <a href="#" class="btn btn-primary">Go somewhere</a>
-                    </div>
-                </div>
-            */
-            const divLatestMessage = document.createElement('div');
-            divLatestMessage.classList.add('card-body');
-            // Add an h5 with subject_id and datatype
-            const h5LatestMessage = document.createElement('h5');
-            h5LatestMessage.classList.add('card-title');
-            if (subscription.subject_id == null) {
-                h5LatestMessage.innerHTML = subscription.datatype;
-            } else {
-                h5LatestMessage.innerHTML = subscription.subject_id + ":" + subscription.datatype;
-            }
-            divLatestMessage.appendChild(h5LatestMessage);
-            // Add a p with the latest message
-            const pLatestMessage = document.createElement('p');
-            pLatestMessage.classList.add('card-text');
-            pLatestMessage.innerHTML = "No messages received yet";
-            pLatestMessage.id = "divLatestMessage" + subscription.subject_id + ":" + subscription.datatype;
-            divLatestMessage.appendChild(pLatestMessage);
-            div.appendChild(divLatestMessage);
-            async function fetch() {
-                const full_specifiers = [desiredSubjectIdValue + ":" + selectedDatatype + ":" + current_messages.length];
-                const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
-                const messages = result[Object.keys(result)[0]]
-                for (const message of messages) {
-                    current_messages.push(message);
-                }
-                pLatestMessage.innerHTML = JSON.stringify(current_messages[current_messages.length - 1]);
-            }
-            setInterval(fetch, 300);
-            // Add a button for removing the subscription
-            const btnRemoveSubscription = document.createElement('button');
-            btnRemoveSubscription.classList.add('btn');
-            btnRemoveSubscription.classList.add('btn-danger');
-            btnRemoveSubscription.innerHTML = "Remove subscription";
-            btnRemoveSubscription.addEventListener('click', async () => {
-                const result = await yukon_state.zubax_apij.unsubscribe(subscription.subject_id, selectedDatatype);
-                if (result.success) {
-                    div.remove();
-                } else {
-                    // Flash the btnRemoveSubscription disabled
-                    btnRemoveSubscription.disabled = true;
-                    setTimeout(() => {
-                        btnRemoveSubscription.disabled = false;
-                    });
-                }
-            });
-            div.appendChild(btnRemoveSubscription);
-        });
-    }
     async function setUpRegistersComponent(immediateCreateTable) {
         if (immediateCreateTable) {
             await update_avatars_dto(yukon_state);
@@ -277,6 +64,199 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
         btnImportRegistersConfig.addEventListener('click', async function (click_event) {
             loadConfigurationFromOpenDialog(false, yukon_state, click_event)
         });
+    }
+
+    async function setUpSettingsComponent(container, yukon_state) {
+        const containerElement = container.getElement()[0];
+        let settings = await yukon_state.zubax_apij.get_settings();
+        const settingsDiv = containerElement.querySelector("#settings-div")
+        // Recursively iterate through all the dictionary of dictionaries (settings) and create a div for each key with a value of dict, creating a nested structure of such bootstrap cards
+        function createRadioDiv(settings, parentdiv) {
+            for (let i = 0; i < settings["values"].length; i++) {
+                const radioDiv = document.createElement("div");
+                radioDiv.classList.add("form-check");
+                const radioInput = document.createElement("input");
+                radioInput.classList.add("form-check-input");
+                radioInput.type = "radio";
+                radioInput.name = settings["name"];
+                radioInput.id = settings["name"] + i;
+                radioInput.checked = settings["chosen_value"] === settings["values"][i];
+                radioInput.addEventListener("change", function () {
+                    if (this.checked) {
+                        settings["chosen_value"] = settings["values"][i];
+                    }
+                });
+                const radioLabel = document.createElement("label");
+                radioLabel.classList.add("form-check-label");
+                radioLabel.htmlFor = settings["name"] + i;
+                radioLabel.innerText = settings["values"][i];
+                radioDiv.appendChild(radioInput);
+                radioDiv.appendChild(radioLabel);
+                parentdiv.appendChild(radioDiv);
+            }
+        }
+        function createSettingsDiv(settings, parentDiv) {
+            if (settings["__type__"] === "radio") {
+                createRadioDiv(settings, parentDiv);
+                return;
+            }
+            for (const [key, value] of Object.entries(settings)) {
+
+                // If the value is an empty dictionary, say that it is empty
+                if (Object.keys(value).length === 0 && value.constructor === Object) {
+                    const div = document.createElement("div");
+                    div.classList.add("card");
+                    div.classList.add("card-body");
+                    div.classList.add("mb-2");
+                    div.innerHTML = `<h5 class="card-title">${key}</h5><p class="card-text">Empty</p>`;
+                    parentDiv.appendChild(div);
+                    // Add a button for adding a key/value pair to the dictionary
+                    continue;
+                }
+                if (typeof value === 'object') {
+                    const cardDiv = document.createElement("div");
+                    cardDiv.classList.add("card");
+                    cardDiv.classList.add("mb-3");
+                    const cardHeaderDiv = document.createElement("div");
+                    cardHeaderDiv.classList.add("card-header");
+                    cardHeaderDiv.innerText = key;
+                    if (typeof value === "object" && value["__type__"] === "radio") {
+                        cardHeaderDiv.innerText = value["name"];
+                    }
+                    // Add a remove button to the card header
+                    const btnRemove = document.createElement("button");
+                    btnRemove.classList.add("btn");
+                    btnRemove.classList.add("btn-danger");
+                    btnRemove.classList.add("btn-sm");
+                    btnRemove.classList.add("float-right");
+                    btnRemove.innerHTML = "Remove";
+                    btnRemove.addEventListener("click", async function () {
+                        delete settings[key];
+                        parentDiv.innerHTML = "";
+                        createSettingsDiv(settings, parentDiv);
+                    });
+                    cardHeaderDiv.appendChild(btnRemove);
+                    if (!Array.isArray(settings)) {
+                        cardDiv.appendChild(cardHeaderDiv);
+                    }
+                    const cardBodyDiv = document.createElement("div");
+                    cardBodyDiv.classList.add("card-body");
+                    cardDiv.appendChild(cardBodyDiv);
+                    parentDiv.appendChild(cardDiv);
+                    createSettingsDiv(value, cardBodyDiv);
+                } else {
+                    console.log("the actual type is " + typeof value);
+                    const formGroupDiv = document.createElement("div");
+                    formGroupDiv.classList.add("form-group");
+                    const label = document.createElement("label");
+                    label.innerText = key;
+                    if (!Array.isArray(settings)) {
+                        formGroupDiv.appendChild(label);
+                    }
+                    // Put each input inside <div class="input-group mb-3">
+                    const inputGroupDiv = document.createElement("div");
+                    inputGroupDiv.classList.add("input-group");
+                    inputGroupDiv.classList.add("mb-3");
+                    if (typeof value === 'boolean') {
+                        const formCheckDiv = document.createElement("div");
+                        formCheckDiv.classList.add("form-check");
+                        const checkbox = document.createElement("input");
+                        checkbox.classList.add("form-check-input");
+                        checkbox.type = "checkbox";
+                        checkbox.id = key;
+                        checkbox.checked = value;
+                        checkbox.addEventListener("change", async function () {
+                            settings[key] = checkbox.checked;
+                        });
+                    } else {
+                        if (typeof value === 'number') {
+                            const input = document.createElement("input");
+                            input.type = "number";
+                            input.classList.add("form-control");
+                            input.value = value;
+                            input.addEventListener("change", async function () {
+                                settings[key] = input.value;
+                            });
+                            inputGroupDiv.appendChild(input);
+                        } else {
+                            const input = document.createElement("input");
+                            input.type = "text";
+                            input.classList.add("form-control");
+                            input.value = value;
+                            input.addEventListener("change", async function () {
+                                settings[key] = input.value;
+                            });
+                            inputGroupDiv.appendChild(input);
+                        }
+                    }
+                    formGroupDiv.appendChild(inputGroupDiv);
+                    parentDiv.appendChild(formGroupDiv);
+                    // If settings is an array, add a button for removing the element from the array
+                    if (Array.isArray(settings)) {
+                        const btnRemove = document.createElement("button");
+                        btnRemove.classList.add("btn");
+                        btnRemove.classList.add("btn-danger");
+                        btnRemove.classList.add("btn-sm");
+                        btnRemove.innerHTML = "Remove";
+                        btnRemove.addEventListener("click", async function () {
+                            settings.splice(key, 1);
+                            parentDiv.innerHTML = "";
+                            createSettingsDiv(settings, parentDiv);
+                        });
+                        inputGroupDiv.appendChild(btnRemove);
+                    }
+                }
+            }
+            if (Array.isArray(settings)) {
+                // Put three buttons in a <div class="btn-group"> for adding a bool, int or string to the array
+                const btnGroupDiv = document.createElement("div");
+                btnGroupDiv.classList.add("btn-group");
+                btnGroupDiv.classList.add("mb-3");
+                const btnAddBool = document.createElement("button");
+                btnAddBool.classList.add("btn");
+                btnAddBool.classList.add("btn-primary");
+                btnAddBool.innerText = "Add bool";
+                btnAddBool.addEventListener("click", function () {
+                    settings.push(true);
+                    parentDiv.innerHTML = "";
+                    createSettingsDiv(settings, parentDiv);
+                });
+                const btnAddInt = document.createElement("button");
+                btnAddInt.classList.add("btn");
+                btnAddInt.classList.add("btn-primary");
+                btnAddInt.innerText = "Add int";
+                btnAddInt.addEventListener("click", function () {
+                    settings.push(0);
+                    parentDiv.innerHTML = "";
+                    createSettingsDiv(settings, parentDiv);
+                });
+                const btnAddString = document.createElement("button");
+                btnAddString.classList.add("btn");
+                btnAddString.classList.add("btn-primary");
+                btnAddString.innerText = "Add string";
+                btnAddString.addEventListener("click", function () {
+                    settings.push("");
+                    parentDiv.innerHTML = "";
+                    createSettingsDiv(settings, parentDiv);
+                });
+                btnGroupDiv.appendChild(btnAddBool);
+                btnGroupDiv.appendChild(btnAddInt);
+                btnGroupDiv.appendChild(btnAddString);
+                parentDiv.appendChild(btnGroupDiv);
+            }
+        }
+        createSettingsDiv(settings, settingsDiv);
+        /* <div class="card">
+            <h5 class="card-header">Featured</h5>
+            <div class="card-body">
+                <h5 class="card-title">Special title treatment</h5>
+                <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+                <a href="#" class="btn btn-primary">Go somewhere</a>
+            </div>
+            </div>
+        */
+
+        // settingsDiv.innerHTML = JSON.stringify(settings, null, 2);
     }
 
     yukon_state.addLocalMessage = function (message, severity) {
@@ -411,7 +391,14 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                     registerComponentAction("../subscriptions.panel.html", "subsComponent", container, () => {
                         const containerElement = container.getElement()[0];
                         containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpSubscriptionsComponent.bind(outsideContext)(container);
+                        setUpSubscriptionsComponent.bind(outsideContext)(container, yukon_state);
+                    });
+                });
+                myLayout.registerComponent("settingsComponent", function (container, componentState) {
+                    registerComponentAction("../settings.panel.html", "settingsComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpSettingsComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 const useSVG = true;

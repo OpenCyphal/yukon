@@ -29,7 +29,6 @@ var yukon_state = {
         "shouldDoubleClickOpenModal": true,
         "shouldDoubleClickPromptToSetValue": true,
         "isTableCellTextSelectable": false,
-        "isSelectionModeComplicated": false,
         "simplifyRegisters": true,
         "preferSmallerFileSelectionDialog": false,
         "alwaysSaveAsNetoworkConfig": false,

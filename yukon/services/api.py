@@ -1,7 +1,3 @@
-import copy
-import importlib
-import importlib.util
-import inspect
 import os
 import sys
 from datetime import datetime
@@ -9,15 +5,14 @@ import json
 import re
 import typing
 from pathlib import Path
-from queue import Queue
 from time import sleep, monotonic
 import logging
 
-import pycyphal
 import yaml
 from uuid import uuid4
 from time import time
 
+from yukon.services.settings_handler import save_settings
 from yukon.domain.unsubscribe_request import UnsubscribeRequest
 from yukon.services.utils import get_datatypes_from_packages_directory_path
 from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
@@ -214,7 +209,7 @@ def make_yaml_string_node_ids_numbers(serialized_conf: str) -> str:
 
 
 def add_register_update_log_item(
-    state: GodState, register_name: str, register_value: str, node_id: str, success: bool
+        state: GodState, register_name: str, register_value: str, node_id: str, success: bool
 ) -> None:
     """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
     request_sent_time = datetime.fromtimestamp(time()).strftime("%H:%M:%S.%f")
@@ -379,7 +374,7 @@ class Api:
         return jsonify(self.state.queues.attach_transport_response.get())
 
     def attach_transport(
-        self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
+            self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
         logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
         interface = Interface()
@@ -527,7 +522,7 @@ class Api:
         for specifier, messages_store in self.state.queues.subscribed_messages.items():
             for dto in dtos:
                 if dto.does_equal_specifier(specifier):
-                    mapping[str(dto)] = messages_store.messages[dto.counter :]
+                    mapping[str(dto)] = messages_store.messages[dto.counter:]
                     break
         # This jsonify is why I made sure to set up the JSON encoder for dsdl
         return jsonify(mapping)
@@ -545,3 +540,10 @@ class Api:
                 break
         for dsdl_folder in dsdl_folders:
             return jsonify(get_datatypes_from_packages_directory_path(dsdl_folder))
+
+    def set_settings(self, settings: dict):
+        assert isinstance(settings, dict)
+        self.state.settings = settings
+
+    def get_settings(self):
+        return jsonify(self.state.settings)
