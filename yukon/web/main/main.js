@@ -73,6 +73,12 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
         // Recursively iterate through all the dictionary of dictionaries (settings) and create a div for each key with a value of dict, creating a nested structure of such bootstrap cards
         function createRadioDiv(settings, parentdiv) {
             for (let i = 0; i < settings["values"].length; i++) {
+                let value = settings["values"][i];
+                let description = "";
+                if (typeof settings["values"][i] === "object") {
+                    value = settings["values"][i]["value"];
+                    description = settings["values"][i]["description"];
+                }
                 const radioDiv = document.createElement("div");
                 radioDiv.classList.add("form-check");
                 const radioInput = document.createElement("input");
@@ -83,22 +89,33 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                 radioInput.checked = settings["chosen_value"] === settings["values"][i];
                 radioInput.addEventListener("change", function () {
                     if (this.checked) {
-                        settings["chosen_value"] = settings["values"][i];
+                        settings["chosen_value"] = value;
                     }
                 });
                 const radioLabel = document.createElement("label");
                 radioLabel.classList.add("form-check-label");
                 radioLabel.htmlFor = settings["name"] + i;
-                radioLabel.innerText = settings["values"][i];
+                radioLabel.innerText = value;
                 radioDiv.appendChild(radioInput);
                 radioDiv.appendChild(radioLabel);
                 parentdiv.appendChild(radioDiv);
+                if (description !== "") {
+                    // Make a new label after the current label
+                    const radioDescriptionLabel = document.createElement("label");
+                    radioDescriptionLabel.classList.add("mb-3");
+                    radioDescriptionLabel.htmlFor = settings["name"] + i;
+                    radioDescriptionLabel.innerText = description;
+                    parentdiv.appendChild(radioDescriptionLabel);
+                }
             }
         }
         function createSettingsDiv(settings, parentDiv) {
             if (settings["__type__"] === "radio") {
                 createRadioDiv(settings, parentDiv);
                 return;
+            }
+            if (settings["__type__"] === "path") {
+
             }
             for (const [key, value] of Object.entries(settings)) {
 
@@ -119,7 +136,20 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                     cardDiv.classList.add("mb-3");
                     const cardHeaderDiv = document.createElement("div");
                     cardHeaderDiv.classList.add("card-header");
-                    cardHeaderDiv.innerText = key;
+                    // If key == "__editable__" then make an input field for the value of the key
+                    if (key === "__editable__") {
+                        const input = document.createElement("input");
+                        input.classList.add("form-control");
+                        input.type = "text";
+                        input.value = value;
+                        input.placeholder = "Enter new key";
+                        input.addEventListener("change", function () {
+                            key = this.value;
+                        });
+                        cardHeaderDiv.appendChild(input);
+                    } else {
+                        cardHeaderDiv.innerText = key;
+                    }
                     if (typeof value === "object" && value["__type__"] === "radio") {
                         cardHeaderDiv.innerText = value["name"];
                     }
@@ -147,19 +177,43 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                 } else {
                     console.log("the actual type is " + typeof value);
                     const formGroupDiv = document.createElement("div");
-                    formGroupDiv.classList.add("form-group");
+                    formGroupDiv.classList.add("form-check");
+                    formGroupDiv.classList.add("mb-3");
                     const label = document.createElement("label");
-                    label.innerText = key;
-                    if (!Array.isArray(settings)) {
+                    label.classList.add("form-check-label");
+                    if (key === "__editable__") {
+                        const input = document.createElement("input");
+                        input.type = "text";
+                        input.value = "";
+                        input.placeholder = "Enter new key";
+                        input.addEventListener("change", function () {
+                            key = this.value;
+                        });
+                        label.appendChild(input);
                         formGroupDiv.appendChild(label);
+                        // Add a submit button
+                        const btnSubmit = document.createElement("button");
+                        btnSubmit.classList.add("btn");
+                        btnSubmit.classList.add("btn-primary");
+                        btnSubmit.classList.add("btn-sm");
+                        btnSubmit.classList.add("float-right");
+                        btnSubmit.innerHTML = "Submit";
+                        btnSubmit.addEventListener("click", async function () {
+                            settings[input.value] = value;
+                            parentDiv.innerHTML = "";
+                            createSettingsDiv(settings, parentDiv);
+                        });
+                        formGroupDiv.appendChild(btnSubmit);
+                    } else {
+                        label.innerHTML = key;
+                        if (!Array.isArray(settings)) {
+                            formGroupDiv.appendChild(label);
+                        }
                     }
+
                     // Put each input inside <div class="input-group mb-3">
-                    const inputGroupDiv = document.createElement("div");
-                    inputGroupDiv.classList.add("input-group");
-                    inputGroupDiv.classList.add("mb-3");
+
                     if (typeof value === 'boolean') {
-                        const formCheckDiv = document.createElement("div");
-                        formCheckDiv.classList.add("form-check");
                         const checkbox = document.createElement("input");
                         checkbox.classList.add("form-check-input");
                         checkbox.type = "checkbox";
@@ -168,6 +222,7 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                         checkbox.addEventListener("change", async function () {
                             settings[key] = checkbox.checked;
                         });
+                        formGroupDiv.appendChild(checkbox);
                     } else {
                         if (typeof value === 'number') {
                             const input = document.createElement("input");
@@ -177,7 +232,7 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                             input.addEventListener("change", async function () {
                                 settings[key] = input.value;
                             });
-                            inputGroupDiv.appendChild(input);
+                            formGroupDiv.appendChild(input);
                         } else {
                             const input = document.createElement("input");
                             input.type = "text";
@@ -186,10 +241,9 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                             input.addEventListener("change", async function () {
                                 settings[key] = input.value;
                             });
-                            inputGroupDiv.appendChild(input);
+                            formGroupDiv.appendChild(input);
                         }
                     }
-                    formGroupDiv.appendChild(inputGroupDiv);
                     parentDiv.appendChild(formGroupDiv);
                     // If settings is an array, add a button for removing the element from the array
                     if (Array.isArray(settings)) {
@@ -203,7 +257,7 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                             parentDiv.innerHTML = "";
                             createSettingsDiv(settings, parentDiv);
                         });
-                        inputGroupDiv.appendChild(btnRemove);
+                        formGroupDiv.appendChild(btnRemove);
                     }
                 }
             }
@@ -217,7 +271,7 @@ import { layout_config } from "../modules/panels/_layout_config.module.js"
                 btnAddBool.classList.add("btn-primary");
                 btnAddBool.innerText = "Add bool";
                 btnAddBool.addEventListener("click", function () {
-                    settings.push(true);
+                    settings.push({ "__editable__": true });
                     parentDiv.innerHTML = "";
                     createSettingsDiv(settings, parentDiv);
                 });
