@@ -12,7 +12,8 @@ import yaml
 from uuid import uuid4
 from time import time
 
-from yukon.services.settings_handler import save_settings, load_settings, loading_settings_into_yukon
+from yukon.services.settings_handler import save_settings, load_settings, loading_settings_into_yukon, \
+    add_all_dsdl_paths_to_pythonpath
 from yukon.domain.unsubscribe_request import UnsubscribeRequest
 from yukon.services.utils import get_datatypes_from_packages_directory_path
 from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
@@ -529,6 +530,7 @@ class Api:
 
     def get_known_datatypes_from_dsdl(self) -> Response:
         # iterate through the paths in PYTHONPATH
+        add_all_dsdl_paths_to_pythonpath(self.state)
         dsdl_folders = []
         # If the CYPHAL_PATH environment variable is set, add the value of that to the list of dsdl_folders
         if "CYPHAL_PATH" in os.environ:

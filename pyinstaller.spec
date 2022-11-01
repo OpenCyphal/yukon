@@ -63,7 +63,8 @@ if my_os == "Linux":
 elif my_os == "Windows":
     datas += [("venv\\Lib\\site-packages\\nunavut", "nunavut")]
 
-datas += [(".compiled", ".compiled")]
+
+# datas += [(".compiled", ".compiled")]
 
 
 def detect_hidden_imports() -> typing.List[str]:
