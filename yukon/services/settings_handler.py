@@ -1,4 +1,5 @@
 import typing
+import logging
 from pathlib import Path
 
 from ruamel import yaml
@@ -10,6 +11,8 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
 from yukon.services._dumper import Dumper
+
+logger = logging.getLogger(__name__)
 
 
 def save_settings(settings_: typing.Dict, save_location: Path):
@@ -38,11 +41,14 @@ def loading_settings_into_yukon(state: GodState):
         for key, value in settings.items():
             if isinstance(value, dict):
                 if key not in loaded_settings:
+                    logger.debug(f"Adding key {key} (has dict value) to loaded_settings")
                     loaded_settings[key] = value
                 else:
                     recursive_update_settings(value, loaded_settings[key])
             else:
                 if key not in loaded_settings:
+                    logger.debug(f"Adding key {key} to loaded_settings")
                     loaded_settings[key] = value
 
-    recursive_update_settings(yukon_state.settings, loaded_settings)
+    recursive_update_settings(state.settings, loaded_settings)
+    state.settings = loaded_settings

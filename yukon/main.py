@@ -12,6 +12,8 @@ from time import sleep, monotonic
 import subprocess
 import mimetypes
 import sentry_sdk
+
+from yukon.services.settings_handler import loading_settings_into_yukon
 from yukon.services.cyphal_worker.cyphal_worker import cyphal_worker
 
 from yukon.domain.interface import Interface
@@ -45,6 +47,7 @@ def run_electron(state: GodState) -> None:
     # Make the thread sleep for 1 second waiting for the server to start
     while not state.gui.is_port_decided:
         sleep(1)
+
     exe_path = get_electron_path()
     electron_logger = logger.getChild("electronJS")
     electron_logger.setLevel("DEBUG")
@@ -139,6 +142,7 @@ def set_logging_levels() -> None:
 
 
 def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
+    loading_settings_into_yukon(state)
     set_logging_levels()
     state.messages_publisher = MessagesPublisher(state)
     state.messages_publisher.setLevel(logging.NOTSET)

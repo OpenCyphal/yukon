@@ -1,6 +1,7 @@
 export async function setUpSettingsComponent(container, yukon_state) {
     const containerElement = container.getElement()[0];
     yukon_state.all_settings = await yukon_state.zubax_apij.get_settings();
+    console.log("got settings into UI")
     let settings = yukon_state.all_settings;
     const settingsDiv = containerElement.querySelector("#settings-div")
     const settingsDebugDiv = containerElement.querySelector("#settings-debug-div");
