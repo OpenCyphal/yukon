@@ -1,8 +1,10 @@
+import logging
+import sys
 import traceback
 import typing
 import pycyphal.dsdl
 
-from services.settings_handler import add_all_dsdl_paths_to_pythonpath
+from yukon.services.settings_handler import add_all_dsdl_paths_to_pythonpath
 from yukon.domain.message_carrier import MessageCarrier
 from yukon.domain.messages_store import MessagesStore
 from yukon.domain.subscribe_response import SubscribeResponse
@@ -10,10 +12,13 @@ from yukon.services.messages_publisher import add_local_message
 from yukon.services.dtype_loader import load_dtype
 from yukon.domain.god_state import GodState
 
+logger = logging.getLogger(__name__)
+
 
 async def do_subscribe_requests_work(state: GodState) -> None:
     if not state.queues.subscribe_requests.empty():
         subscribe_request = state.queues.subscribe_requests.get_nowait()
+        logger.warning("Current PYTHONPATH: %s", sys.path)
         add_all_dsdl_paths_to_pythonpath(state)
         try:
             if not subscribe_request.specifier.subject_id:

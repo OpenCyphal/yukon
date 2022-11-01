@@ -446,6 +446,8 @@ export function showCellValue(node_id, register_name, yukon_state) {
     }
     // Add a submit button
     let modal_submit = document.createElement("button");
+    modal_submit.classList.add("btn");
+    modal_submit.classList.add("btn-primary");
     modal_submit.innerHTML = "Submit";
     if (!isMutable) {
         modal_submit.disabled = true;
@@ -455,6 +457,7 @@ export function showCellValue(node_id, register_name, yukon_state) {
     // If enter is pressed the modal should submit too
     enterListener = function (event) {
         if (event.key == "Enter") {
+            event.preventDefault();
             console.log("Enter pressed");
             submit_modal();
             disconnectEnterListener();
@@ -619,6 +622,8 @@ export function editSelectedCellValues(pairs, yukon_state) {
 
     // Add a submit button
     let modal_submit = document.createElement("button");
+    modal_submit.classList.add("btn");
+    modal_submit.classList.add("btn-primary");
     modal_submit.innerHTML = "Submit compatible";
     if (uneditable_register_count == register_count) {
         modal_submit.disabled = true;
@@ -627,6 +632,8 @@ export function editSelectedCellValues(pairs, yukon_state) {
     // If enter is pressed the modal should submit too
     document.addEventListener("keydown", function (event) {
         if (event.key == "Enter") {
+            event.preventDefault();
+
             console.log("Enter pressed");
             submit_modal();
             document.removeEventListener("keydown", arguments.callee);

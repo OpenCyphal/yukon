@@ -30,6 +30,12 @@ export const layout_config = {
                                             isClosable: true,
                                             title: 'Settings',
                                         },
+                                        {
+                                            type: 'component',
+                                            componentName: 'motorControlComponent',
+                                            isClosable: true,
+                                            title: 'Motor control',
+                                        },
                                     ]
                                 },
                                 {

@@ -7,11 +7,7 @@ from queue import Queue
 from typing import Optional, Any, Callable, Dict
 from uuid import UUID
 
-from pycyphal.application.node_tracker import NodeTracker
-
 import pycyphal
-from pycyphal.application import Node
-from pycyphal.transport.redundant import RedundantTransport
 
 from yukon.services.messages_publisher import MessagesPublisher
 from yukon.domain.messages_store import MessagesStore
@@ -25,7 +21,6 @@ from yukon.domain.message import Message
 from yukon.domain.allocation_request import AllocationRequest
 from yukon.domain.HWID import HWID
 from yukon.domain.attach_transport_request import AttachTransportRequest
-from yukon.domain.UID import UID
 from yukon.domain.avatar import Avatar
 from yukon.domain.interface import Interface
 from yukon.domain.node_state import NodeState
@@ -95,17 +90,17 @@ class GuiState:
 @dataclass
 class AllocationState:
     allocation_requests_by_hwid: Dict[HWID, AllocationRequest] = field(default_factory=dict)
-    allocated_nodes: Dict[HWID, Node] = field(default_factory=dict)
+    allocated_nodes: Dict[HWID, "pycyphal.application.Node"] = field(default_factory=dict)
 
 
 @dataclass
 class CyphalState:
     """A class that holds all cyphal references used by the god state."""
 
-    pseudo_transport: Optional[RedundantTransport] = field(default_factory=none_factory)
+    pseudo_transport: Optional["pycyphal.transport.redundant.RedundantTransport"] = field(default_factory=none_factory)
     tracer: Optional[pycyphal.transport.Tracer] = field(default_factory=none_factory)
-    tracker: Optional[NodeTracker] = field(default_factory=none_factory)
-    local_node: Optional[Node] = field(default_factory=none_factory)
+    tracker: Optional["pycyphal.application.node_tracker.NodeTracker"] = field(default_factory=none_factory)
+    local_node: Optional["pycyphal.application.Node"] = field(default_factory=none_factory)
     add_transport: Optional[Callable[[Interface], None]] = field(default_factory=none_factory)
     known_node_states: list[NodeState] = field(default_factory=list)
     allocation_subscriber: Optional[pycyphal.presentation.Subscriber] = field(default_factory=none_factory)
@@ -153,5 +148,6 @@ class GodState:
                 },
             },
         }
+        self.last_settings_hash: int = 0
         self.messages_publisher: Optional[MessagesPublisher] = field(default_factory=none_factory)
         self.api = None

@@ -1,10 +1,7 @@
 import copy
 from dataclasses import dataclass
-from typing import MutableMapping, Any
+import pycyphal
 
-from pycyphal.application import make_registry, register
-
-from yukon.domain.UID import UID
 from yukon.domain.interface import Interface
 
 
@@ -13,7 +10,9 @@ class AttachTransportRequest:
     requested_interface: Interface
     local_node_id: int
 
-    def get_registry(self) -> register.Registry:
+    def get_registry(self) -> "pycyphal.application.register.Registry":
+        from pycyphal.application import make_registry
+
         registry = make_registry()
         if self.requested_interface.iface != "":
             registry["uavcan.can.iface"] = copy.copy(self.requested_interface.iface)

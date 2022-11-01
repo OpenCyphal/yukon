@@ -17,6 +17,7 @@ import { setUpRegisterUpdateLogComponent } from "../modules/panels/register_upda
 import { setUpSubscriptionsComponent } from "../modules/panels/subscriptions.module.js"
 import { layout_config } from "../modules/panels/_layout_config.module.js"
 import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
+import { setUpMotorControlComponent } from "../modules/panels/motor_control.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
@@ -63,7 +64,7 @@ import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
         });
         const btnImportRegistersConfig = document.getElementById('btnImportRegistersConfig');
         btnImportRegistersConfig.addEventListener('click', async function (click_event) {
-            loadConfigurationFromOpenDialog(false, yukon_state, click_event)
+            await loadConfigurationFromOpenDialog(false, yukon_state, click_event)
         });
     }
 
@@ -210,6 +211,13 @@ import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
                         setUpSettingsComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
+                myLayout.registerComponent("motorControlComponent", function (container, componentState) {
+                    registerComponentAction("../motor-control.panel.html", "motorControlComponent", container, () => {
+                        const containerElement = container.getElement()[0];
+                        containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpMotorControlComponent.bind(outsideContext)(container, yukon_state);
+                    });
+                });
                 const useSVG = true;
                 let caretDownImgSrc = null;
                 let caretUpImgSrc = null;
@@ -246,7 +254,7 @@ import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
                             e.stopPropagation();
                             const container = stack.getActiveContentItem().container.getElement()[0];
                             // Use the data-isExpanded attribute and toggle it
-                            if (container.getAttribute("data-isExpanded") == "true") {
+                            if (container.getAttribute("data-isExpanded") === "true") {
                                 container.removeAttribute("data-isExpanded");
                             } else {
                                 container.setAttribute("data-isExpanded", "true");
@@ -266,7 +274,7 @@ import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
                     stack.on('activeContentItemChanged', function (contentItem) {
                         const activeElementName = stack.getActiveContentItem().config.componentName;
                         console.log("Active element changed to " + activeElementName);
-                        const requiresSettingsButton = stack.getActiveContentItem().config.hasOwnProperty("doesRequireSettingsButton") && stack.getActiveContentItem().config.doesRequireSettingsButton == true;
+                        const requiresSettingsButton = stack.getActiveContentItem().config.hasOwnProperty("doesRequireSettingsButton") && stack.getActiveContentItem().config.doesRequireSettingsButton === true;
                         if (!requiresSettingsButton) {
                             btnPanelShowHideToggle.style.display = "none";
                         } else {
@@ -458,7 +466,7 @@ import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
                         const previousText = selectedCell.innerHTML;
                         selectedCell.innerHTML = "Generating yaml!";
                         setTimeout(function () {
-                            if (selectedCell.innerHTML == "Copied!" || selectedCell.innerHTML == "Generating yaml!" || selectedCell.innerHTML == "Copy failed!") {
+                            if (selectedCell.innerHTML === "Copied!" || selectedCell.innerHTML === "Generating yaml!" || selectedCell.innerHTML === "Copy failed!") {
                                 selectedCell.innerHTML = previousText;
                             }
                         }, 1000);
@@ -489,7 +497,7 @@ import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
                         const previousText = element.innerHTML;
                         element.innerHTML = "Copied!";
                         setTimeout(function () {
-                            if (element.innerHTML == "Copied!") {
+                            if (element.innerHTML === "Copied!") {
                                 element.innerHTML = previousText;
                             }
                         }, 700);
@@ -515,7 +523,7 @@ import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
                 }
                 // Start navigating up through parents (ancestors) of elementOn, until one of the parents has the class lm_content
                 let currentElement = elementOn
-                while (elementOn != document.body) {
+                while (elementOn !== document.body) {
                     if (currentElement.parentElement == null) {
                         return;
                     }
@@ -534,7 +542,7 @@ import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
                 e.preventDefault();
             }
             // If F5 is pressed, reread registers
-            if (e.keyCode == 116) {
+            if (e.code === "F5") {
                 const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": null }, yukon_state);
                 let pairs = [];
                 // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
@@ -549,7 +557,7 @@ import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
             }
         }
         document.addEventListener('keydown', function (e) {
-            if (e.keyCode == 27) {
+            if (e.code === "Escape") {
                 if (escape_timer) {
                     clearTimeout(escape_timer);
                     escape_timer = null;

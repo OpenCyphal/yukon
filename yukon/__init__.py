@@ -45,7 +45,7 @@ logging.basicConfig(
     format="%(asctime)s %(process)07d %(levelname)-3.3s: %(name)s: %(message)s",
 )
 
-# DSDL packages are pre-compiled when the package is built, so we do not need to compile our dependencies at runtime.
+# # DSDL packages are pre-compiled when the package is built, so we do not need to compile our dependencies at runtime.
 dsdl_compiled_directory = str(get_root_directory() / ".compiled")
 # print(f"Adding {dsdl_compiled_directory} to Python path")
 sys.path.insert(0, dsdl_compiled_directory)

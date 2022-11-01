@@ -14,6 +14,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
     const rbUseSelectAdvertised = containerElement.querySelector('#rbUseSelectAdvertised');
     const rbUseSelectFixedId = containerElement.querySelector('#rbUseSelectFixedId');
     const rbUseSelectAny = containerElement.querySelector('#rbUseSelectAny');
+    const rbUseManualDatatypeEntry = containerElement.querySelector('#rbUseManualDatatypeEntry');
     function getCurrentDesiredDatatype() {
         if (rbUseSelectAdvertised.checked) {
             return iSelectDatatype.value;
@@ -21,6 +22,8 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
             return iSelectFixedIdMessageType.value;
         } else if (rbUseSelectAny.checked) {
             return iSelectAny.value;
+        } else if (rbUseManualDatatypeEntry.checked) {
+            return iManualDatatypeEntry.value;
         } else {
             return null;
         }

@@ -1,3 +1,4 @@
+import os
 import sys
 import typing
 import logging
@@ -63,3 +64,5 @@ def add_all_dsdl_paths_to_pythonpath(state: GodState) -> None:
         path = path_object["value"]
         if path not in sys.path:
             sys.path.append(path)
+    # Save the current sys.path into os.environ["PYTHONPATH"]
+    os.environ["PYTHONPATH"] = ":".join(sys.path)
