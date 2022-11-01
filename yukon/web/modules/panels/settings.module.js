@@ -1,6 +1,7 @@
 export async function setUpSettingsComponent(container, yukon_state) {
     const containerElement = container.getElement()[0];
-    let settings = await yukon_state.zubax_apij.get_settings();
+    yukon_state.all_settings = await yukon_state.zubax_apij.get_settings();
+    let settings = yukon_state.all_settings;
     const settingsDiv = containerElement.querySelector("#settings-div")
     const settingsDebugDiv = containerElement.querySelector("#settings-debug-div");
 
@@ -298,6 +299,10 @@ export async function setUpSettingsComponent(container, yukon_state) {
             parentDiv.appendChild(btnGroupDiv);
         }
     }
+    setInterval(async function () {
+        await yukon_state.zubax_apij.set_settings(yukon_state.all_settings);
+        await yukon_state.zubax_apij.save_settings();
+    }, 1000);
     createSettingsDiv(settings, settingsDiv, null, null)
     setInterval(function () {
         settingsDebugDiv.innerHTML = JSON.stringify(settings, null, 2);

@@ -12,7 +12,7 @@ import yaml
 from uuid import uuid4
 from time import time
 
-from yukon.services.settings_handler import save_settings
+from yukon.services.settings_handler import save_settings, load_settings
 from yukon.domain.unsubscribe_request import UnsubscribeRequest
 from yukon.services.utils import get_datatypes_from_packages_directory_path
 from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
@@ -547,3 +547,9 @@ class Api:
 
     def get_settings(self):
         return jsonify(self.state.settings)
+
+    def save_settings(self):
+        save_settings(self.state.settings, Path.home() / "yukon_settings.json")
+
+    def load_settings(self):
+        self.state.settings = load_settings(Path.home() / "yukon_settings.json")
