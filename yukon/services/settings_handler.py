@@ -29,7 +29,7 @@ def loading_settings_into_yukon(state: GodState) -> None:
     """This function makes sure that new settings that Yukon developers add end up in the settings file.
 
     Overridden values from configuration do of course take effect over the default values in code."""
-    loaded_settings = load_settings(Path.home() / "yukon_settings.json")
+    loaded_settings = load_settings(Path.home() / "yukon_settings.yaml")
 
     # Take extra keys and values from self.state.settings and add them to loaded_settings
     # Then make self.state.settings equal to loaded_settings
