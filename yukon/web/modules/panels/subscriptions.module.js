@@ -76,6 +76,8 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
             }, 3000);
         });
         const knownDatatypes = getKnownDatatypes(yukon_state);
+        // Alphabetically sort knownDatatypes
+        knownDatatypes.sort();
         const response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
         iSelectDatatype.innerHTML = '';
         iSelectAny.innerHTML = '';
@@ -96,6 +98,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
             option.value = datatype_full;
             iSelectFixedIdMessageType.appendChild(option);
         }
+        response["variable_id_messages"].sort();
         for (const datatype of response["variable_id_messages"]) {
             // Add a new option to the select
             const option = document.createElement('option');
