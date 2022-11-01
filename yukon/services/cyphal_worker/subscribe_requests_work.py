@@ -2,7 +2,7 @@ import traceback
 import typing
 import pycyphal.dsdl
 
-import uavcan
+from services.settings_handler import add_all_dsdl_paths_to_pythonpath
 from yukon.domain.message_carrier import MessageCarrier
 from yukon.domain.messages_store import MessagesStore
 from yukon.domain.subscribe_response import SubscribeResponse
@@ -14,6 +14,7 @@ from yukon.domain.god_state import GodState
 async def do_subscribe_requests_work(state: GodState) -> None:
     if not state.queues.subscribe_requests.empty():
         subscribe_request = state.queues.subscribe_requests.get_nowait()
+        add_all_dsdl_paths_to_pythonpath(state)
         try:
             if not subscribe_request.specifier.subject_id:
                 new_subscriber = state.cyphal.local_node.make_subscriber(

@@ -59,6 +59,7 @@ def _load(name_components: list[str], major: int | None, minor: int | None) -> T
             try:
                 mod = importlib.import_module(name)
             except ImportError:  # We seem to have hit a reserved word; try with an underscore.
+                _logger.error("Failed to import %r, trying with an underscore", name)
                 mod = importlib.import_module(name + "_")
     except ImportError as ex:
         raise ex

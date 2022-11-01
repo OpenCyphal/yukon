@@ -57,7 +57,7 @@ def loading_settings_into_yukon(state: GodState) -> None:
         state.settings = loaded_settings
 
 
-def add_all_dsdl_paths_to_pythonpath(state: GodState):
+def add_all_dsdl_paths_to_pythonpath(state: GodState) -> None:
     """This function adds all paths in state.settings.dsdl_paths to the python path."""
     for path_object in state.settings["dsdl_directories"]:
         path = path_object["value"]

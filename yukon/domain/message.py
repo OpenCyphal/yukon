@@ -6,7 +6,7 @@ from dataclasses import dataclass
 @dataclass
 class Message:
     message: str
-    timestamp: float = 0.0
+    timestamp: str = ""
     index_nr: int = 0
     # Severities:
     # CRITICAL = 50
