@@ -1,9 +1,0 @@
-import typing
-
-class SubjectSpecifier:
-    subject_id: typing.Optional[int]
-    datatype: str
-    def __init__(self, subject_id: typing.Optional[int] = ..., datatype: str = ...) -> None: ...
-    @staticmethod
-    def from_string(string: str) -> SubjectSpecifier: ...
-    def __hash__(self) -> int: ...

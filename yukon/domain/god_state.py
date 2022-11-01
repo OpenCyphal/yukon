@@ -13,7 +13,7 @@ import pycyphal
 from pycyphal.application import Node
 from pycyphal.transport.redundant import RedundantTransport
 
-from services.messages_publisher import MessagesPublisher
+from yukon.services.messages_publisher import MessagesPublisher
 from yukon.domain.messages_store import MessagesStore
 from yukon.domain.subject_specifier import SubjectSpecifier
 from yukon.domain.subscribe_response import SubscribeResponse
@@ -136,18 +136,22 @@ class GodState:
         self.cyphal = CyphalState()
         self.avatar = AvatarState()
         self.allocation = AllocationState()
-        self.settings = {"dsdl_directories": [{"__type__": "dirpath",
-                                               "value": ""}],
-                         "some_files": [{"__type__": "filepath", "value": ""}],
-                         "ui_settings": {
-                             "Save location": {"__type__": "radio",
-                                               "values": [
-                                                   "Cloud", {"value": "Computer", "description": "Your pc pretty much"},
-                                                   "Device", "Mobile phone"
-                                               ],
-                                               "chosen_value": "Cloud",
-                                               "name": "Save location (nice!)"
-                                               },
-                         }}
+        self.settings = {
+            "dsdl_directories": [{"__type__": "dirpath", "value": ""}],
+            "some_files": [{"__type__": "filepath", "value": ""}],
+            "ui_settings": {
+                "Save location": {
+                    "__type__": "radio",
+                    "values": [
+                        "Cloud",
+                        {"value": "Computer", "description": "Your pc pretty much"},
+                        "Device",
+                        "Mobile phone",
+                    ],
+                    "chosen_value": "Cloud",
+                    "name": "Save location (nice!)",
+                },
+            },
+        }
         self.messages_publisher: Optional[MessagesPublisher] = field(default_factory=none_factory)
         self.api = None

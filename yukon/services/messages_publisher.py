@@ -1,9 +1,9 @@
 import datetime
 import logging
-import time
 
 import typing
 
+import yukon
 from yukon.domain.message import Message
 
 
@@ -46,7 +46,7 @@ def get_level_name(level_no: int) -> str:
 
 
 class MessagesPublisher(logging.Handler):
-    def __init__(self, state) -> None:
+    def __init__(self, state: "yukon.domain.god_state.GodState") -> None:
         super().__init__()
         self._state = state
 
@@ -66,7 +66,9 @@ class MessagesPublisher(logging.Handler):
         self._state.queues.messages.put(new_message)
 
 
-def add_local_message(state, text: str, severity: int, *args: typing.List[typing.Any]) -> None:
+def add_local_message(
+    state: "yukon.domain.god_state.GodState", text: str, severity: int, *args: typing.List[typing.Any]
+) -> None:
     state.queues.message_queue_counter += 1
     state.queues.messages.put(
         Message(
