@@ -3,6 +3,7 @@ const process = require('process');
 const path = require('path')
 const http = require('http');
 const net = require('net');
+const fs = require('fs');
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -28,6 +29,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
     ipcMain.handle('dialog:openPath', handlePathOpen);
+    ipcMain.handle('dialog:saveFile', handleFileSave);
     createWindow();
 
     app.on('activate', () => {
@@ -43,16 +45,16 @@ app.on('window-all-closed', () => {
         app.quit();
     }
 })
-
+async function handleFileSave(_, content) {
+    const { canceled, filePath } = await dialog.showSaveDialog();
+    if (canceled) {
+        return;
+    } else {
+        fs.writeFileSync(filePath, content);
+    }
+}
 async function handlePathOpen(_, properties) {
     const { canceled, filePaths } = await dialog.showOpenDialog(properties);
-    console.log("I don't want to open anything!")
-    console.log("The properties are: " + properties);
-    // List the own properties of properties
-    for (const property in properties) {
-        console.log("Property: " + property);
-    }
-
     if (canceled) {
         return;
     } else {

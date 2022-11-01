@@ -112,7 +112,10 @@ async function saveString(string, yukon_state) {
             yukon_state.addLocalMessage("User didn't specify a file path in the dialog", 20);
         }
     } else {
-        return await yukon_state.zubax_api.save_yaml(string);
+        // Substitute r"['\"](\d+)['\"]" with r"\1" in string\
+        // This will make the node_ids numbers instead of strings
+        string = string.replace(/['"](\d+)['"]/g, "$1");
+        return await window.electronAPI.saveFile(string);
     }
 }
 function parseYamlStringsToNumbers(string) {

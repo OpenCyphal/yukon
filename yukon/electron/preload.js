@@ -12,4 +12,5 @@ window.addEventListener('DOMContentLoaded', () => {
 
 contextBridge.exposeInMainWorld('electronAPI', {
     openPath: (properties) => ipcRenderer.invoke('dialog:openPath', properties),
+    saveFile: (content) => ipcRenderer.invoke('dialog:saveFile', content),
 })

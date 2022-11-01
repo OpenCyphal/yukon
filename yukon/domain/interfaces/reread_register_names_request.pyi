@@ -1,0 +1,3 @@
+class RereadRegisterNamesRequest:
+    node_id: int
+    def __init__(self, node_id) -> None: ...

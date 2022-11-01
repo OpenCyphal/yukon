@@ -1,8 +1,3 @@
-import typing
-from dataclasses import dataclass
-
-
-@dataclass
 class ViewPortInfo:
     title: str
     width: int
@@ -10,3 +5,4 @@ class ViewPortInfo:
     small_icon: str
     large_icon: str
     resizable: bool
+    def __init__(self, title, width, height, small_icon, large_icon, resizable) -> None: ...
