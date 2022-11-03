@@ -171,13 +171,29 @@
 
     input[type="radio"] {
         background: #c7c7c7 !important;
-        border-color: #0d6efd !important;
         color: #b01f1f !important;
     }
 
     input[type="radio"]:checked {
         background: #0d6efd !important;
-        border-color: #0d6efd !important;
         color: white !important;
+    }
+
+    #toolbar {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #btnRestoreDefaultLayout {
+        background-color: #353535;
+        border-color: #727272
+    }
+
+    * {
+        color-scheme: dark;
+    }
+
+    body {
+        background-color: #222222;
     }
 }

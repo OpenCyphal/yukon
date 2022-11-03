@@ -132,21 +132,26 @@ class GodState:
         self.avatar = AvatarState()
         self.allocation = AllocationState()
         self.settings = {
-            "dsdl_directories": [{"__type__": "dirpath", "value": ""}],
-            "some_files": [{"__type__": "filepath", "value": ""}],
-            "ui_settings": {
-                "Save location": {
-                    "__type__": "radio",
-                    "values": [
-                        "Cloud",
-                        {"value": "Computer", "description": "Your pc pretty much"},
-                        "Device",
-                        "Mobile phone",
-                    ],
-                    "chosen_value": "Cloud",
-                    "name": "Save location (nice!)",
-                },
-            },
+            "DSDL search directories": [{"__type__": "dirpath", "value": ""}],
+            "UI": {
+                "Registers": {
+                    "Column width (pixels)": 400
+                }
+            }
+            # "some_files": [{"__type__": "filepath", "value": ""}],
+            # "ui_settings": {
+            #     "Save location": {
+            #         "__type__": "radio",
+            #         "values": [
+            #             "Cloud",
+            #             {"value": "Computer", "description": "Your pc pretty much"},
+            #             "Device",
+            #             "Mobile phone",
+            #         ],
+            #         "chosen_value": "Cloud",
+            #         "name": "Save location (nice!)",
+            #     },
+            # },
         }
         self.last_settings_hash: int = 0
         self.messages_publisher: Optional[MessagesPublisher] = field(default_factory=none_factory)
