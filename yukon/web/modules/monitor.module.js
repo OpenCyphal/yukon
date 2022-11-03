@@ -77,6 +77,7 @@ export function create_directed_graph(yukon_state) {
     my_graph.on("click", "node", function (evt) {
         // If through all activeContainers in the myLayout, if commandsComponent is one of the active containers then set the clicked node id as the target of the command
         console.log("My layout:", yukon_state.myLayout)
+        const isLink = evt.target.data('link');
         let queue = []
         for (const element of yukon_state.myLayout.root.contentItems) {
             queue.push(element);

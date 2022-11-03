@@ -31,7 +31,7 @@ def cyphal_worker(state: GodState) -> None:
             state.cyphal.local_node.registry["uavcan.node.id"] = 13
             state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
             make_tracers_trackers(state)
-            print("Tracers should have been set up.")
+            logger.debug("Tracers should have been set up.")
             while state.gui.gui_running:
                 await asyncio.sleep(0.05)
                 await do_attach_transport_work(state)

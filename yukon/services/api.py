@@ -1,7 +1,3 @@
-import copy
-import importlib
-import importlib.util
-import inspect
 import os
 import sys
 from datetime import datetime
@@ -9,15 +5,19 @@ import json
 import re
 import typing
 from pathlib import Path
-from queue import Queue
 from time import sleep, monotonic
 import logging
 
-import pycyphal
 import yaml
 from uuid import uuid4
 from time import time
 
+from yukon.services.settings_handler import (
+    save_settings,
+    load_settings,
+    loading_settings_into_yukon,
+    add_all_dsdl_paths_to_pythonpath,
+)
 from yukon.domain.unsubscribe_request import UnsubscribeRequest
 from yukon.services.utils import get_datatypes_from_packages_directory_path
 from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
@@ -31,7 +31,6 @@ except ImportError:
 import websockets
 from flask import jsonify, Response
 
-import uavcan
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_log_item import UpdateRegisterLogItem
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
@@ -339,6 +338,8 @@ class Api:
         return file_dto
 
     def update_register_value(self, register_name: str, register_value: str, node_id: str) -> typing.Any:
+        import uavcan
+
         new_value: uavcan.register.Value_1 = unexplode_value(register_value)
         request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id), time())
         self.state.queues.update_registers.put(request)
@@ -427,9 +428,7 @@ class Api:
         self.state.avatar.hide_yakut_avatar = True
 
     def get_messages(self, since_index: int = 0) -> Response:
-        my_list = [
-            x.asdict() for x in list(self.state.queues.messages.queue) if not since_index or x.index_nr >= since_index
-        ]
+        my_list = [x for x in list(self.state.queues.messages.queue) if not since_index or x.index_nr >= since_index]
         return jsonify(my_list)
 
     def get_avatars(self) -> typing.Any:
@@ -498,6 +497,7 @@ class Api:
         add_register_update_log_item(self.state, register_name, register_value, node_id, bool(success))
 
     def subscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
+        add_all_dsdl_paths_to_pythonpath(self.state)
         if subject_id:
             subject_id = int(subject_id)
         self.state.queues.subscribe_requests.put(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
@@ -536,10 +536,11 @@ class Api:
 
     def get_known_datatypes_from_dsdl(self) -> Response:
         # iterate through the paths in PYTHONPATH
+        add_all_dsdl_paths_to_pythonpath(self.state)
         dsdl_folders = []
         # If the CYPHAL_PATH environment variable is set, add the value of that to the list of dsdl_folders
-        if "CYPHAL_PATH" in os.environ:
-            dsdl_folders.append(Path(os.environ["CYPHAL_PATH"]))
+        # if "CYPHAL_PATH" in os.environ:
+        #     dsdl_folders.append(Path(os.environ["CYPHAL_PATH"]))
         for path in sys.path:
             # if the path contains .compiled (which is our dsdl folder) then
             if ".compiled" in path:
@@ -547,3 +548,16 @@ class Api:
                 break
         for dsdl_folder in dsdl_folders:
             return jsonify(get_datatypes_from_packages_directory_path(dsdl_folder))
+
+    def set_settings(self, settings: dict) -> None:
+        assert isinstance(settings, dict)
+        self.state.settings = settings
+
+    def get_settings(self) -> Response:
+        return jsonify(self.state.settings)
+
+    def save_settings(self) -> None:
+        save_settings(self.state.settings, Path.home() / "yukon_settings.yaml")
+
+    def load_settings(self) -> None:
+        loading_settings_into_yukon(self.state)

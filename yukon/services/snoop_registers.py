@@ -31,13 +31,13 @@ async def get_register_value(
         # service_client.response_timeout = 0.5
         msg = uavcan.register.Access_1_0.Request()
         msg.name.name = register_name
-        logger.info("Getting register value for %s", register_name)
+        logger.debug("Getting register value for %s", register_name)
         response = await service_client.call(msg)
         if response is not None:
             if is_reread:
-                logger.info("Received a valid response to a reread request on register %s", register_name)
+                logger.debug("Received a valid response to a reread request on register %s", register_name)
             else:
-                logger.info("Got register value for %s", register_name)
+                logger.debug("Got register value for %s", register_name)
             obj = response[0]
             assert isinstance(obj, uavcan.register.Access_1.Response)
             if isinstance(obj.value, uavcan.primitive.Empty_1):
@@ -127,7 +127,7 @@ def make_handler_for_node_detected(
 
 
 def make_tracers_trackers(state: GodState) -> None:
-    print("Trackers and tracers are being set up")
+    logger.debug("Trackers and tracers are being set up")
     state.cyphal.tracer = state.cyphal.local_node.presentation.transport.make_tracer()
     state.cyphal.tracker = NodeTracker(state.cyphal.local_node)
     iface = Iface(state.cyphal.local_node)

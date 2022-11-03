@@ -80,7 +80,7 @@ export function make_context_menus(yukon_state) {
             },
         },
         {
-            content: `Edit values`,
+            content: `Bulk set values`,
             events: {
                 click: (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;

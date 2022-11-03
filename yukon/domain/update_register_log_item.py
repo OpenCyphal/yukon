@@ -1,10 +1,6 @@
-import typing
 from typing import Optional
 from dataclasses import dataclass
-from datetime import datetime
-from uuid import UUID
 
-import uavcan.register
 from yukon.domain.update_register_response import UpdateRegisterResponse
 
 

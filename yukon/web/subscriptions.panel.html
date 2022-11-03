@@ -1,10 +1,18 @@
 <div class="container" id="SubscriptionsDiv">
-    <p>Manage subscriptions</p>
-    <label for="rbUseSelectAdvertised">Maximum age, before message gets garbage collected</label>
+    <h5>Manage subscriptions</h5>
+    <label for="iMaxAge">Maximum age, before message gets garbage collected</label>
     <div class="mb-3 input-group">
         <input class="form-control" type="number" value="50" id="iMaxAge">
         <span class="input-group-text">seconds</span>
         <button class=" btn btn-outline-secondary" type="button" id="btnSetMaxAge">Set</button>
+    </div>
+    <label for="rbUseManualDatatypeEntry">Type any datatype (with great power comes great responsibility)</label>
+    <div class="mb-3 input-group">
+        <div class="input-group-text">
+            <input class="form-check-input mt-0" type="radio" value=""
+                aria-label="Radio button for following text input" id="rbUseManualDatatypeEntry" name="rbUseSelect">
+        </div>
+        <input id="manualEntryOfDatatype" class="">
     </div>
     <label for="rbUseSelectAdvertised">Select any datatype advertised in .type registers</label>
     <div class="mb-3 input-group">

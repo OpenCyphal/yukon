@@ -8,7 +8,7 @@ from typing import Optional, Any, Callable
 import pycyphal
 from pycyphal.transport import ServiceDataSpecifier, Timestamp, AlienTransfer, MessageDataSpecifier
 
-from yukon.domain.note_state import NodeState
+from yukon.domain.node_state import NodeState
 from yukon.domain.port_set import PortSet
 from yukon.domain._expand_subjects import expand_subjects, expand_mask
 from yukon.domain.iface import Iface

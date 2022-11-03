@@ -22,8 +22,8 @@ def get_datatypes_from_packages_directory_path(path: Path) -> typing.Any:
         package_folder = (path / package_folder_str).absolute()
         sys.path.append(str(package_folder.absolute()))
         package = importlib.import_module(package_folder.name)
-        pycyphal.util.import_submodules(package)
-        sys.path.remove(str(package_folder.absolute()))
+        # pycyphal.util.import_submodules(package)
+        # sys.path.remove(str(package_folder.absolute()))
 
         queue: Queue = Queue()
         queue.put(package)
@@ -56,3 +56,16 @@ def get_datatypes_from_packages_directory_path(path: Path) -> typing.Any:
     # Deduplicate datatypes
     return_object["variable_id_messages"] = list(set(return_object["variable_id_messages"]))
     return return_object
+
+
+def process_dsdl_path(path: Path) -> None:
+    for package_folder_str in list(next(os.walk(path))[1]):
+        package_folder = (path / package_folder_str).absolute()
+        sys.path.append(str(package_folder.absolute()))
+        try:
+            package = importlib.import_module(package_folder.name)
+            pycyphal.util.import_submodules(package)
+        except Exception:
+            logger.warning("Failed to import %s", package_folder.name)
+        finally:
+            sys.path.remove(str(package_folder.absolute()))

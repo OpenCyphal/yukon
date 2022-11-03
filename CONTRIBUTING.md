@@ -45,12 +45,11 @@
 This step will create demos that you can run and use to test Yukon if you have no Cyphal capable devices available
 to connect to your computer.
 
-    yakut compile -O.compiled demos\sirius_cyber_corp
+    yakut compile -O.compiled demos/sirius_cyber_corp
 
 * On every OS: Build a dsdl namespace for anything (like zubax_dsdl), all on one line
 
-      yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
-      zubax_dsdl\zubax zubax_dsdl\zubax_internet
+      yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip zubax_dsdl/zubax zubax_dsdl/zubax_internet
 
 * On every OS: How to run the application from vscode, using the buttons
 

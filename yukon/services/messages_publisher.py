@@ -1,10 +1,10 @@
+import datetime
 import logging
-import time
 
 import typing
 
+import yukon
 from yukon.domain.message import Message
-from yukon.domain.god_state import GodState
 
 
 def get_level_no(level_name: str) -> int:
@@ -46,7 +46,7 @@ def get_level_name(level_no: int) -> str:
 
 
 class MessagesPublisher(logging.Handler):
-    def __init__(self, state: GodState) -> None:
+    def __init__(self, state: "yukon.domain.god_state.GodState") -> None:
         super().__init__()
         self._state = state
 
@@ -57,20 +57,26 @@ class MessagesPublisher(logging.Handler):
                 return
         new_message = Message(
             record.getMessage(),
-            record.created,
+            datetime.datetime.fromtimestamp(record.created).strftime("%y%m%d_%H%M%S"),
             self._state.queues.message_queue_counter,
-            False,
-            [],
             severity_number=record.levelno,
             severity_text=record.levelname,
+            module=record.module,
         )
         self._state.queues.messages.put(new_message)
 
 
-def add_local_message(state: GodState, text: str, severity: int, *args: typing.List[typing.Any]) -> None:
+def add_local_message(
+    state: "yukon.domain.god_state.GodState", text: str, severity: int, *args: typing.List[typing.Any]
+) -> None:
     state.queues.message_queue_counter += 1
     state.queues.messages.put(
         Message(
-            text, time.monotonic(), state.queues.message_queue_counter, False, args, severity, get_level_name(severity)
+            text,
+            datetime.datetime.now().strftime("%y%m%d_%H%M%S"),
+            state.queues.message_queue_counter,
+            severity,
+            get_level_name(severity),
+            __name__,
         )
     )

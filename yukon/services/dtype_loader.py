@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 import re
+import sys
 from typing import Any, Type
 import logging
 import importlib
@@ -51,9 +52,8 @@ def load_dtype(name: str, allow_minor_version_mismatch: bool = False) -> Type[An
 
 
 def _load(name_components: list[str], major: int | None, minor: int | None) -> Type[Any]:
-    from yakut.cmd.compile import make_usage_suggestion
-
     namespaces, short_name = name_components[:-1], name_components[-1]
+    _logger.warning("Current PYTHONPATH: %s", sys.path)
     try:
         mod = None
         for comp in namespaces:
@@ -61,9 +61,10 @@ def _load(name_components: list[str], major: int | None, minor: int | None) -> T
             try:
                 mod = importlib.import_module(name)
             except ImportError:  # We seem to have hit a reserved word; try with an underscore.
+                _logger.error("Failed to import %r, trying with an underscore", name)
                 mod = importlib.import_module(name + "_")
     except ImportError as ex:
-        raise NotFoundError(make_usage_suggestion(namespaces[0])) from ex
+        raise ex
     assert mod
     matches = sorted(
         (
