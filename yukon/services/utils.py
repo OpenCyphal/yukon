@@ -58,7 +58,7 @@ def get_datatypes_from_packages_directory_path(path: Path) -> typing.Any:
     return return_object
 
 
-def process_dsdl_path(path: Path):
+def process_dsdl_path(path: Path) -> None:
     for package_folder_str in list(next(os.walk(path))[1]):
         package_folder = (path / package_folder_str).absolute()
         sys.path.append(str(package_folder.absolute()))
