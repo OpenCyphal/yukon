@@ -186,7 +186,7 @@ export async function return_all_selected_registers_as_yaml(pairs, yukon_state) 
     const required_flow_level = is_networked ? 2 : 1;
     let contains_single_node = is_networked && Object.keys(pairs_object).length == 1;
     let json_string = JSON.stringify(pairs_object);
-    var yaml_string = await serverFormatYaml(pairs_object);
+    let yaml_string = await serverFormatYaml(pairs_object);
     if (yukon_state.settings.simplifyRegisters) {
         let intermediary_structure = await zubax_apij.simplify_configuration(json_string)
         if (contains_single_node && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
@@ -221,7 +221,7 @@ export async function update_available_configurations_list(yukon_state) {
     yukon_state.simplified_configurations_flags = {};
     for (const [file_name, configuration_string] of Object.entries(yukon_state.available_configurations)) {
         // Fill in the available_configurations_radios with radio buttons
-        var radio = document.createElement("input");
+        const radio = document.createElement("input");
         radio.type = "radio";
         radio.name = "configuration";
         radio.value = file_name;
@@ -235,7 +235,7 @@ export async function update_available_configurations_list(yukon_state) {
         }
         available_configurations_radios.appendChild(radio);
         // Label for radio
-        var label = document.createElement("label");
+        const label = document.createElement("label");
         label.htmlFor = file_name;
         label.innerHTML = file_name;
         label.onmousedown = function () {
@@ -256,7 +256,7 @@ export async function update_available_configurations_list(yukon_state) {
                 continue;
             }
             noKeysWereNumbers = false;
-            var checkbox = document.createElement("input");
+            const checkbox = document.createElement("input");
             checkbox.type = "checkbox";
             checkbox.id = key;
             checkbox.checked = true;
@@ -270,12 +270,12 @@ export async function update_available_configurations_list(yukon_state) {
                 }
             }
             label.appendChild(checkbox);
-            var text = document.createElement("span");
+            const text = document.createElement("span");
             text.innerHTML = key;
             label.appendChild(text);
         }
         if (!is_network_configuration && is_configuration_simplified) {
-            var number_input = document.createElement("input");
+            const number_input = document.createElement("input");
             number_input.type = "number";
             number_input.placeholder = "Node id needed";
             number_input.title = "For determining datatypes, a node id is needed";

@@ -33,7 +33,7 @@ export function make_context_menus(yukon_state) {
                 // If cell is a th then
                 let pairs = null;
                 let node_id = null;
-                if (cell.tagName == "TH") {
+                if (cell.tagName === "TH") {
                     // If the cell has class left-side-table-header
                     if (cell.classList.contains("left-side-table-header")) {
                         const register_name = cell.getAttribute("data-register_name");
@@ -52,7 +52,7 @@ export function make_context_menus(yukon_state) {
                         }, yukon_state);
                     }
 
-                } else if (cell.tagName == "TD" || cell.tagName == "INPUT") {
+                } else if (cell.tagName === "TD" || cell.tagName === "INPUT") {
                     // Get the node_id and register_name from the cell
                     node_id = cell.getAttribute("node_id");
                     const register_name = cell.getAttribute("register_name");
@@ -62,7 +62,7 @@ export function make_context_menus(yukon_state) {
                         "only_of_register_name": null
                     }, yukon_state);
                     // If pairs contains nothing then add the node_id and register_name
-                    if (pairs.length == 0) {
+                    if (pairs.length === 0) {
                         pairs[node_id][register_name] = true;
                     }
                 }

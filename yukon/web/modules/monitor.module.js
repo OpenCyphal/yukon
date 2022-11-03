@@ -156,11 +156,11 @@ export function create_directed_graph(yukon_state) {
             const currentElement = queue.shift();
             if (currentElement) {
                 if (currentElement.isStack && currentElement.getActiveContentItem().config.hasOwnProperty("componentName")) {
-                    if (currentElement.getActiveContentItem().config.componentName == "commandsComponent") {
+                    if (currentElement.getActiveContentItem().config.componentName === "commandsComponent") {
                         const commandsComponentOuterElement = currentElement.getActiveContentItem().element[0];
                         const nodeIdInput = commandsComponentOuterElement.querySelector("#iNodeId");
                         nodeIdInput.value = evt.target.id();
-                    } else if (currentElement.getActiveContentItem().config.componentName == "subsComponent") {
+                    } else if (currentElement.getActiveContentItem().config.componentName === "subsComponent") {
                         const commandsComponentOuterElement = currentElement.getActiveContentItem().element[0];
                         const iFixedIdSubscriptionNodeId = commandsComponentOuterElement.querySelector('#iFixedIdSubscriptionNodeId');
                         const rbUseSelectFixedId = commandsComponentOuterElement.querySelector('#rbUseSelectFixedId');

@@ -3,11 +3,11 @@ export function copyObject(object) {
 }
 
 export function secondsToString(seconds) {
-    var numyears = Math.floor(seconds / 31536000);
-    var numdays = Math.floor((seconds % 31536000) / 86400);
-    var numhours = Math.floor(((seconds % 31536000) % 86400) / 3600);
-    var numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
-    var numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
+    const numyears = Math.floor(seconds / 31536000);
+    const numdays = Math.floor((seconds % 31536000) / 86400);
+    const numhours = Math.floor(((seconds % 31536000) % 86400) / 3600);
+    const numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
+    const numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
     return numyears + " years " + numdays + " days " + numhours + " hours " + numminutes + " minutes " + numseconds + " seconds";
 }
 
@@ -32,7 +32,7 @@ export function getDictionaryValueFieldName(dictionary) {
 
 export function getKnownDatatypes(yukon_state) {
     let knownDatatypes = [];
-    for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+    for (let i = 0; i < yukon_state.current_avatars.length; i++) {
         let avatar = yukon_state.current_avatars[i];
         // For each register in registers_exploded
         for (let register_name in avatar.registers_values) {

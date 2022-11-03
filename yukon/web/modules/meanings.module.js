@@ -25,16 +25,16 @@ export const meanings = {
 
 export function getLinkInfo(subject_id, node_id, yukon_state) {
     let infos = [];
-    for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+    for (let i = 0; i < yukon_state.current_avatars.length; i++) {
         const avatar = yukon_state.current_avatars[i];
-        if (avatar.node_id == node_id || !node_id) {
+        if (avatar.node_id === node_id || !node_id) {
             const registersKeys = Object.keys(avatar.registers_values);
-            for (var j = 0; j < registersKeys.length; j++) {
+            for (let j = 0; j < registersKeys.length; j++) {
                 const register_name = registersKeys[j];
                 const register_name_split = register_name.split(".");
                 const link_name = register_name_split[register_name_split.length - 2];
                 const value = avatar.registers_values[register_name];
-                if (parseInt(value) == subject_id && register_name.endsWith(".id")) {
+                if (parseInt(value) === subject_id && register_name.endsWith(".id")) {
                     const datatype = registersKeys.find((a) => a.endsWith(link_name + ".type"));
                     infos.push({name: link_name, type: avatar.registers_values[datatype]});
                 }

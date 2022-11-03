@@ -12,18 +12,18 @@ export function get_all_selected_pairs(options, yukon_state) {
     let selected_rows = yukon_state.selections.selected_rows;
     let selected_registers = yukon_state.selections.selected_registers;
     // For each avatar in current_avatars
-    for (var i = 0; i < current_avatars.length; i++) {
+    for (let i = 0; i < current_avatars.length; i++) {
         let avatar_dto = {
             // "uavcan.node.id": current_avatars[i].node_id,
         };
-        var avatar = current_avatars[i];
+        let avatar = current_avatars[i];
         let saving_all = selected_columns[avatar.node_id] || options.only_of_avatar_of_node_id == avatar.node_id;
         if (options.only_of_avatar_of_node_id && current_avatars[i].node_id != options.only_of_avatar_of_node_id) {
             continue;
         }
 
         // For each key in avatar.registers_exploded_values
-        for (var key in avatar.registers_exploded_values) {
+        for (let key in avatar.registers_exploded_values) {
             let register_name = key;
             let register_value = avatar.registers_exploded_values[key];
             if (options.only_of_register_name && register_name != options.only_of_register_name) {
@@ -52,11 +52,11 @@ export function select_configuration(file_name, yukon_state) {
 export function getAllEntireColumnsThatAreSelected(yukon_state) {
     let all_registers_selected = {};
     // For every register in the avatar with the node_id
-    for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+    for (let i = 0; i < yukon_state.current_avatars.length; i++) {
         const current_avatar = yukon_state.current_avatars[i]
         const node_id = current_avatar.node_id;
         all_registers_selected[current_avatar.node_id] = true;
-        for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+        for (let j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
             const register_name = yukon_state.current_avatars[i].registers[j];
             if (!yukon_state.selections.selected_registers[[node_id, register_name]]) {
                 all_registers_selected[current_avatar.node_id] = false;
@@ -101,10 +101,10 @@ export function selectColumn(node_id, yukon_state) {
     // See if any register of this node_id is selected
     let any_register_selected = false;
     // For every register in the avatar with the node_id
-    for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+    for (let i = 0; i < yukon_state.current_avatars.length; i++) {
         const current_avatar = yukon_state.current_avatars[i]
         if (current_avatar.node_id == node_id) {
-            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+            for (let j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
                 const register_name = yukon_state.current_avatars[i].registers[j];
                 if (yukon_state.selections.selected_registers[[node_id, register_name]]) {
                     any_register_selected = true;
@@ -115,10 +115,10 @@ export function selectColumn(node_id, yukon_state) {
     }
     if (any_register_selected) {
         // Deselect all registers of this node_id
-        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+        for (let i = 0; i < yukon_state.current_avatars.length; i++) {
             const current_avatar = yukon_state.current_avatars[i]
             if (current_avatar.node_id == node_id) {
-                for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                for (let j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
                     const register_name = yukon_state.current_avatars[i].registers[j];
                     yukon_state.selections.selected_registers[[node_id, register_name]] = false;
                 }
@@ -126,10 +126,10 @@ export function selectColumn(node_id, yukon_state) {
         }
     } else {
         // Select all registers of this node_id
-        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+        for (let i = 0; i < yukon_state.current_avatars.length; i++) {
             const current_avatar = yukon_state.current_avatars[i]
             if (current_avatar.node_id == node_id) {
-                for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                for (let j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
                     const register_name = yukon_state.current_avatars[i].registers[j];
                     yukon_state.selections.selected_registers[[node_id, register_name]] = true;
                 }
@@ -149,10 +149,10 @@ export function selectRow(register_name, yukon_state) {
         // See if any register of this node_id is selected
         let any_register_selected = false;
         // For every register in the avatar with the node_id
-        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+        for (let i = 0; i < yukon_state.current_avatars.length; i++) {
             const current_avatar = yukon_state.current_avatars[i];
             const node_id = current_avatar.node_id;
-            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+            for (let j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
                 const register_name2 = yukon_state.current_avatars[i].registers[j];
                 if (register_name2 == register_name) {
                     if (yukon_state.selections.selected_registers[[node_id, register_name]]) {
@@ -164,10 +164,10 @@ export function selectRow(register_name, yukon_state) {
         }
         if (any_register_selected) {
             // Deselect all registers with this register_name
-            for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+            for (let i = 0; i < yukon_state.current_avatars.length; i++) {
                 const current_avatar = yukon_state.current_avatars[i]
                 const node_id = current_avatar.node_id;
-                for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                for (let j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
                     const register_name2 = yukon_state.current_avatars[i].registers[j];
                     if (register_name2 == register_name) {
                         yukon_state.selections.selected_registers[[node_id, register_name]] = false;
@@ -176,10 +176,10 @@ export function selectRow(register_name, yukon_state) {
             }
         } else {
             // Select all registers with this register_name
-            for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+            for (let i = 0; i < yukon_state.current_avatars.length; i++) {
                 const current_avatar = yukon_state.current_avatars[i]
                 const node_id = current_avatar.node_id;
-                for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+                for (let j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
                     const register_name2 = yukon_state.current_avatars[i].registers[j];
                     if (register_name2 == register_name) {
                         yukon_state.selections.selected_registers[[node_id, register_name]] = true;
@@ -305,13 +305,13 @@ function getAllCellsInBetween(start_cell, end_cell, yukon_state) {
     } else {
         start_table_cell = document.getElementById("cell_" + start_cell.node_id + "_" + start_cell.register_name);
         end_table_cell = document.getElementById("cell_" + end_cell.node_id + "_" + end_cell.register_name);
-        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+        for (let i = 0; i < yukon_state.current_avatars.length; i++) {
             const current_avatar = yukon_state.current_avatars[i];
             if (current_avatar.node_id !== start_cell.node_id) {
                 continue;
             }
             // For every register in the avatar
-            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+            for (let j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
                 const register_name = yukon_state.current_avatars[i].registers[j];
                 if (!register_name) {
                     continue;
@@ -379,14 +379,8 @@ function isAllSelected(yukon_state) {
 
 export const moreThanOneSelectedConstraint = () => {
     // If there are more than 1 selected registers
-    if (Object.keys(yukon_state.selections.selected_registers).length > 1) {
-        return true;
-    }
-    return false;
+    return Object.keys(yukon_state.selections.selected_registers).length > 1;
 }
 export const oneSelectedConstraint = () => {
-    if (Object.keys(yukon_state.selections.selected_registers).length == 1) {
-        return true;
-    }
-    return false;
+    return Object.keys(yukon_state.selections.selected_registers).length == 1;
 };

@@ -244,7 +244,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
         table_cell.classList.add('table-cell');
         table_cell.onmouseover = make_select_cell(avatar, register_name, true, yukon_state);
         // inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
-        var lastClick = null;
+        let lastClick = null;
         table_cell.addEventListener('mousedown', function (event) {
             console.log("Mouse down");
             // Check if the mouse button was left click
@@ -267,18 +267,18 @@ export function create_registers_table(_filter_keyword_inclusive, yukon_state) {
     // Clear the table
     const iRegistersFilter = document.querySelector('#iRegistersFilter');
     const filter_keyword_inclusive = _filter_keyword_inclusive || iRegistersFilter.value;
-    var registers_table = document.querySelector('#registers_table')
+    const registers_table = document.querySelector('#registers_table')
     registers_table.innerHTML = '';
     if (yukon_state.current_avatars.length == 0) {
         registers_table.innerHTML = "An empty table, no data, maybe connect a transport (interface) from the panel on the right side."
         return;
     }
-    var registers_table_body = document.createElement('tbody');
+    const registers_table_body = document.createElement('tbody');
     registers_table.appendChild(registers_table_body);
-    var registers_table_header = document.createElement('thead');
+    const registers_table_header = document.createElement('thead');
     registers_table.appendChild(registers_table_header);
     // Add the table headers
-    var table_header_row = document.createElement('tr');
+    const table_header_row = document.createElement('tr');
 
     make_empty_table_header_row_cell(table_header_row, yukon_state);
 
@@ -288,7 +288,7 @@ export function create_registers_table(_filter_keyword_inclusive, yukon_state) {
     }
     registers_table_header.appendChild(table_header_row);
     // Combine all register names from avatar.registers into an array
-    var register_names = [];
+    let register_names = [];
     yukon_state.current_avatars.forEach(function (avatar) {
         avatar.registers.forEach(function (register) {
             if (register != "" && !register_names.includes(register)) {
@@ -316,11 +316,11 @@ export function updateRegistersTableColors(yukon_state, repeat_times, repeat_del
     if (repeat_times && repeat_times > 0) {
         setTimeout(() => updateRegistersTableColors(yukon_state, repeat_times - 1, repeat_delay), repeat_delay)
     }
-    var registers_table = document.querySelector('#registers_table')
+    const registers_table = document.querySelector('#registers_table')
     // For all table cells in registers_table, if the cell has the attribute node_id set to node_id then color it red if the node is selected or white if not
     let needsRefresh = false;
-    for (var i = 1; i < registers_table.rows.length; i++) {
-        for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
+    for (let i = 1; i < registers_table.rows.length; i++) {
+        for (let j = 1; j < registers_table.rows[i].cells.length; j++) {
             const table_cell = registers_table.rows[i].cells[j]
             // Remove the string "register_" from the register_name
             const register_name = table_cell.getAttribute("register_name");
