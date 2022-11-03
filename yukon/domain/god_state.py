@@ -133,11 +133,7 @@ class GodState:
         self.allocation = AllocationState()
         self.settings = {
             "DSDL search directories": [{"__type__": "dirpath", "value": ""}],
-            "UI": {
-                "Registers": {
-                    "Column width (pixels)": 400
-                }
-            }
+            "UI": {"Registers": {"Column width (pixels)": 400}}
             # "some_files": [{"__type__": "filepath", "value": ""}],
             # "ui_settings": {
             #     "Save location": {

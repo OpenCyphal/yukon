@@ -70,7 +70,7 @@ class MessagesPublisher(logging.Handler):
 
 
 def add_local_message(
-        state: "yukon.domain.god_state.GodState", text: str, severity: int, *args: typing.List[typing.Any]
+    state: "yukon.domain.god_state.GodState", text: str, severity: int, *args: typing.List[typing.Any]
 ) -> None:
     state.queues.message_queue_counter += 1
     state.queues.messages.put(
