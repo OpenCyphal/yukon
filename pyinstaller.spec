@@ -48,7 +48,7 @@ paths = yukon.THIRDPARTY_PATH + [
 # It adds a bit of redundant data to the resulting package, but greatly simplifies maintenance and
 # ensures that the layout used for development exactly reflects the environment used in production.
 # The added size penalty is insignificant.
-datas = [("yukon", "."), (".electron", "electron")]
+datas = [("yukon", "yukon"), (".electron", "electron")]
 
 if my_os == "Linux":
     datas += [("venv/lib/python3.10/site-packages/libpcap", "libpcap")]
@@ -59,10 +59,14 @@ elif my_os == "Windows":
     datas += [("venv\\Lib\\site-packages\\pydsdl", "pydsdl")]
 
 if my_os == "Linux":
+    datas += [("venv/lib/python3.10/site-packages/sentry_sdk", "sentry_sdk")]
+elif my_os == "Windows":
+    datas += [("venv\\Lib\\site-packages\\sentry_sdk", "sentry_sdk")]
+
+if my_os == "Linux":
     datas += [("venv/lib/python3.10/site-packages/nunavut", "nunavut")]
 elif my_os == "Windows":
     datas += [("venv\\Lib\\site-packages\\nunavut", "nunavut")]
-
 
 datas += [(".compiled", ".compiled")]
 
@@ -92,13 +96,13 @@ if my_os == "Linux":
 # noinspection PyUnresolvedReferences
 a = Analysis(
     ["yukon/__main__.py"],
-    pathex=paths,
+    pathex=None,
     binaries=[],
     datas=datas,
     hiddenimports=detected_hidden_imports + ["pycyphal"],
     hookspath=[],
     runtime_hooks=[],
-    excludes=[],
+    excludes=["uavcan", "reg", "sirius_cyber_corp", "zubax", "zubax_internet"],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=None,
@@ -115,10 +119,10 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     name=name,
-    debug=False,
+    debug=True,
     strip=False,
     upx=False,
     runtime_tmpdir=None,
-    console=False,
+    console=True,
     icon="icon_128_128.png",
 )

@@ -40,7 +40,7 @@ logger.setLevel("INFO")
 if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     root_path = sys._MEIPASS  # type: ignore # pylint: disable=protected-access
 else:
-    root_path = os.path.dirname(os.path.abspath(__file__))
+    root_path = str(Path(os.path.dirname(os.path.abspath(__file__))).parent)
 
 
 def run_electron(state: GodState) -> None:
@@ -57,13 +57,12 @@ def run_electron(state: GodState) -> None:
     try:
         # Keeping reading the stdout and stderr, look for the string electron: symbol lookup error
         os.environ["YUKON_SERVER_PORT"] = str(state.gui.server_port)
-        print(root_path)
         with subprocess.Popen(
-            [exe_path, Path(root_path) / "electron/main.js"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-            env=os.environ,
+                [exe_path, Path(root_path) / "yukon/electron/main.js"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                env=os.environ,
         ) as p:
 
             def receive_stdout() -> None:
@@ -182,10 +181,10 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     else:
         os.environ.setdefault("IS_DEBUG", "1")
     if (
-        state.gui.is_headless
-        and os.environ.get("YUKON_UDP_IFACE")
-        and os.environ.get("YUKON_NODE_ID")
-        and os.environ.get("YUKON_UDP_MTU")
+            state.gui.is_headless
+            and os.environ.get("YUKON_UDP_IFACE")
+            and os.environ.get("YUKON_NODE_ID")
+            and os.environ.get("YUKON_UDP_MTU")
     ):
         interface: Interface = Interface()
         interface.is_udp = True
@@ -206,11 +205,11 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         time_since_last_poll = monotonic() - state.gui.last_poll_received
         is_running_in_browser = state.gui.is_target_client_known and state.gui.is_running_in_browser
         if (
-            state.gui.last_poll_received != 0
-            and time_since_last_poll > state.gui.time_allowed_between_polls
-            and not os.environ.get("IS_DEBUG")
-            and not state.gui.is_headless
-            and is_running_in_browser
+                state.gui.last_poll_received != 0
+                and time_since_last_poll > state.gui.time_allowed_between_polls
+                and not os.environ.get("IS_DEBUG")
+                and not state.gui.is_headless
+                and is_running_in_browser
         ):
             logging.debug("No poll received in 3 seconds, shutting down")
             state.gui.gui_running = False

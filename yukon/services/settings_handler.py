@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ruamel import yaml
 
+from yukon.services.utils import process_dsdl_path
 from yukon.domain.god_state import GodState
 
 try:
@@ -63,6 +64,7 @@ def add_all_dsdl_paths_to_pythonpath(state: GodState) -> None:
     for path_object in state.settings["dsdl_directories"]:
         path = path_object["value"]
         if path not in sys.path:
+            process_dsdl_path(Path(path))
             sys.path.append(path)
     # Save the current sys.path into os.environ["PYTHONPATH"]
     os.environ["PYTHONPATH"] = ":".join(sys.path)

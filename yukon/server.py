@@ -21,7 +21,7 @@ else:
 gui_dir = os.path.join(root_path, "web")  # development path
 
 if not os.path.exists(gui_dir):  # frozen executable path
-    gui_dir = os.path.join(root_path, "web")
+    gui_dir = os.path.join(root_path, "yukon", "web")
 
 server = Flask(__name__, static_folder=gui_dir, template_folder=gui_dir, static_url_path="")
 server.config["SEND_FILE_MAX_AGE_DEFAULT"] = 1  # disable caching
