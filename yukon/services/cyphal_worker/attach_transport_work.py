@@ -1,7 +1,10 @@
+import logging
 import os
 import platform
 import traceback
+import logging
 
+import pycyphal
 from pycyphal.application import make_transport
 
 from yukon.domain.attach_transport_request import AttachTransportRequest
@@ -10,6 +13,7 @@ from yukon.services.faulty_transport import FaultyTransport
 from yukon.domain.god_state import GodState
 
 my_os = platform.system()
+_logger = logging.getLogger(__name__)
 
 
 async def do_attach_transport_work(state: GodState) -> None:
@@ -30,7 +34,10 @@ async def do_attach_transport_work(state: GodState) -> None:
                 state.cyphal.pseudo_transport.attach_inferior(new_transport)
             except Exception:
                 new_transport.close()
-                state.cyphal.pseudo_transport.detach_inferior(new_transport)
+                try:
+                    state.cyphal.pseudo_transport.detach_inferior(new_transport)
+                except pycyphal.transport.TransportError:
+                    _logger.debug("Transport already detached", exc_info=True)
                 raise
             state.cyphal.inferior_transports_by_interface_hashes[str(hash(atr.requested_interface))] = new_transport
             attach_transport_response = AttachTransportResponse(True, atr.requested_interface.iface)
