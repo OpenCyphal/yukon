@@ -1,8 +1,12 @@
-import { waitForElm } from "../utilities.module.js"
+import {waitForElm} from "../utilities.module.js"
+
 export async function setUpMessagesComponent(container, yukon_state) {
     const containerElement = container.getElement()[0];
     var messagesList = document.querySelector("#messages-list");
+    let lastIndex = -1;
+    let cbAutoscroll = await waitForElm("#cbAutoscroll");
     const optionsPanel = await waitForElm(".options-panel");
+
     function setDisplayState() {
         if (containerElement.getAttribute("data-isexpanded")) {
             containerElement.scrollTop = 0;
@@ -18,6 +22,7 @@ export async function setUpMessagesComponent(container, yukon_state) {
             optionsPanel.style.display = "none";
         }
     }
+
     setDisplayState();
     const observer = new MutationObserver(function (mutations) {
         mutations.forEach(function (mutation) {
@@ -51,20 +56,19 @@ export async function setUpMessagesComponent(container, yukon_state) {
             }
         }
     });
-    var messagesList = document.querySelector("#messages-list");
-    let messagesListWidth = messagesList.getBoundingClientRect().width
     console.log("Messages javascript is ready");
-    var lastIndex = -1;
-    var messagesList = await waitForElm("#messages-list");
-    var cbAutoscroll = await waitForElm("#cbAutoscroll");
+
     function showAllMessages() {
         var messagesList = document.querySelector("#messages-list");
-        if (!messagesList) { return; }
+        if (!messagesList) {
+            return;
+        }
         // For each message in messagesList
         for (const child of messagesList.children) {
             child.style.display = "block";
         }
     }
+
     function applyExcludingTextFilterToMessage() {
         var messagesList = document.querySelector("#messages-list");
         var taExcludedKeywords = document.getElementById("taExcludedKeywords");
@@ -83,6 +87,7 @@ export async function setUpMessagesComponent(container, yukon_state) {
             }
         }
     }
+
     function applyTextFilterToMessages() {
         // Get the filter text from iTextFilter and save it in a variable
         var iTextFilter = document.getElementById("iTextFilter");
@@ -95,6 +100,7 @@ export async function setUpMessagesComponent(container, yukon_state) {
             }
         }
     }
+
     function timeSince(date) {
         var seconds = Math.floor(((new Date().getTime() / 1000) - date))
 
@@ -121,10 +127,13 @@ export async function setUpMessagesComponent(container, yukon_state) {
         }
         return Math.floor(seconds) + " seconds";
     }
+
     async function update_messages() {
         var messagesList = document.querySelector("#messages-list");
         var cbAutoscroll = document.querySelector("#cbAutoscroll");
-        if (!messagesList || !cbAutoscroll) { return; }
+        if (!messagesList || !cbAutoscroll) {
+            return;
+        }
         const messages = await zubax_apij.get_messages(lastIndex + 1);
         // Clear messages-list
         if (document.getElementById("cDeleteOldMessages").checked) {
@@ -193,17 +202,6 @@ export async function setUpMessagesComponent(container, yukon_state) {
 
     // Call update_messages every second
     setInterval(update_messages, 656);
-    // btnTextOutput.addEventListener('click', function () {
-    //     var textOut = document.querySelector("#textOut");
-    //     autosize.update(textOut);
-    // });
-    // var tabTextOut = document.querySelector("#tabTextOut");
-    // window.addEventListener('mouseup', function () {
-    //     if (tabTextOut.classList.contains("is-active")) {
-    //         var textOut = document.querySelector("#textOut");
-    //         autosize.update(textOut);
-    //     }
-    // });
 
     // Run applyTextFilterToMessages() when there is a change in the filter text after the input has
     // stopped for 0.5 seconds
@@ -232,24 +230,4 @@ export async function setUpMessagesComponent(container, yukon_state) {
             applyExcludingTextFilterToMessage();
         }, 1000);
     });
-
-    var textOut = document.querySelector("#textOut");
-    yukon_state.autosize(textOut);
-    var messagesList = document.querySelector("#messages-list");
-    // On resize event
-    yukon_state.addLocalMessage("Found messageList", 10);
-    // at interval of 3 seconds
-    messagesListWidth = messagesList.getBoundingClientRect().width;
-
-    setInterval(function () {
-        var messagesList = document.querySelector("#messages-list");
-        if (!messagesList) { return; }
-        let currentWidth = messagesList.getBoundingClientRect().width;
-        if (currentWidth != messagesListWidth) {
-            messagesListWidth = currentWidth;
-            for (const child of messagesList.children) {
-                yukon_state.autosize.update(child);
-            }
-        }
-    }, 500);
 }

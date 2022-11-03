@@ -1,4 +1,5 @@
-import { getKnownDatatypes } from "../utilities.module.js";
+import {getKnownDatatypes} from "../utilities.module.js";
+
 export async function setUpSubscriptionsComponent(container, yukon_state) {
     const containerElement = container.getElement()[0];
     const iSelectDatatype = containerElement.querySelector('#iSelectDatatype');
@@ -15,6 +16,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
     const rbUseSelectFixedId = containerElement.querySelector('#rbUseSelectFixedId');
     const rbUseSelectAny = containerElement.querySelector('#rbUseSelectAny');
     const rbUseManualDatatypeEntry = containerElement.querySelector('#rbUseManualDatatypeEntry');
+
     function getCurrentDesiredDatatype() {
         if (rbUseSelectAdvertised.checked) {
             return iSelectDatatype.value;
@@ -28,7 +30,8 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
             return null;
         }
     }
-    // If any of the rbUseSelect* radio buttons is clicked, we need to disabled the other two
+
+    // If any of the rbUseSelect* radio buttons is clicked, we need to disable the other two
     // and enable the one that was clicked.
     const rbUseSelectAdvertisedClickHandler = () => {
         iSelectDatatype.disabled = false;
@@ -61,6 +64,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
     btnRefresh1.addEventListener('click', refreshKnownDatatypes);
     btnRefresh2.addEventListener('click', refreshKnownDatatypes);
     btnRefresh3.addEventListener('click', refreshKnownDatatypes);
+
     async function refreshKnownDatatypes() {
         // Flash all buttons btnRefresh1, btnRefresh2, btnRefresh3 with text "Refreshing..."
         const btns = [btnRefresh1, btnRefresh2, btnRefresh3];
@@ -120,6 +124,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
             });
         }, 1200);
     }
+
     setTimeout(refreshKnownDatatypes, 3000);
     btnSubscribeToSubject.addEventListener('click', async () => {
         const selectedDatatype = getCurrentDesiredDatatype();
@@ -190,6 +195,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
         pLatestMessage.id = "divLatestMessage" + subscription.subject_id + ":" + subscription.datatype;
         divLatestMessage.appendChild(pLatestMessage);
         div.appendChild(divLatestMessage);
+
         async function fetch() {
             const full_specifiers = [desiredSubjectIdValue + ":" + selectedDatatype + ":" + current_messages.length];
             const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
@@ -199,6 +205,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
             }
             pLatestMessage.innerHTML = JSON.stringify(current_messages[current_messages.length - 1]);
         }
+
         setInterval(fetch, 300);
         // Add a button for removing the subscription
         const btnRemoveSubscription = document.createElement('button');

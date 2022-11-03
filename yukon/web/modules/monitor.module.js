@@ -1,78 +1,148 @@
-import { secondsToString } from "./utilities.module.js";
-import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
-import { meanings, getLinkInfo } from "./meanings.module.js";
+import {secondsToString} from "./utilities.module.js";
+import {areThereAnyNewOrMissingHashes, updateLastHashes} from './hash_checks.module.js';
+import {meanings, getLinkInfo} from "./meanings.module.js";
+
 export function create_directed_graph(yukon_state) {
     cytoscape.use(cytoscapeKlay);
-    let my_graph = cytoscape({
-        wheelSensitivity: 0.2,
-        container: document.getElementById('cy'), // container to render in
-        // so we can see the ids
-        style: [
-            {
-                selector: 'node',
-                style: {
-                    'text-wrap': 'wrap',
-                    'label': 'data(label)',
-                    'text-valign': 'center',
-                    'text-halign': 'center',
-                    'width': '350px',
-                    'height': '65px',
-                    'background-color': '#e00000',
-                    'shape': 'cut-rectangle',
-                }
-            },
-            {
-                selector: 'edge',
-                style:
+    let night_style = [
+        {
+            selector: 'node',
+            style: {
+                'text-wrap': 'wrap',
+                'label': 'data(label)',
+                'text-valign': 'center',
+                'text-halign': 'center',
+                'width': '350px',
+                'height': '65px',
+                'background-color': '#700000',
+                'color': '#ffffff',
+                'shape': 'cut-rectangle',
+            }
+        },
+        {
+            selector: 'edge',
+            style:
                 {
                     width: 2,
                     targetArrowShape: 'triangle',
                     curveStyle: 'bezier',
                     // 'label': 'data(label)' // maps to data.label
                 }
-            },
-            {
-                selector: 'node[?publish_subject]',
-                style: {
-                    'background-color': '#A6E1FA',
-                    'width': '70px',
-                    'height': '70px',
-                    'shape': 'square'
-                }
-            },
-            {
-                selector: 'node[?link]',
-                style: {
-                    'background-color': '#E6E1FA',
-                    'width': '450px',
-                    'height': '65px',
-                    'shape': 'square'
-                }
-            },
-            {
-                selector: 'node[?serve_subject]',
-                style: {
-                    'background-color': '#0A2472',
-                    'color': '#A6E1FA',
-                    'width': '70px',
-                    'height': '70px',
-                    'shape': 'barrel'
-                }
-            },
-            {
-                selector: 'edge[?publish_edge]',
-                style: {
-                    'line-color': '#A6E1FA',
-                }
-            },
-            {
-                selector: 'edge[?serve_edge]',
-                style: {
-                    'line-color': '#0A2472',
-                }
+        },
+        {
+            selector: 'node[?publish_subject]',
+            style: {
+                'background-color': '#80c5e2',
+                'width': '70px',
+                'height': '70px',
+                'shape': 'square'
             }
-        ]
-
+        },
+        {
+            selector: 'node[?link]',
+            style: {
+                'background-color': '#80d5e2',
+                'width': '450px',
+                'height': '65px',
+                'shape': 'square'
+            }
+        },
+        {
+            selector: 'node[?serve_subject]',
+            style: {
+                'background-color': '#0A2472',
+                'color': '#80c5e2',
+                'width': '70px',
+                'height': '70px',
+                'shape': 'barrel'
+            }
+        },
+        {
+            selector: 'edge[?publish_edge]',
+            style: {
+                'line-color': '#80c5e2',
+            }
+        },
+        {
+            selector: 'edge[?serve_edge]',
+            style: {
+                'line-color': '#0A2472',
+            }
+        }];
+    const day_style = [
+        {
+            selector: 'node',
+            style: {
+                'text-wrap': 'wrap',
+                'label': 'data(label)',
+                'text-valign': 'center',
+                'text-halign': 'center',
+                'width': '350px',
+                'height': '65px',
+                'background-color': '#e00000',
+                'shape': 'cut-rectangle',
+            }
+        },
+        {
+            selector: 'edge',
+            style:
+                {
+                    width: 2,
+                    targetArrowShape: 'triangle',
+                    curveStyle: 'bezier',
+                    // 'label': 'data(label)' // maps to data.label
+                }
+        },
+        {
+            selector: 'node[?publish_subject]',
+            style: {
+                'background-color': '#A6E1FA',
+                'width': '70px',
+                'height': '70px',
+                'shape': 'square'
+            }
+        },
+        {
+            selector: 'node[?link]',
+            style: {
+                'background-color': '#E6E1FA',
+                'width': '450px',
+                'height': '65px',
+                'shape': 'square'
+            }
+        },
+        {
+            selector: 'node[?serve_subject]',
+            style: {
+                'background-color': '#0A2472',
+                'color': '#A6E1FA',
+                'width': '70px',
+                'height': '70px',
+                'shape': 'barrel'
+            }
+        },
+        {
+            selector: 'edge[?publish_edge]',
+            style: {
+                'line-color': '#A6E1FA',
+            }
+        },
+        {
+            selector: 'edge[?serve_edge]',
+            style: {
+                'line-color': '#0A2472',
+            }
+        }
+    ];
+    let chosen_style = day_style;
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        chosen_style = night_style;
+    }
+    let my_graph = cytoscape({
+        wheelSensitivity: 0.2,
+        container: document.getElementById('cy'), // container to render in
+        // so we can see the ids
+        style: chosen_style
     });
     my_graph.on("click", "node", function (evt) {
         // If through all activeContainers in the myLayout, if commandsComponent is one of the active containers then set the clicked node id as the target of the command
@@ -157,6 +227,7 @@ export function create_directed_graph(yukon_state) {
     });
     return my_graph
 }
+
 function createMonitorPopup(text, yukon_state) {
     var cy = document.getElementById('cy');
     // Remove all label elements in the div cy
@@ -196,12 +267,14 @@ function createMonitorPopup(text, yukon_state) {
         }
     }, 3000);
 }
+
 function getDrawingAspectRatio() {
     var cy = document.getElementById('cy');
     var cy_width = cy.clientWidth;
     var cy_height = cy.clientHeight;
     return cy_width / cy_height;
 }
+
 export function refresh_graph_layout(my_graph) {
     if (typeof my_graph == "undefined") {
         return;
@@ -257,9 +330,12 @@ export function refresh_graph_layout(my_graph) {
     );
     layout.run();
 }
+
 export function update_directed_graph(yukon_state) {
     let my_graph = yukon_state.my_graph;
-    if (typeof my_graph == "undefined") { return; }
+    if (typeof my_graph == "undefined") {
+        return;
+    }
     if (!areThereAnyNewOrMissingHashes("monitor_view_hash", yukon_state)) {
         updateLastHashes("monitor_view_hash", yukon_state);
         // If there are any elements in my_graph.elements() then we can return, otherwise we need to make a graph (below)
@@ -273,20 +349,22 @@ export function update_directed_graph(yukon_state) {
     let available_servers = {};
     for (const avatar of yukon_state.current_avatars) {
         console.log(avatar);
-        my_graph.add([{ data: { id: avatar.node_id, label: avatar.node_id + "\n" + avatar.name } }]);
-        if (!avatar.ports) { continue; }
+        my_graph.add([{data: {id: avatar.node_id, label: avatar.node_id + "\n" + avatar.name}}]);
+        if (!avatar.ports) {
+            continue;
+        }
         // Add a node for each pub and connect, then connect avatar to every pub node
         for (const pub of avatar.ports.pub) {
-            my_graph.add([{ data: { id: pub, "publish_subject": true, label: pub + "\nsubject" } }])
+            my_graph.add([{data: {id: pub, "publish_subject": true, label: pub + "\nsubject"}}])
             available_publishers[pub] = true;
-            my_graph.add([{ data: { source: avatar.node_id, target: pub, "publish_edge": true } }]);
+            my_graph.add([{data: {source: avatar.node_id, target: pub, "publish_edge": true}}]);
         }
         // clients should point to servers
         // client node --> [port] --> server node
         // publisher node --> [port] --> subscriber node
         for (const srv of avatar.ports.srv) {
-            my_graph.add([{ data: { id: srv, serve_subject: true, label: srv + "\nservice" } }])
-            my_graph.add([{ data: { source: srv, target: avatar.node_id, label: "A nice label", "serve_edge": true } }])
+            my_graph.add([{data: {id: srv, serve_subject: true, label: srv + "\nservice"}}])
+            my_graph.add([{data: {source: srv, target: avatar.node_id, label: "A nice label", "serve_edge": true}}])
         }
 
     }
@@ -297,18 +375,24 @@ export function update_directed_graph(yukon_state) {
                 const linkInfos = getLinkInfo(parseInt(sub), avatar.node_id, yukon_state);
                 if (linkInfos.length > 0) {
                     assembled_text = "Link name: " + linkInfos[0].name + "\n" + "Type: " + linkInfos[0].type;
-                    my_graph.add([{ data: { "link": true, id: avatar.node_id + "" + sub, label: assembled_text } }]);
-                    my_graph.add([{ data: { source: sub, target: avatar.node_id + "" + sub, label: "A nice label" } }]);
-                    my_graph.add([{ data: { source: avatar.node_id + "" + sub, target: avatar.node_id, label: "A nice label" } }]);
+                    my_graph.add([{data: {"link": true, id: avatar.node_id + "" + sub, label: assembled_text}}]);
+                    my_graph.add([{data: {source: sub, target: avatar.node_id + "" + sub, label: "A nice label"}}]);
+                    my_graph.add([{
+                        data: {
+                            source: avatar.node_id + "" + sub,
+                            target: avatar.node_id,
+                            label: "A nice label"
+                        }
+                    }]);
                 } else {
-                    my_graph.add([{ data: { source: sub, target: avatar.node_id, label: "A nice label" } }])
+                    my_graph.add([{data: {source: sub, target: avatar.node_id, label: "A nice label"}}])
                 }
 
             }
         }
         for (const cln of avatar.ports.cln) {
             if (available_servers[cln]) {
-                my_graph.add([{ data: { source: avatar.node_id, target: cln, label: "A nice label" } }]);
+                my_graph.add([{data: {source: avatar.node_id, target: cln, label: "A nice label"}}]);
             }
         }
     }
