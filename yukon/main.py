@@ -69,7 +69,7 @@ def run_electron(state: GodState) -> None:
                 nonlocal exit_code
                 while p.poll() is None and p.stdout:
                     line1 = p.stdout.readline()
-                    if line1:
+                    if line1 and line1.strip() != "":
                         if "electron: symbol lookup error" in line1:
                             electron_logger.error("There was an error while trying to run the electron app")
                             exit_code = 1
