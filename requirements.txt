@@ -13,3 +13,4 @@ websockets==10.*
 PyYAML==6.*
 ruamel.yaml~=0.17.21
 pkg_about
+pydsdl

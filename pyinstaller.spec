@@ -29,13 +29,6 @@ my_os = platform.system()
 
 sys.path.insert(0, os.getcwd())
 
-try:
-    # noinspection PyUnresolvedReferences
-    sys.getwindowsversion()
-    RUNNING_ON_WINDOWS = True
-except AttributeError:
-    RUNNING_ON_WINDOWS = False
-
 name = "Yukon"
 
 # Pack up the entire source tree with the redistributed archive.
