@@ -29,8 +29,6 @@ my_os = platform.system()
 
 sys.path.insert(0, os.getcwd())
 
-import yukon
-
 try:
     # noinspection PyUnresolvedReferences
     sys.getwindowsversion()
@@ -39,10 +37,6 @@ except AttributeError:
     RUNNING_ON_WINDOWS = False
 
 name = "Yukon"
-
-paths = yukon.THIRDPARTY_PATH + [
-    "yukon",
-]
 
 # Pack up the entire source tree with the redistributed archive.
 # It adds a bit of redundant data to the resulting package, but greatly simplifies maintenance and
