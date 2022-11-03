@@ -102,9 +102,9 @@ export async function setUpMessagesComponent(container, yukon_state) {
     }
 
     function timeSince(date) {
-        var seconds = Math.floor(((new Date().getTime() / 1000) - date))
+        const seconds = Math.floor(((new Date().getTime() / 1000) - date))
 
-        var interval = seconds / 31536000;
+        let interval = seconds / 31536000;
 
         if (interval >= 1) {
             return Math.floor(interval) + " years";
@@ -158,13 +158,14 @@ export async function setUpMessagesComponent(container, yukon_state) {
             const lines = el.message.split("\n");
             if (lines.length > 1) {
                 // If there are multiple lines, create a div for each line
+                lines[0] = el.timestamp + " " + el.module + ": " + lines[0];
                 for (const line of lines) {
                     const div = document.createElement("div");
                     div.innerHTML = line;
                     li.appendChild(div);
                 }
             } else {
-                li.innerHTML = el.timestamp + " " + el.module + " " + el.message;
+                li.innerHTML = el.timestamp + " " + el.module + ": " + el.message;
             }
             if (el.severity_number >= 50) {
                 // Is bad

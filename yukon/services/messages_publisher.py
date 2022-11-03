@@ -45,6 +45,9 @@ def get_level_name(level_no: int) -> str:
         return "UNKNOWN"
 
 
+TIME_FORMAT = "%y-%m-%d %H:%M:%S"
+
+
 class MessagesPublisher(logging.Handler):
     def __init__(self, state: "yukon.domain.god_state.GodState") -> None:
         super().__init__()
@@ -57,23 +60,23 @@ class MessagesPublisher(logging.Handler):
                 return
         new_message = Message(
             record.getMessage(),
-            datetime.datetime.fromtimestamp(record.created).strftime("%y:%m:%d %H:%M:%S"),
+            datetime.datetime.fromtimestamp(record.created).strftime(TIME_FORMAT),
             self._state.queues.message_queue_counter,
             severity_number=record.levelno,
             severity_text=record.levelname,
-            module=record.module,
+            module=record.name,
         )
         self._state.queues.messages.put(new_message)
 
 
 def add_local_message(
-    state: "yukon.domain.god_state.GodState", text: str, severity: int, *args: typing.List[typing.Any]
+        state: "yukon.domain.god_state.GodState", text: str, severity: int, *args: typing.List[typing.Any]
 ) -> None:
     state.queues.message_queue_counter += 1
     state.queues.messages.put(
         Message(
             text,
-            datetime.datetime.now().strftime("%y:%m:%d %H:%M:%S"),
+            datetime.datetime.now().strftime(TIME_FORMAT),
             state.queues.message_queue_counter,
             severity,
             get_level_name(severity),
