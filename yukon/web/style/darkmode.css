@@ -1,0 +1,199 @@
+@media (prefers-color-scheme: dark) {
+    .lm_content {
+        color: #ffffff
+    }
+
+    #iUdpIface {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #iUdpMtu {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #iNodeId {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #iServiceTransferMultiplier {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #btnStart {
+        background: #353535;
+        border-color: #727272;
+        color: #ffffff
+    }
+
+    #maybe-tabs label.selected-tab {
+        background-color: #700000 !important;
+        border-bottom: 5px solid #700000 !important
+    }
+
+    #maybe-tabs label {
+        background-color: #5e5e5e !important
+    }
+
+    #iCommandId {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #sCommands {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #btnSendCommand {
+        background: #353535;
+        color: #ffffff
+    }
+
+    .feedback-message {
+        color: #ffffff
+    }
+
+    .is-danger {
+        background-color: #793200
+    }
+
+    #iTransport {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #iMtu {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #iArbRate {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #iDataRate {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #sTransport {
+        background: #353535;
+        color: #ffffff
+    }
+
+    .card.transport_interface {
+        background: #222222;
+        color: #ffffff
+    }
+
+    .btn.btn-danger {
+        background: #700000;
+        border-color: #740000
+    }
+
+    .mb-3 {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #divMessagesHere {
+        background: #353535;
+        color: #ffffff
+    }
+
+    thead {
+        background-color: #1709b3;
+        color: #ffffff
+    }
+
+    .btn {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #btnSubscribeToSubject {
+        background-color: #353535;
+        border-color: #727272
+    }
+
+    .btn.btn-primary {
+        background: #353535;
+        color: #ffffff;
+        border-color: #727272
+    }
+
+    .card-body {
+        background: #383838
+    }
+
+    #btnImportRegistersConfig {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #iRegistersFilter {
+        background: #353535;
+        color: #ffffff
+    }
+
+    .cell-highlight {
+        background-color: #5e5000
+    }
+
+    .no-value {
+        background-color: #1709b3
+    }
+
+    td.selected-cell {
+        background-color: #1709b3;
+        color: #ffffff
+    }
+
+    td.recently_reread_register {
+        background-color: #700000;
+        color: #ffffff
+    }
+
+    tbody > tr:hover,
+    tbody > tr:hover .no-value {
+        background-color: #353535;
+    }
+
+    input, .input-group, .input-group-text, select {
+        background: #353535 !important;
+        color: #ffffff !important;
+    }
+
+    input[type="radio"] {
+        background: #c7c7c7 !important;
+        color: #b01f1f !important;
+    }
+
+    input[type="radio"]:checked {
+        background: #0d6efd !important;
+        color: white !important;
+    }
+
+    #toolbar {
+        background: #353535;
+        color: #ffffff
+    }
+
+    #btnRestoreDefaultLayout {
+        background-color: #353535;
+        border-color: #727272
+    }
+
+    * {
+        color-scheme: dark;
+    }
+
+    body {
+        background-color: #222222;
+    }
+}

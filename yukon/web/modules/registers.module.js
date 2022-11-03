@@ -1,9 +1,10 @@
-import { areThereAnyNewOrMissingHashes, updateLastHashes } from './hash_checks.module.js';
-import { applyConfiguration } from './yaml.configurations.module.js';
-import { make_select_column, make_select_row, make_select_cell } from './registers.selection.module.js';
-import { update_register_value } from './registers.data.module.js';
-import { getDictionaryValueFieldName } from './utilities.module.js';
-import { createGenericModal } from './modal.module.js';
+import {areThereAnyNewOrMissingHashes, updateLastHashes} from './hash_checks.module.js';
+import {applyConfiguration} from './yaml.configurations.module.js';
+import {make_select_column, make_select_row, make_select_cell} from './registers.selection.module.js';
+import {update_register_value} from './registers.data.module.js';
+import {getDictionaryValueFieldName} from './utilities.module.js';
+import {createGenericModal} from './modal.module.js';
+
 export function add_node_id_headers(table_header_row, yukon_state) {
     const current_avatars = yukon_state.current_avatars;
     current_avatars.forEach(function (avatar) {
@@ -47,6 +48,7 @@ export function add_node_id_headers(table_header_row, yukon_state) {
         table_header_cell.onmouseover = make_select_column(avatar.node_id, true, yukon_state);
     });
 }
+
 export function make_empty_table_header_row_cell(table_header_row, yukon_state) {
     var empty_table_header_row_cell = document.createElement('th');
     if (yukon_state.settings.showAlotOfButtons) {
@@ -68,12 +70,14 @@ export function make_empty_table_header_row_cell(table_header_row, yukon_state) 
     }
     table_header_row.appendChild(empty_table_header_row_cell);
 }
+
 export function addContentForRegisterName(register_name, filter_keyword_inclusive, registers_table_body, yukon_state) {
     if (filter_keyword_inclusive != "" && !register_name.includes(filter_keyword_inclusive)) {
         return;
     }
     let table_register_row = document.createElement('tr');
     registers_table_body.appendChild(table_register_row);
+
     function make_header_cell() {
         let table_header_cell = document.createElement('th');
         // REGISTER NAME HERE
@@ -94,6 +98,7 @@ export function addContentForRegisterName(register_name, filter_keyword_inclusiv
 
         table_register_row.appendChild(table_header_cell);
     }
+
     make_header_cell();
 
     addContentForCells(register_name, table_register_row, yukon_state);
@@ -103,6 +108,7 @@ export function addContentForRegisterName(register_name, filter_keyword_inclusiv
         make_header_cell();
     }
 }
+
 export function addContentForCells(register_name, table_register_row, yukon_state) {
     yukon_state.current_avatars.forEach(function (avatar) {
         // ALL THE REGISTER VALUES HERE
@@ -135,59 +141,35 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             // If the length of the array value is 1 then display the value without brackets
             let text_input = document.createElement('div');
             inputFieldReference = text_input;
-            if (value.length == 1) {
+            if (value.length === 1) {
                 isOnlyValueInArray = true;
-                inputFieldReference.innerHTML = value[0];
+                text_input.innerHTML = value[0];
             } else {
-                inputFieldReference.innerHTML = JSON.stringify(value);
+                text_input.innerHTML = JSON.stringify(value);
             }
             // When the text input is clicked
         } else if (type_string.includes("natural")) {
             // Create a number input field
             let number_input_field = document.createElement('div');
             inputFieldReference = number_input_field;
-            if (register_value == 65535) {
+            if (register_value === 65535) {
                 number_input_field.style.backgroundColor = '#ee0e0e';
             }
             inputFieldReference.innerHTML = value;
         } else if (type_string === "string") {
             let text_input = document.createElement('div');
             inputFieldReference = text_input;
-            inputFieldReference.innerHTML = value;
+            text_input.innerHTML = value;
             // When the text input is clicked
         } else {
             let text_input = document.createElement('div');
             inputFieldReference = text_input;
-            inputFieldReference.disabled = 'true';
-            inputFieldReference.style.backgroundColor = '#ee0e0e !important';
-            inputFieldReference.innerHTML = "Unhandled: " + value;
+            text_input.disabled = 'true';
+            text_input.style.backgroundColor = '#ee0e0e !important';
+            text_input.innerHTML = "Unhandled: " + value;
         }
-        // jQuery.fn.hasOverflown = function () {
-        //     var res;
-        //     console.log(this.text());
-        //     var cont = $('<div>' + this.text() + '</div>').css("display", "table")
-        //         .css("z-index", "-1").css("position", "absolute")
-        //         .css("font-family", this.css("font-family"))
-        //         .css("font-size", this.css("font-size"))
-        //         .css("font-weight", this.css("font-weight")).appendTo('body');
-        //     res = (cont.width() > this.width());
-        //     cont.remove();
-        //     return res;
-        // };
-        // setTimeout(function () {
-        //     if ($(inputFieldReference).hasOverflown()) {
-        //         table_cell.title = inputFieldReference.innerHTML;
-        //         inputFieldReference.title = inputFieldReference.innerHTML;
-        //         // Make a button to show the full value and align the button right in the cell
-        //         let btnShowFullValue = document.createElement('button');
-        //         inputFieldReference.position = "relative";
-        //         // Add an ellipse image to the button
-        //         btnShowFullValue.innerHTML = '...';
-        //         btnShowFullValue.classList.add('btn-show-full-value');
-        //         inputFieldReference.appendChild(btnShowFullValue);
-        //     }
-        // }, 900);
         table_cell.appendChild(inputFieldReference);
+
         function styleLabel(label) {
             label.style.height = '0px';
             label.style.position = 'absolute';
@@ -209,6 +191,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             //     event.stopPropagation();
             // }
         }
+
         // Create a new 10% height label in inputFieldReference and place it in the bottom right corner of the input field
         {
             // For displaying the value
@@ -239,7 +222,8 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             label.style.right = '2px';
             label.style.left = '2px';
             label.style.zIndex = '1';
-            table_cell.style.position = 'relative'; ``
+            table_cell.style.position = 'relative';
+            ``
             label.innerHTML = "";
             if (isMutable) {
                 label.innerHTML += "M";
@@ -260,7 +244,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
         table_cell.classList.add('table-cell');
         table_cell.onmouseover = make_select_cell(avatar, register_name, true, yukon_state);
         // inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
-        var lastClick = null;
+        let lastClick = null;
         table_cell.addEventListener('mousedown', function (event) {
             console.log("Mouse down");
             // Check if the mouse button was left click
@@ -278,22 +262,23 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
         // Create a text input element in the table cell
     });
 }
+
 export function create_registers_table(_filter_keyword_inclusive, yukon_state) {
     // Clear the table
     const iRegistersFilter = document.querySelector('#iRegistersFilter');
     const filter_keyword_inclusive = _filter_keyword_inclusive || iRegistersFilter.value;
-    var registers_table = document.querySelector('#registers_table')
+    const registers_table = document.querySelector('#registers_table')
     registers_table.innerHTML = '';
     if (yukon_state.current_avatars.length == 0) {
         registers_table.innerHTML = "An empty table, no data, maybe connect a transport (interface) from the panel on the right side."
         return;
     }
-    var registers_table_body = document.createElement('tbody');
+    const registers_table_body = document.createElement('tbody');
     registers_table.appendChild(registers_table_body);
-    var registers_table_header = document.createElement('thead');
+    const registers_table_header = document.createElement('thead');
     registers_table.appendChild(registers_table_header);
     // Add the table headers
-    var table_header_row = document.createElement('tr');
+    const table_header_row = document.createElement('tr');
 
     make_empty_table_header_row_cell(table_header_row, yukon_state);
 
@@ -303,7 +288,7 @@ export function create_registers_table(_filter_keyword_inclusive, yukon_state) {
     }
     registers_table_header.appendChild(table_header_row);
     // Combine all register names from avatar.registers into an array
-    var register_names = [];
+    let register_names = [];
     yukon_state.current_avatars.forEach(function (avatar) {
         avatar.registers.forEach(function (register) {
             if (register != "" && !register_names.includes(register)) {
@@ -319,6 +304,7 @@ export function create_registers_table(_filter_keyword_inclusive, yukon_state) {
 
     updateRegistersTableColors(yukon_state);
 }
+
 export function update_tables(override) {
     if (override || areThereAnyNewOrMissingHashes("registers_hash", yukon_state)) {
         create_registers_table(null, yukon_state);
@@ -330,11 +316,11 @@ export function updateRegistersTableColors(yukon_state, repeat_times, repeat_del
     if (repeat_times && repeat_times > 0) {
         setTimeout(() => updateRegistersTableColors(yukon_state, repeat_times - 1, repeat_delay), repeat_delay)
     }
-    var registers_table = document.querySelector('#registers_table')
+    const registers_table = document.querySelector('#registers_table')
     // For all table cells in registers_table, if the cell has the attribute node_id set to node_id then color it red if the node is selected or white if not
     let needsRefresh = false;
-    for (var i = 1; i < registers_table.rows.length; i++) {
-        for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
+    for (let i = 1; i < registers_table.rows.length; i++) {
+        for (let j = 1; j < registers_table.rows[i].cells.length; j++) {
             const table_cell = registers_table.rows[i].cells[j]
             // Remove the string "register_" from the register_name
             const register_name = table_cell.getAttribute("register_name");
@@ -391,6 +377,7 @@ export function updateRegistersTableColors(yukon_state, repeat_times, repeat_del
         yukon_state.updateRegistersTableColorsAgainTimer = setTimeout(yukon_state.updateRegistersTableColors, 1000);
     }
 }
+
 export function showCellValue(node_id, register_name, yukon_state) {
     const avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id == node_id);
     const explodedRegister = avatar.registers_exploded_values[register_name];
@@ -456,7 +443,7 @@ export function showCellValue(node_id, register_name, yukon_state) {
     modal_submit.onclick = submit_modal;
     // If enter is pressed the modal should submit too
     enterListener = function (event) {
-        if (event.key == "Enter") {
+        if (event.key === "Enter") {
             event.preventDefault();
             console.log("Enter pressed");
             submit_modal();
@@ -522,7 +509,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
     for (const node_id in pairs) {
         const registers = pairs[node_id];
         for (const register_name in registers) {
-            const avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id == node_id);
+            const avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id === node_id);
             const explodedRegister = avatar.registers_exploded_values[register_name];
             const isMutable = explodedRegister["_meta_"].mutable;
             const isPersistent = explodedRegister["_meta_"].persistent;
@@ -550,7 +537,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
             }
             if (array_size === null) {
                 array_size = current_array_size;
-            } else if (array_size == current_array_size) {
+            } else if (array_size === current_array_size) {
                 // Do nothing
             } else {
                 // Color the pair div red
@@ -594,7 +581,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
                 pair_submit.disabled = true;
             }
             pair_submit.onclick = async function () {
-                if (modal_value.value != "") {
+                if (modal_value.value !== "") {
                     // Remove the list element
                     pair_div.parentNode.removeChild(pair_div);
                     // Update the value in the table
@@ -604,7 +591,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
                     // Run update_tables every second, do that only for the next 4 seconds
                     let interval1 = setInterval(() => update_tables(true), 1000);
                     setTimeout(() => clearInterval(interval1), 4000);
-                    if (register_count == 1) {
+                    if (register_count === 1) {
                         document.body.removeChild(modal);
                     } else {
                         register_count -= 1;
@@ -625,20 +612,23 @@ export function editSelectedCellValues(pairs, yukon_state) {
     modal_submit.classList.add("btn");
     modal_submit.classList.add("btn-primary");
     modal_submit.innerHTML = "Submit compatible";
-    if (uneditable_register_count == register_count) {
+    if (uneditable_register_count === register_count) {
         modal_submit.disabled = true;
     }
     modal_submit.onclick = submit_modal;
     // If enter is pressed the modal should submit too
-    document.addEventListener("keydown", function (event) {
-        if (event.key == "Enter") {
+    let enterListener = null;
+    let disconnectEnterListener = function () {
+        document.removeEventListener("keydown", enterListener);
+    }
+    enterListener = function (event) {
+        if (event.key === "Enter") {
             event.preventDefault();
-
-            console.log("Enter pressed");
             submit_modal();
-            document.removeEventListener("keydown", arguments.callee);
+            disconnectEnterListener();
         }
-    });
+    }
+    document.addEventListener("keydown", enterListener);
     modal_content.appendChild(modal_submit);
     // For each pair in pairs, add the datatype to a string variable called type_string
 

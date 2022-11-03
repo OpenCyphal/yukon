@@ -64,6 +64,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
         pathDiv.appendChild(removeButton);
         parentDiv.appendChild(pathDiv);
     }
+
     function createRadioDiv(settings, parentdiv) {
         for (let i = 0; i < settings["values"].length; i++) {
             let value = settings["values"][i];
@@ -102,6 +103,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             }
         }
     }
+
     function createSettingsDiv(settings, parentDiv, parentSettings) {
         if (settings["__type__"] === "radio") {
             createRadioDiv(settings, parentDiv);
@@ -142,9 +144,6 @@ export async function setUpSettingsComponent(container, yukon_state) {
                     input.type = "text";
                     input.value = value;
                     input.placeholder = "Enter new key";
-                    input.addEventListener("change", function () {
-                        key = this.value;
-                    });
                     cardHeaderDiv.appendChild(input);
                 } else {
                     const cardHeaderH5 = document.createElement("span");
@@ -290,7 +289,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             btnAddString.classList.add("btn-primary");
             btnAddString.innerText = "Add path";
             btnAddString.addEventListener("click", function () {
-                settings.push({ "__type__": "dirpath", "value": "" });
+                settings.push({"__type__": "dirpath", "value": ""});
                 parentDiv.innerHTML = "";
                 createSettingsDiv(settings, parentDiv, parentSettings, null);
             });
@@ -300,6 +299,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             parentDiv.appendChild(btnGroupDiv);
         }
     }
+
     setInterval(async function () {
         await yukon_state.zubax_apij.set_settings(yukon_state.all_settings);
         await yukon_state.zubax_apij.save_settings();

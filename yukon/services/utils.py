@@ -59,13 +59,14 @@ def get_datatypes_from_packages_directory_path(path: Path) -> typing.Any:
 
 
 def process_dsdl_path(path: Path) -> None:
-    for package_folder_str in list(next(os.walk(path))[1]):
-        package_folder = (path / package_folder_str).absolute()
-        sys.path.append(str(package_folder.absolute()))
-        try:
-            package = importlib.import_module(package_folder.name)
-            pycyphal.util.import_submodules(package)
-        except Exception:
-            logger.warning("Failed to import %s", package_folder.name)
-        finally:
-            sys.path.remove(str(package_folder.absolute()))
+    pass
+    # for package_folder_str in list(next(os.walk(path))[1]):
+    #     package_folder = (path / package_folder_str).absolute()
+    #     sys.path.append(str(package_folder.absolute()))
+    #     try:
+    #         package = importlib.import_module(package_folder.name)
+    #         pycyphal.util.import_submodules(package)
+    #     except Exception:
+    #         logger.warning("Failed to import %s", package_folder.name)
+    #     finally:
+    #         sys.path.remove(str(package_folder.absolute()))

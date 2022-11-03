@@ -1,5 +1,6 @@
-import { updateRegistersTableColors } from "./registers.module.js";
-import { copyObject, getDictionaryValueFieldName } from "./utilities.module.js";
+import {updateRegistersTableColors} from "./registers.module.js";
+import {copyObject, getDictionaryValueFieldName} from "./utilities.module.js";
+
 function trueFalseDecider(stringInput) {
     stringInput = stringInput.trim().toLowerCase();
     if (stringInput === "true") {
@@ -10,19 +11,20 @@ function trueFalseDecider(stringInput) {
         throw stringInput + " is not convertible to a boolean"
     }
 }
+
 export async function update_register_value(register_name, register_value, node_id, yukon_state) {
     const zubax_api = yukon_state.zubax_api;
     // Find the avatar which has the node_id
     const the_avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id === parseInt(node_id));
     let unprocessed_value = copyObject(the_avatar["registers_exploded_values"][register_name])
     const isValueArray = Object.prototype.toString.call(
-            unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"]
-        ) === '[object Array]';
+        unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"]
+    ) === '[object Array]';
     // if unprocessed_value[Object.keys(the_value)[0]]["value"]
     if (typeof unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"] == "string") {
         unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"] = register_value
     } else if (isValueArray) {
-        if(typeof unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"][0] == "number") {
+        if (typeof unprocessed_value[getDictionaryValueFieldName(unprocessed_value)]["value"][0] == "number") {
             // Split register_value by comma and convert to array of numbers
             // Remove square brackets
             register_value = register_value.replace("[", "").replace("]", "");
@@ -34,7 +36,7 @@ export async function update_register_value(register_name, register_value, node_
             let register_values = null;
             try {
                 register_values = register_value.split(",").map(trueFalseDecider);
-            } catch (error){
+            } catch (error) {
                 console.error(e);
                 return;
             }
@@ -59,6 +61,7 @@ export async function update_register_value(register_name, register_value, node_
     console.log("Register value updated for " + register_name + " to " + register_value + " for node " + node_id)
     return await zubax_api.update_register_value(register_name, unprocessed_value, node_id);
 }
+
 export function rereadPairs(pairs, yukon_state) {
     // For every key of node_id in pairs
     for (let node_id in pairs) {
@@ -84,6 +87,7 @@ export function rereadPairs(pairs, yukon_state) {
     }, 600);
     yukon_state.zubax_api.reread_registers(pairs);
 }
+
 export function rereadNode(integer_node_id) {
     zubax_api.reread_node(integer_node_id)
 }

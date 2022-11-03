@@ -51,7 +51,7 @@ def run_electron(state: GodState) -> None:
     exe_path = get_electron_path()
     electron_logger = logger.getChild("electronJS")
     electron_logger.setLevel("DEBUG")
-    electron_logger.addHandler(state.messages_publisher)
+    # electron_logger.addHandler(state.messages_publisher)
     exit_code = 0
     # Use subprocess to run the exe
     try:
@@ -69,7 +69,7 @@ def run_electron(state: GodState) -> None:
                 nonlocal exit_code
                 while p.poll() is None and p.stdout:
                     line1 = p.stdout.readline()
-                    if line1:
+                    if line1 and line1.strip() != "":
                         if "electron: symbol lookup error" in line1:
                             electron_logger.error("There was an error while trying to run the electron app")
                             exit_code = 1
@@ -80,7 +80,6 @@ def run_electron(state: GodState) -> None:
                 nonlocal exit_code
                 while p.poll() is None and p.stderr:
                     line2 = p.stderr.readline()
-                    logger.warning("got one from electron")
                     if line2:
                         electron_logger.error(line2)
                         if "electron: symbol lookup error" in line2:

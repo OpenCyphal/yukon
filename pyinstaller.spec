@@ -40,20 +40,20 @@ datas = [("yukon", "yukon"), (".electron", "electron")]
 if my_os == "Linux":
     datas += [("venv/lib/python3.10/site-packages/libpcap", "libpcap")]
 
-if my_os == "Linux":
-    datas += [("venv/lib/python3.10/site-packages/pydsdl", "pydsdl")]
-elif my_os == "Windows":
-    datas += [("venv\\Lib\\site-packages\\pydsdl", "pydsdl")]
-
-if my_os == "Linux":
-    datas += [("venv/lib/python3.10/site-packages/sentry_sdk", "sentry_sdk")]
-elif my_os == "Windows":
-    datas += [("venv\\Lib\\site-packages\\sentry_sdk", "sentry_sdk")]
-
-if my_os == "Linux":
-    datas += [("venv/lib/python3.10/site-packages/nunavut", "nunavut")]
-elif my_os == "Windows":
-    datas += [("venv\\Lib\\site-packages\\nunavut", "nunavut")]
+# if my_os == "Linux":
+#     datas += [("venv/lib/python3.10/site-packages/pydsdl", "pydsdl")]
+# elif my_os == "Windows":
+#     datas += [("venv\\Lib\\site-packages\\pydsdl", "pydsdl")]
+#
+# if my_os == "Linux":
+#     datas += [("venv/lib/python3.10/site-packages/sentry_sdk", "sentry_sdk")]
+# elif my_os == "Windows":
+#     datas += [("venv\\Lib\\site-packages\\sentry_sdk", "sentry_sdk")]
+#
+# if my_os == "Linux":
+#     datas += [("venv/lib/python3.10/site-packages/nunavut", "nunavut")]
+# elif my_os == "Windows":
+#     datas += [("venv\\Lib\\site-packages\\nunavut", "nunavut")]
 
 datas += [(".compiled", ".compiled")]
 
@@ -86,7 +86,7 @@ a = Analysis(
     pathex=None,
     binaries=[],
     datas=datas,
-    hiddenimports=detected_hidden_imports + ["pycyphal"],
+    hiddenimports=detected_hidden_imports + ["pycyphal"] + ["pydsdl"] + ["sentry_sdk"] + ["nunavut"],
     hookspath=[],
     runtime_hooks=[],
     excludes=["uavcan", "reg", "sirius_cyber_corp", "zubax", "zubax_internet"],
