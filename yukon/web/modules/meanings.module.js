@@ -27,7 +27,7 @@ export function getLinkInfo(subject_id, node_id, yukon_state) {
     let infos = [];
     for (var i = 0; i < yukon_state.current_avatars.length; i++) {
         const avatar = yukon_state.current_avatars[i];
-        if(avatar.node_id == node_id || !node_id) {
+        if (avatar.node_id == node_id || !node_id) {
             const registersKeys = Object.keys(avatar.registers_values);
             for (var j = 0; j < registersKeys.length; j++) {
                 const register_name = registersKeys[j];

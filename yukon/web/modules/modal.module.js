@@ -23,7 +23,7 @@ export function createGenericModal(escapeCallback) {
     modal_close.classList.add("btn");
     modal_close.classList.add("btn-danger");
     let escapeListener = null;
-    let disconnectEscapeListener = function() {
+    let disconnectEscapeListener = function () {
         if (escapeListener) {
             document.removeEventListener("keydown", escapeListener);
             escapeListener = null;
@@ -41,7 +41,7 @@ export function createGenericModal(escapeCallback) {
             console.log("Escape was pressed to close a modal");
             disconnectEscapeListener();
             if (modal.parentNode === document.body) {
-                if(escapeCallback) {
+                if (escapeCallback) {
                     escapeCallback();
                 }
                 document.body.removeChild(modal);
@@ -50,5 +50,5 @@ export function createGenericModal(escapeCallback) {
     }
     // Also close the modal if escape is pressed
     document.addEventListener("keydown", escapeListener);
-    return { "modal": modal, "modal_content": modal_content };
+    return {"modal": modal, "modal_content": modal_content};
 }

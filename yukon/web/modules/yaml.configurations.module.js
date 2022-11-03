@@ -1,6 +1,11 @@
-import { get_all_selected_pairs, select_configuration, getAllEntireColumnsThatAreSelected } from "./registers.selection.module.js";
-import { update_tables, updateRegistersTableColors } from "./registers.module.js";
-import { copyObject, JsonParseHelper } from "./utilities.module.js";
+import {
+    get_all_selected_pairs,
+    select_configuration,
+    getAllEntireColumnsThatAreSelected
+} from "./registers.selection.module.js";
+import {update_tables, updateRegistersTableColors} from "./registers.module.js";
+import {copyObject, JsonParseHelper} from "./utilities.module.js";
+
 export async function applyConfiguration(configuration, set_node_id, applyPairs, yukon_state) {
     let zubax_api = yukon_state.zubax_api;
     // If configuration starts with a { then it is json
@@ -22,6 +27,7 @@ export async function applyConfiguration(configuration, set_node_id, applyPairs,
     } else {
         potential_node_id = set_node_id;
     }
+
     function removeUnnecessaryPairsFromAvatar(avatar) {
         for (let j = 0; j < avatar.length; j++) {
             let register_name = avatar[j];
@@ -35,6 +41,7 @@ export async function applyConfiguration(configuration, set_node_id, applyPairs,
             }
         }
     }
+
     const is_network_configuration = await isNetworkConfiguration(configuration_deserialized);
     const is_configuration_simplified = await isSimplifiedConfiguration(configuration_deserialized);
     if (is_network_configuration) {
@@ -89,9 +96,11 @@ export async function applyConfiguration(configuration, set_node_id, applyPairs,
         yukon_state.addLocalMessage("Didn't know what to do with the configuration", 40);
     }
 }
+
 async function isNetworkConfiguration(yamlOrJSONSerializedConfiguration) {
     return (await zubax_api.is_network_configuration(yamlOrJSONSerializedConfiguration)).trim() == "true";
 }
+
 async function isSimplifiedConfiguration(yamlOrJSONSerializedConfiguration) {
     return (await zubax_api.is_configuration_simplified(yamlOrJSONSerializedConfiguration)).trim() == "true";
 }
@@ -118,14 +127,17 @@ async function saveString(string, yukon_state) {
         return await window.electronAPI.saveFile(string);
     }
 }
+
 function parseYamlStringsToNumbers(string) {
     return string.replace(/['"](\d+)['"]/g, "$1");
 }
+
 async function saveYaml(string, yukon_state) {
     // Use regex ['\"](\d+)['\"] and replace with $1
     string = parseYamlStringsToNumbers(string);
     saveString(string, yukon_state);
 }
+
 export async function openFile(yukon_state) {
     let file_dto = {};
     try {
@@ -152,9 +164,11 @@ export async function openFile(yukon_state) {
         yukon_state.addLocalMessage("Error opening file: " + e, 40);
     }
 }
+
 async function serverFormatYaml(object) {
     return await yukon_state.zubax_api.yaml_to_yaml(jsyaml.dump(object));
 }
+
 export async function return_all_selected_registers_as_yaml(pairs, yukon_state) {
     let zubax_api = yukon_state.zubax_api;
     // A pair is the register_name and the node_id
@@ -189,10 +203,16 @@ export async function return_all_selected_registers_as_yaml(pairs, yukon_state) 
         return parseYamlStringsToNumbers(yaml_string_modified);
     }
 }
+
 export async function export_all_selected_registers(only_of_avatar_of_node_id, get_everything, yukon_state) {
-    let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": only_of_avatar_of_node_id, "get_everything": get_everything, "only_of_register_name": null }, yukon_state);
+    let pairs = get_all_selected_pairs({
+        "only_of_avatar_of_node_id": only_of_avatar_of_node_id,
+        "get_everything": get_everything,
+        "only_of_register_name": null
+    }, yukon_state);
     await saveYaml(await return_all_selected_registers_as_yaml(pairs, yukon_state), yukon_state);
 }
+
 export async function update_available_configurations_list(yukon_state) {
     let zubax_api = yukon_state.zubax_api;
     var available_configurations_radios = document.querySelector("#available_configurations_radios");
@@ -265,6 +285,7 @@ export async function update_available_configurations_list(yukon_state) {
         available_configurations_radios.appendChild(label);
     }
 }
+
 export async function loadConfigurationFromOpenDialog(selectImmediately, yukon_state, click_event) {
     const result_dto = await openFile(yukon_state);
     if (!result_dto || result_dto.text == "") {
@@ -278,6 +299,7 @@ export async function loadConfigurationFromOpenDialog(selectImmediately, yukon_s
     yukon_state.addLocalMessage("Configuration file added to the list of selectable configurations", 20);
     return result_dto;
 }
+
 export async function actionApplyConfiguration(selectImmediately, applyToAll, avatar, onlyApplySelected, yukon_state, click_event) {
     let result_dto = await loadConfigurationFromOpenDialog(selectImmediately, yukon_state, click_event);
     let pairs = null;

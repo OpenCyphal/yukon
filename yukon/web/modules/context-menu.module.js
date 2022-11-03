@@ -1,10 +1,27 @@
-import { export_all_selected_registers, return_all_selected_registers_as_yaml, update_available_configurations_list, applyConfiguration, openFile, actionApplyConfiguration } from "./yaml.configurations.module.js";
-import { selectColumn, selectRow, getAllEntireColumnsThatAreSelected, get_all_selected_pairs, make_select_row, unselectAll, make_select_column, moreThanOneSelectedConstraint, oneSelectedConstraint } from "./registers.selection.module.js";
-import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./registers.module.js";
-import { rereadNode, rereadPairs } from "./registers.data.module.js";
-import { downloadIcon, copyIcon, pasteIcon } from "./icons.module.js";
-import { copyObject } from "./utilities.module.js";
-import { copyTextToClipboard } from "./copy.module.js";
+import {
+    export_all_selected_registers,
+    return_all_selected_registers_as_yaml,
+    update_available_configurations_list,
+    applyConfiguration,
+    openFile,
+    actionApplyConfiguration
+} from "./yaml.configurations.module.js";
+import {
+    selectColumn,
+    selectRow,
+    getAllEntireColumnsThatAreSelected,
+    get_all_selected_pairs,
+    make_select_row,
+    unselectAll,
+    make_select_column,
+    moreThanOneSelectedConstraint,
+    oneSelectedConstraint
+} from "./registers.selection.module.js";
+import {updateRegistersTableColors, showCellValue, editSelectedCellValues} from "./registers.module.js";
+import {rereadNode, rereadPairs} from "./registers.data.module.js";
+import {downloadIcon, copyIcon, pasteIcon} from "./icons.module.js";
+import {copyObject} from "./utilities.module.js";
+import {copyTextToClipboard} from "./copy.module.js";
 
 export function make_context_menus(yukon_state) {
     const addLocalMessage = yukon_state.addLocalMessage;
@@ -145,7 +162,11 @@ export function make_context_menus(yukon_state) {
             content: `Copy selected as yaml`,
             events: {
                 click: async (e, elementOpenedOn) => {
-                    let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
+                    let pairs = get_all_selected_pairs({
+                        "only_of_avatar_of_node_id": null,
+                        "get_everything": false,
+                        "only_of_register_name": null
+                    }, yukon_state);
                     const yaml_text = await return_all_selected_registers_as_yaml(pairs, yukon_state);
                     await copyTextToClipboard(yaml_text);
                     e.stopPropagation();
@@ -160,7 +181,11 @@ export function make_context_menus(yukon_state) {
                     const cell = elementOpenedOn;
                     const node_id = cell.getAttribute("node_id");
                     const register_name = cell.getAttribute("register_name");
-                    const pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
+                    const pairs = get_all_selected_pairs({
+                        "only_of_avatar_of_node_id": null,
+                        "get_everything": false,
+                        "only_of_register_name": null
+                    }, yukon_state);
                     // The current cell was the element that this context menu was summoned on
                     // If there are no keys in pairs, then add the current cell
                     if (Object.keys(pairs).length == 0) {
@@ -262,7 +287,11 @@ export function make_context_menus(yukon_state) {
                 click: async (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
                     const node_id = headerCell.getAttribute("data-node_id");
-                    let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": node_id, "get_everything": false, "only_of_register_name": null }, yukon_state);
+                    let pairs = get_all_selected_pairs({
+                        "only_of_avatar_of_node_id": node_id,
+                        "get_everything": false,
+                        "only_of_register_name": null
+                    }, yukon_state);
                     await copyTextToClipboard(await return_all_selected_registers_as_yaml(pairs, yukon_state));
                     e.stopPropagation();
                 }
@@ -346,7 +375,11 @@ export function make_context_menus(yukon_state) {
                 click: async (e, elementOpenedOn) => {
                     const cell = elementOpenedOn;
                     const register_name = cell.getAttribute("data-register_name");
-                    let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": register_name }, yukon_state);
+                    let pairs = get_all_selected_pairs({
+                        "only_of_avatar_of_node_id": null,
+                        "get_everything": true,
+                        "only_of_register_name": register_name
+                    }, yukon_state);
                     await copyTextToClipboard(await return_all_selected_registers_as_yaml(pairs, yukon_state));
                     e.stopPropagation();
                 }
