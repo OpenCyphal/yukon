@@ -138,6 +138,7 @@ def set_logging_levels() -> None:
     logging.getLogger("can").setLevel(logging.INFO)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
     logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
+    logging.getLogger("pycyphal.transport.can.media.pythoncan._pythoncan").setLevel(logging.CRITICAL)
 
 
 def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:

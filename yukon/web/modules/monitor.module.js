@@ -32,7 +32,8 @@ export function create_directed_graph(yukon_state) {
         {
             selector: 'node[?publish_subject]',
             style: {
-                'background-color': '#80c5e2',
+                'background-color': '#345c70',
+                'color': '#80c5e2',
                 'width': '70px',
                 'height': '70px',
                 'shape': 'square'
@@ -41,7 +42,8 @@ export function create_directed_graph(yukon_state) {
         {
             selector: 'node[?link]',
             style: {
-                'background-color': '#80d5e2',
+                'background-color': '#005b3f',
+                'color': '#80c5e2',
                 'width': '450px',
                 'height': '65px',
                 'shape': 'square'
@@ -166,12 +168,15 @@ export function create_directed_graph(yukon_state) {
                         const rbUseSelectFixedId = commandsComponentOuterElement.querySelector('#rbUseSelectFixedId');
                         // IF rbUseSelectFixedId is checked then set the value of iFixedIdSubscriptionNodeId to the id of the clicked node
                         if (rbUseSelectFixedId.checked) {
-                            iFixedIdSubscriptionNodeId.value = evt.target.id();
+                            if(evt.target.data().node) {
+                                iFixedIdSubscriptionNodeId.value = evt.target.id();
+                            }
                         } else {
-                            const subjectIdInput = commandsComponentOuterElement.querySelector("#iSubjectId");
-                            subjectIdInput.value = evt.target.id();
+                            if(evt.target.data().publish_subject) {
+                                const subjectIdInput = commandsComponentOuterElement.querySelector("#iSubjectId");
+                                subjectIdInput.value = evt.target.id();
+                            }
                         }
-
                     }
                 } else {
                     for (const contentItem of currentElement.contentItems) {
@@ -184,10 +189,10 @@ export function create_directed_graph(yukon_state) {
         }
     });
     my_graph.on('mouseover', 'node', function (evt) {
-        var node = evt.target;
+        const node = evt.target;
         // Find the avatar for the node
-        var avatar = yukon_state.current_avatars.find(function (avatar) {
-            return avatar.node_id == node.id();
+        const avatar = yukon_state.current_avatars.find(function (avatar) {
+            return avatar.node_id === node.id();
         });
         if (avatar) {
             // Create a label with the avatar's name
@@ -212,14 +217,14 @@ export function create_directed_graph(yukon_state) {
         }
     });
     my_graph.on('mouseout', 'node', function (evt) {
-        var node = evt.target;
+        const node = evt.target;
         // Remove the current monitor popup
-        var cy = document.getElementById('cy');
+        const cy = document.getElementById('cy');
         // Remove all label elements in the div cy
-        var labels = cy.getElementsByTagName('div');
-        for (var i = 0; i < labels.length; i++) {
+        const labels = cy.getElementsByTagName('div');
+        for (let i = 0; i < labels.length; i++) {
             // Check if className of the element is 'label'
-            if (labels[i].className == 'label') {
+            if (labels[i].className === 'label') {
                 // Remove the element
                 labels[i].parentNode.removeChild(labels[i]);
             }
@@ -229,18 +234,18 @@ export function create_directed_graph(yukon_state) {
 }
 
 function createMonitorPopup(text, yukon_state) {
-    var cy = document.getElementById('cy');
+    const cy = document.getElementById('cy');
     // Remove all label elements in the div cy
-    var labels = cy.getElementsByTagName('div');
-    for (var i = 0; i < labels.length; i++) {
+    const labels = cy.getElementsByTagName('div');
+    for (let i = 0; i < labels.length; i++) {
         // Check if className of the element is 'label'
-        if (labels[i].className == 'label') {
+        if (labels[i].className === 'label') {
             // Remove the element
             labels[i].parentNode.removeChild(labels[i]);
         }
     }
     // Create a sticky div in cy to display a label with text
-    var label = document.createElement('div');
+    const label = document.createElement('div');
     label.className = 'label';
     label.innerHTML = text;
     cy.appendChild(label);
@@ -269,9 +274,9 @@ function createMonitorPopup(text, yukon_state) {
 }
 
 function getDrawingAspectRatio() {
-    var cy = document.getElementById('cy');
-    var cy_width = cy.clientWidth;
-    var cy_height = cy.clientHeight;
+    const cy = document.getElementById('cy');
+    const cy_width = cy.clientWidth;
+    const cy_height = cy.clientHeight;
     return cy_width / cy_height;
 }
 
@@ -349,7 +354,7 @@ export function update_directed_graph(yukon_state) {
     let available_servers = {};
     for (const avatar of yukon_state.current_avatars) {
         console.log(avatar);
-        my_graph.add([{data: {id: avatar.node_id, label: avatar.node_id + "\n" + avatar.name}}]);
+        my_graph.add([{data: {id: avatar.node_id, node: true, label: avatar.node_id + "\n" + avatar.name}}]);
         if (!avatar.ports) {
             continue;
         }

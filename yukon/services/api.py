@@ -47,7 +47,7 @@ from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.NOTSET)
 
 
@@ -474,13 +474,11 @@ class Api:
             self.state.queues.reread_register_names.put(RereadRegisterNamesRequest(node_id_as_int))
 
     def announce_running_in_electron(self) -> None:
-        logger.info("Announcing that we are running in electron")
         self.state.gui.is_running_in_electron = True
         self.state.gui.is_running_in_browser = False
         self.state.gui.is_target_client_known = True
 
     def announce_running_in_browser(self) -> None:
-        logger.info("Announcing that we are running in browser")
         self.state.gui.is_running_in_electron = False
         self.state.gui.is_running_in_browser = True
         self.state.gui.is_target_client_known = True

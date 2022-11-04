@@ -28,7 +28,7 @@ server.config["SEND_FILE_MAX_AGE_DEFAULT"] = 1  # disable caching
 server.json_encoder = EnhancedJSONEncoder
 WSGIRequestHandler.protocol_version = "HTTP/1.1"
 our_token = "ABC"
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
 
 
@@ -48,7 +48,8 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
         try:
             _object = request.get_json()
         except Exception as _:  # pylint: disable=broad-except
-            logger.warning("There was no json data attached")
+            pass
+            # logger.warning("There was no json data attached")
         try:
             found_method = getattr(api, path)
         except Exception:  # pylint: disable=broad-except

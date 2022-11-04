@@ -1,23 +1,31 @@
-import { make_context_menus } from '../modules/context-menu.module.js';
-import { create_directed_graph, update_directed_graph } from '../modules/monitor.module.js';
-import { isRunningInElectron, areThereAnyActiveModals } from "../modules/utilities.module.js";
-import { loadConfigurationFromOpenDialog, return_all_selected_registers_as_yaml } from '../modules/yaml.configurations.module.js';
-import { create_registers_table, update_tables } from '../modules/registers.module.js';
-import { get_all_selected_pairs, unselectAll, selectAll, oneSelectedConstraint, moreThanOneSelectedConstraint } from '../modules/registers.selection.module.js';
-import { rereadPairs } from "../modules/registers.data.module.js"
-import { openFile } from "../modules/yaml.configurations.module.js"
-import { initTransports } from "../modules/panels/transports.module.js"
-import { copyTextToClipboard } from "../modules/copy.module.js"
-import { setUpStatusComponent } from "../modules/panels/status.module.js"
-import { setUpTransportsListComponent } from "../modules/panels/transports-list.module.js"
-import { setUpCommandsComponent } from "../modules/panels/commands.module.js"
-import { update_avatars_dto } from "../modules/data.module.js"
-import { setUpMessagesComponent } from "../modules/panels/messages.module.js"
-import { setUpRegisterUpdateLogComponent } from "../modules/panels/register_update_log.module.js"
-import { setUpSubscriptionsComponent } from "../modules/panels/subscriptions.module.js"
-import { layout_config } from "../modules/panels/_layout_config.module.js"
-import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
-import { setUpMotorControlComponent } from "../modules/panels/motor_control.module.js"
+import {make_context_menus} from '../modules/context-menu.module.js';
+import {create_directed_graph, update_directed_graph} from '../modules/monitor.module.js';
+import {isRunningInElectron, areThereAnyActiveModals} from "../modules/utilities.module.js";
+import {
+    loadConfigurationFromOpenDialog,
+    return_all_selected_registers_as_yaml
+} from '../modules/yaml.configurations.module.js';
+import {create_registers_table, update_tables} from '../modules/registers.module.js';
+import {
+    get_all_selected_pairs,
+    unselectAll,
+    selectAll,
+    oneSelectedConstraint,
+    moreThanOneSelectedConstraint
+} from '../modules/registers.selection.module.js';
+import {rereadPairs} from "../modules/registers.data.module.js"
+import {initTransports} from "../modules/panels/transports.module.js"
+import {copyTextToClipboard} from "../modules/copy.module.js"
+import {setUpStatusComponent} from "../modules/panels/status.module.js"
+import {setUpTransportsListComponent} from "../modules/panels/transports-list.module.js"
+import {setUpCommandsComponent} from "../modules/panels/commands.module.js"
+import {update_avatars_dto} from "../modules/data.module.js"
+import {setUpMessagesComponent} from "../modules/panels/messages.module.js"
+import {setUpRegisterUpdateLogComponent} from "../modules/panels/register_update_log.module.js"
+import {setUpSubscriptionsComponent} from "../modules/panels/subscriptions.module.js"
+import {layout_config} from "../modules/panels/_layout_config.module.js"
+import {setUpSettingsComponent} from "../modules/panels/settings.module.js"
+import {setUpMotorControlComponent} from "../modules/panels/motor_control.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
@@ -25,14 +33,22 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
     yukon_state.autosize = autosize;
     yukon_state.navigator = window.navigator;
     yukon_state.jsyaml = jsyaml;
-    if (isRunningInElectron(yukon_state)) {
-        zubax_api.announce_running_in_electron();
-    } else {
+    if (!isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_browser();
     }
+    if (window.electronAPI) {
+        window.electronAPI.onOpenSettings(function () {
+            yukon_state.settingsComponent.parent.parent.setActiveContentItem(yukon_state.settingsComponent.parent);
+            yukon_state.settingsComponent.parent.parent.toggleMaximise();
+        });
+    } else {
+        // Popout windows unfortunately don't have access to the electron API
+    }
+
 
     function setUpMonitorComponent() {
         yukon_state.my_graph = create_directed_graph(yukon_state);
+
         async function get_and_display_avatars() {
             await update_avatars_dto(yukon_state);
             update_directed_graph(yukon_state);
@@ -52,7 +68,7 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
             await update_avatars_dto(yukon_state);
             update_tables();
         }, 893);
-        var timer = null;
+        let timer = null;
         const iRegistersFilter = document.getElementById('iRegistersFilter');
         iRegistersFilter.addEventListener("input", function () {
             if (timer) {
@@ -72,19 +88,20 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
         zubax_api.add_local_message(message, severity);
     }
     const addLocalMessage = yukon_state.addLocalMessage;
+
     async function doStuffWhenReady() {
         function dynamicallyLoadHTML(path, container, callback, callback_delay) {
-            var xhr = new XMLHttpRequest();
+            const xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function () {
-                if (this.readyState == 4) {
-                    if (this.status == 200) {
+                if (this.readyState === 4) {
+                    if (this.status === 200) {
                         container.getElement().html(this.responseText);
                         if (callback_delay) {
                             setTimeout(callback, callback_delay);
                         } else {
                             callback();
                         }
-                    } else if (this.status == 404) {
+                    } else if (this.status === 404) {
                         container.getElement().html("Page not found.");
                     } else {
                         container.getElement().html("Error: " + this.status);
@@ -94,9 +111,11 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
             xhr.open("GET", path, true);
             xhr.send();
         }
+
         function setUpTransportsComponent(container) {
             initTransports(container, yukon_state);
         }
+
         function addComponentToLayout(componentName, componentText) {
             const addedComponent = {
                 type: 'component',
@@ -111,7 +130,9 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
                 yukon_state.myLayout.root.addChild(addedComponent);
             }
         }
+
         const outsideContext = this;
+
         function addRestoreButton(buttonText, buttonComponentName) {
             const toolbar = document.querySelector("#toolbar");
             const btnRestore = document.createElement("button");
@@ -123,6 +144,7 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
             });
             toolbar.appendChild(btnRestore);
         }
+
         function initalizeLayout() {
             let hadPreviousLayout = false;
             if (typeof yukon_state.myLayout !== 'undefined') {
@@ -207,6 +229,7 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
                 myLayout.registerComponent("settingsComponent", function (container, componentState) {
                     registerComponentAction("../settings.panel.html", "settingsComponent", container, () => {
                         const containerElement = container.getElement()[0];
+                        yukon_state.settingsComponent = container;
                         containerElementToContainerObjectMap.set(containerElement, container);
                         setUpSettingsComponent.bind(outsideContext)(container, yukon_state);
                     });
@@ -232,11 +255,11 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
                 }
 
                 myLayout.on('stackCreated', function (stack) {
-                    console.log("Stack:", stack);
                     //HTML for the colorDropdown is stored in a template tag
                     const btnPanelShowHideToggle = document.createElement("li");
                     btnPanelShowHideToggle.setAttribute("id", "btn-panel-show-hide-yakut");
                     const caretDownImageElement = document.createElement("img");
+
                     // Make sure it has 100% width and height
                     caretDownImageElement.setAttribute("width", "100%");
                     caretDownImageElement.setAttribute("height", "100%");
@@ -347,7 +370,7 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
                 yukon_state.myLayout.updateSize();
             }, 50);
         });
-        let last_time_when_a_window_was_opened = null;
+
         function registerComponentAction(uri, componentName, container, actionWhenCreating) {
             let isDestroyed = true;
             dynamicallyLoadHTML(uri, container, () => {
@@ -370,10 +393,6 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
                 try {
                     const lastOpenPopoutsLength = yukon_state.myLayout.openPopouts.length;
                     setTimeout(() => {
-                        // The popout event is not fired, I believe it is a bug in GoldenLayout
-                        //                    if(last_time_when_a_window_was_opened != null && Date.now() - last_time_when_a_window_was_opened < 100) {
-                        //                        return;
-                        //                    }
                         if (lastOpenPopoutsLength < yukon_state.myLayout.openPopouts.length) {
                             console.log("Not making a restore button because a popout was opened");
                             return;
@@ -390,6 +409,7 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
 
             });
         }
+
         let containerElementToContainerObjectMap = new WeakMap();
         yukon_state.selectingTableCellsIsDisabledStyle = document.createElement('style');
         yukon_state.selectingTableCellsIsDisabledStyle.innerHTML = `
@@ -400,7 +420,9 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
         make_context_menus(yukon_state);
         // When escape is double pressed within 400ms, run unselectAll
         let escape_timer = null;
-        window.onkeyup = function (e) { yukon_state.pressedKeys[e.keyCode] = false; }
+        window.onkeyup = function (e) {
+            yukon_state.pressedKeys[e.keyCode] = false;
+        }
         // Add event listeners for focus and blur event handlers to window
         window.addEventListener('focus', function () {
             yukon_state.pressedKeys[18] = false;
@@ -438,6 +460,7 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
                 y: event.pageY
             };
         }
+
         window.onkeydown = async function (e) {
             // If alt tab was pressed return
             yukon_state.pressedKeys[e.keyCode] = true;
@@ -445,6 +468,7 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
             if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[65]) {
                 if (areThereAnyActiveModals(yukon_state)) {
                     // The modal should handle its own copy and paste events (natively)
+                    // Not going to copy any of the selected registers here.
                     return;
                 }
                 selectAll(yukon_state);
@@ -459,7 +483,11 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
                 // If there are any cells selected
                 // If there aren't any cells selected then get the element that the mouse is hovering over and copy its value
                 if (oneSelectedConstraint() || moreThanOneSelectedConstraint()) {
-                    let pairs = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": false, "only_of_register_name": null }, yukon_state);
+                    let pairs = get_all_selected_pairs({
+                        "only_of_avatar_of_node_id": null,
+                        "get_everything": false,
+                        "only_of_register_name": null
+                    }, yukon_state);
                     const selectedCells = document.querySelectorAll(".selected-cell .input")
                     for (let i = 0; i < selectedCells.length; i++) {
                         const selectedCell = selectedCells[i];
@@ -543,7 +571,11 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
             }
             // If F5 is pressed, reread registers
             if (e.code === "F5") {
-                const data = get_all_selected_pairs({ "only_of_avatar_of_node_id": null, "get_everything": true, "only_of_register_name": null }, yukon_state);
+                const data = get_all_selected_pairs({
+                    "only_of_avatar_of_node_id": null,
+                    "get_everything": true,
+                    "only_of_register_name": null
+                }, yukon_state);
                 let pairs = [];
                 // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
                 for (const node_id of Object.keys(data)) {
@@ -568,70 +600,9 @@ import { setUpMotorControlComponent } from "../modules/panels/motor_control.modu
                     }, 400);
                 }
             }
-            if (e.keyCode == 69 && yukon_state.pressedKeys[18]) {
-                openFile(yukon_state);
-            }
         });
-        function markCellWithMessage(table_cell, message, delay) {
-            // Make an absolute positioned div positioned over the table cell
-            var div = document.createElement('div');
-            div.style.position = 'absolute';
-            div.style.top = table_cell.offsetTop + 'px';
-            div.style.left = table_cell.offsetLeft + 'px';
-            div.style.width = table_cell.offsetWidth + 'px';
-            div.style.height = table_cell.offsetHeight + 'px';
-            // Add an underlined paragraph to the div containing the message
-            var p = document.createElement('p');
-            p.innerHTML = message;
-            p.style.textDecoration = 'underline';
-            div.appendChild(p);
-            // Add the div to the table cell
-            table_cell.appendChild(div);
-            setTimeout(function () {
-                div.parentNode.removeChild(div);
-            }, delay);
-        }
-        function findTableCell(node_id2, register_name2) {
-            for (var i = 1; i < registers_table.rows.length; i++) {
-                for (var j = 1; j < registers_table.rows[i].cells.length; j++) {
-                    const table_cell = registers_table.rows[i].cells[j]
-                    let node_id = table_cell.getAttribute("node_id")
-                    let register_name = table_cell.getAttribute("register_name")
-                    if (register_name == null) {
-                        continue; // Must be the header cell at the end
-                    }
-                    if (parseInt(node_id) == parseInt(node_id2) && register_name == register_name2) {
-                        return table_cell
-                    }
-                }
-            }
-        }
-
-        function serialize_configuration_of_all_avatars() {
-            var configuration = {};
-            yukon_state.current_avatars.forEach(function (avatar) {
-                configuration[avatar.node_id] = avatar.registers_exploded_values;
-            });
-            return JSON.stringify(configuration);
-        }
-
-        //        var btnFetch = document.getElementById('btnFetch');
-        //        btnFetch.addEventListener('click', function () {
-        //            update_messages()
-        //        });
-
-        // if hide-yakut is checked then send a message to the server to hide the yakut
-        // var hideYakut = document.getElementById('hide-yakut');
-        // hideYakut.addEventListener('change', async function () {
-        //     if (hideYakut.checked) {
-        //         await zubax_api.hide_yakut()
-        //         await updateTextOut(true);
-        //     } else {
-        //         await zubax_api.show_yakut()
-        //         await updateTextOut(true);
-        //     }
-        // });
     }
+
     try {
         if (zubax_api_ready) {
             await doStuffWhenReady();

@@ -175,7 +175,7 @@
     }
 
     input[type="radio"]:checked {
-        background: #0d6efd !important;
+        background: #700000 !important;
         color: white !important;
     }
 
@@ -195,5 +195,18 @@
 
     body {
         background-color: #222222;
+    }
+
+    button {
+        background-color: #353535 !important;
+        border-color: #727272 !important;
+    }
+
+    #btnShowHideToolbar {
+        background-color: #646464;
+    }
+
+    img {
+        filter: invert(42%) sepia(93%) saturate(1352%) hue-rotate(87deg) brightness(119%) contrast(119%);
     }
 }
