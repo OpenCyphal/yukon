@@ -16,6 +16,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
     const rbUseSelectFixedId = containerElement.querySelector('#rbUseSelectFixedId');
     const rbUseSelectAny = containerElement.querySelector('#rbUseSelectAny');
     const rbUseManualDatatypeEntry = containerElement.querySelector('#rbUseManualDatatypeEntry');
+    const iManualDatatypeEntry = containerElement.querySelector('#iManualDatatypeEntry');
 
     function getCurrentDesiredDatatype() {
         if (rbUseSelectAdvertised.checked) {

@@ -187,11 +187,11 @@ body {
 
 #layout {
     display: block;
-    height: calc(100%);
+    height: calc(100% - 0.2em);
 }
 
 #toolbar.shown ~ #layout {
-    height: calc(100% - 1.8em);
+    height: calc(100% - 2.1em);
 }
 
 #toolbar {
