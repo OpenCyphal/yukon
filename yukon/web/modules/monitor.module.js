@@ -4,6 +4,7 @@ import {meanings, getLinkInfo} from "./meanings.module.js";
 
 export function create_directed_graph(yukon_state) {
     cytoscape.use(cytoscapeKlay);
+    cytoscape.use(cytoscapePopper);
     let night_style = [
         {
             selector: 'node',
@@ -423,6 +424,20 @@ export function update_directed_graph(yukon_state) {
                 my_graph.add([{data: {source: avatar.node_id, target: cln, label: "A nice label"}}]);
             }
         }
+    }
+    if (my_graph.nodes()[0]) {
+        my_graph.nodes()[0].popper({
+            content: () => {
+                let div = document.createElement('div');
+
+                div.innerHTML = 'Popper content';
+
+                document.body.appendChild(div);
+
+                return div;
+            },
+            popper: {} // my popper options here
+        });
     }
 
     refresh_graph_layout(my_graph);
