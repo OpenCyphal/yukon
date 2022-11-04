@@ -91,7 +91,6 @@ app.whenReady().then(() => {
                     {
                         label: "Settings",
                         click: () => {
-                            console.log("Going to emit openSettings");
                             window.webContents.send('openSettings')
                         }
                     }
