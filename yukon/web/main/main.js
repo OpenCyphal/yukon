@@ -36,14 +36,6 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
     if (!isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_browser();
     }
-    if (window.electronAPI) {
-        window.electronAPI.onOpenSettings(function () {
-            yukon_state.settingsComponent.parent.parent.setActiveContentItem(yukon_state.settingsComponent.parent);
-            yukon_state.settingsComponent.parent.parent.toggleMaximise();
-        });
-    } else {
-        // Popout windows unfortunately don't have access to the electron API
-    }
 
 
     function setUpMonitorComponent() {
@@ -129,6 +121,15 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                 console.log(e);
                 yukon_state.myLayout.root.addChild(addedComponent);
             }
+        }
+
+        if (window.electronAPI) {
+            window.electronAPI.onOpenSettings(function () {
+                yukon_state.settingsComponent.parent.parent.setActiveContentItem(yukon_state.settingsComponent.parent);
+                yukon_state.settingsComponent.parent.parent.toggleMaximise();
+            });
+        } else {
+            // Popout windows unfortunately don't have access to the electron API
         }
 
         const outsideContext = this;
