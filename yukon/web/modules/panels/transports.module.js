@@ -58,7 +58,7 @@ export function initTransports(container, yukon_state) {
         }
     }
     async function fillSelectionWithSocketcan() {
-        const results = await zubax_api.get_socketcan_ports();
+        const results = await zubax_apij.get_socketcan_ports();
         const ports = results.ports;
         const hash = results.hash;
         if (hash !== yukon_state.last_socketcan_list_hash) {
