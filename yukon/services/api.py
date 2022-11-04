@@ -47,7 +47,7 @@ from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.NOTSET)
 
 

@@ -28,7 +28,7 @@ server.config["SEND_FILE_MAX_AGE_DEFAULT"] = 1  # disable caching
 server.json_encoder = EnhancedJSONEncoder
 WSGIRequestHandler.protocol_version = "HTTP/1.1"
 our_token = "ABC"
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
 
 
