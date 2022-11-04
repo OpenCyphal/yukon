@@ -179,6 +179,16 @@
         color: white !important;
     }
 
+    input[type="checkbox"] {
+        background: #c7c7c7 !important;
+        color: #b01f1f !important;
+    }
+
+    input[type="checkbox"]:checked {
+        background: #700000 !important;
+        color: white !important;
+    }
+
     #toolbar {
         background: #353535;
         color: #ffffff
@@ -213,5 +223,9 @@
     .card-header {
         background: #353535;
         color: #ffffff
+    }
+
+    .form-check {
+        background-color: #353535;
     }
 }

@@ -38,7 +38,7 @@ async def do_subscribe_requests_work(state: GodState) -> None:
                     message_carrier = MessageCarrier(pycyphal.dsdl.to_builtin(msg), None, messages_store.counter)
                     messages_store.counter += 1
                     messages_store.messages.append(message_carrier)
-                add_local_message(state, repr(msg), 20, subscribe_request.specifier.subject_id)
+                # add_local_message(state, repr(msg), 20, subscribe_request.specifier.subject_id)
 
             new_subscriber.receive_in_background(callback)
             state.queues.subscribed_messages[subscribe_request.specifier] = MessagesStore()
