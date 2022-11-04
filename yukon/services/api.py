@@ -245,6 +245,9 @@ class Api:
 
     def get_socketcan_ports(self) -> Response:
         _list = get_socketcan_ports()
+        for port in _list:
+            if self.state.cyphal.already_used_transport_interfaces.get("socketcan:" + port.get("device")):
+                port["already_used"] = True
         _list_hash = json.dumps(_list, sort_keys=True)
         return jsonify(
             {
@@ -255,6 +258,9 @@ class Api:
 
     def get_slcan_ports(self) -> typing.Dict[str, typing.Any]:
         _list = get_slcan_ports()
+        for port in _list:
+            if self.state.cyphal.already_used_transport_interfaces.get("slcan:" + port.get("device")):
+                port["already_used"] = True
         _list_hash = json.dumps(_list, sort_keys=True)
         return {
             "ports": _list,
