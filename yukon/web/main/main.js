@@ -33,9 +33,7 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
     yukon_state.autosize = autosize;
     yukon_state.navigator = window.navigator;
     yukon_state.jsyaml = jsyaml;
-    if (isRunningInElectron(yukon_state)) {
-        zubax_api.announce_running_in_electron();
-    } else {
+    if (!isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_browser();
     }
     if (window.electronAPI) {
