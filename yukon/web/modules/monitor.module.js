@@ -166,15 +166,29 @@ export function create_directed_graph(yukon_state) {
                         const commandsComponentOuterElement = currentElement.getActiveContentItem().element[0];
                         const iFixedIdSubscriptionNodeId = commandsComponentOuterElement.querySelector('#iFixedIdSubscriptionNodeId');
                         const rbUseSelectFixedId = commandsComponentOuterElement.querySelector('#rbUseSelectFixedId');
+                        const rbUseManualDatatypeEntry = commandsComponentOuterElement.querySelector('#rbUseManualDatatypeEntry');
+                        const iManualDatatypeEntry = commandsComponentOuterElement.querySelector('#iManualDatatypeEntry');
+                        const subjectIdInput = commandsComponentOuterElement.querySelector("#iSubjectId");
                         // IF rbUseSelectFixedId is checked then set the value of iFixedIdSubscriptionNodeId to the id of the clicked node
                         if (rbUseSelectFixedId.checked) {
-                            if(evt.target.data().node) {
+                            if (evt.target.data().node) {
                                 iFixedIdSubscriptionNodeId.value = evt.target.id();
+                            } else if (evt.target.data().link) {
+                                if (evt.target.data().link_type) {
+                                    rbUseManualDatatypeEntry.checked = true
+                                    iManualDatatypeEntry.value = evt.target.data().link_type;
+                                    subjectIdInput.value = evt.target.data().subject_id;
+                                }
                             }
                         } else {
-                            if(evt.target.data().publish_subject) {
-                                const subjectIdInput = commandsComponentOuterElement.querySelector("#iSubjectId");
+                            if (evt.target.data().publish_subject) {
                                 subjectIdInput.value = evt.target.id();
+                            } else if (evt.target.data().link) {
+                                if (evt.target.data().link_type) {
+                                    rbUseManualDatatypeEntry.checked = true
+                                    iManualDatatypeEntry.value = evt.target.data().link_type;
+                                    subjectIdInput.value = evt.target.data().subject_id;
+                                }
                             }
                         }
                     }
@@ -380,7 +394,16 @@ export function update_directed_graph(yukon_state) {
                 const linkInfos = getLinkInfo(parseInt(sub), avatar.node_id, yukon_state);
                 if (linkInfos.length > 0) {
                     assembled_text = "Link name: " + linkInfos[0].name + "\n" + "Type: " + linkInfos[0].type;
-                    my_graph.add([{data: {"link": true, id: avatar.node_id + "" + sub, label: assembled_text}}]);
+                    my_graph.add([{
+                        data: {
+                            "link": true,
+                            "link_name": linkInfos[0].name,
+                            "link_type": linkInfos[0].type,
+                            "subject_id": parseInt(sub),
+                            id: avatar.node_id + "" + sub,
+                            label: assembled_text
+                        }
+                    }]);
                     my_graph.add([{data: {source: sub, target: avatar.node_id + "" + sub, label: "A nice label"}}]);
                     my_graph.add([{
                         data: {
