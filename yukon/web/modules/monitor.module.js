@@ -32,7 +32,8 @@ export function create_directed_graph(yukon_state) {
         {
             selector: 'node[?publish_subject]',
             style: {
-                'background-color': '#80c5e2',
+                'background-color': '#345c70',
+                'color': '#80c5e2',
                 'width': '70px',
                 'height': '70px',
                 'shape': 'square'
@@ -41,7 +42,8 @@ export function create_directed_graph(yukon_state) {
         {
             selector: 'node[?link]',
             style: {
-                'background-color': '#80d5e2',
+                'background-color': '#005b3f',
+                'color': '#80c5e2',
                 'width': '450px',
                 'height': '65px',
                 'shape': 'square'

@@ -48,7 +48,8 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
         try:
             _object = request.get_json()
         except Exception as _:  # pylint: disable=broad-except
-            logger.warning("There was no json data attached")
+            pass
+            # logger.warning("There was no json data attached")
         try:
             found_method = getattr(api, path)
         except Exception:  # pylint: disable=broad-except

@@ -77,7 +77,7 @@ export async function setUpMessagesComponent(container, yukon_state) {
             // For every excluded keyword in the list, hide the message if it contains the keyword
             for (const keyword of excludedKeywords) {
                 // If keyword is empty then continue
-                if (keyword == "") {
+                if (keyword === "") {
                     continue;
                 }
                 if (child.innerHTML.includes(keyword)) {
@@ -134,7 +134,7 @@ export async function setUpMessagesComponent(container, yukon_state) {
         if (!messagesList || !cbAutoscroll) {
             return;
         }
-        const messages = await zubax_apij.get_messages(lastIndex + 1);
+        const messagesObject = await zubax_apij.get_messages(lastIndex + 1);
         // Clear messages-list
         if (document.getElementById("cDeleteOldMessages").checked) {
             for (const child of messagesList.children) {
@@ -148,8 +148,7 @@ export async function setUpMessagesComponent(container, yukon_state) {
             }
         }
         // Add messages to messages-list
-        var messagesObject = messages;
-        // Make sure that type of d is array
+        // Make sure that type of d is an array
         console.assert(messagesObject instanceof Array);
         for (const el of messagesObject) {
             const li = document.createElement("div");
@@ -174,7 +173,7 @@ export async function setUpMessagesComponent(container, yukon_state) {
                 li.style["font-weight"] = "bold";
             } else if (el.severity_number >= 40) { // Error
                 li.style.color = "red";
-            } else if (el.severity_number == 30) {
+            } else if (el.severity_number === 30) {
                 li.style.color = "orange";
             }
             // Set an attribute on the list element with current timestamp
@@ -184,11 +183,11 @@ export async function setUpMessagesComponent(container, yukon_state) {
 
             li.setAttribute("timeStampReadable", el.timestamp);
             // If el is the last in d
-            if (messagesObject.indexOf(el) == messagesObject.length - 1) {
+            if (messagesObject.indexOf(el) === messagesObject.length - 1) {
                 // Scroll to bottom of messages-list
                 setTimeout(function () {
                     var iAutoscrollFilter = document.getElementById("iAutoscrollFilter");
-                    if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
+                    if (cbAutoscroll.checked && (iAutoscrollFilter.value === "" || el.includes(iAutoscrollFilter.value))) {
                         containerElement.scrollTop = containerElement.scrollHeight;
                     }
                 }, 50);
@@ -210,7 +209,7 @@ export async function setUpMessagesComponent(container, yukon_state) {
     var taExcludedKeywords = document.getElementById("taExcludedKeywords");
     var timer = null;
     cbAutoscroll.addEventListener('change', function () {
-        if (cbAutoscroll.checked && (iAutoscrollFilter.value == "" || el.includes(iAutoscrollFilter.value))) {
+        if (cbAutoscroll.checked && (iAutoscrollFilter.value === "" || el.includes(iAutoscrollFilter.value))) {
             messagesList.scrollTop = messagesList.scrollHeight;
         }
     });
