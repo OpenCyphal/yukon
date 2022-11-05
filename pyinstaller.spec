@@ -106,10 +106,10 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     name=name,
-    debug=True,
+    debug=False,
     strip=False,
     upx=False,
     runtime_tmpdir=None,
-    console=True,
+    console=False,
     icon="icon_128_128.png",
 )
