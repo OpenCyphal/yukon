@@ -4,7 +4,7 @@ const path = require('path')
 const http = require('http');
 const net = require('net');
 const fs = require('fs');
-
+console.log(app.getAppPath())
 function createWindow() {
     const win = new BrowserWindow({
         width: 800,
@@ -12,7 +12,7 @@ function createWindow() {
         webPreferences: {
             preload: path.join(__dirname, 'preload.js')
         },
-        icon: "icon_128_128.png",
+        icon: path.join(app.getAppPath(), "icon_128_128.png"),
     })
     win.setBackgroundColor('#000')
     // Send a GET request to http://locahost:5000/api/announce_running_in_electron
