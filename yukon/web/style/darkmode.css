@@ -214,4 +214,14 @@
         background: #353535;
         color: #ffffff
     }
+
+    .feedback-message {
+        background: #353535;
+        color: #ffffff;
+    }
+
+    .feedback-message.success {
+        background: #353535;
+        color: #ffffff;
+    }
 }
