@@ -7,6 +7,7 @@ import logging
 import pycyphal
 from pycyphal.application import make_transport
 
+from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.attach_transport_response import AttachTransportResponse
 from yukon.services.faulty_transport import FaultyTransport

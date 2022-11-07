@@ -2,13 +2,13 @@ import logging
 import threading
 import typing
 from dataclasses import dataclass, field
-from pathlib import Path
 from queue import Queue
 from typing import Optional, Any, Callable, Dict
 from uuid import UUID
 
 import pycyphal
 
+from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.messages_publisher import MessagesPublisher
 from yukon.domain.messages_store import MessagesStore
 from yukon.domain.subject_specifier import SubjectSpecifier
@@ -112,6 +112,7 @@ class CyphalState:
     subscribers_by_subscribe_request: Dict[SubscribeRequest, pycyphal.presentation.Subscriber] = field(
         default_factory=dict
     )
+    centralized_allocator: Optional[CentralizedAllocator] = field(default_factory=none_factory)
 
 
 @dataclass
@@ -133,7 +134,16 @@ class GodState:
         self.allocation = AllocationState()
         self.settings = {
             "DSDL search directories": [{"__type__": "dirpath", "value": ""}],
-            "UI": {"Registers": {"Column width (pixels)": 400}}
+            "UI": {"Registers": {"Column width (pixels)": 400}},
+            "Node allocation": {
+                "__type__": "radio",
+                "values": [
+                    "Automatic",
+                    {"value": "Manual", "description": "Haven't implemented this yet "},
+                ],
+                "chosen_value": "Manual",
+                "name": "Node allocation"
+            },
             # "some_files": [{"__type__": "filepath", "value": ""}],
             # "ui_settings": {
             #     "Save location": {
