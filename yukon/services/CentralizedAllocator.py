@@ -4,8 +4,14 @@ import sqlite3
 from typing import Optional, Union
 
 import pycyphal
-from pycyphal.application.plug_and_play import Allocator, _AllocationTable, _DB_DEFAULT_LOCATION, _DB_TIMEOUT, \
-    _NUM_RESERVED_TOP_NODE_IDS, ID
+from pycyphal.application.plug_and_play import (
+    Allocator,
+    _AllocationTable,
+    _DB_DEFAULT_LOCATION,
+    _DB_TIMEOUT,
+    _NUM_RESERVED_TOP_NODE_IDS,
+    ID,
+)
 
 from uavcan.pnp import NodeIDAllocationData_1, NodeIDAllocationData_2
 
@@ -18,9 +24,9 @@ class CentralizedAllocator(Allocator):
     """
 
     def __init__(
-            self,
-            node: pycyphal.application.Node,
-            database_file: Optional[Union[str, pathlib.Path]] = None,
+        self,
+        node: pycyphal.application.Node,
+        database_file: Optional[Union[str, pathlib.Path]] = None,
     ):
         """
         :param node:
@@ -79,7 +85,7 @@ class CentralizedAllocator(Allocator):
         self._alloc.register(node_id, unique_id)
 
     async def _on_message(
-            self, msg: Union[NodeIDAllocationData_1, NodeIDAllocationData_2], meta: pycyphal.transport.TransferFrom
+        self, msg: Union[NodeIDAllocationData_1, NodeIDAllocationData_2], meta: pycyphal.transport.TransferFrom
     ) -> None:
         if meta.source_node_id is not None:
             _logger.error(  # pylint: disable=logging-fstring-interpolation

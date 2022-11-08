@@ -144,12 +144,9 @@ class GodState:
                     {"value": "Manual", "description": "Haven't implemented this yet "},
                 ],
                 "chosen_value": "Manual",
-                "name": "Node allocation"
+                "name": "Node allocation",
             },
-            "Firmware updates": {
-                "Enabled": False,
-                "File path": {"__type__": "dirpath", "value": ""}
-            }
+            "Firmware updates": {"Enabled": False, "File path": {"__type__": "dirpath", "value": ""}}
             # "some_files": [{"__type__": "filepath", "value": ""}],
             # "ui_settings": {
             #     "Save location": {

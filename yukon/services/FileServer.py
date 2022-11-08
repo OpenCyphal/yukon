@@ -75,8 +75,9 @@ class FileServer:
 
         :raises: :class:`FileNotFoundError` if :attr:`roots` is empty.
         """
+        # TODO: Something is wrong here, I believe, maybe the condition was intended to be inverted
         if isinstance(p, pathlib.Path):
-            p = p.path.tobytes().decode(errors="ignore").replace(chr(pathlib.Path.SEPARATOR), os.sep)
+            p = p.path.tobytes().decode(errors="ignore").replace(chr(pathlib.Path.SEPARATOR), os.sep)  #  type: ignore
         assert not isinstance(p, pathlib.Path)
         p = pathlib.Path(str(pathlib.Path(p)).strip(os.sep))  # Make relative, canonicalize the trailing separator
         # See if there are existing entries under this name:
@@ -240,5 +241,5 @@ class FileServer:
             _logger.info("%r: Error: %r", self, ex, exc_info=True)
             return Write.Response(self.convert_error(ex))
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> typing.Any:
         return pycyphal.util.repr_attributes(self, list(map(str, self.roots)))
