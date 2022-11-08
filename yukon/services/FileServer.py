@@ -34,27 +34,28 @@ class FileServer:
         # noinspection PyUnresolvedReferences
         self._data_transfer_capacity = int(pycyphal.dsdl.get_model(Unstructured)["value"].data_type.capacity)
 
-        self.s_ls = node.get_server(List)
-        self.s_if = node.get_server(GetInfo)
-        self.s_mo = node.get_server(Modify)
-        self.s_rd = node.get_server(Read)
-        self.s_wr = node.get_server(Write)
+        self.service_list = node.get_server(List)
+        self.service_info = node.get_server(GetInfo)
+        self.service_modify = node.get_server(Modify)
+        self.service_read = node.get_server(Read)
+        self.service_write = node.get_server(Write)
 
         node.add_lifetime_hooks(self.start, self.close)
 
     def start(self) -> None:
-        self.s_ls.serve_in_background(self._serve_ls)
-        self.s_if.serve_in_background(self._serve_if)
-        self.s_mo.serve_in_background(self._serve_mo)
-        self.s_rd.serve_in_background(self._serve_rd)
-        self.s_wr.serve_in_background(self._serve_wr)
+        _logger.info("%r: Starting", self)
+        self.service_list.serve_in_background(self._serve_list)
+        self.service_info.serve_in_background(self._serve_getinfo)
+        self.service_modify.serve_in_background(self._serve_modify)
+        self.service_read.serve_in_background(self._serve_read)
+        self.service_write.serve_in_background(self._serve_write)
 
     def close(self) -> None:
-        self.s_ls.close()
-        self.s_if.close()
-        self.s_mo.close()
-        self.s_rd.close()
-        self.s_wr.close()
+        self.service_list.close()
+        self.service_info.close()
+        self.service_modify.close()
+        self.service_read.close()
+        self.service_write.close()
 
     @property
     def roots(self) -> typing.List[pathlib.Path]:
@@ -124,7 +125,7 @@ class FileServer:
             )
         return Error(Error.UNKNOWN_ERROR)
 
-    async def _serve_ls(
+    async def _serve_list(
         self, request: List.Request, meta: pycyphal.presentation.ServiceRequestMetadata
     ) -> List.Response:
         _logger.info("%r: Request from %r: %r", self, meta.client_node_id, request)
@@ -140,7 +141,7 @@ class FileServer:
             _logger.exception("%r: Directory list error: %s", self, ex)
         return List.Response()
 
-    async def _serve_if(
+    async def _serve_getinfo(
         self, request: GetInfo.Request, meta: pycyphal.presentation.ServiceRequestMetadata
     ) -> GetInfo.Response:
         _logger.info("%r: Request from %r: %r", self, meta.client_node_id, request)
@@ -158,7 +159,7 @@ class FileServer:
             _logger.info("%r: Error: %r", self, ex, exc_info=True)
             return GetInfo.Response(self.convert_error(ex))
 
-    async def _serve_mo(
+    async def _serve_modify(
         self, request: Modify.Request, meta: pycyphal.presentation.ServiceRequestMetadata
     ) -> Modify.Response:
         _logger.info("%r: Request from %r: %r", self, meta.client_node_id, request)
@@ -209,7 +210,7 @@ class FileServer:
             _logger.info("%r: Error: %r", self, ex, exc_info=True)
             return Modify.Response(self.convert_error(ex))
 
-    async def _serve_rd(
+    async def _serve_read(
         self, request: Read.Request, meta: pycyphal.presentation.ServiceRequestMetadata
     ) -> Read.Response:
         _logger.info("%r: Request from %r: %r", self, meta.client_node_id, request)
@@ -223,7 +224,7 @@ class FileServer:
             _logger.info("%r: Error: %r", self, ex, exc_info=True)
             return Read.Response(self.convert_error(ex))
 
-    async def _serve_wr(
+    async def _serve_write(
         self, request: Write.Request, meta: pycyphal.presentation.ServiceRequestMetadata
     ) -> Write.Response:
         _logger.info("%r: Request from %r: %r", self, meta.client_node_id, request)
