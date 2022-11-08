@@ -427,7 +427,7 @@ export function update_directed_graph(yukon_state) {
             }
         }
     }
-    if (my_graph.nodes()[0]) {
+    /*if (my_graph.nodes()[0]) {
         my_graph.nodes()[0].popper({
             content: () => {
                 let div = document.createElement('div');
@@ -440,7 +440,7 @@ export function update_directed_graph(yukon_state) {
             },
             popper: {} // my popper options here
         });
-    }
+    }*/
 
     refresh_graph_layout(my_graph);
 }

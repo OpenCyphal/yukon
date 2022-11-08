@@ -8,6 +8,7 @@ from uuid import UUID
 
 import pycyphal
 
+from yukon.services.FileServer import FileServer
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.messages_publisher import MessagesPublisher
 from yukon.domain.messages_store import MessagesStore
@@ -113,6 +114,7 @@ class CyphalState:
         default_factory=dict
     )
     centralized_allocator: Optional[CentralizedAllocator] = field(default_factory=none_factory)
+    file_server: Optional[FileServer] = field(default_factory=none_factory)
 
 
 @dataclass
@@ -144,6 +146,10 @@ class GodState:
                 "chosen_value": "Manual",
                 "name": "Node allocation"
             },
+            "Firmware updates": {
+                "Enabled": False,
+                "File path": {"__type__": "dirpath", "value": ""}
+            }
             # "some_files": [{"__type__": "filepath", "value": ""}],
             # "ui_settings": {
             #     "Save location": {
