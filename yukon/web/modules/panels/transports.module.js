@@ -1,4 +1,5 @@
-import { JsonParseHelper } from "../utilities.module.js";
+import {JsonParseHelper} from "../utilities.module.js";
+
 export function initTransports(container, yukon_state) {
     const containerElem = container.getElement()[0];
     const transports = Object.freeze({
@@ -16,10 +17,12 @@ export function initTransports(container, yukon_state) {
     var currentSelectedTransportType = [transports.CAN, transports.CAN.MANUAL];
     console.log("zubax_api_ready in add_transport.js");
     const cbShowTransportCombobox = containerElem.querySelector('#cbShowTransportCombobox');
+
     function resetAllHashes() {
         yukon_state.last_slcan_list_hash = null;
         yukon_state.last_socketcan_list_hash = null;
     }
+
     function detectDeviceFromProductId(productId) {
         if (productId == 24600) {
             return "Dronecode probe"
@@ -29,8 +32,9 @@ export function initTransports(container, yukon_state) {
         return null;
 
     }
+
     async function fillSelectionWithSlcan() {
-        const results = JSON.parse((await zubax_api.get_slcan_ports()), JsonParseHelper);;
+        const results = await zubax_apij.get_slcan_ports();
         const ports = results.ports;
         const hash = results.hash;
         if (hash !== yukon_state.last_slcan_list_hash) {
@@ -48,6 +52,9 @@ export function initTransports(container, yukon_state) {
             for (const port of ports) {
                 const option = document.createElement("option");
                 option.value = port.device;
+                if (port.already_used) {
+                    option.disabled = true;
+                }
                 let device_name = detectDeviceFromProductId(port.product_id);
                 if (device_name == null) {
                     device_name = port.description;
@@ -57,6 +64,7 @@ export function initTransports(container, yukon_state) {
             }
         }
     }
+
     async function fillSelectionWithSocketcan() {
         const results = await zubax_apij.get_socketcan_ports();
         const ports = results.ports;
@@ -75,6 +83,9 @@ export function initTransports(container, yukon_state) {
             // Fill sTransport with ports
             for (const port of ports) {
                 const option = document.createElement("option");
+                if (port.already_used) {
+                    option.disabled = true;
+                }
                 let device_name = detectDeviceFromProductId(port.product_id);
                 if (device_name == null) {
                     device_name = port.description;
@@ -89,6 +100,7 @@ export function initTransports(container, yukon_state) {
     function addLocalMessage(message, severity) {
         zubax_api.add_local_message(message, severity)
     }
+
     async function doTheTabSwitching() {
         const h1TransportType = containerElem.querySelector("h1#TransportType");
         const iTransport = containerElem.querySelector("#iTransport");
@@ -145,39 +157,37 @@ export function initTransports(container, yukon_state) {
                 divMtu.style.display = "none";
                 UDPLinuxWarning.style.display = "block";
                 break;
-            case transports.CAN.SLCAN:
-                {
-                    h1TransportType.innerHTML = "SLCAN";
-                    divTypeTransport.style.display = "none";
-                    iMtu.value = 8;
+            case transports.CAN.SLCAN: {
+                h1TransportType.innerHTML = "SLCAN";
+                divTypeTransport.style.display = "none";
+                iMtu.value = 8;
+                await fillSelectionWithSlcan();
+                let thisInterval;
+                thisInterval = setInterval(async function () {
+                    if (currentSelectedTransportType[1] != transports.CAN.SLCAN) {
+                        clearInterval(thisInterval);
+                        return
+                    }
                     await fillSelectionWithSlcan();
-                    let thisInterval;
-                    thisInterval = setInterval(async function () {
-                        if (currentSelectedTransportType[1] != transports.CAN.SLCAN) {
-                            clearInterval(thisInterval);
-                            return
-                        }
-                        await fillSelectionWithSlcan();
-                    }, 1000);
-                }
+                }, 1000);
+            }
                 break;
-            case transports.CAN.SOCKETCAN:
-                {
-                    h1TransportType.innerHTML = "SocketCAN";
-                    divTypeTransport.style.display = "none";
-                    divArbRate.style.display = "none";
-                    divDataRate.style.display = "none";
-                    iMtu.value = 64;
+            case transports.CAN.SOCKETCAN: {
+                h1TransportType.innerHTML = "SocketCAN";
+                divTypeTransport.style.display = "none";
+                divArbRate.style.display = "none";
+                divDataRate.style.display = "none";
+                iMtu.value = 64;
+                await fillSelectionWithSocketcan();
+                let thisInterval;
+                thisInterval = setInterval(async function () {
+                    if (currentSelectedTransportType[1] != transports.CAN.SOCKETCAN) {
+                        clearInterval(thisInterval);
+                        return
+                    }
                     await fillSelectionWithSocketcan();
-                    let thisInterval;
-                    thisInterval = setInterval(async function () {
-                        if (currentSelectedTransportType[1] != transports.CAN.SOCKETCAN) {
-                            clearInterval(thisInterval);
-                            return
-                        }
-                        await fillSelectionWithSocketcan();
-                    }, 1000);
-                }
+                }, 1000);
+            }
                 break;
             case transports.CAN.CANDUMP:
                 h1TransportType.innerHTML = "CANDUMP";
@@ -195,6 +205,7 @@ export function initTransports(container, yukon_state) {
                 break;
         }
     }
+
     // Disable all inputs contained in these divs that are not visible
     function disableAllInputs() {
         const divTypeTransport = containerElem.querySelector("#divTypeTransport");
@@ -222,7 +233,9 @@ export function initTransports(container, yukon_state) {
             }
         }
     }
+
     disableAllInputs();
+
     function getCoords(elem) {
         let box = elem.getBoundingClientRect();
 
@@ -233,15 +246,17 @@ export function initTransports(container, yukon_state) {
             left: box.left + window.pageXOffset
         };
     }
+
     const getChildTopAndLeftPosition = (element) => [getCoords(element).top, getCoords(element).left];
+
     function setCurrentTransport(tabRow, isTopMost) {
         if (isTopMost) {
             currentSelectedTransportType = [tabRow, tabRow.tabNames[tabRow.selectedTabIndex]];
-        }
-        else {
+        } else {
             currentSelectedTransportType = [tabRow.parentTabName, tabRow.tabNames[tabRow.selectedTabIndex]];
         }
     }
+
     function moveSlider(targetTab, tabRow) {
         const slider = tabRow.slider;
         const targetWidth = targetTab.getBoundingClientRect().width
@@ -251,6 +266,7 @@ export function initTransports(container, yukon_state) {
         }
         return true;
     }
+
     async function moveTab(tabRow, index, isTopMost, wasClicked) {
         if (tabRow.selectedTabIndex == index) {
             return;
@@ -281,7 +297,9 @@ export function initTransports(container, yukon_state) {
         }
         await doTheTabSwitching();
     }
+
     const maybe_tabs = containerElem.querySelector('#maybe-tabs');
+
     function addChildTabRow(ParentTabRow, selectedTabName, wasClicked) {
         ParentTabRow.removeCurrentChildTabRow();
         const arrayOfTabNames = Object.values(transports[selectedTabName]);
@@ -291,6 +309,7 @@ export function initTransports(container, yukon_state) {
         ParentTabRow.childTabRow = tabRow;
         maybe_tabs.appendChild(tabRow.div);
     }
+
     function addOneTabRow(tabNameArray, isTopMost, wasClicked) {
         let tabRow = {};
         tabRow.div = document.createElement("div");
@@ -344,6 +363,7 @@ export function initTransports(container, yukon_state) {
         }, 30);
         return tabRow;
     }
+
     function InitTabStuff() {
         const firstMainRow = addOneTabRow(Object.keys(transports), true, false)
         maybe_tabs.appendChild(firstMainRow.div);
@@ -360,11 +380,13 @@ export function initTransports(container, yukon_state) {
         //     }
         // }, 500);
     }
+
     function displayErrorMessage(message) {
         const feedbackMessageDiv = containerElem.querySelector(".feedback-message");
         feedbackMessageDiv.style.display = "block";
         feedbackMessageDiv.innerHTML = message;
     }
+
     function verifyInputs() {
         const iTransport = containerElem.querySelector("#iTransport");
         const sTransport = containerElem.querySelector("#sTransport");
@@ -442,9 +464,13 @@ export function initTransports(container, yukon_state) {
 
         return isFormCorrect;
     }
+
     const btnStart = containerElem.querySelector("#btnStart");
     btnStart.addEventListener('click', async function () {
-        if (!verifyInputs()) { console.error("Invalid input values."); return; }
+        if (!verifyInputs()) {
+            console.error("Invalid input values.");
+            return;
+        }
         const feedbackMessageDiv = containerElem.querySelector(".feedback-message");
         feedbackMessageDiv.style.display = "none";
         feedbackMessageDiv.innerHTML = "";

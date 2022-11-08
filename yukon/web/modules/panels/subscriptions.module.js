@@ -197,11 +197,29 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
         divLatestMessage.appendChild(pLatestMessage);
         div.appendChild(divLatestMessage);
 
+        const divLogToConsole = document.createElement('div');
+        divLogToConsole.classList.add('form-check');
+        const inputLogToConsole = document.createElement('input');
+        inputLogToConsole.classList.add('form-check-input');
+        inputLogToConsole.classList.add('checkbox');
+        inputLogToConsole.type = 'checkbox';
+        inputLogToConsole.id = "inputLogToConsole" + subscription.subject_id + ":" + subscription.datatype;
+        divLogToConsole.appendChild(inputLogToConsole);
+        const labelLogToConsole = document.createElement('label');
+        labelLogToConsole.classList.add('form-check-label');
+        labelLogToConsole.htmlFor = inputLogToConsole.id;
+        labelLogToConsole.innerHTML = "Log to console";
+        divLogToConsole.appendChild(labelLogToConsole);
+        divLatestMessage.appendChild(divLogToConsole);
+
         async function fetch() {
             const full_specifiers = [desiredSubjectIdValue + ":" + selectedDatatype + ":" + current_messages.length];
             const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
             const messages = result[Object.keys(result)[0]]
             for (const message of messages) {
+                if (inputLogToConsole.checked) {
+                    yukon_state.addLocalMessage(JSON.stringify(message.message), 20);
+                }
                 current_messages.push(message);
             }
             pLatestMessage.innerHTML = JSON.stringify(current_messages[current_messages.length - 1]);
