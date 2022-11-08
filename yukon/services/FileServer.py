@@ -215,7 +215,7 @@ class FileServer:
     ) -> Read.Response:
         _logger.info("%r: Request from %r: %r", self, meta.client_node_id, request)
         try:
-            with open(pathlib.Path(*self.locate(request.path)), "rb") as f:
+            with open(pathlib.Path(*self.locate(request.path.path.tobytes().decode())), "rb") as f:
                 if request.offset != 0:  # Do not seek unless necessary to support non-seekable files.
                     f.seek(request.offset)
                 data = f.read(self._data_transfer_capacity)
