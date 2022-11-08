@@ -313,7 +313,7 @@ export function make_context_menus(yukon_state) {
                 click: async (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
                     const node_id = headerCell.getAttribute("data-node_id");
-                    const response = await yukon_state.zubax_api.send_command(parseInt(node_id), 65530, "");
+                    const response = await yukon_state.zubax_apij.send_command(parseInt(node_id), 65530, "");
                     if (response) {
                         if (response.success) {
                             addLocalMessage("Stored persistent states for node " + node_id, 20);

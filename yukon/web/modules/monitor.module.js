@@ -4,6 +4,7 @@ import {meanings, getLinkInfo} from "./meanings.module.js";
 
 export function create_directed_graph(yukon_state) {
     cytoscape.use(cytoscapeKlay);
+    cytoscape.use(cytoscapePopper);
     let night_style = [
         {
             selector: 'node',
@@ -159,9 +160,11 @@ export function create_directed_graph(yukon_state) {
             if (currentElement) {
                 if (currentElement.isStack && currentElement.getActiveContentItem().config.hasOwnProperty("componentName")) {
                     if (currentElement.getActiveContentItem().config.componentName === "commandsComponent") {
-                        const commandsComponentOuterElement = currentElement.getActiveContentItem().element[0];
-                        const nodeIdInput = commandsComponentOuterElement.querySelector("#iNodeId");
-                        nodeIdInput.value = evt.target.id();
+                        if (evt.target.data().node) {
+                            const commandsComponentOuterElement = currentElement.getActiveContentItem().element[0];
+                            const nodeIdInput = commandsComponentOuterElement.querySelector("#iNodeId");
+                            nodeIdInput.value = evt.target.id();
+                        }
                     } else if (currentElement.getActiveContentItem().config.componentName === "subsComponent") {
                         const commandsComponentOuterElement = currentElement.getActiveContentItem().element[0];
                         const iFixedIdSubscriptionNodeId = commandsComponentOuterElement.querySelector('#iFixedIdSubscriptionNodeId');
@@ -424,6 +427,20 @@ export function update_directed_graph(yukon_state) {
             }
         }
     }
+    /*if (my_graph.nodes()[0]) {
+        my_graph.nodes()[0].popper({
+            content: () => {
+                let div = document.createElement('div');
+
+                div.innerHTML = 'Popper content';
+
+                document.body.appendChild(div);
+
+                return div;
+            },
+            popper: {} // my popper options here
+        });
+    }*/
 
     refresh_graph_layout(my_graph);
 }

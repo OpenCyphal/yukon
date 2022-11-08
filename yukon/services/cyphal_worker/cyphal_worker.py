@@ -1,8 +1,15 @@
 import asyncio
 import logging
 
-from pycyphal.application import make_node, NodeInfo
+import typing
 
+import pycyphal
+from pycyphal.application import make_node, NodeInfo, make_registry
+
+import uavcan
+import yukon.domain.god_state
+from yukon.services.FileServer import FileServer
+from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.cyphal_worker.unsubscribe_requests_work import do_unsubscribe_requests_work
 from yukon.services.cyphal_worker.detach_transport_work import do_detach_transport_work
 from yukon.services.cyphal_worker.subscribe_requests_work import do_subscribe_requests_work
@@ -19,20 +26,73 @@ logger = logging.getLogger(__name__)
 logger.setLevel("NOTSET")
 
 
+def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -> None:
+    allocation_data_sub = state.cyphal.local_node.make_subscriber(uavcan.pnp.NodeIDAllocationData_1_0)
+
+    def receive_allocate_request(msg: typing.Any, metadata: pycyphal.transport.TransferFrom) -> None:
+        pass
+
+    allocation_data_sub.receive_in_background(receive_allocate_request)
+
+
 def cyphal_worker(state: GodState) -> None:
     """It starts the node and keeps adding any transports that are queued for adding"""
 
     async def _internal_method() -> None:
         try:
+            my_registry = make_registry()
+            my_registry["uavcan.node.id"] = 13
             state.cyphal.local_node = make_node(
-                NodeInfo(name="com.zubax.sapog.tests.debugger"), reconfigurable_transport=True
+                NodeInfo(name="org.opencyphal.yukon"), my_registry, reconfigurable_transport=True
             )
+
             state.cyphal.local_node.start()
-            state.cyphal.local_node.registry["uavcan.node.id"] = 13
             state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
+
             make_tracers_trackers(state)
+
             logger.debug("Tracers should have been set up.")
             while state.gui.gui_running:
+                try:
+                    if state.cyphal.centralized_allocator:
+                        if state.settings["Node allocation"]["chosen_value"] == "Automatic":
+                            if not state.cyphal.centralized_allocator.running:
+                                logger.info("Allocator is now running")
+                                state.cyphal.centralized_allocator.start()
+                        else:
+                            if state.cyphal.centralized_allocator.running:
+                                logger.info("Allocator is now stopped")
+                                state.cyphal.centralized_allocator.close()
+                                state.cyphal.centralized_allocator = None
+                    elif (
+                        state.settings["Node allocation"]["chosen_value"] == "Automatic" and state.cyphal.local_node.id
+                    ):
+                        state.cyphal.centralized_allocator = CentralizedAllocator(state.cyphal.local_node)
+                except:
+                    logger.exception("A failure with the centralized allocator")
+
+                try:
+                    if not state.cyphal.file_server:
+                        if state.settings["Firmware updates"]["Enabled"] == True:
+                            state.cyphal.file_server = FileServer(
+                                state.cyphal.local_node, [state.settings["Firmware updates"]["File path"]["value"]]
+                            )
+                            logger.info(
+                                "File server started on path "
+                                + state.settings["Firmware updates"]["File path"]["value"]
+                            )
+                            state.cyphal.file_server.start()
+                    else:
+                        if state.settings["Firmware updates"]["Enabled"] == False:
+                            logger.info(
+                                "File server stopped on path "
+                                + state.settings["Firmware updates"]["File path"]["value"]
+                            )
+                            state.cyphal.file_server.close()
+                            state.cyphal.file_server = None
+                except:
+                    logger.exception("A failure with the file server")
+
                 await asyncio.sleep(0.05)
                 await do_attach_transport_work(state)
                 await asyncio.sleep(0.02)

@@ -35,6 +35,7 @@ async def do_send_command_work(state: GodState) -> None:
                 )
                 msg = uavcan.node.ExecuteCommand_1_1.Request()
                 msg.command = int(send_command_request.command_id)
+                msg.parameter = send_command_request.text_argument
                 response_tuple = await service_client.call(msg)
                 if response_tuple:
                     stop_retry = True
