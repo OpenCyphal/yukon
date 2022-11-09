@@ -5,9 +5,13 @@ import typing
 
 import pycyphal
 from pycyphal.application import make_node, NodeInfo, make_registry
+import pycyphal.transport.can
+import dronecan
 
 import uavcan
+import uavcan.pnp
 import yukon.domain.god_state
+from services.cyphal_worker.forward_dronecan_work import do_forward_dronecan_work
 from yukon.services.FileServer import FileServer
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.cyphal_worker.unsubscribe_requests_work import do_unsubscribe_requests_work
@@ -35,6 +39,40 @@ def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -
     allocation_data_sub.receive_in_background(receive_allocate_request)
 
 
+def handle_settings_of_fileserver_and_allocator(state: "yukon.domain.god_state.GodState"):
+    try:
+        if state.cyphal.centralized_allocator:
+            if state.settings["Node allocation"]["chosen_value"] == "Automatic":
+                if not state.cyphal.centralized_allocator.running:
+                    logger.info("Allocator is now running")
+                    state.cyphal.centralized_allocator.start()
+            else:
+                if state.cyphal.centralized_allocator.running:
+                    logger.info("Allocator is now stopped")
+                    state.cyphal.centralized_allocator.close()
+                    state.cyphal.centralized_allocator = None
+        elif state.settings["Node allocation"]["chosen_value"] == "Automatic" and state.cyphal.local_node.id:
+            state.cyphal.centralized_allocator = CentralizedAllocator(state.cyphal.local_node)
+    except:
+        logger.exception("A failure with the centralized allocator")
+
+    try:
+        if not state.cyphal.file_server:
+            if state.settings["Firmware updates"]["Enabled"]:
+                state.cyphal.file_server = FileServer(
+                    state.cyphal.local_node, [state.settings["Firmware updates"]["File path"]["value"]]
+                )
+                logger.info("File server started on path " + state.settings["Firmware updates"]["File path"]["value"])
+                state.cyphal.file_server.start()
+        else:
+            if not state.settings["Firmware updates"]["Enabled"]:
+                logger.info("File server stopped on path " + state.settings["Firmware updates"]["File path"]["value"])
+                state.cyphal.file_server.close()
+                state.cyphal.file_server = None
+    except:
+        logger.exception("A failure with the file server")
+
+
 def cyphal_worker(state: GodState) -> None:
     """It starts the node and keeps adding any transports that are queued for adding"""
 
@@ -47,54 +85,26 @@ def cyphal_worker(state: GodState) -> None:
             )
 
             state.cyphal.local_node.start()
+
+            def handle_transmit_message_to_dronecan(capture: pycyphal.transport.Capture) -> None:
+                if isinstance(capture, pycyphal.transport.can.CANCapture):
+                    can_frame = dronecan.driver.CANFrame(
+                        capture.frame.identifier, capture.frame.data, True, canfd=False
+                    )
+                    state.cyphal.dronecan_traffic_queues.input_queue.put_nowait(can_frame)
+
+            state.cyphal.local_node.presentation.transport.begin_capture(handle_transmit_message_to_dronecan)
             state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
 
             make_tracers_trackers(state)
 
             logger.debug("Tracers should have been set up.")
             while state.gui.gui_running:
-                try:
-                    if state.cyphal.centralized_allocator:
-                        if state.settings["Node allocation"]["chosen_value"] == "Automatic":
-                            if not state.cyphal.centralized_allocator.running:
-                                logger.info("Allocator is now running")
-                                state.cyphal.centralized_allocator.start()
-                        else:
-                            if state.cyphal.centralized_allocator.running:
-                                logger.info("Allocator is now stopped")
-                                state.cyphal.centralized_allocator.close()
-                                state.cyphal.centralized_allocator = None
-                    elif (
-                        state.settings["Node allocation"]["chosen_value"] == "Automatic" and state.cyphal.local_node.id
-                    ):
-                        state.cyphal.centralized_allocator = CentralizedAllocator(state.cyphal.local_node)
-                except:
-                    logger.exception("A failure with the centralized allocator")
-
-                try:
-                    if not state.cyphal.file_server:
-                        if state.settings["Firmware updates"]["Enabled"] == True:
-                            state.cyphal.file_server = FileServer(
-                                state.cyphal.local_node, [state.settings["Firmware updates"]["File path"]["value"]]
-                            )
-                            logger.info(
-                                "File server started on path "
-                                + state.settings["Firmware updates"]["File path"]["value"]
-                            )
-                            state.cyphal.file_server.start()
-                    else:
-                        if state.settings["Firmware updates"]["Enabled"] == False:
-                            logger.info(
-                                "File server stopped on path "
-                                + state.settings["Firmware updates"]["File path"]["value"]
-                            )
-                            state.cyphal.file_server.close()
-                            state.cyphal.file_server = None
-                except:
-                    logger.exception("A failure with the file server")
-
+                handle_settings_of_fileserver_and_allocator(state)
                 await asyncio.sleep(0.05)
                 await do_attach_transport_work(state)
+                await asyncio.sleep(0.02)
+                await do_forward_dronecan_work(state)
                 await asyncio.sleep(0.02)
                 await do_detach_transport_work(state)
                 await asyncio.sleep(0.02)

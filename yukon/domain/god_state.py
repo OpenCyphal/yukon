@@ -8,6 +8,7 @@ from uuid import UUID
 
 import pycyphal
 
+from domain.dronecan_traffic_queues import DroneCanTrafficQueues
 from yukon.services.FileServer import FileServer
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.messages_publisher import MessagesPublisher
@@ -163,5 +164,6 @@ class GodState:
             # },
         }
         self.last_settings_hash: int = 0
+        self.dronecan_traffic_queues = DroneCanTrafficQueues()
         self.messages_publisher: Optional[MessagesPublisher] = field(default_factory=none_factory)
         self.api = None
