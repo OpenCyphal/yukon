@@ -5,10 +5,10 @@ import queue
 import sys
 import time
 from pathlib import Path
-import multiprocessing
 import logging
 
 import typing
+import dronecan.app.node_monitor
 from dronecan.driver.common import AbstractDriver, CANFrame
 from dronecan.node import Node
 
@@ -28,7 +28,6 @@ from dronecan import uavcan
 class GoodDriver(AbstractDriver):
     def __init__(self, state: GodState):
         self.state = state
-        self._io_hooks = []
 
     def send(
         self,
@@ -42,10 +41,9 @@ class GoodDriver(AbstractDriver):
         frame = CANFrame(message_id, message, extended, canfd=canfd)
         self.state.dronecan_traffic_queues.output_queue.put_nowait(frame)
 
-    def receive(self, timeout: float = 0.0) -> typing.Optional[CANFrame]:
-        if timeout is None:
-            deadline = None
-        elif timeout == 0:
+    def receive(self, timeout: typing.Optional[float] = 0.0) -> typing.Optional[CANFrame]:
+        deadline: typing.Optional[float] = None
+        if timeout == 0:
             deadline = 0
         else:
             deadline = time.monotonic() + timeout
@@ -65,39 +63,48 @@ class GoodDriver(AbstractDriver):
                 return
 
 
-def main(current_file_path, port, file_name):
-    can = GoodDriver()
-    node = Node(can, node_id=123)
-    # Add the current directory to the paths list
-    file_server = FileServer(node, ["/"])  # This is secure!
-    node_monitor = NodeMonitor(node)
-    # It is NOT necessary to specify the database storage.
-    # If it is not specified, the allocation table will be kept in memory, thus it will not be persistent.
-    allocator = CentralizedServer(node, node_monitor, database_storage=Path(os.getcwd()) / "allocation.db")
+def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
+    state.dronecan.allocator = None
+    state.dronecan.node_monitor = None
+    try:
+        state.dronecan.driver = GoodDriver(state)
+        state.dronecan.node = Node(state.dronecan.driver, node_id=123)
+        # Add the current directory to the paths list
+        state.dronecan.file_server = FileServer(state.dronecan.node, ["/"])  # This is secure!
+        state.dronecan.node_monitor = NodeMonitor(state.dronecan.node)
+        # It is NOT necessary to specify the database storage.
+        # If it is not specified, the allocation table will be kept in memory, thus it will not be persistent.
+        state.dronecan.allocator = CentralizedServer(
+            state.dronecan.node, state.dronecan.node_monitor, database_storage=Path(os.getcwd()) / "allocation.db"
+        )
 
-    def node_update(event):
-        if event.event_id == event.EVENT_ID_NEW:
-            req = uavcan.protocol.file.BeginFirmwareUpdate.Request()
-            req.image_file_remote_path.path = str(Path(os.getcwd()) / file_name)
-            logging.warning("Sending %r to %r", req, event.entry.node_id)
-            node.request(req, event.entry.node_id, lambda e: None)
+        def node_update(event: "dronecan.app.node_monitor.NodeMonitor.UpdateEvent") -> None:
+            if event.event_id == event.EVENT_ID_NEW:
+                req = uavcan.protocol.file.BeginFirmwareUpdate.Request()
+                req.image_file_remote_path.path = state.settings["DroneCAN firmware substitution"][
+                    "Substitute firmware path"
+                ]
+                logging.warning("Sending %r to %r", req, event.entry.node_id)
+                state.dronecan.node.request(req, event.entry.node_id, lambda e: None)
 
-    node_monitor.add_update_handler(node_update)
+        state.dronecan.node_monitor.add_update_handler(node_update)
 
-    # The allocator and the node monitor will be running in the background, requiring no additional attention
-    # When they are no longer needed, they should be finalized by calling close():
-    while True:
-        try:
-            node.spin()  # Spin forever or until an exception is thrown
-        except UAVCANException as ex:
-            if "Toggle bit value" not in str(ex):
-                print("Node error:", ex)
+        # The allocator and the node monitor will be running in the background, requiring no additional attention
+        # When they are no longer needed, they should be finalized by calling close():
+        while True:
+            try:
+                state.dronecan.node.spin()  # Spin forever or until an exception is thrown
+            except UAVCANException as ex:
+                if "Toggle bit value" not in str(ex):
+                    print("Node error:", ex)
+    except Exception as ex:
+        if state.dronecan.allocator:
+            state.dronecan.allocator.close()
+        if state.dronecan.node_monitor:
+            state.dronecan.node_monitor.close()
 
-    allocator.close()
-    node_monitor.close()
 
-
-if __name__ == "__main__":
-    multiprocessing.freeze_support()
-    print("sys.argv", sys.argv)
-    main(*sys.argv)
+# if __name__ == "__main__":
+#     multiprocessing.freeze_support()
+#     print("sys.argv", sys.argv)
+#     main(*sys.argv)

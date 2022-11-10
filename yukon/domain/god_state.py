@@ -6,9 +6,14 @@ from queue import Queue
 from typing import Optional, Any, Callable, Dict
 from uuid import UUID
 
+import dronecan
 import pycyphal
+from dronecan.node import Node
+import dronecan.app
+import yukon.services.FileServer
+from domain.proxy_objects import ReactiveValue
+from yukon.domain.dronecan_traffic_queues import DroneCanTrafficQueues
 
-from domain.dronecan_traffic_queues import DroneCanTrafficQueues
 from yukon.services.FileServer import FileServer
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.messages_publisher import MessagesPublisher
@@ -115,7 +120,7 @@ class CyphalState:
         default_factory=dict
     )
     centralized_allocator: Optional[CentralizedAllocator] = field(default_factory=none_factory)
-    file_server: Optional[FileServer] = field(default_factory=none_factory)
+    file_server: Optional[yukon.services.FileServer.FileServer] = field(default_factory=none_factory)
 
 
 @dataclass
@@ -128,15 +133,29 @@ class AvatarState:
     disappeared_nodes: Dict[int, bool] = field(default_factory=dict)
 
 
+@dataclass
+class DroneCanState:
+    driver: Optional["yukon.services.flash_dronecan_firmware_with_cyphal_firmware.GoodDriver"] = field(
+        default_factory=none_factory
+    )
+    is_running: bool = False
+    thread: Optional[threading.Thread] = field(default_factory=none_factory)
+    node: Optional["dronecan.node.Node"] = field(default_factory=none_factory)
+    file_server: Optional["dronecan.app.file_server.FileServer"] = field(default_factory=none_factory)
+    node_monitor: Optional["dronecan.app.node_monitor.NodeMonitor"] = field(default_factory=none_factory)
+    allocator: Optional["dronecan.app.dynamic_node_id.CentralizedServer"] = field(default_factory=none_factory)
+
+
 class GodState:
     def __init__(self) -> None:
         self.queues = QueuesState()
         self.gui = GuiState()
         self.cyphal = CyphalState()
+        self.dronecan = DroneCanState()
         self.avatar = AvatarState()
         self.allocation = AllocationState()
         self.settings = {
-            "DSDL search directories": [{"__type__": "dirpath", "value": ""}],
+            "DSDL search directories": [{"__type__": "dirpath", "value": ReactiveValue("")}],
             "UI": {"Registers": {"Column width (pixels)": 400}},
             "Node allocation": {
                 "__type__": "radio",
@@ -144,10 +163,17 @@ class GodState:
                     "Automatic",
                     {"value": "Manual", "description": "Haven't implemented this yet "},
                 ],
-                "chosen_value": "Manual",
+                "chosen_value": ReactiveValue("Manual"),
                 "name": "Node allocation",
             },
-            "Firmware updates": {"Enabled": False, "File path": {"__type__": "dirpath", "value": ""}}
+            "Firmware updates": {
+                "Enabled": ReactiveValue(False),
+                "File path": {"__type__": "dirpath", "value": ReactiveValue("")},
+            },
+            "DroneCAN firmware substitution": {
+                "Enabled": ReactiveValue(False),
+                "Substitute firmware path": {"__type__": "filepath", "value": ReactiveValue("")},
+            }
             # "some_files": [{"__type__": "filepath", "value": ""}],
             # "ui_settings": {
             #     "Save location": {

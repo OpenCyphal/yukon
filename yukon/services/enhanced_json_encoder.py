@@ -7,6 +7,7 @@ from uuid import UUID
 import pycyphal
 
 import uavcan
+from yukon.domain.proxy_objects import ReactiveValue
 from yukon.services.value_utils import explode_value
 from yukon.domain.attach_transport_response import AttachTransportResponse
 from yukon.domain.update_register_log_item import UpdateRegisterLogItem
@@ -18,6 +19,8 @@ INFINITY = float("inf")
 
 class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, o: typing.Any) -> typing.Any:
+        if isinstance(o, ReactiveValue):
+            return o.value
         if isinstance(o, UUID):
             return str(o)
         if isinstance(o, DetachTransportResponse):

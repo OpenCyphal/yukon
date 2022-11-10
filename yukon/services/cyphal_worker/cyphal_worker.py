@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 
 import typing
 
@@ -12,6 +13,7 @@ import uavcan
 import uavcan.pnp
 import yukon.domain.god_state
 from services.cyphal_worker.forward_dronecan_work import do_forward_dronecan_work
+from services.flash_dronecan_firmware_with_cyphal_firmware import run_dronecan_firmware_updater
 from yukon.services.FileServer import FileServer
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.cyphal_worker.unsubscribe_requests_work import do_unsubscribe_requests_work
@@ -39,7 +41,7 @@ def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -
     allocation_data_sub.receive_in_background(receive_allocate_request)
 
 
-def handle_settings_of_fileserver_and_allocator(state: "yukon.domain.god_state.GodState"):
+def handle_settings_of_fileserver_and_allocator(state: "yukon.domain.god_state.GodState") -> None:
     try:
         if state.cyphal.centralized_allocator:
             if state.settings["Node allocation"]["chosen_value"] == "Automatic":
@@ -73,6 +75,25 @@ def handle_settings_of_fileserver_and_allocator(state: "yukon.domain.god_state.G
         logger.exception("A failure with the file server")
 
 
+def handle_settings_for_dronecan_conversion(state: "yukon.domain.god_state.GodState") -> None:
+    should_be_running = state.settings["DroneCAN firmware substitution"]["Enabled"]
+    is_dronecan_firmware_path_available = (
+        state.settings["DroneCAN firmware substitution"]["Substitute firmware path"]["value"] != ""
+    )
+    if not state.dronecan.is_running:
+        if should_be_running and is_dronecan_firmware_path_available:
+            state.dronecan.thread = threading.Thread(target=run_dronecan_firmware_updater, args=(state,))
+    else:
+        if not should_be_running:
+            state.dronecan.is_running = False
+            state.dronecan.thread.join()
+            state.dronecan.file_server = None
+            state.dronecan.thread = None
+            state.dronecan.node_monitor = None
+            state.dronecan.driver = None
+            state.dronecan.allocator = None
+
+
 def cyphal_worker(state: GodState) -> None:
     """It starts the node and keeps adding any transports that are queued for adding"""
 
@@ -101,6 +122,8 @@ def cyphal_worker(state: GodState) -> None:
             logger.debug("Tracers should have been set up.")
             while state.gui.gui_running:
                 handle_settings_of_fileserver_and_allocator(state)
+                await asyncio.sleep(0.02)
+                handle_settings_for_dronecan_conversion(state)
                 await asyncio.sleep(0.05)
                 await do_attach_transport_work(state)
                 await asyncio.sleep(0.02)

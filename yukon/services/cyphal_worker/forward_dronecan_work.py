@@ -6,7 +6,7 @@ from pycyphal.transport.can.media import DataFrame, FrameFormat, Envelope
 from domain.god_state import GodState
 
 
-async def do_forward_dronecan_work(state: GodState):
+async def do_forward_dronecan_work(state: GodState) -> None:
     if not state.dronecan_traffic_queues.output_queue.empty():
         envelopes_to_send: typing.List[Envelope] = []
         transport = typing.cast(CANTransport, state.cyphal.local_node.presentation.transport)

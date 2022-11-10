@@ -12,6 +12,7 @@ import yaml
 from uuid import uuid4
 from time import time
 
+from yukon.domain.proxy_objects import ReactiveValue
 from yukon.services.settings_handler import (
     save_settings,
     load_settings,
@@ -269,16 +270,6 @@ class Api:
 
     def add_local_message(self, message: str, severity: int) -> None:
         add_local_message(self.state, message, severity)
-
-    def save_yaml(self, text: str, convert_to_numbers: bool = True) -> None:
-        new_text = make_yaml_string_node_ids_numbers(text)
-        if not convert_to_numbers:
-            save_text_into_file(text)
-            return
-        save_text_into_file(new_text)
-
-    def save_text(self, text: str) -> None:
-        save_text_into_file(text)
 
     def save_all_of_register_configuration(self, serialized_configuration: str) -> None:
         save_text_into_file(serialized_configuration)
@@ -555,6 +546,22 @@ class Api:
 
     def set_settings(self, settings: dict) -> None:
         assert isinstance(settings, dict)
+
+        def recursive_reactivize_settings(current_settings: typing.Union[dict, list]) -> None:
+            if isinstance(current_settings, dict):
+                for key, value in settings.items():
+                    if isinstance(value, dict) or isinstance(value, list):
+                        recursive_reactivize_settings(current_settings[key])
+                    else:
+                        current_settings[key] = ReactiveValue(value)
+            elif isinstance(current_settings, list):
+                for index, value in enumerate(current_settings):
+                    if isinstance(value, dict) or isinstance(value, list):
+                        recursive_reactivize_settings(current_settings[index])
+                    else:
+                        current_settings[index] = ReactiveValue(value)
+
+        recursive_reactivize_settings(settings)
         self.state.settings = settings
 
     def get_settings(self) -> Response:
