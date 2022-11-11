@@ -12,8 +12,16 @@ import dronecan
 import uavcan
 import uavcan.pnp
 import yukon.domain.god_state
-from services.cyphal_worker.forward_dronecan_work import do_forward_dronecan_work
-from services.flash_dronecan_firmware_with_cyphal_firmware import run_dronecan_firmware_updater
+from yukon.domain.command_send_response import CommandSendResponse
+from yukon.domain.subscribe_request import SubscribeRequest
+from yukon.domain.unsubscribe_request import UnsubscribeRequest
+from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
+from yukon.domain.attach_transport_request import AttachTransportRequest
+from yukon.domain.command_send_request import CommandSendRequest
+from yukon.domain.reread_registers_request import RereadRegistersRequest
+from yukon.domain.update_register_request import UpdateRegisterRequest
+from yukon.services.cyphal_worker.forward_dronecan_work import do_forward_dronecan_work
+from yukon.services.flash_dronecan_firmware_with_cyphal_firmware import run_dronecan_firmware_updater
 from yukon.services.FileServer import FileServer
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.cyphal_worker.unsubscribe_requests_work import do_unsubscribe_requests_work
@@ -121,29 +129,24 @@ def cyphal_worker(state: GodState) -> None:
 
             logger.debug("Tracers should have been set up.")
             while state.gui.gui_running:
-                handle_settings_of_fileserver_and_allocator(state)
-                await asyncio.sleep(0.02)
-                handle_settings_for_dronecan_conversion(state)
-                await asyncio.sleep(0.05)
-                await do_attach_transport_work(state)
-                await asyncio.sleep(0.02)
-                await do_forward_dronecan_work(state)
-                await asyncio.sleep(0.02)
-                await do_detach_transport_work(state)
-                await asyncio.sleep(0.02)
-                await do_subscribe_requests_work(state)
-                await asyncio.sleep(0.02)
-                await do_unsubscribe_requests_work(state)
-                await asyncio.sleep(0.02)
-                await do_update_register_work(state)
-                await asyncio.sleep(0.02)
-                await do_apply_configuration_work(state)
-                await asyncio.sleep(0.02)
-                await do_send_command_work(state)
-                await asyncio.sleep(0.02)
-                await do_reread_registers_work(state)
-                await asyncio.sleep(0.02)
-                await do_reread_register_names_work(state)
+                queue_element = await state.queues.god_queue.get()
+                if isinstance(queue_element, AttachTransportRequest):
+                    await do_attach_transport_work(state, queue_element)
+                elif isinstance(queue_element, queue_element):
+                    await do_detach_transport_work(state, queue_element)
+                elif isinstance(queue_element, UpdateRegisterRequest):
+                    await do_update_register_work(state, queue_element)
+                elif isinstance(queue_element, ApplyConfigurationRequest):
+                    await do_apply_configuration_work(state, queue_element)
+                elif isinstance(queue_element, CommandSendRequest):
+                    await do_send_command_work(state, queue_element)
+                elif isinstance(queue_element, RereadRegistersRequest):
+                    await do_reread_registers_work(state, queue_element)
+                elif isinstance(queue_element, SubscribeRequest):
+                    await do_subscribe_requests_work(state, queue_element)
+                elif isinstance(queue_element, UnsubscribeRequest):
+                    await do_unsubscribe_requests_work(state, queue_element)
+
         except Exception as e:
             logger.exception(e)
             raise e

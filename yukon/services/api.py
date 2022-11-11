@@ -5,6 +5,7 @@ import json
 import re
 import typing
 from pathlib import Path
+from queue import Empty
 from time import sleep, monotonic
 import logging
 
@@ -12,6 +13,7 @@ import yaml
 from uuid import uuid4
 from time import time
 
+from yukon.domain.detach_transport_request import DetachTransportRequest
 from yukon.domain.proxy_objects import ReactiveValue
 from yukon.services.settings_handler import (
     save_settings,
@@ -289,11 +291,11 @@ class Api:
 
     def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
         request = ApplyConfigurationRequest(node_id, configuration, is_network_configuration(configuration))
-        self.state.queues.apply_configuration.put(request)
+        self.state.queues.god_queue.put(request)
 
     def apply_all_of_configuration(self, configuration: str) -> None:
         request = ApplyConfigurationRequest(None, configuration, is_network_configuration(configuration))
-        self.state.queues.apply_configuration.put(request)
+        self.state.queues.god_queue.put(request)
 
     def simplify_configuration(self, configuration: str) -> Response:
         if isinstance(configuration, str):
@@ -339,8 +341,9 @@ class Api:
 
         new_value: uavcan.register.Value_1 = unexplode_value(register_value)
         request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id), time())
-        self.state.queues.update_registers.put(request)
+        self.state.queues.god_queue.put(request)
         timeout = time() + 5
+
         while time() < timeout:
             response = self.state.queues.update_registers_response.get(request.request_id)
             if not response:
@@ -365,16 +368,12 @@ class Api:
         interface.udp_mtu = int(udp_mtu)
         interface.is_udp = True
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-        self.state.queues.attach_transport.put(atr)
-        timeout = time() + 5
-        while True:
-            if time() >= timeout:
-                raise Exception("Failed to receive a response for attached CAN transport.")
-            if self.state.queues.attach_transport_response.empty():
-                sleep(0.1)
-            else:
-                break
-        return jsonify(self.state.queues.attach_transport_response.get())
+        self.state.queues.god_queue.put(atr)
+        try:
+            response = self.state.queues.attach_transport_response.get(timeout=5)
+        except Empty:
+            raise Exception("Failed to receive a response for attached CAN transport.")
+        return jsonify(response)
 
     def attach_transport(
         self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
@@ -387,30 +386,21 @@ class Api:
         interface.iface = interface_string
 
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-        self.state.queues.attach_transport.put(atr)
-        timeout = time() + 5
-        while True:
-            if time() >= timeout:
-                raise Exception("Failed to receive a response for attached transport.")
-            if self.state.queues.attach_transport_response.empty():
-                sleep(0.1)
-            else:
-                break
-        return jsonify(self.state.queues.attach_transport_response.get())
+        self.state.queues.god_queue.put(atr)
+        try:
+            response = self.state.queues.attach_transport_response.get(timeout=5)
+        except Empty:
+            raise Exception("Failed to receive a response for attached CAN transport.")
+        return jsonify(response)
 
     def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
-        self.state.queues.detach_transport.put(hash)
-        timeout = time() + 5
-        while True:
-            if time() >= timeout:
-                raise Exception("Failed to receive a response for detached transport.")
-            if self.state.queues.detach_transport_response.empty():
-                sleep(0.1)
-            else:
-                break
-
-        return jsonify(self.state.queues.detach_transport_response.get())
+        self.state.queues.god_queue.put(DetachTransportRequest(hash))
+        try:
+            response = self.state.queues.detach_transport_response.get(timeout=5)
+        except Empty:
+            raise Exception("Failed to receive a response for detached CAN transport.")
+        return jsonify(response)
 
     # def save_registers_of_node(self, node_id: int, registers: typing.Dict["str"]) -> None:
     def show_yakut(self) -> None:
@@ -455,15 +445,12 @@ class Api:
 
     def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
         send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)
-        self.state.queues.send_command.put(send_command_request)
-        timeout = time() + 5
-        while time() < timeout:
-            if self.state.queues.command_response.empty():
-                sleep(0.1)
-            else:
-                break
-        command_response = self.state.queues.command_response.get()
-        return {"success": command_response.is_success, "message": command_response.message}
+        self.state.queues.god_queue.put(send_command_request)
+        try:
+            response = self.state.queues.command_send_response.get(timeout=5)
+        except Empty:
+            raise Exception("Failed to receive a response for sending command.")
+        return jsonify({"success": response.is_success, "message": response.message})
 
     def reread_node(self, node_id: str) -> None:
         node_id_as_int = int(node_id)
@@ -495,26 +482,22 @@ class Api:
         add_all_dsdl_paths_to_pythonpath(self.state)
         if subject_id:
             subject_id = int(subject_id)
-        self.state.queues.subscribe_requests.put(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
-        while True:
-            if self.state.queues.subscribe_requests_responses.empty():
-                sleep(0.1)
-            else:
-                break
-        subscribe_response = self.state.queues.subscribe_requests_responses.get()
-        return jsonify(subscribe_response)
+        self.state.queues.god_queue.put(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
+        try:
+            response = self.state.queues.subscribe_requests_responses.get(timeout=5)
+        except Empty:
+            raise Exception("Failed to receive a response for subscribing.")
+        return jsonify(response)
 
     def unsubscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
         if subject_id:
             subject_id = int(subject_id)
-        self.state.queues.unsubscribe_requests.put(UnsubscribeRequest(SubjectSpecifier(subject_id, datatype)))
-        while True:
-            if self.state.queues.unsubscribe_requests_responses.empty():
-                sleep(0.1)
-            else:
-                break
-        unsubscribe_response = self.state.queues.unsubscribe_requests_responses.get()
-        return jsonify(unsubscribe_response)
+        self.state.queues.god_queue.put(UnsubscribeRequest(SubjectSpecifier(subject_id, datatype)))
+        try:
+            response = self.state.queues.unsubscribe_requests_responses.get(timeout=5)
+        except Empty:
+            raise Exception("Failed to receive a response for unsubscribing.")
+        return jsonify(response)
 
     def fetch_messages_for_subscription_specifiers(self, specifiers: str) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""

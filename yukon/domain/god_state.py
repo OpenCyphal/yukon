@@ -61,21 +61,14 @@ class QueuesState:
     message_queue_counter: int = 0
     messages: Queue[Message] = field(default_factory=Queue)
     attach_transport_response: Queue[str] = field(default_factory=Queue)
-    attach_transport: Queue[AttachTransportRequest] = field(default_factory=Queue)
-    detach_transport: Queue[int] = field(default_factory=Queue)
-    update_registers: Queue[UpdateRegisterRequest] = field(default_factory=Queue)
     update_registers_response: Dict[UUID, UpdateRegisterResponse] = field(default_factory=dict)
-    subscribe_requests: Queue[SubscribeRequest] = field(default_factory=Queue)
     subscribe_requests_responses: Queue[SubscribeResponse] = field(default_factory=Queue)
     subscribed_messages: typing.Dict[SubjectSpecifier, MessagesStore] = field(default_factory=dict)
-    unsubscribe_requests: Queue[int] = field(default_factory=Queue)
     unsubscribe_requests_responses: Queue[str] = field(default_factory=Queue)
-    apply_configuration: Queue[ApplyConfigurationRequest] = field(default_factory=Queue)
-    reread_registers: Queue[RereadRegistersRequest] = field(default_factory=Queue)
     reread_register_names: Queue[RereadRegisterNamesRequest] = field(default_factory=Queue)
     detach_transport_response: Queue[str] = field(default_factory=Queue)
-    send_command: Queue[CommandSendRequest] = field(default_factory=Queue)
     command_response: Queue[CommandSendResponse] = field(default_factory=Queue)
+    god_queue: Queue[Any] = field(default_factory=Queue)
 
 
 @dataclass

@@ -1,11 +1,13 @@
 import traceback
+
+from yukon.domain.unsubscribe_request import UnsubscribeRequest
 from yukon.domain.unsubscribe_response import UnsubscribeResponse
 from yukon.domain.subscribe_response import SubscribeResponse
 from yukon.services.messages_publisher import add_local_message
 from yukon.domain.god_state import GodState
 
 
-async def do_unsubscribe_requests_work(state: GodState) -> None:
+async def do_unsubscribe_requests_work(state: GodState, unsubscribe_request: UnsubscribeRequest) -> None:
     if not state.queues.unsubscribe_requests.empty():
         unsubscribe_request = state.queues.unsubscribe_requests.get_nowait()
         try:
