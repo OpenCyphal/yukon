@@ -291,11 +291,11 @@ class Api:
 
     def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
         request = ApplyConfigurationRequest(node_id, configuration, is_network_configuration(configuration))
-        self.state.queues.god_queue.put(request)
+        self.state.queues.god_queue.put_nowait(request)
 
     def apply_all_of_configuration(self, configuration: str) -> None:
         request = ApplyConfigurationRequest(None, configuration, is_network_configuration(configuration))
-        self.state.queues.god_queue.put(request)
+        self.state.queues.god_queue.put_nowait(request)
 
     def simplify_configuration(self, configuration: str) -> Response:
         if isinstance(configuration, str):
@@ -341,10 +341,11 @@ class Api:
 
         new_value: uavcan.register.Value_1 = unexplode_value(register_value)
         request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id), time())
-        self.state.queues.god_queue.put(request)
+        self.state.queues.god_queue.put_nowait(request)
         timeout = time() + 5
 
         while time() < timeout:
+            # This is a get from a dictionary, not a queue, so it is not blocking
             response = self.state.queues.update_registers_response.get(request.request_id)
             if not response:
                 sleep(0.1)
@@ -368,7 +369,7 @@ class Api:
         interface.udp_mtu = int(udp_mtu)
         interface.is_udp = True
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-        self.state.queues.god_queue.put(atr)
+        self.state.queues.god_queue.put_nowait(atr)
         try:
             response = self.state.queues.attach_transport_response.get(timeout=5)
         except Empty:
@@ -386,7 +387,7 @@ class Api:
         interface.iface = interface_string
 
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-        self.state.queues.god_queue.put(atr)
+        self.state.queues.god_queue.put_nowait(atr)
         try:
             response = self.state.queues.attach_transport_response.get(timeout=5)
         except Empty:
@@ -395,7 +396,7 @@ class Api:
 
     def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
-        self.state.queues.god_queue.put(DetachTransportRequest(hash))
+        self.state.queues.god_queue.put_nowait(DetachTransportRequest(hash))
         try:
             response = self.state.queues.detach_transport_response.get(timeout=5)
         except Empty:
@@ -409,7 +410,7 @@ class Api:
     def reread_registers(self, request_contents: typing.Dict[int, typing.Dict[str, bool]]) -> None:
         """yukon/web/modules/registers.data.module.js explains the request_contents structure."""
         request = RereadRegistersRequest(uuid4(), request_contents)
-        self.state.queues.reread_registers.put(request)
+        self.state.queues.reread_registers.put_nowait(request)
 
     def hide_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = True
@@ -445,7 +446,7 @@ class Api:
 
     def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
         send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)
-        self.state.queues.god_queue.put(send_command_request)
+        self.state.queues.god_queue.put_nowait(send_command_request)
         try:
             response = self.state.queues.command_send_response.get(timeout=5)
         except Empty:
@@ -482,7 +483,7 @@ class Api:
         add_all_dsdl_paths_to_pythonpath(self.state)
         if subject_id:
             subject_id = int(subject_id)
-        self.state.queues.god_queue.put(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
+        self.state.queues.god_queue.put_nowait(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
         try:
             response = self.state.queues.subscribe_requests_responses.get(timeout=5)
         except Empty:
@@ -492,7 +493,7 @@ class Api:
     def unsubscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
         if subject_id:
             subject_id = int(subject_id)
-        self.state.queues.god_queue.put(UnsubscribeRequest(SubjectSpecifier(subject_id, datatype)))
+        self.state.queues.god_queue.put_nowait(UnsubscribeRequest(SubjectSpecifier(subject_id, datatype)))
         try:
             response = self.state.queues.unsubscribe_requests_responses.get(timeout=5)
         except Empty:
@@ -532,15 +533,15 @@ class Api:
 
         def recursive_reactivize_settings(current_settings: typing.Union[dict, list]) -> None:
             if isinstance(current_settings, dict):
-                for key, value in settings.items():
-                    if isinstance(value, dict) or isinstance(value, list):
-                        recursive_reactivize_settings(current_settings[key])
+                for key, value in current_settings.items():
+                    if isinstance(value, (list, dict)):
+                        recursive_reactivize_settings(value)
                     else:
                         current_settings[key] = ReactiveValue(value)
             elif isinstance(current_settings, list):
                 for index, value in enumerate(current_settings):
-                    if isinstance(value, dict) or isinstance(value, list):
-                        recursive_reactivize_settings(current_settings[index])
+                    if isinstance(value, (list, dict)):
+                        recursive_reactivize_settings(value)
                     else:
                         current_settings[index] = ReactiveValue(value)
 

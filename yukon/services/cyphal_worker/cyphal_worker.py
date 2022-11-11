@@ -12,6 +12,7 @@ import dronecan
 import uavcan
 import uavcan.pnp
 import yukon.domain.god_state
+from yukon.domain.detach_transport_request import DetachTransportRequest
 from yukon.domain.command_send_response import CommandSendResponse
 from yukon.domain.subscribe_request import SubscribeRequest
 from yukon.domain.unsubscribe_request import UnsubscribeRequest
@@ -103,8 +104,6 @@ def handle_settings_for_dronecan_conversion(state: "yukon.domain.god_state.GodSt
 
 
 def cyphal_worker(state: GodState) -> None:
-    """It starts the node and keeps adding any transports that are queued for adding"""
-
     async def _internal_method() -> None:
         try:
             my_registry = make_registry()
@@ -132,7 +131,7 @@ def cyphal_worker(state: GodState) -> None:
                 queue_element = await state.queues.god_queue.get()
                 if isinstance(queue_element, AttachTransportRequest):
                     await do_attach_transport_work(state, queue_element)
-                elif isinstance(queue_element, queue_element):
+                elif isinstance(queue_element, DetachTransportRequest):
                     await do_detach_transport_work(state, queue_element)
                 elif isinstance(queue_element, UpdateRegisterRequest):
                     await do_update_register_work(state, queue_element)

@@ -45,5 +45,8 @@ class ReactiveValue:
     def value(self, value: int) -> None:
         self.set(value)
 
+    def __str__(self) -> str:
+        return str(self._value)
+
     # Implement methods from https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types
     # use the self._value as the underlying value

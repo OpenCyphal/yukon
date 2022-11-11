@@ -3,6 +3,7 @@ import threading
 import typing
 from dataclasses import dataclass, field
 from queue import Queue
+from asyncio import Queue as AsyncQueue
 from typing import Optional, Any, Callable, Dict
 from uuid import UUID
 
@@ -68,7 +69,7 @@ class QueuesState:
     reread_register_names: Queue[RereadRegisterNamesRequest] = field(default_factory=Queue)
     detach_transport_response: Queue[str] = field(default_factory=Queue)
     command_response: Queue[CommandSendResponse] = field(default_factory=Queue)
-    god_queue: Queue[Any] = field(default_factory=Queue)
+    god_queue: AsyncQueue[Any] = field(default_factory=AsyncQueue)
 
 
 @dataclass
