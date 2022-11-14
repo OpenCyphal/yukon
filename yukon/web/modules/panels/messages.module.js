@@ -155,16 +155,20 @@ export async function setUpMessagesComponent(container, yukon_state) {
             li.classList.add("messageElement");
             // Split el.messages into lines
             const lines = el.message.split("\n");
+            let firstLetterOfSeverityText = "";
+            if (el.severity_text.length > 0) {
+                firstLetterOfSeverityText = " " + el.severity_text[0]
+            }
             if (lines.length > 1) {
                 // If there are multiple lines, create a div for each line
-                lines[0] = el.timestamp + " " + el.module + ": " + lines[0];
+                lines[0] = el.timestamp + " " + el.module + firstLetterOfSeverityText  + ": " + lines[0];
                 for (const line of lines) {
                     const div = document.createElement("div");
                     div.innerHTML = line;
                     li.appendChild(div);
                 }
             } else {
-                li.innerHTML = el.timestamp + " " + el.module + ": " + el.message;
+                li.innerHTML = el.timestamp + " " + el.module + firstLetterOfSeverityText  + ": " + el.message;
             }
             if (el.severity_number >= 50) {
                 // Is bad

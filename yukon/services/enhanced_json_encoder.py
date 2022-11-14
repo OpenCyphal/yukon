@@ -1,5 +1,6 @@
 import dataclasses
 import json
+import logging
 from json.encoder import encode_basestring_ascii, encode_basestring, c_make_encoder, _make_iterencode  # type: ignore
 import typing
 from uuid import UUID
@@ -16,11 +17,16 @@ from yukon.domain.detach_transport_response import DetachTransportResponse
 
 INFINITY = float("inf")
 
+_logger = logging.getLogger(__name__)
+
 
 class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, o: typing.Any) -> typing.Any:
         if isinstance(o, ReactiveValue):
-            return o.value
+            if isinstance(o._value, ReactiveValue):
+                _logger.warning("ReactiveValue contains ReactiveValue")
+                return ""
+            return str(o._value)
         if isinstance(o, UUID):
             return str(o)
         if isinstance(o, DetachTransportResponse):

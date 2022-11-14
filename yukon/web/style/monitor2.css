@@ -1,0 +1,24 @@
+.node {
+    border: 1px solid darkolivegreen;
+    background-color: #d5d5d5;
+    color: #a33fff;
+    padding: 0.5em;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    position: absolute;
+    border-radius: 5px;
+}
+.line {
+    text-wrap: none;
+    height: 100%;
+}
+.subscriber {
+    border: 1px solid black;
+    background-color: #d5d5d5;
+    color: #a33fff;
+}
+td {
+    min-width: 140px;
+}

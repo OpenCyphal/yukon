@@ -12,7 +12,7 @@ import pycyphal
 from dronecan.node import Node
 import dronecan.app
 import yukon.services.FileServer
-from domain.proxy_objects import ReactiveValue
+from yukon.domain.proxy_objects import ReactiveValue
 from yukon.domain.dronecan_traffic_queues import DroneCanTrafficQueues
 
 from yukon.services.FileServer import FileServer
