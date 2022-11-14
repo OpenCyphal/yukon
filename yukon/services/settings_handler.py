@@ -10,6 +10,7 @@ from pathlib import Path
 from ruamel import yaml
 from ruamel.yaml.scanner import ScannerError
 
+from domain.proxy_objects import ReactiveValue
 from services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.services.utils import process_dsdl_path
 from yukon.domain.god_state import GodState
@@ -50,6 +51,23 @@ def load_settings(load_location: Path) -> typing.Any:
         raise IncorrectConfigurationException()
 
 
+def recursive_reactivize_settings(current_settings: typing.Union[dict, list]) -> None:
+    if isinstance(current_settings, dict):
+        for key, value in current_settings.items():
+            if isinstance(value, (list, dict)):
+                recursive_reactivize_settings(value)
+            else:
+                if not isinstance(value, ReactiveValue):
+                    current_settings[key] = ReactiveValue(value)
+    elif isinstance(current_settings, list):
+        for index, value in enumerate(current_settings):
+            if isinstance(value, (list, dict)):
+                recursive_reactivize_settings(value)
+            else:
+                if not isinstance(value, ReactiveValue):
+                    current_settings[index] = ReactiveValue(value)
+
+
 def loading_settings_into_yukon(state: GodState) -> None:
     """This function makes sure that new settings that Yukon developers add end up in the settings file.
 
@@ -83,6 +101,7 @@ def loading_settings_into_yukon(state: GodState) -> None:
                         loaded_settings[key] = value
 
         recursive_update_settings(state.settings, loaded_settings)
+        recursive_reactivize_settings(state.settings)
         state.settings = loaded_settings
 
 

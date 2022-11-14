@@ -1,8 +1,10 @@
 from typing import Any
 
+import typing
+
 
 class Connection:
-    def __init__(self, callback) -> None:
+    def __init__(self, callback: typing.Any) -> None:
         self._callback = callback
         self.destroyed = False
         self._reactive_value = None
@@ -12,7 +14,7 @@ class Connection:
         self.destroyed = True
         self._reactive_value.disconnect(self)
 
-    def send(self, *args, **kwargs) -> None:
+    def send(self, *args: typing.Optional[list], **kwargs: typing.Optional[dict]) -> None:
         self._callback(*args, **kwargs)
 
 
@@ -21,7 +23,7 @@ class ReactiveValue:
         self._value = value
         self._connections: list[Connection] = []
 
-    def connect(self, callback) -> Connection:
+    def connect(self, callback: typing.Any) -> Connection:
         connection = Connection(callback)
         self._connections.append(connection)
         return connection
@@ -36,14 +38,6 @@ class ReactiveValue:
 
     def get(self) -> Any:
         return self._value
-
-    @property
-    def value(self):
-        return self._value
-
-    @value.setter
-    def value(self, value: int) -> None:
-        self.set(value)
 
     def __str__(self) -> str:
         return str(self._value)

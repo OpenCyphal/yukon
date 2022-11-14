@@ -26,7 +26,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             if isinstance(o._value, ReactiveValue):
                 _logger.warning("ReactiveValue contains ReactiveValue")
                 return ""
-            return str(o._value)
+            return o._value
         if isinstance(o, UUID):
             return str(o)
         if isinstance(o, DetachTransportResponse):

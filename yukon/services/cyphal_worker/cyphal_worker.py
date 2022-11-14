@@ -50,57 +50,68 @@ def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -
     allocation_data_sub.receive_in_background(receive_allocate_request)
 
 
-def handle_settings_of_fileserver_and_allocator(state: "yukon.domain.god_state.GodState") -> None:
-    try:
-        if state.cyphal.centralized_allocator:
-            if state.settings["Node allocation"]["chosen_value"] == "Automatic":
-                if not state.cyphal.centralized_allocator.running:
-                    logger.info("Allocator is now running")
-                    state.cyphal.centralized_allocator.start()
-            else:
-                if state.cyphal.centralized_allocator.running:
-                    logger.info("Allocator is now stopped")
-                    state.cyphal.centralized_allocator.close()
-                    state.cyphal.centralized_allocator = None
-        elif state.settings["Node allocation"]["chosen_value"] == "Automatic" and state.cyphal.local_node.id:
-            state.cyphal.centralized_allocator = CentralizedAllocator(state.cyphal.local_node)
-    except:
-        logger.exception("A failure with the centralized allocator")
+# def handle_settings_of_fileserver_and_allocator(state: "yukon.domain.god_state.GodState") -> None:
+#     try:
+#         if state.cyphal.centralized_allocator:
+#             if state.settings["Node allocation"]["chosen_value"] == "Automatic":
+#                 if not state.cyphal.centralized_allocator.running:
+#                     logger.info("Allocator is now running")
+#                     state.cyphal.centralized_allocator.start()
+#             else:
+#                 if state.cyphal.centralized_allocator.running:
+#                     logger.info("Allocator is now stopped")
+#                     state.cyphal.centralized_allocator.close()
+#                     state.cyphal.centralized_allocator = None
+#         elif state.settings["Node allocation"]["chosen_value"] == "Automatic" and state.cyphal.local_node.id:
+#             state.cyphal.centralized_allocator = CentralizedAllocator(state.cyphal.local_node)
+#     except:
+#         logger.exception("A failure with the centralized allocator")
+#
+#     try:
+#         if not state.cyphal.file_server:
+#             if state.settings["Firmware updates"]["Enabled"]:
+#                 state.cyphal.file_server = FileServer(
+#                     state.cyphal.local_node, [state.settings["Firmware updates"]["File path"]["value"]]
+#                 )
+#                 logger.info("File server started on path " + state.settings["Firmware updates"]["File path"]["value"])
+#                 state.cyphal.file_server.start()
+#         else:
+#             if not state.settings["Firmware updates"]["Enabled"]:
+#                 logger.info("File server stopped on path " + state.settings["Firmware updates"]["File path"]["value"])
+#                 state.cyphal.file_server.close()
+#                 state.cyphal.file_server = None
+#     except:
+#         logger.exception("A failure with the file server")
 
-    try:
-        if not state.cyphal.file_server:
-            if state.settings["Firmware updates"]["Enabled"]:
-                state.cyphal.file_server = FileServer(
-                    state.cyphal.local_node, [state.settings["Firmware updates"]["File path"]["value"]]
-                )
-                logger.info("File server started on path " + state.settings["Firmware updates"]["File path"]["value"])
-                state.cyphal.file_server.start()
-        else:
-            if not state.settings["Firmware updates"]["Enabled"]:
-                logger.info("File server stopped on path " + state.settings["Firmware updates"]["File path"]["value"])
-                state.cyphal.file_server.close()
-                state.cyphal.file_server = None
-    except:
-        logger.exception("A failure with the file server")
+
+# def handle_settings_for_dronecan_conversion(state: "yukon.domain.god_state.GodState") -> None:
+#     should_be_running = state.settings["DroneCAN firmware substitution"]["Enabled"]
+#     is_dronecan_firmware_path_available = (
+#         state.settings["DroneCAN firmware substitution"]["Substitute firmware path"]["value"] != ""
+#     )
+#     if not state.dronecan.is_running:
+#         if should_be_running and is_dronecan_firmware_path_available:
+#             state.dronecan.thread = threading.Thread(target=run_dronecan_firmware_updater, args=(state,))
+#     else:
+#         if not should_be_running:
+#             state.dronecan.is_running = False
+#             state.dronecan.thread.join()
+#             state.dronecan.file_server = None
+#             state.dronecan.thread = None
+#             state.dronecan.node_monitor = None
+#             state.dronecan.driver = None
+#             state.dronecan.allocator = None
 
 
-def handle_settings_for_dronecan_conversion(state: "yukon.domain.god_state.GodState") -> None:
-    should_be_running = state.settings["DroneCAN firmware substitution"]["Enabled"]
-    is_dronecan_firmware_path_available = (
-        state.settings["DroneCAN firmware substitution"]["Substitute firmware path"]["value"] != ""
-    )
-    if not state.dronecan.is_running:
-        if should_be_running and is_dronecan_firmware_path_available:
-            state.dronecan.thread = threading.Thread(target=run_dronecan_firmware_updater, args=(state,))
-    else:
-        if not should_be_running:
-            state.dronecan.is_running = False
-            state.dronecan.thread.join()
-            state.dronecan.file_server = None
-            state.dronecan.thread = None
-            state.dronecan.node_monitor = None
-            state.dronecan.driver = None
-            state.dronecan.allocator = None
+def set_handlers_for_configuration_changes(state: "yukon.domain.god_state.GodState") -> None:
+    s1 = state.settings.get("DroneCAN firmware substitution")
+    if s1:
+        s2 = s1.get("Enabled")
+
+        def _handle_setting_change(new_value: bool) -> None:
+            logger.info("DroneCAN firmware substitution is now " + ("enabled" if new_value else "disabled"))
+
+        s2.connect(_handle_setting_change)
 
 
 def cyphal_worker(state: GodState) -> None:
@@ -111,7 +122,7 @@ def cyphal_worker(state: GodState) -> None:
             state.cyphal.local_node = make_node(
                 NodeInfo(name="org.opencyphal.yukon"), my_registry, reconfigurable_transport=True
             )
-
+            set_handlers_for_configuration_changes(state)
             state.cyphal.local_node.start()
 
             def handle_transmit_message_to_dronecan(capture: pycyphal.transport.Capture) -> None:

@@ -19,6 +19,7 @@ from yukon.services.settings_handler import (
     load_settings,
     loading_settings_into_yukon,
     add_all_dsdl_paths_to_pythonpath,
+    recursive_reactivize_settings,
 )
 from yukon.domain.unsubscribe_request import UnsubscribeRequest
 from yukon.services.utils import get_datatypes_from_packages_directory_path
@@ -529,20 +530,6 @@ class Api:
 
     def set_settings(self, settings: dict) -> None:
         assert isinstance(settings, dict)
-
-        def recursive_reactivize_settings(current_settings: typing.Union[dict, list]) -> None:
-            if isinstance(current_settings, dict):
-                for key, value in current_settings.items():
-                    if isinstance(value, (list, dict)):
-                        recursive_reactivize_settings(value)
-                    else:
-                        current_settings[key] = ReactiveValue(value)
-            elif isinstance(current_settings, list):
-                for index, value in enumerate(current_settings):
-                    if isinstance(value, (list, dict)):
-                        recursive_reactivize_settings(value)
-                    else:
-                        current_settings[index] = ReactiveValue(value)
 
         recursive_reactivize_settings(settings)
         self.state.settings = settings

@@ -37,13 +37,13 @@ class GoodDriver(AbstractDriver):
         ts_monotonic: typing.Optional[float] = None,
         ts_real: typing.Optional[float] = None,
         canfd: bool = False,
-    ):
+    ) -> None:
         frame = CANFrame(message_id, message, extended, canfd=canfd)
         self.state.dronecan_traffic_queues.output_queue.put_nowait(frame)
 
     def receive(self, timeout: typing.Optional[float] = 0.0) -> typing.Optional[CANFrame]:
         deadline: typing.Optional[float] = None
-        if timeout == 0:
+        if timeout == 0 or timeout is None:
             deadline = 0
         else:
             deadline = time.monotonic() + timeout
@@ -60,7 +60,8 @@ class GoodDriver(AbstractDriver):
 
                 return self.state.dronecan_traffic_queues.input_queue.get(timeout=get_timeout)
             except queue.Empty:
-                return
+                return None
+        return None
 
 
 def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
