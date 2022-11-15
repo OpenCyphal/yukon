@@ -12,7 +12,7 @@ import dronecan.app.node_monitor
 from dronecan.driver.common import AbstractDriver, CANFrame
 from dronecan.node import Node
 
-from domain.god_state import GodState
+from yukon.domain.god_state import GodState
 
 logging.basicConfig(level=logging.INFO)
 # Add dronecan to path from the parent directory

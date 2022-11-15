@@ -103,17 +103,6 @@ def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -
 #             state.dronecan.allocator = None
 
 
-def set_handlers_for_configuration_changes(state: "yukon.domain.god_state.GodState") -> None:
-    s1 = state.settings.get("DroneCAN firmware substitution")
-    if s1:
-        s2 = s1.get("Enabled")
-
-        def _handle_setting_change(new_value: bool) -> None:
-            logger.info("DroneCAN firmware substitution is now " + ("enabled" if new_value else "disabled"))
-
-        s2.connect(_handle_setting_change)
-
-
 def cyphal_worker(state: GodState) -> None:
     async def _internal_method() -> None:
         try:
@@ -122,7 +111,7 @@ def cyphal_worker(state: GodState) -> None:
             state.cyphal.local_node = make_node(
                 NodeInfo(name="org.opencyphal.yukon"), my_registry, reconfigurable_transport=True
             )
-            set_handlers_for_configuration_changes(state)
+
             state.cyphal.local_node.start()
 
             def handle_transmit_message_to_dronecan(capture: pycyphal.transport.Capture) -> None:

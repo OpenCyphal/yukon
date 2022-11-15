@@ -1,7 +1,7 @@
 import uavcan
 import logging
 
-from domain.command_send_request import CommandSendRequest
+from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.command_send_response import CommandSendResponse
 from yukon.domain.god_state import GodState
 

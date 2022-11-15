@@ -20,6 +20,7 @@ from yukon.services.settings_handler import (
     loading_settings_into_yukon,
     add_all_dsdl_paths_to_pythonpath,
     recursive_reactivize_settings,
+    modify_settings_values_from_a_new_copy,
 )
 from yukon.domain.unsubscribe_request import UnsubscribeRequest
 from yukon.services.utils import get_datatypes_from_packages_directory_path
@@ -530,9 +531,7 @@ class Api:
 
     def set_settings(self, settings: dict) -> None:
         assert isinstance(settings, dict)
-
-        recursive_reactivize_settings(settings)
-        self.state.settings = settings
+        modify_settings_values_from_a_new_copy(self.state.settings, settings)
 
     def get_settings(self) -> Response:
         return jsonify(self.state.settings)

@@ -1,3 +1,4 @@
+import inspect
 import json
 import os
 import shutil
@@ -10,8 +11,8 @@ from pathlib import Path
 from ruamel import yaml
 from ruamel.yaml.scanner import ScannerError
 
-from domain.proxy_objects import ReactiveValue
-from services.enhanced_json_encoder import EnhancedJSONEncoder
+from yukon.domain.proxy_objects import ReactiveValue
+from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.services.utils import process_dsdl_path
 from yukon.domain.god_state import GodState
 
@@ -28,7 +29,8 @@ class IncorrectConfigurationException(Exception):
 
 
 def save_settings(settings_: typing.Dict, save_location: Path) -> None:
-    settings_dumped_string = yaml.dump(json.loads(json.dumps(settings_, cls=EnhancedJSONEncoder)))
+    json_traversed_settings = json.loads(json.dumps(settings_, cls=EnhancedJSONEncoder))
+    settings_dumped_string = yaml.dump(json_traversed_settings)
     with open(save_location, "w") as file:
         file.write(settings_dumped_string)
 
@@ -51,21 +53,79 @@ def load_settings(load_location: Path) -> typing.Any:
         raise IncorrectConfigurationException()
 
 
-def recursive_reactivize_settings(current_settings: typing.Union[dict, list]) -> None:
+# logger.setLevel(logging.DEBUG)
+
+
+def modify_settings_values_from_a_new_copy(
+    current_settings: typing.Union[dict, list], new_settings: typing.Union[dict, list]
+) -> None:
+    is_start_of_recursion = False
+    if "modify_settings_values_from_a_new_copy" in [x[3] for x in inspect.stack()[1:]]:
+        logger.debug("Recursive call")
+    else:
+        logger.debug("——————Modifying settings——————")
+        is_start_of_recursion = True
     if isinstance(current_settings, dict):
         for key, value in current_settings.items():
             if isinstance(value, (list, dict)):
-                recursive_reactivize_settings(value)
-            else:
-                if not isinstance(value, ReactiveValue):
-                    current_settings[key] = ReactiveValue(value)
+                logger.debug("Entering dict %r for modification", current_settings)
+                modify_settings_values_from_a_new_copy(current_settings[key], new_settings[key])
+            elif isinstance(value, ReactiveValue):
+                logger.debug("Modifying %r", value)
+                current_settings[key].value = new_settings[key]
+                logger.debug("Modified %r", current_settings[key])
     elif isinstance(current_settings, list):
         for index, value in enumerate(current_settings):
             if isinstance(value, (list, dict)):
-                recursive_reactivize_settings(value)
-            else:
-                if not isinstance(value, ReactiveValue):
-                    current_settings[index] = ReactiveValue(value)
+                logger.debug("Entering list %r for modification", current_settings)
+                modify_settings_values_from_a_new_copy(current_settings[index], new_settings[index])
+            elif isinstance(value, ReactiveValue):
+                logger.debug("Modifying %r", current_settings[index])
+                current_settings[index].value = new_settings[index]
+                logger.debug("Modified %r", current_settings[index])
+    if is_start_of_recursion:
+        logger.debug("——————Done modifying settings——————")
+
+
+def recursive_reactivize_settings(current_settings: typing.Union[dict, list]) -> None:
+    # See if the call stack contains recursive_reactivize_settings, current stack element is not counted
+    is_start_of_recursion = False
+    if "recursive_reactivize_settings" in [x[3] for x in inspect.stack()[1:]]:
+        logger.debug("Recursive call")
+    else:
+        logger.debug("——————Reactivizing settings——————")
+        is_start_of_recursion = True
+    if isinstance(current_settings, dict):
+        logger.debug("Entering dict %r for reactivization", current_settings)
+        for key, value in current_settings.items():
+            if isinstance(value, (list, dict)):
+                recursive_reactivize_settings(current_settings[key])
+            elif isinstance(value, (int, float, bool, str)):
+                logger.debug("Reactivizing %r", value)
+                current_settings[key] = ReactiveValue(value)
+                logger.debug("Reactivized %r", current_settings[key])
+    elif isinstance(current_settings, list):
+        logger.debug("Entering list %r for reactivization", current_settings)
+        for index, value in enumerate(current_settings):
+            if isinstance(value, (list, dict)):
+                recursive_reactivize_settings(current_settings[index])
+            elif isinstance(value, (int, float, bool, str)):
+                logger.debug("Reactivizing %r", value)
+                current_settings[index] = ReactiveValue(value)
+                logger.debug("Reactivized %r", current_settings[index])
+    if is_start_of_recursion:
+        logger.debug("——————Done reactivizing settings——————")
+
+
+def set_handlers_for_configuration_changes(state: "yukon.domain.god_state.GodState") -> None:
+    s1 = state.settings.get("DroneCAN firmware substitution")
+    if s1:
+        s2 = s1.get("Enabled")
+
+        def _handle_setting_change(new_value: bool) -> None:
+            logger.info("DroneCAN firmware substitution is now " + ("enabled" if new_value else "disabled"))
+
+        s2.connect(_handle_setting_change)
 
 
 def loading_settings_into_yukon(state: GodState) -> None:
@@ -101,8 +161,9 @@ def loading_settings_into_yukon(state: GodState) -> None:
                         loaded_settings[key] = value
 
         recursive_update_settings(state.settings, loaded_settings)
-        recursive_reactivize_settings(state.settings)
+        recursive_reactivize_settings(loaded_settings)
         state.settings = loaded_settings
+        set_handlers_for_configuration_changes(state)
 
 
 def add_all_dsdl_paths_to_pythonpath(state: GodState) -> None:

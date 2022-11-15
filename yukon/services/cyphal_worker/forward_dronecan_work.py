@@ -3,7 +3,7 @@ import dronecan.driver
 from pycyphal.transport.can import CANCapture, CANTransport
 from pycyphal.transport.can.media import DataFrame, FrameFormat, Envelope
 
-from domain.god_state import GodState
+from yukon.domain.god_state import GodState
 
 
 async def do_forward_dronecan_work(state: GodState) -> None:

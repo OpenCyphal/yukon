@@ -1,6 +1,8 @@
+import sys
 from typing import Any
 
 import typing
+import threading
 
 
 class Connection:
@@ -31,16 +33,24 @@ class ReactiveValue:
     def disconnect(self, connection: Connection) -> None:
         self._connections.remove(connection)
 
-    def set(self, value: Any) -> None:
-        self._value = value
-        for connection in self._connections:
-            connection.send(value)
-
-    def get(self) -> Any:
+    @property
+    def value(self):
         return self._value
 
+    @value.setter
+    def value(self, value: Any) -> None:
+        if self._value != value:
+            self._value = value
+            for connection in self._connections:
+                connection.send(value)
+
     def __str__(self) -> str:
-        return str(self._value)
+        return str(self.value)
+
+    def __repr__(self) -> str:
+        if len(str(self.value)) > 30:
+            return f"ReactiveValue({str(self.value)[:30]}...)"
+        return "ReactiveValue({})".format(self.value)
 
     # Implement methods from https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types
     # use the self._value as the underlying value
