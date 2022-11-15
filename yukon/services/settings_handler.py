@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import sys
+import threading
 import typing
 import logging
 from datetime import datetime
@@ -13,6 +14,8 @@ from ruamel.yaml.scanner import ScannerError
 
 from yukon.domain.proxy_objects import ReactiveValue
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
+from yukon.services.flash_dronecan_firmware_with_cyphal_firmware import run_dronecan_firmware_updater
+from yukon.services.settings_changed_actions import set_handlers_for_configuration_changes
 from yukon.services.utils import process_dsdl_path
 from yukon.domain.god_state import GodState
 
@@ -115,17 +118,6 @@ def recursive_reactivize_settings(current_settings: typing.Union[dict, list]) ->
                 logger.debug("Reactivized %r", current_settings[index])
     if is_start_of_recursion:
         logger.debug("——————Done reactivizing settings——————")
-
-
-def set_handlers_for_configuration_changes(state: "yukon.domain.god_state.GodState") -> None:
-    s1 = state.settings.get("DroneCAN firmware substitution")
-    if s1:
-        s2 = s1.get("Enabled")
-
-        def _handle_setting_change(new_value: bool) -> None:
-            logger.info("DroneCAN firmware substitution is now " + ("enabled" if new_value else "disabled"))
-
-        s2.connect(_handle_setting_change)
 
 
 def loading_settings_into_yukon(state: GodState) -> None:
