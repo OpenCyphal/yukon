@@ -34,7 +34,7 @@ async def do_apply_configuration_work(state: GodState, config: ApplyConfiguratio
                 at_least_one_register_was_modified = True
                 prototype = unexplode_value(prototype_string)
                 unexploded_value = unexplode_value(register_value, prototype)
-                state.queues.update_registers.put(
+                state.queues.god_queue.put(
                     UpdateRegisterRequest(uuid4(), register_name, unexploded_value, config.node_id, time.time())
                 )
             if not at_least_one_register_was_modified:
@@ -48,7 +48,7 @@ async def do_apply_configuration_work(state: GodState, config: ApplyConfiguratio
                         logger.debug("Do something")
                         value = json.loads(value)
                     unexploded_value = unexplode_value(value)
-                    state.queues.update_registers.put(
+                    state.queues.god_queue.put(
                         UpdateRegisterRequest(uuid4(), register_name, unexploded_value, config.node_id, time.time())
                     )
     elif config.is_network_config:
@@ -62,7 +62,7 @@ async def do_apply_configuration_work(state: GodState, config: ApplyConfiguratio
                 logger.error(f"Configuration for node {node_id} is not a dict")
                 continue
             for k, v in register_values_exploded.items():
-                state.queues.update_registers.put(
+                state.queues.god_queue.put(
                     UpdateRegisterRequest(uuid4(), k, unexplode_value(v), int(node_id), time.time())
                 )
     else:

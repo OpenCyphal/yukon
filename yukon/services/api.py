@@ -55,33 +55,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.NOTSET)
 
 
-def save_text_into_file(file_contents: str) -> None:
-    import tkinter
-    import tkinter as tk
-    from tkinter.filedialog import SaveAs
-
-    root = tk.Tk()
-    root.geometry("1x1+0+0")
-    root.eval("tk::PlaceWindow . center")
-    second_win = tkinter.Toplevel(root)
-    second_win.withdraw()
-    root.eval(f"tk::PlaceWindow {str(second_win)} center")
-    # Show window again and lift it to top so it can get focus,
-    # otherwise dialogs will end up behind the terminal.
-    root.deiconify()
-    root.lift()
-    root.focus_force()
-    save_as_dialog = SaveAs(root)
-    file_path = save_as_dialog.show()
-    root.withdraw()
-    root.destroy()
-    if file_path:
-        with open(file_path, "w") as f:
-            f.write(file_contents)
-    else:
-        logger.warning("No file selected")
-
-
 def make_sure_is_deserialized(any_conf: typing.Any) -> typing.Any:
     if isinstance(any_conf, str):
         # if the first character in deserialize_conf is a {, then it is a JSON string.
@@ -140,6 +113,9 @@ def unexplode_a_register(state: GodState, node_id: int, register_name: str, regi
     return json.dumps(explode_value(value))
 
 
+logger.setLevel(logging.DEBUG)
+
+
 def unsimplify_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deserialized_conf: typing.Any) -> str:
     if is_configuration_simplified(deserialized_conf):
         if is_network_configuration(deserialized_conf):
@@ -151,8 +127,14 @@ def unsimplify_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deser
                 if not deserialized_node_specific_conf:
                     continue
                 for register_name, simplified_value in deserialized_node_specific_conf.items():
+                    logger.debug("Unsimplifying %s", register_name)
                     simplified_value2 = json.loads(json.dumps(simplified_value))
+                    logger.debug("The simplified value is %r", simplified_value2)
                     prototype = unexplode_value(avatar.register_exploded_values[register_name])
+                    logger.debug("prototype: %r", prototype)
+                    if simplified_value2 == "NaN":
+                        simplified_value2 = float("nan")
+                    # normal
                     typed_value = explode_value(unexplode_value(simplified_value2, prototype))
                     deserialized_node_specific_conf[register_name] = typed_value
             return json.dumps(deserialized_conf)
@@ -248,9 +230,9 @@ class Api:
         self.last_avatars = []
 
     def get_socketcan_ports(self) -> Response:
-        _list = get_socketcan_ports()
+        _list = [{"name": port_name, "already_used": False} for port_name in get_socketcan_ports()]
         for port in _list:
-            if self.state.cyphal.already_used_transport_interfaces.get("socketcan:" + port.get("device")):
+            if self.state.cyphal.already_used_transport_interfaces.get("socketcan:" + port["port_name"]):
                 port["already_used"] = True
         _list_hash = json.dumps(_list, sort_keys=True)
         return jsonify(
@@ -273,9 +255,6 @@ class Api:
 
     def add_local_message(self, message: str, severity: int) -> None:
         add_local_message(self.state, message, severity)
-
-    def save_all_of_register_configuration(self, serialized_configuration: str) -> None:
-        save_text_into_file(serialized_configuration)
 
     def import_all_of_register_configuration(self) -> str:
         return import_candump_file_contents()
@@ -411,7 +390,7 @@ class Api:
     def reread_registers(self, request_contents: typing.Dict[int, typing.Dict[str, bool]]) -> None:
         """yukon/web/modules/registers.data.module.js explains the request_contents structure."""
         request = RereadRegistersRequest(uuid4(), request_contents)
-        self.state.queues.reread_registers.put_nowait(request)
+        self.state.queues.god_queue.put_nowait(request)
 
     def hide_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = True
