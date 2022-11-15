@@ -1,4 +1,4 @@
-import {JsonParseHelper} from "../utilities.module.js";
+import { JsonParseHelper } from "../utilities.module.js";
 
 export function initTransports(container, yukon_state) {
     const containerElem = container.getElement()[0];
@@ -407,19 +407,7 @@ export function initTransports(container, yukon_state) {
         if (currentSelectedTransportType[1] == transports.CAN.MANUAL) {
             if (iTransport.value == "" || !iTransport.value.includes(":")) {
                 iTransport.classList.add("is-danger");
-                displayErrorMessage("Transport shouldn't be empty and should be in the format <slcan|socketcan>:<port>");
-                isFormCorrect = false;
-            }
-            const transportMustContain = ["socketcan", "slcan"];
-            let containsAtLeastOne = false;
-            for (const transportType of transportMustContain) {
-                if (iTransport.value.includes(transportType)) {
-                    containsAtLeastOne = true;
-                }
-            }
-            if (!containsAtLeastOne) {
-                displayErrorMessage("Transport type should be either slcan or socketcan");
-                iTransport.classList.add("is-danger");
+                displayErrorMessage("Transport shouldn't be empty and should be in the format <transport_type>:<port>");
                 isFormCorrect = false;
             }
         } else if (currentSelectedTransportType[1] == transports.UDP.UDP) {
