@@ -75,9 +75,15 @@ def detect_hidden_imports() -> typing.List[str]:
 
 
 detected_hidden_imports = detect_hidden_imports()
-detected_hidden_imports += ["can.interfaces.slcan"]
-detected_hidden_imports += ["can.interfaces.virtual"]
+detected_hidden_imports += ["can.interfaces"]
 detected_hidden_imports += ["pkg_about"]
+detected_hidden_imports += ["__future__", "pkg_resources", "sched", "multiprocessing", "sqlite3", "serial"]
+
+if my_os == "Linux":
+    datas += [("venv/lib/python3.10/site-packages/dronecan", "dronecan")]
+elif my_os == "Windows":
+    datas += [("venv\\Lib\\site-packages\\dronecan", "dronecan")]
+
 if my_os == "Linux":
     detected_hidden_imports += ["libpcap"]
 # noinspection PyUnresolvedReferences
