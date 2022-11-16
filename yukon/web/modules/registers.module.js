@@ -7,7 +7,10 @@ import {createGenericModal} from './modal.module.js';
 
 export function add_node_id_headers(table_header_row, yukon_state) {
     const current_avatars = yukon_state.current_avatars;
-    current_avatars.forEach(function (avatar) {
+    const avatars_copy = [];
+    current_avatars.forEach(avatar => { avatars_copy.push(avatar); });
+    avatars_copy.sort(compareAvatar);
+    for(const avatar of avatars_copy) {
         let table_header_cell = document.createElement('th');
         table_header_cell.innerHTML = avatar.node_id;
         table_header_cell.title = avatar.name;
@@ -46,14 +49,14 @@ export function add_node_id_headers(table_header_row, yukon_state) {
         }
         table_header_cell.onmousedown = make_select_column(avatar.node_id, null, yukon_state);
         table_header_cell.onmouseover = make_select_column(avatar.node_id, true, yukon_state);
-    });
+    }
 }
 
 export function make_empty_table_header_row_cell(table_header_row, yukon_state) {
-    var empty_table_header_row_cell = document.createElement('th');
+    const empty_table_header_row_cell = document.createElement('th');
     if (yukon_state.settings.showAlotOfButtons) {
         // Add a button into the empty table header row cell
-        var button = document.createElement('button');
+        const button = document.createElement('button');
         button.innerHTML = 'Apply sel. conf to all nodes';
         button.onclick = function () {
             if (yukon_state.selections.selected_config != null && yukon_state.available_configurations[yukon_state.selections.selected_config] != null) {
@@ -61,12 +64,12 @@ export function make_empty_table_header_row_cell(table_header_row, yukon_state) 
             }
         }
         empty_table_header_row_cell.appendChild(button);
-        var button = document.createElement('button');
-        button.innerHTML = 'Save all of configuration';
-        button.onclick = function () {
+        const button2 = document.createElement('button');
+        button2.innerHTML = 'Save all of configuration';
+        button2.onclick = function () {
             export_all_selected_registers(null, true)
         }
-        empty_table_header_row_cell.appendChild(button);
+        empty_table_header_row_cell.appendChild(button2);
     }
     table_header_row.appendChild(empty_table_header_row_cell);
 }
@@ -108,9 +111,22 @@ export function addContentForRegisterName(register_name, filter_keyword_inclusiv
         make_header_cell();
     }
 }
+function compareAvatar( a, b ) {
+  if ( a.node_id < b.node_id ){
+    return -1;
+  }
+  if ( a.node_id > b.node_id ){
+    return 1;
+  }
+  return 0;
+}
 
 export function addContentForCells(register_name, table_register_row, yukon_state) {
-    yukon_state.current_avatars.forEach(function (avatar) {
+    const avatars = yukon_state.current_avatars;
+    const avatars_copy = [];
+    avatars.forEach(avatar => { avatars_copy.push(avatar); });
+    avatars_copy.sort(compareAvatar);
+    for(const avatar of avatars_copy) {
         // ALL THE REGISTER VALUES HERE
         const table_cell = document.createElement('td');
         table_register_row.appendChild(table_cell);
@@ -260,7 +276,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             lastClick = new Date();
         });
         // Create a text input element in the table cell
-    });
+    }
 }
 
 export function create_registers_table(_filter_keyword_inclusive, yukon_state) {
