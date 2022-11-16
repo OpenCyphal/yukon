@@ -218,7 +218,7 @@ export function make_select_cell(avatar, register_name, is_mouse_over, yukon_sta
                 const allCells = getAllCellsInBetween(yukon_state.selections.last_cell_selected, {
                     "node_id": avatar.node_id,
                     "register_name": register_name
-                });
+                }, yukon_state);
                 for (var i = 0; i < allCells.length; i++) {
                     const cell = allCells[i];
                     yukon_state.selections.selected_registers[[cell.node_id, cell.register_name]] = true;
@@ -271,9 +271,9 @@ export function make_select_cell(avatar, register_name, is_mouse_over, yukon_sta
 function getAllCellsInBetween(start_cell, end_cell, yukon_state) {
     let row_based_selection = false;
     let column_based_selection = false;
-    if (start_cell.node_id == end_cell.node_id) {
+    if (start_cell.node_id === end_cell.node_id) {
         column_based_selection = true;
-    } else if (start_cell.register_name == end_cell.register_name) {
+    } else if (start_cell.register_name === end_cell.register_name) {
         row_based_selection = true;
     } else {
         return [];
@@ -284,10 +284,10 @@ function getAllCellsInBetween(start_cell, end_cell, yukon_state) {
     if (row_based_selection) {
         start_table_cell = document.getElementById("cell_" + start_cell.node_id + "_" + start_cell.register_name);
         end_table_cell = document.getElementById("cell_" + end_cell.node_id + "_" + end_cell.register_name);
-        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+        for (let i = 0; i < yukon_state.current_avatars.length; i++) {
             const current_avatar = yukon_state.current_avatars[i];
             // For every register in the avatar
-            for (var j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
+            for (let j = 0; j < yukon_state.current_avatars[i].registers.length; j++) {
                 const register_name = yukon_state.current_avatars[i].registers[j];
                 if (!register_name || register_name !== start_cell.register_name) {
                     continue;
