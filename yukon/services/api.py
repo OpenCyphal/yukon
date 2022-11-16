@@ -429,7 +429,7 @@ class Api:
         send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)
         self.state.queues.god_queue.put_nowait(send_command_request)
         try:
-            response = self.state.queues.command_send_response.get(timeout=5)
+            response = self.state.queues.command_response.get(timeout=5)
         except Empty:
             raise Exception("Failed to receive a response for sending command.")
         return jsonify({"success": response.is_success, "message": response.message})

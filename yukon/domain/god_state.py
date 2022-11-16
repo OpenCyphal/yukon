@@ -28,11 +28,9 @@ from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
 from yukon.domain.message import Message
 from yukon.domain.allocation_request import AllocationRequest
 from yukon.domain.HWID import HWID
-from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.avatar import Avatar
 from yukon.domain.interface import Interface
 from yukon.domain.node_state import NodeState
-from yukon.domain.update_register_request import UpdateRegisterRequest
 from yukon.domain.update_register_response import UpdateRegisterResponse
 from yukon.services.faulty_transport import FaultyTransport
 from yukon.domain.command_send_request import CommandSendRequest
