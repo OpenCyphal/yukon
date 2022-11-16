@@ -1,4 +1,5 @@
 libpcap==1.10.0b15
+python-can[seeedstudio,serial] ==4.0.0
 pycyphal[transport-can-pythoncan,transport-serial,transport-udp]
 sentry-sdk==1.*
 pytest
