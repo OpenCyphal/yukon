@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 
 import typing
 
@@ -11,6 +12,9 @@ import dronecan
 import uavcan
 import uavcan.pnp
 import yukon.domain.god_state
+from yukon.domain.request_run_dronecan_firmware_updater import RequestRunDronecanFirmwareUpdater
+from yukon.domain.start_fileserver_request import StartFileServerRequest
+from yukon.services.FileServer import FileServer
 from yukon.domain.detach_transport_request import DetachTransportRequest
 from yukon.domain.subscribe_request import SubscribeRequest
 from yukon.domain.unsubscribe_request import UnsubscribeRequest
@@ -28,6 +32,7 @@ from yukon.services.cyphal_worker.attach_transport_work import do_attach_transpo
 from yukon.services.cyphal_worker.update_configuration_work import do_apply_configuration_work
 from yukon.services.cyphal_worker.update_register_work import do_update_register_work
 from yukon.domain.god_state import GodState
+from yukon.services.flash_dronecan_firmware_with_cyphal_firmware import run_dronecan_firmware_updater
 from yukon.services.snoop_registers import make_tracers_trackers
 
 logger = logging.getLogger(__name__)
@@ -41,6 +46,9 @@ def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -
         pass
 
     allocation_data_sub.receive_in_background(receive_allocate_request)
+
+
+logger.setLevel(logging.DEBUG)
 
 
 def cyphal_worker(state: GodState) -> None:
@@ -86,7 +94,26 @@ def cyphal_worker(state: GodState) -> None:
                     await do_subscribe_requests_work(state, queue_element)
                 elif isinstance(queue_element, UnsubscribeRequest):
                     await do_unsubscribe_requests_work(state, queue_element)
-
+                elif isinstance(queue_element, StartFileServerRequest):
+                    state.cyphal.file_server = FileServer(
+                        state.cyphal.local_node, [state.settings["Firmware updates"]["File path"]["value"].value]
+                    )
+                    logger.info(
+                        "File server started on path " + state.settings["Firmware updates"]["File path"]["value"].value
+                    )
+                    state.cyphal.file_server.start()
+                elif isinstance(queue_element, RequestRunDronecanFirmwareUpdater):
+                    logger.debug("A request to run the DroneCAN firmware updater was received.")
+                    is_dronecan_firmware_path_available = (
+                            state.settings["DroneCAN firmware substitution"]["Substitute firmware path"][
+                                "value"].value != ""
+                    )
+                    if is_dronecan_firmware_path_available:
+                        state.dronecan.thread = threading.Thread(target=run_dronecan_firmware_updater, args=(state,))
+                        logger.info("DroneCAN firmware substitution is now " + "enabled")
+                    else:
+                        logger.error("DroneCAN firmware path is not set")
+                        continue
         except Exception as e:
             logger.exception(e)
             raise e

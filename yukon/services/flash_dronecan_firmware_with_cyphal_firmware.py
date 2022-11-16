@@ -14,15 +14,14 @@ from dronecan.node import Node
 
 from yukon.domain.god_state import GodState
 
-logging.basicConfig(level=logging.INFO)
-# Add dronecan to path from the parent directory
-parent_dir = Path(__file__).parent.parent
-sys.path.append(str(parent_dir))
 from dronecan import make_node, UAVCANException, make_driver
 from dronecan.app.dynamic_node_id import CentralizedServer
 from dronecan.app.file_server import FileServer
 from dronecan.app.node_monitor import NodeMonitor
 from dronecan import uavcan
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class GoodDriver(AbstractDriver):
@@ -39,6 +38,7 @@ class GoodDriver(AbstractDriver):
         canfd: bool = False,
     ) -> None:
         frame = CANFrame(message_id, message, extended, canfd=canfd)
+        logger.debug("Sending CAN frame: %r", frame)
         self.state.dronecan_traffic_queues.output_queue.put_nowait(frame)
 
     def receive(self, timeout: typing.Optional[float] = 0.0) -> typing.Optional[CANFrame]:
@@ -57,19 +57,22 @@ class GoodDriver(AbstractDriver):
                 else:
                     # TODO this is a workaround. Zero timeout causes the IPC queue to ALWAYS throw queue.Empty!
                     get_timeout = max(1e-3, deadline - time.monotonic())
-
-                return self.state.dronecan_traffic_queues.input_queue.get(timeout=get_timeout)
+                received_frame = self.state.dronecan_traffic_queues.input_queue.get(timeout=get_timeout)
+                logger.debug("Received CAN frame: %r", received_frame)
+                return received_frame
             except queue.Empty:
                 return None
         return None
 
 
 def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
+    logger.debug("Starting DroneCAN firmware updater")
     state.dronecan.allocator = None
     state.dronecan.node_monitor = None
     try:
         state.dronecan.driver = GoodDriver(state)
         state.dronecan.node = Node(state.dronecan.driver, node_id=123)
+        logger.debug("Node %r created", state.dronecan.node)
         # Add the current directory to the paths list
         state.dronecan.file_server = FileServer(state.dronecan.node, ["/"])  # This is secure!
         state.dronecan.node_monitor = NodeMonitor(state.dronecan.node)
@@ -85,7 +88,7 @@ def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
                 req.image_file_remote_path.path = state.settings["DroneCAN firmware substitution"][
                     "Substitute firmware path"
                 ]
-                logging.warning("Sending %r to %r", req, event.entry.node_id)
+                logging.debug("Sending %r to %r", req, event.entry.node_id)
                 state.dronecan.node.request(req, event.entry.node_id, lambda e: None)
 
         state.dronecan.node_monitor.add_update_handler(node_update)
@@ -99,6 +102,7 @@ def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
                 if "Toggle bit value" not in str(ex):
                     print("Node error:", ex)
     except Exception as ex:
+        logger.debug("DroneCAN firmware updater failed: %r", ex)
         if state.dronecan.allocator:
             state.dronecan.allocator.close()
         if state.dronecan.node_monitor:
