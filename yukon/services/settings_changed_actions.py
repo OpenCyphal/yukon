@@ -1,6 +1,7 @@
 import logging
 import threading
 
+import yukon
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.FileServer import FileServer
 from yukon.services.flash_dronecan_firmware_with_cyphal_firmware import run_dronecan_firmware_updater
@@ -8,7 +9,7 @@ from yukon.services.flash_dronecan_firmware_with_cyphal_firmware import run_dron
 logger = logging.getLogger(__name__)
 
 
-def set_dronecan_handlers(state: "yukon.domain.god_state.GodState"):
+def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
     is_dronecan_firmware_path_available = (
         state.settings["DroneCAN firmware substitution"]["Substitute firmware path"]["value"].value != ""
     )
@@ -45,7 +46,7 @@ def set_file_server_handler(state: "yukon.domain.god_state.GodState") -> None:
         logger.info("File server path changed to " + new_value)
         state.cyphal.file_server.roots = [new_value]
 
-    def _handle_enabled_change(should_be_enabled: bool):
+    def _handle_enabled_change(should_be_enabled: bool) -> None:
         is_already_running = state.cyphal.file_server is not None
         if is_already_running:
             if not should_be_enabled:
@@ -66,7 +67,7 @@ def set_file_server_handler(state: "yukon.domain.god_state.GodState") -> None:
 
 
 def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
-    def _handle_mode_change(new_mode: str):
+    def _handle_mode_change(new_mode: str) -> None:
         if new_mode == "Automatic" and not state.cyphal.centralized_allocator and state.cyphal.local_node.id:
             logger.info("Allocator is now running")
             state.cyphal.centralized_allocator = CentralizedAllocator(state.cyphal.local_node)

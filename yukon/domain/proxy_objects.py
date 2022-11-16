@@ -34,7 +34,7 @@ class ReactiveValue:
         self._connections.remove(connection)
 
     @property
-    def value(self):
+    def value(self) -> typing.Any:
         return self._value
 
     @value.setter

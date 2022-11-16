@@ -42,14 +42,6 @@ class FileServer:
 
         node.add_lifetime_hooks(self.start, self.close)
 
-    @property
-    def roots(self):
-        return self._roots
-
-    @roots.setter
-    def roots(self, value: typing.Iterable[typing.Union[str, pathlib.Path]]) -> None:
-        self._roots = [pathlib.Path(x).resolve() for x in value]
-
     def start(self) -> None:
         _logger.info("%r: Starting", self)
         self.service_list.serve_in_background(self._serve_list)
@@ -74,6 +66,10 @@ class FileServer:
         The list can be modified.
         """
         return self._roots
+
+    @roots.setter
+    def roots(self, value: typing.Iterable[typing.Union[str, pathlib.Path]]) -> None:
+        self._roots = [pathlib.Path(x).resolve() for x in value]
 
     def locate(self, p: typing.Union[pathlib.Path, str, pathlib.Path]) -> typing.Tuple[pathlib.Path, pathlib.Path]:
         """
