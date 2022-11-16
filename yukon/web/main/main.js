@@ -1,6 +1,6 @@
 import {make_context_menus} from '../modules/context-menu.module.js';
 import {create_directed_graph, update_directed_graph} from '../modules/monitor.module.js';
-import {isRunningInElectron, areThereAnyActiveModals} from "../modules/utilities.module.js";
+import {isRunningInElectron, areThereAnyActiveModals, getHoveredContainerElementAndContainerObject} from "../modules/utilities.module.js";
 import {
     loadConfigurationFromOpenDialog,
     return_all_selected_registers_as_yaml
@@ -167,63 +167,63 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                 myLayout.registerComponent('registersComponent', function (container, componentState) {
                     registerComponentAction("../registers.panel.html", "registersComponent", container, () => {
                         const containerElement = container.getElement()[0];
-                        containerElementToContainerObjectMap.set(containerElement, container);
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpRegistersComponent.bind(outsideContext)(true);
                     });
                 });
                 myLayout.registerComponent('statusComponent', function (container, componentState) {
                     registerComponentAction("../status.panel.html", "statusComponent", container, () => {
                         const containerElement = container.getElement()[0];
-                        containerElementToContainerObjectMap.set(containerElement, container);
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpStatusComponent.bind(outsideContext)(yukon_state);
                     });
                 });
                 myLayout.registerComponent('monitorComponent', function (container, componentState) {
                     registerComponentAction("../monitor.panel.html", "monitorComponent", container, () => {
                         const containerElement = container.getElement()[0];
-                        containerElementToContainerObjectMap.set(containerElement, container);
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpMonitorComponent.bind(outsideContext)();
                     });
                 });
                 myLayout.registerComponent('messagesComponent', function (container, componentState) {
                     registerComponentAction("../messages.panel.html", "messagesComponent", container, () => {
                         const containerElement = container.getElement()[0];
-                        containerElementToContainerObjectMap.set(containerElement, container);
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpMessagesComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 myLayout.registerComponent('transportsComponent', function (container, componentState) {
                     registerComponentAction("../transport.panel.html", "transportsComponent", container, () => {
                         const containerElement = container.getElement()[0];
-                        containerElementToContainerObjectMap.set(containerElement, container);
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpTransportsComponent.bind(outsideContext)(container);
                     });
                 });
                 myLayout.registerComponent("transportsListComponent", function (container, componentState) {
                     registerComponentAction("../transports_list.panel.html", "transportsListComponent", container, () => {
                         const containerElement = container.getElement()[0];
-                        containerElementToContainerObjectMap.set(containerElement, container);
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpTransportsListComponent.bind(outsideContext)(yukon_state);
                     });
                 });
                 myLayout.registerComponent("commandsComponent", function (container, componentState) {
                     registerComponentAction("../commands.panel.html", "transportsListComponent", container, () => {
                         const containerElement = container.getElement()[0];
-                        containerElementToContainerObjectMap.set(containerElement, container);
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpCommandsComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 myLayout.registerComponent("registerUpdateLogComponent", function (container, componentState) {
                     registerComponentAction("../register_update_log.html", "registerUpdateLogComponent", container, () => {
                         const containerElement = container.getElement()[0];
-                        containerElementToContainerObjectMap.set(containerElement, container);
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpRegisterUpdateLogComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 myLayout.registerComponent("subsComponent", function (container, componentState) {
                     registerComponentAction("../subscriptions.panel.html", "subsComponent", container, () => {
                         const containerElement = container.getElement()[0];
-                        containerElementToContainerObjectMap.set(containerElement, container);
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpSubscriptionsComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
@@ -231,14 +231,14 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                     registerComponentAction("../settings.panel.html", "settingsComponent", container, () => {
                         const containerElement = container.getElement()[0];
                         yukon_state.settingsComponent = container;
-                        containerElementToContainerObjectMap.set(containerElement, container);
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpSettingsComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 myLayout.registerComponent("motorControlComponent", function (container, componentState) {
                     registerComponentAction("../motor-control.panel.html", "motorControlComponent", container, () => {
                         const containerElement = container.getElement()[0];
-                        containerElementToContainerObjectMap.set(containerElement, container);
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpMotorControlComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
@@ -445,7 +445,6 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
             });
         }
 
-        let containerElementToContainerObjectMap = new WeakMap();
         yukon_state.selectingTableCellsIsDisabledStyle = document.createElement('style');
         yukon_state.selectingTableCellsIsDisabledStyle.innerHTML = `
         .table-cell {
@@ -465,7 +464,6 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
         window.addEventListener('blur', function () {
             yukon_state.pressedKeys[18] = false;
         });
-        var mousePos;
 
         document.onmousemove = handleMouseMove;
 
@@ -490,7 +488,7 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                     (doc && doc.clientTop || body && body.clientTop || 0);
             }
 
-            mousePos = {
+            yukon_state.mousePos = {
                 x: event.pageX,
                 y: event.pageY
             };
@@ -506,11 +504,22 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                     // Not going to copy any of the selected registers here.
                     return;
                 }
+                const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
+                const hoveredContainerObject = returnArray[1];
+                if(!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
+                    return;
+                }
                 selectAll(yukon_state);
                 e.preventDefault();
             }
             // If ctrl c was pressed
             if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[67]) {
+                // Make sure that mouse is over the registersComponent
+                const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
+                const hoveredContainerObject = returnArray[1];
+                if(!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
+                    return;
+                }
                 if (areThereAnyActiveModals(yukon_state)) {
                     // The modal should handle its own copy and paste events (natively)
                     return;
@@ -554,7 +563,7 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                     e.stopPropagation();
                 } else {
                     console.log("Just copying from under the mouse")
-                    let element = document.elementFromPoint(mousePos.x, mousePos.y);
+                    let element = document.elementFromPoint(yukon_state.mousePos.x, yukon_state.mousePos.y);
                     const copyTextOfElement = function (element, event) {
                         copyTextToClipboard(element.innerText, event);
                         const previousText = element.innerHTML;
@@ -580,47 +589,25 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
             }
             // If ctrl space was pressed, toggle maximize-minimize of the currently hovered over ContentItem
             if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[32]) {
-                const elementOn = document.elementFromPoint(mousePos.x, mousePos.y);
-                if (elementOn == null) {
-                    return;
-                }
-                // Start navigating up through parents (ancestors) of elementOn, until one of the parents has the class lm_content
-                let currentElement = elementOn
-                while (elementOn !== document.body) {
-                    if (currentElement.parentElement == null) {
-                        return;
-                    }
-                    if (currentElement.classList.contains("lm_content")) {
-                        break;
-                    } else {
-                        currentElement = currentElement.parentElement;
-                    }
-                }
-                // Now we need every initialization of a panel to keep adding to a global dictionary where they have keys as the actual html element and the value is the golden-layout object
-                let containerObject = null;
-                if (containerElementToContainerObjectMap.has(currentElement)) {
-                    containerObject = containerElementToContainerObjectMap.get(currentElement);
-                }
+                const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
+                const containerObject = returnArray[1];
                 containerObject.parent.parent.toggleMaximise();
                 e.preventDefault();
             }
             // If F5 is pressed, reread registers
             if (e.code === "F5") {
+                e.preventDefault();
+                const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
+                const hoveredContainerObject = returnArray[1];
+                if(!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
+                    return;
+                }
                 const data = get_all_selected_pairs({
                     "only_of_avatar_of_node_id": null,
                     "get_everything": true,
                     "only_of_register_name": null
                 }, yukon_state);
-                let pairs = [];
-                // For every key, value in all_selected_pairs, then for every key in the value make an array for each key, value pair
-                for (const node_id of Object.keys(data)) {
-                    const value = data[node_id];
-                    pairs[node_id] = {};
-                    for (const register_name of Object.keys(value)) {
-                        pairs[node_id][register_name] = true;
-                    }
-                }
-                rereadPairs(pairs, yukon_state);
+                rereadPairs(data, yukon_state);
             }
         }
         document.addEventListener('keydown', function (e) {

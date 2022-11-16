@@ -93,3 +93,28 @@ export function waitForElm(selector, timeOutMilliSeconds) {
 
     });
 }
+
+export function getHoveredContainerElementAndContainerObject(yukon_state) {
+    const elementOn = document.elementFromPoint(yukon_state.mousePos.x, yukon_state.mousePos.y);
+    if (elementOn == null) {
+        return;
+    }
+    // Start navigating up through parents (ancestors) of elementOn, until one of the parents has the class lm_content
+    let currentElement = elementOn
+    while (elementOn !== document.body) {
+        if (currentElement.parentElement == null) {
+            return;
+        }
+        if (currentElement.classList.contains("lm_content")) {
+            break;
+        } else {
+            currentElement = currentElement.parentElement;
+        }
+    }
+    // Now we need every initialization of a panel to keep adding to a global dictionary where they have keys as the actual html element and the value is the golden-layout object
+    let containerObject = null;
+    if (yukon_state.containerElementToContainerObjectMap.has(currentElement)) {
+        containerObject = yukon_state.containerElementToContainerObjectMap.get(currentElement);
+    }
+    return [currentElement, containerObject];
+}
