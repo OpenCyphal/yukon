@@ -230,9 +230,10 @@ class Api:
         self.last_avatars = []
 
     def get_socketcan_ports(self) -> Response:
-        _list = [{"name": port_name, "already_used": False} for port_name in get_socketcan_ports()]
+        socket_can_ports = get_socketcan_ports()
+        _list = [{"name": port_name, "already_used": False} for port_name in socket_can_ports]
         for port in _list:
-            if self.state.cyphal.already_used_transport_interfaces.get("socketcan:" + port["port_name"]):
+            if self.state.cyphal.already_used_transport_interfaces.get("socketcan:" + port["name"]):
                 port["already_used"] = True
         _list_hash = json.dumps(_list, sort_keys=True)
         return jsonify(
