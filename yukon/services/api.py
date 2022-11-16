@@ -450,6 +450,7 @@ class Api:
 
     def close_yukon(self) -> None:
         self.state.gui.gui_running = False
+        self.state.queues.god_queue.put_nowait("Exiting")  # This could be anything
 
     def yaml_to_yaml(self, yaml_in: str) -> Response:
         text_response = Dumper().dumps(yaml.load(yaml_in, Loader))

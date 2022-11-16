@@ -75,6 +75,7 @@ def cyphal_worker(state: GodState) -> None:
 
             logger.debug("Tracers should have been set up.")
             while state.gui.gui_running:
+                # An empty element is going to be inserted here on application shutdown to get the loop to exit.
                 queue_element = await state.queues.god_queue.get()
                 if isinstance(queue_element, AttachTransportRequest):
                     await do_attach_transport_work(state, queue_element)

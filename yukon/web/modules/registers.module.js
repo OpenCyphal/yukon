@@ -6,9 +6,7 @@ import {getDictionaryValueFieldName} from './utilities.module.js';
 import {createGenericModal} from './modal.module.js';
 
 export function add_node_id_headers(table_header_row, yukon_state) {
-    const current_avatars = yukon_state.current_avatars;
-    const avatars_copy = [];
-    current_avatars.forEach(avatar => { avatars_copy.push(avatar); });
+    const avatars_copy = Array.from(yukon_state.current_avatars)
     avatars_copy.sort(compareAvatar);
     for(const avatar of avatars_copy) {
         let table_header_cell = document.createElement('th');
@@ -122,9 +120,7 @@ function compareAvatar( a, b ) {
 }
 
 export function addContentForCells(register_name, table_register_row, yukon_state) {
-    const avatars = yukon_state.current_avatars;
-    const avatars_copy = [];
-    avatars.forEach(avatar => { avatars_copy.push(avatar); });
+    const avatars_copy = Array.from(yukon_state.current_avatars)
     avatars_copy.sort(compareAvatar);
     for(const avatar of avatars_copy) {
         // ALL THE REGISTER VALUES HERE
