@@ -75,6 +75,8 @@ def cyphal_worker(state: GodState) -> None:
             def handle_transmit_message_to_dronecan(
                 redundant_capture: pycyphal.transport.redundant.RedundantCapture,
             ) -> None:
+                if not state.dronecan.is_running:
+                    return
                 # TODO: This should actually make sure it is a CAN capture not any other transport
                 if isinstance(redundant_capture, pycyphal.transport.redundant.RedundantCapture):
                     capture = redundant_capture.inferior
