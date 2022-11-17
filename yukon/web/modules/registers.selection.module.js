@@ -69,6 +69,9 @@ export function getAllEntireColumnsThatAreSelected(yukon_state) {
 
 export function make_select_column(node_id, is_mouse_over, yukon_state) {
     return function (event) {
+        if (yukon_state.is_cursor_snapping_column) {
+            return;
+        }
         if (is_mouse_over) {
             if (!event.buttons == 1) {
                 return;

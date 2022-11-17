@@ -13,6 +13,61 @@ export function add_node_id_headers(table_header_row, yukon_state) {
         table_header_cell.innerHTML = avatar.node_id;
         table_header_cell.title = avatar.name;
         table_header_cell.classList.add("node_id_header");
+        let isMouseOverLoopRunning = false;
+        document.addEventListener("mouseup", function(event) {
+            if(isMouseOverLoopRunning) {
+                isMouseOverLoopRunning = false;
+            }
+        });
+        table_header_cell.addEventListener('mousedown', function() {
+            if (yukon_state.is_cursor_snapping_column) {
+                console.log("Dragging column");
+                yukon_state.edge_drag_start_position_x = yukon_state.mousePos.x;
+                yukon_state.is_cursor_dragging_column = true;
+            }
+        });
+        table_header_cell.addEventListener("mouseout", function() {
+            isMouseOverLoopRunning = false;
+            document.body.style.cursor = "default";
+        });
+        // Add a listener to the hover event of table_header_cell
+        table_header_cell.addEventListener('mouseover', function() {
+            console.log("Mouse over node id header");
+            isMouseOverLoopRunning = true;
+            let myInterval = null;
+            myInterval = setInterval(function() {
+                const position = table_header_cell.getBoundingClientRect();
+                const x = position.left;
+                const y = position.top;
+                const width = position.width;
+                // console.log("x: " + x + " y: " + y + " width: " + width);
+                // Calculate the position of the right edge of the element
+                const right_edge = x + width;
+                // console.log("right_edge: " + right_edge);
+                const mouse_distance_from_right_edge = Math.abs(yukon_state.mousePos.x - right_edge);
+                // console.log("mouse_distance_from_right_edge: " + mouse_distance_from_right_edge);
+                const is_snapping = mouse_distance_from_right_edge <= yukon_state.settings.column_edge_snap_distance;
+                if (is_snapping && isMouseOverLoopRunning) {
+                    // console.log("Mouse snapping over edge of node_id_header " + avatar.node_id);
+                    yukon_state.is_cursor_snapping_column = true;
+                    document.body.style.cursor = "ew-resize";
+                    if(yukon_state.is_cursor_dragging_column) {
+                        const distanceBetweenStartAndCurrent = yukon_state.mousePos.x - yukon_state.edge_drag_start_position_x;
+                        console.log("distanceBetweenStartAndCurrent: " + distanceBetweenStartAndCurrent);
+                    }
+                } else {
+                    document.body.style.cursor = "default";
+                    yukon_state.is_cursor_snapping_column = false;
+                }
+                if(!isMouseOverLoopRunning && !yukon_state.is_cursor_dragging_column) {
+                    clearInterval(myInterval);
+                    document.body.style.cursor = "default";
+                    yukon_state.is_cursor_snapping_column = false;
+                }
+            }, 5);
+
+            // yukon_state.mousePos
+        });
         table_header_cell.setAttribute("data-node_id", avatar.node_id);
         table_header_row.appendChild(table_header_cell);
         if (yukon_state.settings.showAlotOfButtons) {

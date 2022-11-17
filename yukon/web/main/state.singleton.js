@@ -25,6 +25,7 @@ var yukon_state = {
     "is_currently_restoring_default_layout": false,
     "all_settings": null,
     containerElementToContainerObjectMap: new WeakMap(),
+
     mousePos: null,
     "settings": {
         "showAlotOfButtons": false,
@@ -36,5 +37,6 @@ var yukon_state = {
         "preferSmallerFileSelectionDialog": false,
         "alwaysSaveAsNetoworkConfig": false,
         "yamlFlowLevel": -1,
+        "column_edge_snap_distance": 10,
     }
 };
