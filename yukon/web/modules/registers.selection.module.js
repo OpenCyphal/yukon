@@ -69,7 +69,7 @@ export function getAllEntireColumnsThatAreSelected(yukon_state) {
 
 export function make_select_column(node_id, is_mouse_over, yukon_state) {
     return function (event) {
-        if (yukon_state.is_cursor_snapping_column) {
+        if (yukon_state.is_cursor_snapping_column || yukon_state.is_cursor_dragging_column) {
             return;
         }
         if (is_mouse_over) {
@@ -214,6 +214,9 @@ export function make_select_row(register_name, is_mouse_over, yukon_state) {
 
 export function make_select_cell(avatar, register_name, is_mouse_over, yukon_state) {
     let selectCell = function () {
+        if (yukon_state.is_cursor_snapping_column || yukon_state.is_cursor_dragging_column) {
+            return;
+        }
         if (!yukon_state.selections.selected_registers[[avatar.node_id, register_name]]) {
             yukon_state.selections.selected_registers[[avatar.node_id, register_name]] = true;
             // If shift is being held down

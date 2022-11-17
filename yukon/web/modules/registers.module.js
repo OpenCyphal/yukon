@@ -13,22 +13,32 @@ export function add_node_id_headers(table_header_row, yukon_state) {
         table_header_cell.innerHTML = avatar.node_id;
         table_header_cell.title = avatar.name;
         table_header_cell.classList.add("node_id_header");
+        let isSnappingThisElement = false;
+        let isDraggingThisElement = false;
         let isMouseOverLoopRunning = false;
         document.addEventListener("mouseup", function(event) {
+            yukon_state.is_cursor_dragging_column = false;
+            isDraggingThisElement = false;
             if(isMouseOverLoopRunning) {
                 isMouseOverLoopRunning = false;
             }
         });
+
+        let initialWidth = table_header_cell.offsetWidth;
         table_header_cell.addEventListener('mousedown', function() {
-            if (yukon_state.is_cursor_snapping_column) {
-                console.log("Dragging column");
+            if (isSnappingThisElement) {
+                initialWidth = table_header_cell.offsetWidth;
                 yukon_state.edge_drag_start_position_x = yukon_state.mousePos.x;
+                console.log("Dragging column is now active");
                 yukon_state.is_cursor_dragging_column = true;
+                isDraggingThisElement = true;
             }
         });
         table_header_cell.addEventListener("mouseout", function() {
-            isMouseOverLoopRunning = false;
-            document.body.style.cursor = "default";
+            if(!isDraggingThisElement) {
+                isMouseOverLoopRunning = false;
+                document.body.style.cursor = "default";
+            }
         });
         // Add a listener to the hover event of table_header_cell
         table_header_cell.addEventListener('mouseover', function() {
@@ -50,19 +60,34 @@ export function add_node_id_headers(table_header_row, yukon_state) {
                 if (is_snapping && isMouseOverLoopRunning) {
                     // console.log("Mouse snapping over edge of node_id_header " + avatar.node_id);
                     yukon_state.is_cursor_snapping_column = true;
+                    isSnappingThisElement = true;
                     document.body.style.cursor = "ew-resize";
-                    if(yukon_state.is_cursor_dragging_column) {
+                } else {
+                    if(!isDraggingThisElement) {
+                        document.body.style.cursor = "default";
+                        yukon_state.is_cursor_snapping_column = false;
+                        isSnappingThisElement = false;
+                    }
+                }
+                if(isDraggingThisElement) {
                         const distanceBetweenStartAndCurrent = yukon_state.mousePos.x - yukon_state.edge_drag_start_position_x;
+                        // Get all td elements that have the node_id attribute set to avatar.node_id
+                        const node_id_cells = document.querySelectorAll("td[node_id='" + avatar.node_id + "']");
+                        const desiredWidth = (initialWidth + distanceBetweenStartAndCurrent);
+                        for(const node_id_cell of node_id_cells) {
+                            node_id_cell.style.setProperty( "width",   desiredWidth+ "px", "important");
+                            node_id_cell.style.setProperty( "min-width",  desiredWidth + "px", "important");
+                        }
+                        table_header_cell.style.setProperty( "width",  desiredWidth + "px", "important");
+                        table_header_cell.style.setProperty( "min-width",  desiredWidth + "px", "important");
+                        // table_header_cell.style.minWidth = desiredWidth + "px !important";
                         console.log("distanceBetweenStartAndCurrent: " + distanceBetweenStartAndCurrent);
                     }
-                } else {
-                    document.body.style.cursor = "default";
-                    yukon_state.is_cursor_snapping_column = false;
-                }
-                if(!isMouseOverLoopRunning && !yukon_state.is_cursor_dragging_column) {
+                if(!isMouseOverLoopRunning && !isDraggingThisElement) {
                     clearInterval(myInterval);
                     document.body.style.cursor = "default";
                     yukon_state.is_cursor_snapping_column = false;
+                    isSnappingThisElement = false;
                 }
             }, 5);
 
