@@ -77,9 +77,11 @@ export function add_node_id_headers(table_header_row, yukon_state) {
                         for(const node_id_cell of node_id_cells) {
                             node_id_cell.style.setProperty( "width",   desiredWidth+ "px", "important");
                             node_id_cell.style.setProperty( "min-width",  desiredWidth + "px", "important");
+                            node_id_cell.style.setProperty( "max-width",  desiredWidth + "px", "important");
                         }
                         table_header_cell.style.setProperty( "width",  desiredWidth + "px", "important");
                         table_header_cell.style.setProperty( "min-width",  desiredWidth + "px", "important");
+                        table_header_cell.style.setProperty( "max-width",  desiredWidth + "px", "important");
                         // table_header_cell.style.minWidth = desiredWidth + "px !important";
                         console.log("distanceBetweenStartAndCurrent: " + distanceBetweenStartAndCurrent);
                     }
