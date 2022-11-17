@@ -1,3 +1,4 @@
+import logging
 import typing
 import dronecan.driver
 from pycyphal.transport.can import CANCapture, CANTransport
@@ -6,8 +7,14 @@ from pycyphal.transport.can.media import DataFrame, FrameFormat, Envelope
 from yukon.domain.god_state import GodState
 
 
+logger = logging.getLogger(__name__)
+
+logger.setLevel(logging.DEBUG)
+
+
 async def do_forward_dronecan_work(state: GodState) -> None:
     if not state.dronecan_traffic_queues.output_queue.empty():
+        logger.debug("There are CAN frames to forward to dronecan")
         envelopes_to_send: typing.List[Envelope] = []
         transport = typing.cast(CANTransport, state.cyphal.local_node.presentation.transport)
         for frame in state.dronecan_traffic_queues.output_queue.queue:

@@ -8,6 +8,8 @@ import pycyphal
 from pycyphal.application import make_node, NodeInfo, make_registry
 import pycyphal.transport.can
 import dronecan
+from pycyphal.transport.can import CANCapture
+from pycyphal.transport.udp import UDPCapture
 
 import uavcan
 import uavcan.pnp
@@ -23,6 +25,7 @@ from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_request import UpdateRegisterRequest
+from yukon.services.cyphal_worker.forward_dronecan_work import do_forward_dronecan_work
 from yukon.services.cyphal_worker.unsubscribe_requests_work import do_unsubscribe_requests_work
 from yukon.services.cyphal_worker.detach_transport_work import do_detach_transport_work
 from yukon.services.cyphal_worker.subscribe_requests_work import do_subscribe_requests_work
@@ -62,12 +65,25 @@ def cyphal_worker(state: GodState) -> None:
 
             state.cyphal.local_node.start()
 
-            def handle_transmit_message_to_dronecan(capture: pycyphal.transport.Capture) -> None:
-                if isinstance(capture, pycyphal.transport.can.CANCapture):
-                    can_frame = dronecan.driver.CANFrame(
-                        capture.frame.identifier, capture.frame.data, True, canfd=False
-                    )
-                    state.cyphal.dronecan_traffic_queues.input_queue.put_nowait(can_frame)
+            async def forward_dronecan_loop() -> None:
+                while True:
+                    await do_forward_dronecan_work(state)
+                    await asyncio.sleep(0.1)
+
+            task = asyncio.create_task(forward_dronecan_loop())
+
+            def handle_transmit_message_to_dronecan(
+                redundant_capture: pycyphal.transport.redundant.RedundantCapture,
+            ) -> None:
+                # TODO: This should actually make sure it is a CAN capture not any other transport
+                if isinstance(redundant_capture, pycyphal.transport.redundant.RedundantCapture):
+                    capture = redundant_capture.inferior
+                    if isinstance(capture, CANCapture):
+                        can_frame = dronecan.driver.CANFrame(
+                            capture.frame.identifier, capture.frame.data, True, canfd=False
+                        )
+                        logger.debug("Dronecan is receiving a message: %r", can_frame)
+                        state.dronecan_traffic_queues.input_queue.put_nowait(can_frame)
 
             state.cyphal.local_node.presentation.transport.begin_capture(handle_transmit_message_to_dronecan)
             state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
@@ -104,12 +120,13 @@ def cyphal_worker(state: GodState) -> None:
                     state.cyphal.file_server.start()
                 elif isinstance(queue_element, RequestRunDronecanFirmwareUpdater):
                     logger.debug("A request to run the DroneCAN firmware updater was received.")
-                    is_dronecan_firmware_path_available = (
-                            state.settings["DroneCAN firmware substitution"]["Substitute firmware path"][
-                                "value"].value != ""
-                    )
+                    fpath = state.settings["DroneCAN firmware substitution"]["Substitute firmware path"]["value"].value
+                    is_dronecan_firmware_path_available = fpath != ""
                     if is_dronecan_firmware_path_available:
-                        state.dronecan.thread = threading.Thread(target=run_dronecan_firmware_updater, args=(state,))
+                        state.dronecan.thread = threading.Thread(
+                            target=run_dronecan_firmware_updater, args=(state, fpath)
+                        )
+                        state.dronecan.thread.start()
                         logger.info("DroneCAN firmware substitution is now " + "enabled")
                     else:
                         logger.error("DroneCAN firmware path is not set")
