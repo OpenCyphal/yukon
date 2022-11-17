@@ -97,12 +97,12 @@ class ContextMenu {
       }
     });
     document.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
       // If e.target starts with a . then check if the classList contains the target, if e.target starts with a # then check if the id is the target
       const isId = this.target[0] === "#";
       const isClass = this.target[0] === ".";
       if ((isClass && e.target.classList.contains(this.target.substring(1))) || (isId && e.target.id === this.target.substring(1))) {
         this.closeMenu(this.renderedMenu)
+        e.preventDefault();
         this.renderedMenu = this.renderMenu();
 
         this.elementOpenedOn = e.target;

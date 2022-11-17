@@ -1,10 +1,10 @@
-import os
 import sys
 from datetime import datetime
 import json
 import re
 import typing
 from pathlib import Path
+from queue import Empty
 from time import sleep, monotonic
 import logging
 
@@ -12,11 +12,15 @@ import yaml
 from uuid import uuid4
 from time import time
 
+from yukon.domain.detach_transport_request import DetachTransportRequest
+from yukon.domain.proxy_objects import ReactiveValue
 from yukon.services.settings_handler import (
     save_settings,
     load_settings,
     loading_settings_into_yukon,
     add_all_dsdl_paths_to_pythonpath,
+    recursive_reactivize_settings,
+    modify_settings_values_from_a_new_copy,
 )
 from yukon.domain.unsubscribe_request import UnsubscribeRequest
 from yukon.services.utils import get_datatypes_from_packages_directory_path
@@ -49,33 +53,6 @@ from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.NOTSET)
-
-
-def save_text_into_file(file_contents: str) -> None:
-    import tkinter
-    import tkinter as tk
-    from tkinter.filedialog import SaveAs
-
-    root = tk.Tk()
-    root.geometry("1x1+0+0")
-    root.eval("tk::PlaceWindow . center")
-    second_win = tkinter.Toplevel(root)
-    second_win.withdraw()
-    root.eval(f"tk::PlaceWindow {str(second_win)} center")
-    # Show window again and lift it to top so it can get focus,
-    # otherwise dialogs will end up behind the terminal.
-    root.deiconify()
-    root.lift()
-    root.focus_force()
-    save_as_dialog = SaveAs(root)
-    file_path = save_as_dialog.show()
-    root.withdraw()
-    root.destroy()
-    if file_path:
-        with open(file_path, "w") as f:
-            f.write(file_contents)
-    else:
-        logger.warning("No file selected")
 
 
 def make_sure_is_deserialized(any_conf: typing.Any) -> typing.Any:
@@ -136,6 +113,9 @@ def unexplode_a_register(state: GodState, node_id: int, register_name: str, regi
     return json.dumps(explode_value(value))
 
 
+logger.setLevel(logging.DEBUG)
+
+
 def unsimplify_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deserialized_conf: typing.Any) -> str:
     if is_configuration_simplified(deserialized_conf):
         if is_network_configuration(deserialized_conf):
@@ -147,8 +127,14 @@ def unsimplify_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deser
                 if not deserialized_node_specific_conf:
                     continue
                 for register_name, simplified_value in deserialized_node_specific_conf.items():
+                    logger.debug("Unsimplifying %s", register_name)
                     simplified_value2 = json.loads(json.dumps(simplified_value))
+                    logger.debug("The simplified value is %r", simplified_value2)
                     prototype = unexplode_value(avatar.register_exploded_values[register_name])
+                    logger.debug("prototype: %r", prototype)
+                    if simplified_value2 == "NaN":
+                        simplified_value2 = float("nan")
+                    # normal
                     typed_value = explode_value(unexplode_value(simplified_value2, prototype))
                     deserialized_node_specific_conf[register_name] = typed_value
             return json.dumps(deserialized_conf)
@@ -244,9 +230,10 @@ class Api:
         self.last_avatars = []
 
     def get_socketcan_ports(self) -> Response:
-        _list = get_socketcan_ports()
+        socket_can_ports = get_socketcan_ports()
+        _list = [{"name": port_name, "already_used": False} for port_name in socket_can_ports]
         for port in _list:
-            if self.state.cyphal.already_used_transport_interfaces.get("socketcan:" + port.get("device")):
+            if self.state.cyphal.already_used_transport_interfaces.get("socketcan:" + port["name"]):
                 port["already_used"] = True
         _list_hash = json.dumps(_list, sort_keys=True)
         return jsonify(
@@ -270,19 +257,6 @@ class Api:
     def add_local_message(self, message: str, severity: int) -> None:
         add_local_message(self.state, message, severity)
 
-    def save_yaml(self, text: str, convert_to_numbers: bool = True) -> None:
-        new_text = make_yaml_string_node_ids_numbers(text)
-        if not convert_to_numbers:
-            save_text_into_file(text)
-            return
-        save_text_into_file(new_text)
-
-    def save_text(self, text: str) -> None:
-        save_text_into_file(text)
-
-    def save_all_of_register_configuration(self, serialized_configuration: str) -> None:
-        save_text_into_file(serialized_configuration)
-
     def import_all_of_register_configuration(self) -> str:
         return import_candump_file_contents()
 
@@ -298,11 +272,11 @@ class Api:
 
     def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
         request = ApplyConfigurationRequest(node_id, configuration, is_network_configuration(configuration))
-        self.state.queues.apply_configuration.put(request)
+        self.state.queues.god_queue.put_nowait(request)
 
     def apply_all_of_configuration(self, configuration: str) -> None:
         request = ApplyConfigurationRequest(None, configuration, is_network_configuration(configuration))
-        self.state.queues.apply_configuration.put(request)
+        self.state.queues.god_queue.put_nowait(request)
 
     def simplify_configuration(self, configuration: str) -> Response:
         if isinstance(configuration, str):
@@ -348,9 +322,11 @@ class Api:
 
         new_value: uavcan.register.Value_1 = unexplode_value(register_value)
         request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id), time())
-        self.state.queues.update_registers.put(request)
+        self.state.queues.god_queue.put_nowait(request)
         timeout = time() + 5
+
         while time() < timeout:
+            # This is a get from a dictionary, not a queue, so it is not blocking
             response = self.state.queues.update_registers_response.get(request.request_id)
             if not response:
                 sleep(0.1)
@@ -374,16 +350,12 @@ class Api:
         interface.udp_mtu = int(udp_mtu)
         interface.is_udp = True
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-        self.state.queues.attach_transport.put(atr)
-        timeout = time() + 5
-        while True:
-            if time() >= timeout:
-                raise Exception("Failed to receive a response for attached CAN transport.")
-            if self.state.queues.attach_transport_response.empty():
-                sleep(0.1)
-            else:
-                break
-        return jsonify(self.state.queues.attach_transport_response.get())
+        self.state.queues.god_queue.put_nowait(atr)
+        try:
+            response = self.state.queues.attach_transport_response.get(timeout=5)
+        except Empty:
+            raise Exception("Failed to receive a response for attached CAN transport.")
+        return jsonify(response)
 
     def attach_transport(
         self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
@@ -396,30 +368,21 @@ class Api:
         interface.iface = interface_string
 
         atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-        self.state.queues.attach_transport.put(atr)
-        timeout = time() + 5
-        while True:
-            if time() >= timeout:
-                raise Exception("Failed to receive a response for attached transport.")
-            if self.state.queues.attach_transport_response.empty():
-                sleep(0.1)
-            else:
-                break
-        return jsonify(self.state.queues.attach_transport_response.get())
+        self.state.queues.god_queue.put_nowait(atr)
+        try:
+            response = self.state.queues.attach_transport_response.get(timeout=5)
+        except Empty:
+            raise Exception("Failed to receive a response for attached CAN transport.")
+        return jsonify(response)
 
     def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
-        self.state.queues.detach_transport.put(hash)
-        timeout = time() + 5
-        while True:
-            if time() >= timeout:
-                raise Exception("Failed to receive a response for detached transport.")
-            if self.state.queues.detach_transport_response.empty():
-                sleep(0.1)
-            else:
-                break
-
-        return jsonify(self.state.queues.detach_transport_response.get())
+        self.state.queues.god_queue.put_nowait(DetachTransportRequest(hash))
+        try:
+            response = self.state.queues.detach_transport_response.get(timeout=5)
+        except Empty:
+            raise Exception("Failed to receive a response for detached CAN transport.")
+        return jsonify(response)
 
     # def save_registers_of_node(self, node_id: int, registers: typing.Dict["str"]) -> None:
     def show_yakut(self) -> None:
@@ -428,7 +391,7 @@ class Api:
     def reread_registers(self, request_contents: typing.Dict[int, typing.Dict[str, bool]]) -> None:
         """yukon/web/modules/registers.data.module.js explains the request_contents structure."""
         request = RereadRegistersRequest(uuid4(), request_contents)
-        self.state.queues.reread_registers.put(request)
+        self.state.queues.god_queue.put_nowait(request)
 
     def hide_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = True
@@ -464,15 +427,12 @@ class Api:
 
     def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
         send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)
-        self.state.queues.send_command.put(send_command_request)
-        timeout = time() + 5
-        while time() < timeout:
-            if self.state.queues.command_response.empty():
-                sleep(0.1)
-            else:
-                break
-        command_response = self.state.queues.command_response.get()
-        return {"success": command_response.is_success, "message": command_response.message}
+        self.state.queues.god_queue.put_nowait(send_command_request)
+        try:
+            response = self.state.queues.command_response.get(timeout=5)
+        except Empty:
+            raise Exception("Failed to receive a response for sending command.")
+        return jsonify({"success": response.is_success, "message": response.message})
 
     def reread_node(self, node_id: str) -> None:
         node_id_as_int = int(node_id)
@@ -491,6 +451,7 @@ class Api:
 
     def close_yukon(self) -> None:
         self.state.gui.gui_running = False
+        self.state.queues.god_queue.put_nowait("Exiting")  # This could be anything
 
     def yaml_to_yaml(self, yaml_in: str) -> Response:
         text_response = Dumper().dumps(yaml.load(yaml_in, Loader))
@@ -504,26 +465,22 @@ class Api:
         add_all_dsdl_paths_to_pythonpath(self.state)
         if subject_id:
             subject_id = int(subject_id)
-        self.state.queues.subscribe_requests.put(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
-        while True:
-            if self.state.queues.subscribe_requests_responses.empty():
-                sleep(0.1)
-            else:
-                break
-        subscribe_response = self.state.queues.subscribe_requests_responses.get()
-        return jsonify(subscribe_response)
+        self.state.queues.god_queue.put_nowait(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
+        try:
+            response = self.state.queues.subscribe_requests_responses.get(timeout=5)
+        except Empty:
+            raise Exception("Failed to receive a response for subscribing.")
+        return jsonify(response)
 
     def unsubscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
         if subject_id:
             subject_id = int(subject_id)
-        self.state.queues.unsubscribe_requests.put(UnsubscribeRequest(SubjectSpecifier(subject_id, datatype)))
-        while True:
-            if self.state.queues.unsubscribe_requests_responses.empty():
-                sleep(0.1)
-            else:
-                break
-        unsubscribe_response = self.state.queues.unsubscribe_requests_responses.get()
-        return jsonify(unsubscribe_response)
+        self.state.queues.god_queue.put_nowait(UnsubscribeRequest(SubjectSpecifier(subject_id, datatype)))
+        try:
+            response = self.state.queues.unsubscribe_requests_responses.get(timeout=5)
+        except Empty:
+            raise Exception("Failed to receive a response for unsubscribing.")
+        return jsonify(response)
 
     def fetch_messages_for_subscription_specifiers(self, specifiers: str) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
@@ -555,7 +512,7 @@ class Api:
 
     def set_settings(self, settings: dict) -> None:
         assert isinstance(settings, dict)
-        self.state.settings = settings
+        modify_settings_values_from_a_new_copy(self.state.settings, settings)
 
     def get_settings(self) -> Response:
         return jsonify(self.state.settings)

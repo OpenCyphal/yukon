@@ -1,5 +1,7 @@
 import dataclasses
+import inspect
 import json
+import logging
 from json.encoder import encode_basestring_ascii, encode_basestring, c_make_encoder, _make_iterencode  # type: ignore
 import typing
 from uuid import UUID
@@ -7,6 +9,8 @@ from uuid import UUID
 import pycyphal
 
 import uavcan
+from yukon.domain.proxy_objects import ReactiveValue
+
 from yukon.services.value_utils import explode_value
 from yukon.domain.attach_transport_response import AttachTransportResponse
 from yukon.domain.update_register_log_item import UpdateRegisterLogItem
@@ -15,9 +19,23 @@ from yukon.domain.detach_transport_response import DetachTransportResponse
 
 INFINITY = float("inf")
 
+_logger = logging.getLogger(__name__)
+# _logger.setLevel(logging.DEBUG)
+
 
 class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, o: typing.Any) -> typing.Any:
+        if "save_settings" in [x[3] for x in inspect.stack()]:
+            _logger.debug("Coming from save_settings")
+        _logger.debug("Serializing %r: %r", type(o), o)
+        if isinstance(o, ReactiveValue):
+            if isinstance(o.value, ReactiveValue):
+                _logger.warning("ReactiveValue contains ReactiveValue")
+                raise TypeError("ReactiveValue contains ReactiveValue")
+            if isinstance(o.value, (float, int, str, bool)):
+                return o.value
+            else:
+                raise TypeError("ReactiveValue contains unsupported type %r", type(o.value))
         if isinstance(o, UUID):
             return str(o)
         if isinstance(o, DetachTransportResponse):
@@ -55,7 +73,6 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             return dataclasses.asdict(o)
         if hasattr(o, "_serialize_"):
             pycyphal.dsdl.to_builtin(o)
-
         return super().default(o)
 
     def iterencode(self, o: typing.Any, _one_shot: bool = False) -> typing.Any:

@@ -61,38 +61,35 @@ def assemble_response_and_log_item(
         add_local_message(state, message, message_severity, register_update.register_name)
 
 
-async def do_update_register_work(state: GodState) -> None:
-    if not state.queues.update_registers.empty():
-        register_update = state.queues.update_registers.get_nowait()
-        # make a uavcan.register.Access_1 request to the node
+async def do_update_register_work(state: GodState, register_update: UpdateRegisterRequest) -> None:
+    try:
         try:
-            try:
-                value_before_update: str = state.avatar.avatars_by_node_id[register_update.node_id].register_values[
-                    register_update.register_name
-                ]
-            except KeyError as e:
-                raise NodeDoesNotExist(register_update.node_id)
-            response_received_time = None
-            client = state.cyphal.local_node.make_client(uavcan.register.Access_1, register_update.node_id)
-            request = uavcan.register.Access_1.Request()
-            request.name.name = register_update.register_name
-            request.value = register_update.value
-            # We don't need the response here because it is snooped by an avatar anyway
-            response = await client.call(request)
-            if response is None:
-                raise NoResponse(register_update.node_id)
-            access_response, transfer_object = response
-            if not access_response.mutable:
-                raise NoSuccess("Failed to update register {}, it is not mutable".format(register_update.register_name))
-            if isinstance(access_response.value.empty, uavcan.primitive.Empty_1):
-                raise RegisterDoesNotExistOnNode(register_update.register_name, register_update.node_id)
-            assemble_response_and_log_item(state, register_update, value_before_update, None, True)
-        except NoSuccess as e:
-            tb = traceback.format_exc()
-            assemble_response_and_log_item(state, register_update, value_before_update, tb, False)
-        except RegisterDoesNotExistOnNode as e:
-            tb = traceback.format_exc()
-            assemble_response_and_log_item(state, register_update, value_before_update, tb, False)
-        except NodeDoesNotExist as e:
-            tb = traceback.format_exc()
-            assemble_response_and_log_item(state, register_update, None, tb, False)
+            value_before_update: str = state.avatar.avatars_by_node_id[register_update.node_id].register_values[
+                register_update.register_name
+            ]
+        except KeyError as e:
+            raise NodeDoesNotExist(register_update.node_id)
+        response_received_time = None
+        client = state.cyphal.local_node.make_client(uavcan.register.Access_1, register_update.node_id)
+        request = uavcan.register.Access_1.Request()
+        request.name.name = register_update.register_name
+        request.value = register_update.value
+        # We don't need the response here because it is snooped by an avatar anyway
+        response = await client.call(request)
+        if response is None:
+            raise NoResponse(register_update.node_id)
+        access_response, transfer_object = response
+        if not access_response.mutable:
+            raise NoSuccess("Failed to update register {}, it is not mutable".format(register_update.register_name))
+        if isinstance(access_response.value.empty, uavcan.primitive.Empty_1):
+            raise RegisterDoesNotExistOnNode(register_update.register_name, register_update.node_id)
+        assemble_response_and_log_item(state, register_update, value_before_update, None, True)
+    except NoSuccess as e:
+        tb = traceback.format_exc()
+        assemble_response_and_log_item(state, register_update, value_before_update, tb, False)
+    except RegisterDoesNotExistOnNode as e:
+        tb = traceback.format_exc()
+        assemble_response_and_log_item(state, register_update, value_before_update, tb, False)
+    except NodeDoesNotExist as e:
+        tb = traceback.format_exc()
+        assemble_response_and_log_item(state, register_update, None, tb, False)

@@ -67,6 +67,10 @@ class FileServer:
         """
         return self._roots
 
+    @roots.setter
+    def roots(self, value: typing.Iterable[typing.Union[str, pathlib.Path]]) -> None:
+        self._roots = [pathlib.Path(x).resolve() for x in value]
+
     def locate(self, p: typing.Union[pathlib.Path, str, pathlib.Path]) -> typing.Tuple[pathlib.Path, pathlib.Path]:
         """
         Iterate through :attr:`roots` until a root r is found such that ``r/p`` exists and return ``(r, p)``.

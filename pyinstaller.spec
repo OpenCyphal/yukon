@@ -75,9 +75,21 @@ def detect_hidden_imports() -> typing.List[str]:
 
 
 detected_hidden_imports = detect_hidden_imports()
-detected_hidden_imports += ["can.interfaces.slcan"]
-detected_hidden_imports += ["can.interfaces.virtual"]
+detected_hidden_imports += ["can.interfaces"]
 detected_hidden_imports += ["pkg_about"]
+detected_hidden_imports += ["__future__", "pkg_resources", "sched", "multiprocessing", "sqlite3", "serial",
+                            "python-can", "dronecan", "wrapt"]
+
+if my_os == "Linux":
+    datas += [("venv/lib/python3.10/site-packages/dronecan", "dronecan")]
+elif my_os == "Windows":
+    datas += [("venv\\Lib\\site-packages\\dronecan", "dronecan")]
+
+if my_os == "Linux":
+    datas += [("venv/lib/python3.10/site-packages/can", "can")]
+elif my_os == "Windows":
+    datas += [("venv\\Lib\\site-packages\\can", "can")]
+
 if my_os == "Linux":
     detected_hidden_imports += ["libpcap"]
 # noinspection PyUnresolvedReferences
@@ -89,7 +101,7 @@ a = Analysis(
     hiddenimports=detected_hidden_imports + ["pycyphal"] + ["pydsdl"] + ["sentry_sdk"] + ["nunavut"],
     hookspath=[],
     runtime_hooks=[],
-    excludes=["uavcan", "reg", "sirius_cyber_corp", "zubax", "zubax_internet"],
+    excludes=["uavcan", "reg", "sirius_cyber_corp", "zubax", "zubax_internet", "dronecan", "can"],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=None,

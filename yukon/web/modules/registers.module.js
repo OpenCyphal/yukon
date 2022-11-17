@@ -6,12 +6,95 @@ import {getDictionaryValueFieldName} from './utilities.module.js';
 import {createGenericModal} from './modal.module.js';
 
 export function add_node_id_headers(table_header_row, yukon_state) {
-    const current_avatars = yukon_state.current_avatars;
-    current_avatars.forEach(function (avatar) {
+    const avatars_copy = Array.from(yukon_state.current_avatars)
+    avatars_copy.sort(compareAvatar);
+    for(const avatar of avatars_copy) {
         let table_header_cell = document.createElement('th');
         table_header_cell.innerHTML = avatar.node_id;
         table_header_cell.title = avatar.name;
         table_header_cell.classList.add("node_id_header");
+        let isSnappingThisElement = false;
+        let isDraggingThisElement = false;
+        let isMouseOverLoopRunning = false;
+        document.addEventListener("mouseup", function(event) {
+            yukon_state.is_cursor_dragging_column = false;
+            isDraggingThisElement = false;
+            if(isMouseOverLoopRunning) {
+                isMouseOverLoopRunning = false;
+            }
+        });
+
+        let initialWidth = table_header_cell.offsetWidth;
+        table_header_cell.addEventListener('mousedown', function() {
+            if (isSnappingThisElement) {
+                initialWidth = table_header_cell.offsetWidth;
+                yukon_state.edge_drag_start_position_x = yukon_state.mousePos.x;
+                console.log("Dragging column is now active");
+                yukon_state.is_cursor_dragging_column = true;
+                isDraggingThisElement = true;
+            }
+        });
+        table_header_cell.addEventListener("mouseout", function() {
+            if(!isDraggingThisElement) {
+                isMouseOverLoopRunning = false;
+                document.body.style.cursor = "default";
+            }
+        });
+        // Add a listener to the hover event of table_header_cell
+        table_header_cell.addEventListener('mouseover', function() {
+            console.log("Mouse over node id header");
+            isMouseOverLoopRunning = true;
+            let myInterval = null;
+            myInterval = setInterval(function() {
+                const position = table_header_cell.getBoundingClientRect();
+                const x = position.left;
+                const y = position.top;
+                const width = position.width;
+                // console.log("x: " + x + " y: " + y + " width: " + width);
+                // Calculate the position of the right edge of the element
+                const right_edge = x + width;
+                // console.log("right_edge: " + right_edge);
+                const mouse_distance_from_right_edge = Math.abs(yukon_state.mousePos.x - right_edge);
+                // console.log("mouse_distance_from_right_edge: " + mouse_distance_from_right_edge);
+                const is_snapping = mouse_distance_from_right_edge <= yukon_state.settings.column_edge_snap_distance;
+                if (is_snapping && isMouseOverLoopRunning) {
+                    // console.log("Mouse snapping over edge of node_id_header " + avatar.node_id);
+                    yukon_state.is_cursor_snapping_column = true;
+                    isSnappingThisElement = true;
+                    document.body.style.cursor = "ew-resize";
+                } else {
+                    if(!isDraggingThisElement) {
+                        document.body.style.cursor = "default";
+                        yukon_state.is_cursor_snapping_column = false;
+                        isSnappingThisElement = false;
+                    }
+                }
+                if(isDraggingThisElement) {
+                        const distanceBetweenStartAndCurrent = yukon_state.mousePos.x - yukon_state.edge_drag_start_position_x;
+                        // Get all td elements that have the node_id attribute set to avatar.node_id
+                        const node_id_cells = document.querySelectorAll("td[node_id='" + avatar.node_id + "']");
+                        const desiredWidth = (initialWidth + distanceBetweenStartAndCurrent);
+                        for(const node_id_cell of node_id_cells) {
+                            node_id_cell.style.setProperty( "width",   desiredWidth+ "px", "important");
+                            node_id_cell.style.setProperty( "min-width",  desiredWidth + "px", "important");
+                            node_id_cell.style.setProperty( "max-width",  desiredWidth + "px", "important");
+                        }
+                        table_header_cell.style.setProperty( "width",  desiredWidth + "px", "important");
+                        table_header_cell.style.setProperty( "min-width",  desiredWidth + "px", "important");
+                        table_header_cell.style.setProperty( "max-width",  desiredWidth + "px", "important");
+                        // table_header_cell.style.minWidth = desiredWidth + "px !important";
+                        console.log("distanceBetweenStartAndCurrent: " + distanceBetweenStartAndCurrent);
+                    }
+                if(!isMouseOverLoopRunning && !isDraggingThisElement) {
+                    clearInterval(myInterval);
+                    document.body.style.cursor = "default";
+                    yukon_state.is_cursor_snapping_column = false;
+                    isSnappingThisElement = false;
+                }
+            }, 5);
+
+            // yukon_state.mousePos
+        });
         table_header_cell.setAttribute("data-node_id", avatar.node_id);
         table_header_row.appendChild(table_header_cell);
         if (yukon_state.settings.showAlotOfButtons) {
@@ -46,14 +129,14 @@ export function add_node_id_headers(table_header_row, yukon_state) {
         }
         table_header_cell.onmousedown = make_select_column(avatar.node_id, null, yukon_state);
         table_header_cell.onmouseover = make_select_column(avatar.node_id, true, yukon_state);
-    });
+    }
 }
 
 export function make_empty_table_header_row_cell(table_header_row, yukon_state) {
-    var empty_table_header_row_cell = document.createElement('th');
+    const empty_table_header_row_cell = document.createElement('th');
     if (yukon_state.settings.showAlotOfButtons) {
         // Add a button into the empty table header row cell
-        var button = document.createElement('button');
+        const button = document.createElement('button');
         button.innerHTML = 'Apply sel. conf to all nodes';
         button.onclick = function () {
             if (yukon_state.selections.selected_config != null && yukon_state.available_configurations[yukon_state.selections.selected_config] != null) {
@@ -61,12 +144,12 @@ export function make_empty_table_header_row_cell(table_header_row, yukon_state) 
             }
         }
         empty_table_header_row_cell.appendChild(button);
-        var button = document.createElement('button');
-        button.innerHTML = 'Save all of configuration';
-        button.onclick = function () {
+        const button2 = document.createElement('button');
+        button2.innerHTML = 'Save all of configuration';
+        button2.onclick = function () {
             export_all_selected_registers(null, true)
         }
-        empty_table_header_row_cell.appendChild(button);
+        empty_table_header_row_cell.appendChild(button2);
     }
     table_header_row.appendChild(empty_table_header_row_cell);
 }
@@ -108,9 +191,20 @@ export function addContentForRegisterName(register_name, filter_keyword_inclusiv
         make_header_cell();
     }
 }
+function compareAvatar( a, b ) {
+  if ( a.node_id < b.node_id ){
+    return -1;
+  }
+  if ( a.node_id > b.node_id ){
+    return 1;
+  }
+  return 0;
+}
 
 export function addContentForCells(register_name, table_register_row, yukon_state) {
-    yukon_state.current_avatars.forEach(function (avatar) {
+    const avatars_copy = Array.from(yukon_state.current_avatars)
+    avatars_copy.sort(compareAvatar);
+    for(const avatar of avatars_copy) {
         // ALL THE REGISTER VALUES HERE
         const table_cell = document.createElement('td');
         table_register_row.appendChild(table_cell);
@@ -260,7 +354,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             lastClick = new Date();
         });
         // Create a text input element in the table cell
-    });
+    }
 }
 
 export function create_registers_table(_filter_keyword_inclusive, yukon_state) {

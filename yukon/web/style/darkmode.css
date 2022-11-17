@@ -87,7 +87,7 @@
     }
 
     .card.transport_interface {
-        background: #222222;
+        background: #363636;
         color: #ffffff
     }
 
@@ -164,29 +164,23 @@
         background-color: #353535;
     }
 
-    input, .input-group, .input-group-text, select {
+    input[type="text"], input[type="number"], .input-group, .input-group-text, select {
         background: #353535 !important;
         color: #ffffff !important;
     }
 
     input[type="radio"] {
-        background: #c7c7c7 !important;
-        color: #b01f1f !important;
+        accent-color: #34495e;
+        /*background: #c7c7c7 !important;*/
+        /*color: #b01f1f !important;*/
     }
 
-    input[type="radio"]:checked {
-        background: #700000 !important;
-        color: white !important;
-    }
-
+    /*input[type="radio"]:checked {*/
+    /*    background: #700000 !important;*/
+    /*    color: white !important;*/
+    /*}*/
     input[type="checkbox"] {
-        background: #c7c7c7 !important;
-        color: #b01f1f !important;
-    }
-
-    input[type="checkbox"]:checked {
-        background: #700000 !important;
-        color: white !important;
+        accent-color: #34495e;
     }
 
     #toolbar {

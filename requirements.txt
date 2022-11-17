@@ -1,5 +1,5 @@
 libpcap==1.10.0b15
-python-can[seeedstudio,serial] ==4.0.0
+python-can[seeedstudio,serial,neovi,canalystii,gs_usb,nixnet,pcan] ==4.0.0
 pycyphal[transport-can-pythoncan,transport-serial,transport-udp]
 sentry-sdk==1.*
 pytest
@@ -15,3 +15,4 @@ PyYAML==6.*
 ruamel.yaml~=0.17.21
 pkg_about
 pydsdl
+dronecan
