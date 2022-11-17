@@ -22,8 +22,9 @@ import os
 import sys
 import glob
 import typing
-
+import sysconfig
 import platform
+from pathlib import Path
 
 my_os = platform.system()
 
@@ -39,21 +40,6 @@ datas = [("yukon", "yukon"), (".electron", "electron")]
 
 if my_os == "Linux":
     datas += [("venv/lib/python3.10/site-packages/libpcap", "libpcap")]
-
-# if my_os == "Linux":
-#     datas += [("venv/lib/python3.10/site-packages/pydsdl", "pydsdl")]
-# elif my_os == "Windows":
-#     datas += [("venv\\Lib\\site-packages\\pydsdl", "pydsdl")]
-#
-# if my_os == "Linux":
-#     datas += [("venv/lib/python3.10/site-packages/sentry_sdk", "sentry_sdk")]
-# elif my_os == "Windows":
-#     datas += [("venv\\Lib\\site-packages\\sentry_sdk", "sentry_sdk")]
-#
-# if my_os == "Linux":
-#     datas += [("venv/lib/python3.10/site-packages/nunavut", "nunavut")]
-# elif my_os == "Windows":
-#     datas += [("venv\\Lib\\site-packages\\nunavut", "nunavut")]
 
 datas += [(".compiled", ".compiled")]
 
@@ -77,18 +63,22 @@ def detect_hidden_imports() -> typing.List[str]:
 detected_hidden_imports = detect_hidden_imports()
 detected_hidden_imports += ["can.interfaces"]
 detected_hidden_imports += ["pkg_about"]
-detected_hidden_imports += ["__future__", "pkg_resources", "sched", "multiprocessing", "sqlite3", "serial",
-                            "python-can", "dronecan", "wrapt"]
+detected_hidden_imports += [
+    "__future__",
+    "pkg_resources",
+    "sched",
+    "multiprocessing",
+    "sqlite3",
+    "serial",
+    "python-can",
+    "dronecan",
+    "wrapt",
+]
 
-if my_os == "Linux":
-    datas += [("venv/lib/python3.10/site-packages/dronecan", "dronecan")]
-elif my_os == "Windows":
-    datas += [("venv\\Lib\\site-packages\\dronecan", "dronecan")]
+site_packages = Path(sysconfig.get_paths()["purelib"])
 
-if my_os == "Linux":
-    datas += [("venv/lib/python3.10/site-packages/can", "can")]
-elif my_os == "Windows":
-    datas += [("venv\\Lib\\site-packages\\can", "can")]
+datas += [(site_packages / "dronecan", "dronecan")]
+datas += [(site_packages / "can", "can")]
 
 if my_os == "Linux":
     detected_hidden_imports += ["libpcap"]
