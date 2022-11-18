@@ -88,7 +88,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             });
             const radioLabel = document.createElement("label");
             radioLabel.classList.add("form-check-label");
-            radioLabel.htmlFor = settings["name"] + i;
+            radioLabel.setAttribute("for", settings["name"] + i)
             radioLabel.innerText = value;
             radioDiv.appendChild(radioInput);
             radioDiv.appendChild(radioLabel);
@@ -97,7 +97,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                 // Make a new label after the current label
                 const radioDescriptionLabel = document.createElement("label");
                 radioDescriptionLabel.classList.add("mb-3");
-                radioDescriptionLabel.htmlFor = settings["name"] + i;
+                radioDescriptionLabel.setAttribute("for", settings["name"] + i)
                 radioDescriptionLabel.innerText = description;
                 parentdiv.appendChild(radioDescriptionLabel);
             }
@@ -184,6 +184,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                 formGroupDiv.classList.add("mb-3");
                 const label = document.createElement("label");
                 label.classList.add("form-check-label");
+                label.setAttribute("for", key);
                 if (key === "__editable__") {
                     const input = document.createElement("input");
                     input.type = "text";
