@@ -226,9 +226,23 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
         } catch (e) {
             widthFromSettings = 400;
         }
+        let doWrapFromSettings = null;
+        try {
+            doWrapFromSettings = yukon_state.all_settings["UI"]["Registers"]["Wrap cell text"]
+        } catch (e) {
+            doWrapFromSettings = false;
+        }
         table_cell.style.setProperty("width", widthFromSettings + "px", "important");
         table_cell.style.setProperty("min-width", widthFromSettings + "px", "important");
         table_cell.style.setProperty("max-width", widthFromSettings + "px", "important");
+        if (!doWrapFromSettings) {
+            table_cell.style.setProperty("word-wrap", "normal", "important");
+            table_cell.style.setProperty("white-space", "no-wrap", "important");
+        } else {
+            console.log("Wrap is enabled")
+            table_cell.style.setProperty("word-wrap", "break-word", "important");
+            table_cell.style.setProperty("white-space", "normal", "important");
+        }
         // Set an attribute on td to store the register name
         table_cell.setAttribute('id', "cell_" + avatar.node_id + "_" + register_name);
         table_cell.setAttribute("register_name", register_name);
