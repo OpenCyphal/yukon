@@ -169,6 +169,10 @@
         color: #ffffff !important;
     }
 
+    label {
+        color: #ffffff !important;
+    }
+
     input[type="radio"] {
         accent-color: #34495e;
         /*background: #c7c7c7 !important;*/

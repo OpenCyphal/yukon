@@ -1,10 +1,11 @@
-const {app, BrowserWindow, ipcMain, dialog, Menu} = require('electron')
+const {app, BrowserWindow, ipcMain, dialog, Menu, MenuItem} = require('electron')
 const process = require('process');
 const path = require('path')
 const http = require('http');
 const net = require('net');
 const fs = require('fs');
 console.log(app.getAppPath())
+
 function createWindow() {
     const win = new BrowserWindow({
         width: 800,
@@ -23,6 +24,15 @@ function createWindow() {
     // Add the port to the loadURL below
     win.loadURL(url);
     win.maximize();
+    win.webContents.on('context-menu', (_, props) => {
+        const menu = new Menu();
+        menu.append(new MenuItem({label: 'Cut', role: 'cut'}));
+        menu.append(new MenuItem({label: 'Copy', role: 'copy'}));
+        if (props.isEditable) {
+            menu.append(new MenuItem({label: 'Paste', role: 'paste'}));
+        }
+        menu.popup();
+    });
     return win;
 }
 
@@ -153,7 +163,8 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-        http.get('http://localhost:5000/api/close_yukon', (resp) => {});
+        http.get('http://localhost:5000/api/close_yukon', (resp) => {
+        });
         app.quit();
     }
 })

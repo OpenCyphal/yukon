@@ -1,6 +1,10 @@
 import {make_context_menus} from '../modules/context-menu.module.js';
 import {create_directed_graph, update_directed_graph} from '../modules/monitor.module.js';
-import {isRunningInElectron, areThereAnyActiveModals, getHoveredContainerElementAndContainerObject} from "../modules/utilities.module.js";
+import {
+    isRunningInElectron,
+    areThereAnyActiveModals,
+    getHoveredContainerElementAndContainerObject
+} from "../modules/utilities.module.js";
 import {
     loadConfigurationFromOpenDialog,
     return_all_selected_registers_as_yaml
@@ -254,36 +258,8 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                     caretDownImgSrc = "../images/caret-down-18-18.png";
                     caretUpImgSrc = "../images/caret-up-18-18.png";
                 }
-                let autoScrollEnabledImgSrc = "../images/caret-down.svg";//"../images/autoscroll-enabled.svg";
-                let autoScrollDisabledImgSrc = "../images/threelines.svg";//"../images/autoscroll-disabled.svg";
 
                 myLayout.on('stackCreated', function (stack) {
-                    const spanAutoScroll = document.createElement("span");
-                    // Add a checkbox and a label  for it in liAutoScroll
-                    const cbAutoscroll = document.createElement("input");
-                    cbAutoscroll.type = "checkbox";
-                    cbAutoscroll.checked = true;
-                    cbAutoscroll.id = "cbAutoscroll";
-                    const labelAutoscroll = document.createElement("label");
-                    labelAutoscroll.htmlFor = "cbAutoscroll";
-                    labelAutoscroll.innerText = "Autoscroll";
-                    spanAutoScroll.appendChild(cbAutoscroll);
-                    spanAutoScroll.appendChild(labelAutoscroll);
-
-
-                    // const autoScrollEnabledImageElement = document.createElement("img");
-                    // autoScrollEnabledImageElement.setAttribute("width", "100%");
-                    // autoScrollEnabledImageElement.setAttribute("height", "100%");
-                    // autoScrollEnabledImageElement.setAttribute("src", autoScrollEnabledImgSrc);
-                    // btnAutoScroll.appendChild(autoScrollEnabledImageElement);
-                    // const autoScrollDisabledImageElement = document.createElement("img");
-                    // autoScrollDisabledImageElement.setAttribute("width", "100%");
-                    // autoScrollDisabledImageElement.setAttribute("height", "100%");
-                    // autoScrollDisabledImageElement.setAttribute("src", autoScrollDisabledImgSrc);
-                    // btnAutoScroll.appendChild(autoScrollDisabledImageElement);
-
-
-
                     //HTML for the colorDropdown is stored in a template tag
                     const btnPanelShowHideToggle = document.createElement("li");
                     const caretDownImageElement = document.createElement("img");
@@ -322,7 +298,32 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                     );
                     // Add the btnPanelShowHideToggle to the header
                     stack.header.controlsContainer.prepend(btnPanelShowHideToggle);
-                    stack.header.controlsContainer.prepend(spanAutoScroll);
+                    // Does stack have the messages panel?
+                    let hasMessagesPanel = false;
+                    for (let component of stack.config.content) {
+                        if (component.componentName === "messagesComponent") {
+                            hasMessagesPanel = true;
+                            break;
+                        }
+                    }
+                    let spanAutoScroll = null;
+                    if (hasMessagesPanel) {
+                        spanAutoScroll = document.createElement("span");
+                        // Add a checkbox and a label  for it in liAutoScroll
+                        const cbAutoscroll = document.createElement("input");
+                        cbAutoscroll.type = "checkbox";
+                        cbAutoscroll.checked = true;
+                        cbAutoscroll.id = "cbAutoscroll";
+                        // Float spanAutoScroll to the left
+                        spanAutoScroll.style.cssFloat = "left";
+                        const labelAutoscroll = document.createElement("label");
+                        labelAutoscroll.htmlFor = "cbAutoscroll";
+                        labelAutoscroll.innerText = "Autoscroll";
+                        spanAutoScroll.appendChild(cbAutoscroll);
+                        spanAutoScroll.appendChild(labelAutoscroll);
+                        stack.header.controlsContainer.prepend(spanAutoScroll);
+                    }
+
                     stack.on('activeContentItemChanged', function (contentItem) {
                         const activeElementName = stack.getActiveContentItem().config.componentName;
                         console.log("Active element changed to " + activeElementName);
@@ -333,10 +334,12 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                         } else {
                             btnPanelShowHideToggle.style.display = "block";
                         }
-                        if(!doesRequireAutoScroll) {
-                            spanAutoScroll.style.display = "none";
-                        } else {
-                            spanAutoScroll.style.display = "inline-block";
+                        if (spanAutoScroll) {
+                            if (doesRequireAutoScroll) {
+                                spanAutoScroll.style.display = "inline-block";
+                            } else {
+                                spanAutoScroll.style.display = "none";
+                            }
                         }
                         console.log(activeElementName + " requires settings button: " + requiresSettingsButton);
                         const container = stack.getActiveContentItem().container.getElement()[0];
@@ -506,7 +509,7 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                 }
                 const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
                 const hoveredContainerObject = returnArray[1];
-                if(!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
+                if (!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
                     return;
                 }
                 selectAll(yukon_state);
@@ -517,7 +520,7 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                 // Make sure that mouse is over the registersComponent
                 const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
                 const hoveredContainerObject = returnArray[1];
-                if(!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
+                if (!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
                     return;
                 }
                 if (areThereAnyActiveModals(yukon_state)) {
@@ -599,7 +602,7 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                 e.preventDefault();
                 const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
                 const hoveredContainerObject = returnArray[1];
-                if(!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
+                if (!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
                     return;
                 }
                 const data = get_all_selected_pairs({

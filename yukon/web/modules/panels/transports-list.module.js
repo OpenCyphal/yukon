@@ -1,5 +1,6 @@
 export function setUpTransportsListComponent(yukon_state) {
     let lastTransportsListHash = 0;
+
     async function syncList() {
         const transportsList = document.querySelector('#transports_list');
         const received_transport_interfaces_object = await yukon_state.zubax_apij.get_connected_transport_interfaces();
@@ -97,5 +98,6 @@ export function setUpTransportsListComponent(yukon_state) {
             transportsList.appendChild(transport_interface);
         }
     }
+
     setInterval(syncList, 1143);
 }

@@ -18,8 +18,7 @@ var yukon_state = {
     // The value object contains { messages: [], counter: 0}
     "subscriptions": {},
 
-    "existingHashesSet": {
-    },
+    "existingHashesSet": {},
     "last_slcan_list_hash": null,
     "last_socketcan_list_hash": null,
     "is_currently_restoring_default_layout": false,

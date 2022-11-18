@@ -15,11 +15,13 @@ export async function setUpMessagesComponent(container, yukon_state) {
             }
             optionsPanel.style.display = "block";
         } else {
-            if (typeof cbAutoscroll !== "undefined") {
-                cbAutoscroll.checked = true;
-                containerElement.scrollTop = containerElement.scrollHeight;
-            }
             optionsPanel.style.display = "none";
+        }
+    }
+
+    function unsetAutoscroll() {
+        if (typeof cbAutoscroll !== "undefined") {
+            cbAutoscroll.checked = false;
         }
     }
 
@@ -130,6 +132,9 @@ export async function setUpMessagesComponent(container, yukon_state) {
 
     async function update_messages() {
         var messagesList = document.querySelector("#messages-list");
+        messagesList.addEventListener("click", unsetAutoscroll);
+        // If it wasn't for autoscroll toggling this event itself then this could be used to turn off autoscroll
+        // messagesList.parentElement.parentElement.parentElement.addEventListener("scroll", unsetAutoscroll);
         var cbAutoscroll = document.querySelector("#cbAutoscroll");
         if (!messagesList || !cbAutoscroll) {
             return;
@@ -161,14 +166,14 @@ export async function setUpMessagesComponent(container, yukon_state) {
             }
             if (lines.length > 1) {
                 // If there are multiple lines, create a div for each line
-                lines[0] = el.timestamp + " " + el.module + firstLetterOfSeverityText  + ": " + lines[0];
+                lines[0] = el.timestamp + " " + el.module + firstLetterOfSeverityText + ": " + lines[0];
                 for (const line of lines) {
                     const div = document.createElement("div");
                     div.innerHTML = line;
                     li.appendChild(div);
                 }
             } else {
-                li.innerHTML = el.timestamp + " " + el.module + firstLetterOfSeverityText  + ": " + el.message;
+                li.innerHTML = el.timestamp + " " + el.module + firstLetterOfSeverityText + ": " + el.message;
             }
             if (el.severity_number >= 50) {
                 // Is bad
