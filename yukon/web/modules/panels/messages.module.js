@@ -130,6 +130,9 @@ export async function setUpMessagesComponent(container, yukon_state) {
 
     async function update_messages() {
         var messagesList = document.querySelector("#messages-list");
+        messagesList.addEventListener("click", unsetAutoscroll);
+        // If it wasn't for autoscroll toggling this event itself then this could be used to turn off autoscroll
+        // messagesList.parentElement.parentElement.parentElement.addEventListener("scroll", unsetAutoscroll);
         var cbAutoscroll = document.querySelector("#cbAutoscroll");
         if (!messagesList || !cbAutoscroll) {
             return;
@@ -153,7 +156,6 @@ export async function setUpMessagesComponent(container, yukon_state) {
         for (const el of messagesObject) {
             const li = document.createElement("div");
             li.classList.add("messageElement");
-            li.addEventListener("click", unsetAutoscroll);
             // Split el.messages into lines
             const lines = el.message.split("\n");
             let firstLetterOfSeverityText = "";
