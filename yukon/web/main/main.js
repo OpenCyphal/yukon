@@ -258,32 +258,6 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                 let autoScrollDisabledImgSrc = "../images/threelines.svg";//"../images/autoscroll-disabled.svg";
 
                 myLayout.on('stackCreated', function (stack) {
-                    const spanAutoScroll = document.createElement("span");
-                    // Add a checkbox and a label  for it in liAutoScroll
-                    const cbAutoscroll = document.createElement("input");
-                    cbAutoscroll.type = "checkbox";
-                    cbAutoscroll.checked = true;
-                    cbAutoscroll.id = "cbAutoscroll";
-                    const labelAutoscroll = document.createElement("label");
-                    labelAutoscroll.htmlFor = "cbAutoscroll";
-                    labelAutoscroll.innerText = "Autoscroll";
-                    spanAutoScroll.appendChild(cbAutoscroll);
-                    spanAutoScroll.appendChild(labelAutoscroll);
-
-
-                    // const autoScrollEnabledImageElement = document.createElement("img");
-                    // autoScrollEnabledImageElement.setAttribute("width", "100%");
-                    // autoScrollEnabledImageElement.setAttribute("height", "100%");
-                    // autoScrollEnabledImageElement.setAttribute("src", autoScrollEnabledImgSrc);
-                    // btnAutoScroll.appendChild(autoScrollEnabledImageElement);
-                    // const autoScrollDisabledImageElement = document.createElement("img");
-                    // autoScrollDisabledImageElement.setAttribute("width", "100%");
-                    // autoScrollDisabledImageElement.setAttribute("height", "100%");
-                    // autoScrollDisabledImageElement.setAttribute("src", autoScrollDisabledImgSrc);
-                    // btnAutoScroll.appendChild(autoScrollDisabledImageElement);
-
-
-
                     //HTML for the colorDropdown is stored in a template tag
                     const btnPanelShowHideToggle = document.createElement("li");
                     const caretDownImageElement = document.createElement("img");
@@ -322,7 +296,32 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                     );
                     // Add the btnPanelShowHideToggle to the header
                     stack.header.controlsContainer.prepend(btnPanelShowHideToggle);
-                    stack.header.controlsContainer.prepend(spanAutoScroll);
+                    // Does stack have the messages panel?
+                    let hasMessagesPanel = false;
+                    for(let component of stack.config.content) {
+                        if(component.componentName === "messagesComponent") {
+                            hasMessagesPanel = true;
+                            break;
+                        }
+                    }
+                    let spanAutoScroll = null;
+                    if(hasMessagesPanel) {
+                        spanAutoScroll = document.createElement("span");
+                        // Add a checkbox and a label  for it in liAutoScroll
+                        const cbAutoscroll = document.createElement("input");
+                        cbAutoscroll.type = "checkbox";
+                        cbAutoscroll.checked = true;
+                        cbAutoscroll.id = "cbAutoscroll";
+                        // Float spanAutoScroll to the left
+                        spanAutoScroll.style.cssFloat = "left";
+                        const labelAutoscroll = document.createElement("label");
+                        labelAutoscroll.htmlFor = "cbAutoscroll";
+                        labelAutoscroll.innerText = "Autoscroll";
+                        spanAutoScroll.appendChild(cbAutoscroll);
+                        spanAutoScroll.appendChild(labelAutoscroll);
+                        stack.header.controlsContainer.prepend(spanAutoScroll);
+                    }
+
                     stack.on('activeContentItemChanged', function (contentItem) {
                         const activeElementName = stack.getActiveContentItem().config.componentName;
                         console.log("Active element changed to " + activeElementName);
@@ -333,10 +332,12 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                         } else {
                             btnPanelShowHideToggle.style.display = "block";
                         }
-                        if(!doesRequireAutoScroll) {
-                            spanAutoScroll.style.display = "none";
-                        } else {
-                            spanAutoScroll.style.display = "inline-block";
+                        if(spanAutoScroll) {
+                            if(doesRequireAutoScroll) {
+                                spanAutoScroll.style.display = "inline-block";
+                            } else {
+                                spanAutoScroll.style.display = "none";
+                            }
                         }
                         console.log(activeElementName + " requires settings button: " + requiresSettingsButton);
                         const container = stack.getActiveContentItem().container.getElement()[0];

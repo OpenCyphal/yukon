@@ -15,14 +15,14 @@ export async function setUpMessagesComponent(container, yukon_state) {
             }
             optionsPanel.style.display = "block";
         } else {
-            if (typeof cbAutoscroll !== "undefined") {
-                cbAutoscroll.checked = true;
-                containerElement.scrollTop = containerElement.scrollHeight;
-            }
             optionsPanel.style.display = "none";
         }
     }
-
+    function unsetAutoscroll() {
+        if (typeof cbAutoscroll !== "undefined") {
+            cbAutoscroll.checked = false;
+        }
+    }
     setDisplayState();
     const observer = new MutationObserver(function (mutations) {
         mutations.forEach(function (mutation) {
@@ -153,6 +153,7 @@ export async function setUpMessagesComponent(container, yukon_state) {
         for (const el of messagesObject) {
             const li = document.createElement("div");
             li.classList.add("messageElement");
+            li.addEventListener("click", unsetAutoscroll);
             // Split el.messages into lines
             const lines = el.message.split("\n");
             let firstLetterOfSeverityText = "";
