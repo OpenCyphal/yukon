@@ -33,22 +33,22 @@ form#transport-selection-form {
     padding-right: 1em;
 }
 
-form#transport-selection-form>div {
+form#transport-selection-form > div {
     margin-top: 0.5em;
     margin-bottom: 0.5em;
 }
 
-form#transport-selection-form>div>label {
+form#transport-selection-form > div > label {
     display: block;
     margin-bottom: 0.5em;
 }
 
-form#transport-selection-form>div>label.inline {
+form#transport-selection-form > div > label.inline {
     display: inline-block;
     margin-bottom: 0.5em;
 }
 
-form#transport-selection-form>div>input[type=number],
+form#transport-selection-form > div > input[type=number],
 input[type=text] {
     display: block;
     width: 100%;
@@ -90,13 +90,13 @@ input[type=text] {
     align-items: center;
 }
 
-.choice-inline-label>label.surrounding-label {
+.choice-inline-label > label.surrounding-label {
     margin-right: 0.5em;
     margin-left: 0.5em;
     display: inline-block !important;
 }
 
-form#transport-selection-form>#maybe-tabs>div.tab-row {
+form#transport-selection-form > #maybe-tabs > div.tab-row {
     overflow: hidden;
     position: relative;
     /* Making it an anchor point for tab-slider */
@@ -107,7 +107,7 @@ form#transport-selection-form>#maybe-tabs>div.tab-row {
     height: 33px;
 }
 
-form#transport-selection-form>#maybe-tabs label {
+form#transport-selection-form > #maybe-tabs label {
     display: inline !important;
     height: 100%;
     flex-grow: 3;
@@ -115,14 +115,14 @@ form#transport-selection-form>#maybe-tabs label {
     background-color: #cfcfcf;
 }
 
-form#transport-selection-form>#maybe-tabs label.selected-tab {
+form#transport-selection-form > #maybe-tabs label.selected-tab {
     background-color: #ee0000;
     border-bottom: 5px solid #ee0000;
     color: #fff;
     z-index: 1;
 }
 
-form#transport-selection-form>#maybe-tabs input {
+form#transport-selection-form > #maybe-tabs input {
     margin: 0;
     padding: 0;
     width: 0;
@@ -130,7 +130,7 @@ form#transport-selection-form>#maybe-tabs input {
     visibility: hidden;
 }
 
-form#transport-selection-form>#maybe-tabs .tab-slider {
+form#transport-selection-form > #maybe-tabs .tab-slider {
     position: absolute;
     background-color: #ee0000;
 }

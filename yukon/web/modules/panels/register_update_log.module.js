@@ -1,6 +1,7 @@
 export async function setUpRegisterUpdateLogComponent(container, yukon_state) {
     const containerElement = container.getElement()[0];
     const registerUpdateLog = document.querySelector("#register-update-log");
+
     async function fetchRegisterUpdateLog() {
         const items = await yukon_state.zubax_apij.get_register_update_log_items();
         registerUpdateLog.innerHTML = "";
@@ -35,7 +36,7 @@ export async function setUpRegisterUpdateLogComponent(container, yukon_state) {
             const response_received_time_cell = row.insertCell(4);
             const success = row.insertCell(5);
             name_value_cell.innerHTML = item.register_name;
-            if(item.response) {
+            if (item.response) {
                 new_value_cell.innerHTML = item.response.value;
             } else {
                 new_value_cell.innerHTML = item.previous_value;
@@ -43,12 +44,13 @@ export async function setUpRegisterUpdateLogComponent(container, yukon_state) {
             previous_value_cell.innerHTML = item.previous_value;
             request_sent_time_cell.innerHTML = item.request_sent_time;
             response_received_time_cell.innerHTML = item.response_received_time;
-            if(item.success) {
+            if (item.success) {
                 success.innerHTML = "✓";
             } else {
                 success.innerHTML = "✗";
             }
         }
     }
+
     setInterval(fetchRegisterUpdateLog, 1000);
 }

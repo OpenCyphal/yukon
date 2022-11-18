@@ -138,7 +138,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
             return;
         }
         let desiredSubjectIdValue = iSubjectId.value;
-        if(rbUseSelectFixedId.checked) {
+        if (rbUseSelectFixedId.checked) {
             desiredSubjectIdValue = null;
         }
         if (desiredSubjectIdValue == "") {

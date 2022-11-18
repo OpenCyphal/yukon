@@ -18,11 +18,13 @@ export async function setUpMessagesComponent(container, yukon_state) {
             optionsPanel.style.display = "none";
         }
     }
+
     function unsetAutoscroll() {
         if (typeof cbAutoscroll !== "undefined") {
             cbAutoscroll.checked = false;
         }
     }
+
     setDisplayState();
     const observer = new MutationObserver(function (mutations) {
         mutations.forEach(function (mutation) {
@@ -164,14 +166,14 @@ export async function setUpMessagesComponent(container, yukon_state) {
             }
             if (lines.length > 1) {
                 // If there are multiple lines, create a div for each line
-                lines[0] = el.timestamp + " " + el.module + firstLetterOfSeverityText  + ": " + lines[0];
+                lines[0] = el.timestamp + " " + el.module + firstLetterOfSeverityText + ": " + lines[0];
                 for (const line of lines) {
                     const div = document.createElement("div");
                     div.innerHTML = line;
                     li.appendChild(div);
                 }
             } else {
-                li.innerHTML = el.timestamp + " " + el.module + firstLetterOfSeverityText  + ": " + el.message;
+                li.innerHTML = el.timestamp + " " + el.module + firstLetterOfSeverityText + ": " + el.message;
             }
             if (el.severity_number >= 50) {
                 // Is bad

@@ -8,7 +8,7 @@ import {createGenericModal} from './modal.module.js';
 export function add_node_id_headers(table_header_row, yukon_state) {
     const avatars_copy = Array.from(yukon_state.current_avatars)
     avatars_copy.sort(compareAvatar);
-    for(const avatar of avatars_copy) {
+    for (const avatar of avatars_copy) {
         let table_header_cell = document.createElement('th');
         table_header_cell.innerHTML = avatar.node_id;
         table_header_cell.title = avatar.name;
@@ -16,16 +16,16 @@ export function add_node_id_headers(table_header_row, yukon_state) {
         let isSnappingThisElement = false;
         let isDraggingThisElement = false;
         let isMouseOverLoopRunning = false;
-        document.addEventListener("mouseup", function(event) {
+        document.addEventListener("mouseup", function (event) {
             yukon_state.is_cursor_dragging_column = false;
             isDraggingThisElement = false;
-            if(isMouseOverLoopRunning) {
+            if (isMouseOverLoopRunning) {
                 isMouseOverLoopRunning = false;
             }
         });
 
         let initialWidth = table_header_cell.offsetWidth;
-        table_header_cell.addEventListener('mousedown', function() {
+        table_header_cell.addEventListener('mousedown', function () {
             if (isSnappingThisElement) {
                 initialWidth = table_header_cell.offsetWidth;
                 yukon_state.edge_drag_start_position_x = yukon_state.mousePos.x;
@@ -34,8 +34,8 @@ export function add_node_id_headers(table_header_row, yukon_state) {
                 isDraggingThisElement = true;
             }
         });
-        table_header_cell.addEventListener("mouseout", function() {
-            if(!isDraggingThisElement) {
+        table_header_cell.addEventListener("mouseout", function () {
+            if (!isDraggingThisElement) {
                 isMouseOverLoopRunning = false;
                 document.body.style.cursor = "default";
             }
@@ -46,15 +46,15 @@ export function add_node_id_headers(table_header_row, yukon_state) {
         } catch (e) {
             widthFromSettings = 400;
         }
-        table_header_cell.style.setProperty( "width",   widthFromSettings + "px", "important");
-        table_header_cell.style.setProperty( "min-width",  widthFromSettings + "px", "important");
-        table_header_cell.style.setProperty( "max-width",   widthFromSettings + "px", "important");
+        table_header_cell.style.setProperty("width", widthFromSettings + "px", "important");
+        table_header_cell.style.setProperty("min-width", widthFromSettings + "px", "important");
+        table_header_cell.style.setProperty("max-width", widthFromSettings + "px", "important");
         // Add a listener to the hover event of table_header_cell
-        table_header_cell.addEventListener('mouseover', function() {
+        table_header_cell.addEventListener('mouseover', function () {
             console.log("Mouse over node id header");
             isMouseOverLoopRunning = true;
             let myInterval = null;
-            myInterval = setInterval(function() {
+            myInterval = setInterval(function () {
                 const position = table_header_cell.getBoundingClientRect();
                 const x = position.left;
                 const y = position.top;
@@ -72,29 +72,29 @@ export function add_node_id_headers(table_header_row, yukon_state) {
                     isSnappingThisElement = true;
                     document.body.style.cursor = "ew-resize";
                 } else {
-                    if(!isDraggingThisElement) {
+                    if (!isDraggingThisElement) {
                         document.body.style.cursor = "default";
                         yukon_state.is_cursor_snapping_column = false;
                         isSnappingThisElement = false;
                     }
                 }
-                if(isDraggingThisElement) {
-                        const distanceBetweenStartAndCurrent = yukon_state.mousePos.x - yukon_state.edge_drag_start_position_x;
-                        // Get all td elements that have the node_id attribute set to avatar.node_id
-                        const node_id_cells = document.querySelectorAll("td[node_id='" + avatar.node_id + "']");
-                        const desiredWidth = (initialWidth + distanceBetweenStartAndCurrent);
-                        for(const node_id_cell of node_id_cells) {
-                            node_id_cell.style.setProperty( "width",   desiredWidth+ "px", "important");
-                            node_id_cell.style.setProperty( "min-width",  desiredWidth + "px", "important");
-                            node_id_cell.style.setProperty( "max-width",  desiredWidth + "px", "important");
-                        }
-                        table_header_cell.style.setProperty( "width",  desiredWidth + "px", "important");
-                        table_header_cell.style.setProperty( "min-width",  desiredWidth + "px", "important");
-                        table_header_cell.style.setProperty( "max-width",  desiredWidth + "px", "important");
-                        // table_header_cell.style.minWidth = desiredWidth + "px !important";
-                        console.log("distanceBetweenStartAndCurrent: " + distanceBetweenStartAndCurrent);
+                if (isDraggingThisElement) {
+                    const distanceBetweenStartAndCurrent = yukon_state.mousePos.x - yukon_state.edge_drag_start_position_x;
+                    // Get all td elements that have the node_id attribute set to avatar.node_id
+                    const node_id_cells = document.querySelectorAll("td[node_id='" + avatar.node_id + "']");
+                    const desiredWidth = (initialWidth + distanceBetweenStartAndCurrent);
+                    for (const node_id_cell of node_id_cells) {
+                        node_id_cell.style.setProperty("width", desiredWidth + "px", "important");
+                        node_id_cell.style.setProperty("min-width", desiredWidth + "px", "important");
+                        node_id_cell.style.setProperty("max-width", desiredWidth + "px", "important");
                     }
-                if(!isMouseOverLoopRunning && !isDraggingThisElement) {
+                    table_header_cell.style.setProperty("width", desiredWidth + "px", "important");
+                    table_header_cell.style.setProperty("min-width", desiredWidth + "px", "important");
+                    table_header_cell.style.setProperty("max-width", desiredWidth + "px", "important");
+                    // table_header_cell.style.minWidth = desiredWidth + "px !important";
+                    console.log("distanceBetweenStartAndCurrent: " + distanceBetweenStartAndCurrent);
+                }
+                if (!isMouseOverLoopRunning && !isDraggingThisElement) {
                     clearInterval(myInterval);
                     document.body.style.cursor = "default";
                     yukon_state.is_cursor_snapping_column = false;
@@ -200,20 +200,21 @@ export function addContentForRegisterName(register_name, filter_keyword_inclusiv
         make_header_cell();
     }
 }
-function compareAvatar( a, b ) {
-  if ( a.node_id < b.node_id ){
-    return -1;
-  }
-  if ( a.node_id > b.node_id ){
-    return 1;
-  }
-  return 0;
+
+function compareAvatar(a, b) {
+    if (a.node_id < b.node_id) {
+        return -1;
+    }
+    if (a.node_id > b.node_id) {
+        return 1;
+    }
+    return 0;
 }
 
 export function addContentForCells(register_name, table_register_row, yukon_state) {
     const avatars_copy = Array.from(yukon_state.current_avatars)
     avatars_copy.sort(compareAvatar);
-    for(const avatar of avatars_copy) {
+    for (const avatar of avatars_copy) {
         // ALL THE REGISTER VALUES HERE
         const table_cell = document.createElement('td');
         table_register_row.appendChild(table_cell);
@@ -225,9 +226,9 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
         } catch (e) {
             widthFromSettings = 400;
         }
-        table_cell.style.setProperty( "width",   widthFromSettings + "px", "important");
-        table_cell.style.setProperty( "min-width",  widthFromSettings + "px", "important");
-        table_cell.style.setProperty( "max-width",   widthFromSettings + "px", "important");
+        table_cell.style.setProperty("width", widthFromSettings + "px", "important");
+        table_cell.style.setProperty("min-width", widthFromSettings + "px", "important");
+        table_cell.style.setProperty("max-width", widthFromSettings + "px", "important");
         // Set an attribute on td to store the register name
         table_cell.setAttribute('id', "cell_" + avatar.node_id + "_" + register_name);
         table_cell.setAttribute("register_name", register_name);

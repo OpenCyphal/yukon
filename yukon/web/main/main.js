@@ -1,6 +1,10 @@
 import {make_context_menus} from '../modules/context-menu.module.js';
 import {create_directed_graph, update_directed_graph} from '../modules/monitor.module.js';
-import {isRunningInElectron, areThereAnyActiveModals, getHoveredContainerElementAndContainerObject} from "../modules/utilities.module.js";
+import {
+    isRunningInElectron,
+    areThereAnyActiveModals,
+    getHoveredContainerElementAndContainerObject
+} from "../modules/utilities.module.js";
 import {
     loadConfigurationFromOpenDialog,
     return_all_selected_registers_as_yaml
@@ -296,14 +300,14 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                     stack.header.controlsContainer.prepend(btnPanelShowHideToggle);
                     // Does stack have the messages panel?
                     let hasMessagesPanel = false;
-                    for(let component of stack.config.content) {
-                        if(component.componentName === "messagesComponent") {
+                    for (let component of stack.config.content) {
+                        if (component.componentName === "messagesComponent") {
                             hasMessagesPanel = true;
                             break;
                         }
                     }
                     let spanAutoScroll = null;
-                    if(hasMessagesPanel) {
+                    if (hasMessagesPanel) {
                         spanAutoScroll = document.createElement("span");
                         // Add a checkbox and a label  for it in liAutoScroll
                         const cbAutoscroll = document.createElement("input");
@@ -330,8 +334,8 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                         } else {
                             btnPanelShowHideToggle.style.display = "block";
                         }
-                        if(spanAutoScroll) {
-                            if(doesRequireAutoScroll) {
+                        if (spanAutoScroll) {
+                            if (doesRequireAutoScroll) {
                                 spanAutoScroll.style.display = "inline-block";
                             } else {
                                 spanAutoScroll.style.display = "none";
@@ -505,7 +509,7 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                 }
                 const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
                 const hoveredContainerObject = returnArray[1];
-                if(!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
+                if (!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
                     return;
                 }
                 selectAll(yukon_state);
@@ -516,7 +520,7 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                 // Make sure that mouse is over the registersComponent
                 const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
                 const hoveredContainerObject = returnArray[1];
-                if(!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
+                if (!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
                     return;
                 }
                 if (areThereAnyActiveModals(yukon_state)) {
@@ -598,7 +602,7 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                 e.preventDefault();
                 const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
                 const hoveredContainerObject = returnArray[1];
-                if(!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
+                if (!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
                     return;
                 }
                 const data = get_all_selected_pairs({
