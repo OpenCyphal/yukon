@@ -148,7 +148,7 @@ class GodState:
         self.allocation = AllocationState()
         self.settings = {
             "DSDL search directories": [{"__type__": "dirpath", "value": ReactiveValue("")}],
-            "UI": {"Registers": {"Column width (pixels)": 400}},
+            "UI": {"Registers": {"Column width (pixels)": 400, "Wrap cell text": False}},
             "Node allocation": {
                 "__type__": "radio",
                 "values": [
@@ -184,4 +184,5 @@ class GodState:
         self.last_settings_hash: int = 0
         self.dronecan_traffic_queues = DroneCanTrafficQueues()
         self.messages_publisher: Optional[MessagesPublisher] = field(default_factory=none_factory)
+        self.cyphal_worker_asyncio_loop = None
         self.api = None

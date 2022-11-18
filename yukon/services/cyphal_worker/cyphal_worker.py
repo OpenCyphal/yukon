@@ -64,6 +64,7 @@ def cyphal_worker(state: GodState) -> None:
             )
 
             state.cyphal.local_node.start()
+            state.cyphal_worker_asyncio_loop = asyncio.get_running_loop()
 
             async def forward_dronecan_loop() -> None:
                 while True:

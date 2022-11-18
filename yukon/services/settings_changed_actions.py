@@ -1,5 +1,7 @@
+import asyncio
 import logging
 import threading
+import traceback
 
 import yukon
 from yukon.domain.request_run_dronecan_firmware_updater import RequestRunDronecanFirmwareUpdater
@@ -9,6 +11,7 @@ from yukon.services.FileServer import FileServer
 from yukon.services.flash_dronecan_firmware_with_cyphal_firmware import run_dronecan_firmware_updater
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
@@ -56,8 +59,20 @@ def set_file_server_handler(state: "yukon.domain.god_state.GodState") -> None:
 def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
     def _handle_mode_change(new_mode: str) -> None:
         if new_mode == "Automatic" and not state.cyphal.centralized_allocator and state.cyphal.local_node.id:
-            logger.info("Allocator is now running")
-            state.cyphal.centralized_allocator = CentralizedAllocator(state.cyphal.local_node)
+            # For the current thread, the same event loop is used
+
+            def _run_allocator() -> None:
+                logger.debug("Now running allocator")
+                try:
+                    state.cyphal.centralized_allocator = CentralizedAllocator(state.cyphal.local_node)
+                    state.cyphal.centralized_allocator.start()
+                    logger.info("Allocator is now running")
+                except:
+                    logger.exception("Exception while running allocator")
+                    tb = traceback.format_exc()
+                    logger.error(tb)
+
+            state.cyphal_worker_asyncio_loop.call_soon_threadsafe(_run_allocator)
         elif new_mode == "Manual" and state.cyphal.centralized_allocator:
             logger.info("Allocator is now stopped")
             state.cyphal.centralized_allocator.close()
