@@ -40,9 +40,15 @@ export function add_node_id_headers(table_header_row, yukon_state) {
                 document.body.style.cursor = "default";
             }
         });
-        table_header_cell.style.setProperty( "width",   "400px", "important");
-        table_header_cell.style.setProperty( "min-width",  "400px", "important");
-        table_header_cell.style.setProperty( "max-width",   "400px", "important");
+        let widthFromSettings = null;
+        try {
+            widthFromSettings = yukon_state.all_settings["UI"]["Registers"]["Column width (pixels)"]
+        } catch (e) {
+            widthFromSettings = 400;
+        }
+        table_header_cell.style.setProperty( "width",   widthFromSettings + "px", "important");
+        table_header_cell.style.setProperty( "min-width",  widthFromSettings + "px", "important");
+        table_header_cell.style.setProperty( "max-width",   widthFromSettings + "px", "important");
         // Add a listener to the hover event of table_header_cell
         table_header_cell.addEventListener('mouseover', function() {
             console.log("Mouse over node id header");
@@ -213,9 +219,15 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
         table_register_row.appendChild(table_cell);
         // Add a table_cell class to table_cell
         table_cell.classList.add('no-padding');
-        table_cell.style.setProperty( "width",   "400px", "important");
-        table_cell.style.setProperty( "min-width",  "400px", "important");
-        table_cell.style.setProperty( "max-width",   "400px", "important");
+        let widthFromSettings = null;
+        try {
+            widthFromSettings = yukon_state.all_settings["UI"]["Registers"]["Column width (pixels)"]
+        } catch (e) {
+            widthFromSettings = 400;
+        }
+        table_cell.style.setProperty( "width",   widthFromSettings + "px", "important");
+        table_cell.style.setProperty( "min-width",  widthFromSettings + "px", "important");
+        table_cell.style.setProperty( "max-width",   widthFromSettings + "px", "important");
         // Set an attribute on td to store the register name
         table_cell.setAttribute('id', "cell_" + avatar.node_id + "_" + register_name);
         table_cell.setAttribute("register_name", register_name);
