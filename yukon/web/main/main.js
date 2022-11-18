@@ -254,8 +254,6 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                     caretDownImgSrc = "../images/caret-down-18-18.png";
                     caretUpImgSrc = "../images/caret-up-18-18.png";
                 }
-                let autoScrollEnabledImgSrc = "../images/caret-down.svg";//"../images/autoscroll-enabled.svg";
-                let autoScrollDisabledImgSrc = "../images/threelines.svg";//"../images/autoscroll-disabled.svg";
 
                 myLayout.on('stackCreated', function (stack) {
                     //HTML for the colorDropdown is stored in a template tag
