@@ -113,14 +113,6 @@ def cyphal_worker(state: GodState) -> None:
                     await do_subscribe_requests_work(state, queue_element)
                 elif isinstance(queue_element, UnsubscribeRequest):
                     await do_unsubscribe_requests_work(state, queue_element)
-                elif isinstance(queue_element, StartFileServerRequest):
-                    state.cyphal.file_server = FileServer(
-                        state.cyphal.local_node, [state.settings["Firmware updates"]["File path"]["value"].value]
-                    )
-                    logger.info(
-                        "File server started on path " + state.settings["Firmware updates"]["File path"]["value"].value
-                    )
-                    state.cyphal.file_server.start()
                 elif isinstance(queue_element, RequestRunDronecanFirmwareUpdater):
                     logger.debug("A request to run the DroneCAN firmware updater was received.")
                     fpath = state.settings["DroneCAN firmware substitution"]["Substitute firmware path"]["value"].value
