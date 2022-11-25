@@ -23,6 +23,9 @@ export function setUpMonitor2Component(container, yukon_state) {
 function isContainerPopulated(containerElement) {
     return containerElement.querySelectorAll(".node").length > 0;
 }
+function getLinkInfo(port_nr) {
+
+}
 function update_monitor2(containerElement, yukon_state) {
     if (!areThereAnyNewOrMissingHashes("monitor2_hash", yukon_state)) {
         updateLastHashes("monitor2_hash", yukon_state);

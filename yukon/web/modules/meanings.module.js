@@ -25,8 +25,7 @@ export const meanings = {
 
 export function getLinkInfo(subject_id, node_id, yukon_state) {
     let infos = [];
-    for (let i = 0; i < yukon_state.current_avatars.length; i++) {
-        const avatar = yukon_state.current_avatars[i];
+    for (const avatar of yukon_state.current_avatars) {
         if (avatar.node_id === node_id || !node_id) {
             const registersKeys = Object.keys(avatar.registers_values);
             for (let j = 0; j < registersKeys.length; j++) {
@@ -42,4 +41,20 @@ export function getLinkInfo(subject_id, node_id, yukon_state) {
         }
     }
     return Array.from(new Set(infos));
+}
+export function getRelatedLinks(subject_id, yukon_state) {
+    let links = [];
+    for (const avatar of yukon_state.current_avatars) {
+        const registersKeys = Object.keys(avatar.registers_values);
+        for (let j = 0; j < registersKeys.length; j++) {
+            const register_name = registersKeys[j];
+            const register_name_split = register_name.split(".");
+            const link_name = register_name_split[register_name_split.length - 2];
+            const value = avatar.registers_values[register_name];
+            if (parseInt(value) === subject_id && register_name.endsWith(".id")) {
+                links.push({name: link_name, node_id: avatar.node_id, subject_id: subject_id, type:});
+            }
+        }
+    }
+    return Array.from(new Set(links));
 }
