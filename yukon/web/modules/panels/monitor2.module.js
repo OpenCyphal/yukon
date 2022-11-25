@@ -1,18 +1,19 @@
 import {areThereAnyNewOrMissingHashes, updateLastHashes} from "../hash_checks.module.js";
 
-const settings = {
-    "VerticalLineMarginTop": 5,
-    "PageMarginTop": 20,
-    "NodeXOffset": 20,
-    "DistancePerHorizontalConnection": 20, // In pixels
-    "DistanceBetweenNodes": 2, // In pixels
-    "NodeWidth": 150, // In pixels
-    "AvatarMinHeight": 50, // In pixels
-    "AvatarConnectionPadding": 10,
-    "LinkInfoWidth": 200,
-    "PubLineXOffset": 20 + 150 + 20 + 200, // In pixels
-    "DistanceBetweenLines": 50, // In pixels
-}
+const settings = {};
+settings.VerticalLineMarginTop = 5;
+settings.PageMarginTop = 20;
+settings.NodeXOffset = 20;
+settings.DistancePerHorizontalConnection = 20;
+settings.DistanceBetweenNodes = 2;
+settings.NodeWidth = 150;
+settings.AvatarMinHeight = 50;
+settings.AvatarConnectionPadding = 10;
+settings.LinkInfoWidth = 300;
+settings.PubLineXOffset = settings.NodeXOffset + settings.NodeWidth + settings.LinkInfoWidth + 20;
+settings.DistanceBetweenLines = 60;
+settings.HorizontalColliderHeight = 17;
+settings.HorizontalColliderOffsetY = (settings.HorizontalColliderHeight - 1) / 2
 export function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0].querySelector("#monitor2");
     setInterval(() => {
@@ -111,12 +112,25 @@ function update_monitor2(containerElement, yukon_state) {
                 horizontal_line.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + "px";
                 horizontal_line.style.width = matchingPort.x_offset - settings["NodeXOffset"] - settings["NodeWidth"] + "px";
                 horizontal_line.style.height = "1px";
+                // Create an invisible collider div for horizontal_line, it should have a height of 10px
+                const horizontal_line_collider = document.createElement("div");
+                horizontal_line_collider.classList.add("horizontal_line_collider");
+                horizontal_line_collider.style.top = y_counter + avatar_y_counter - settings["HorizontalColliderOffsetY"] + "px";
+                horizontal_line_collider.style.left = horizontal_line.style.left;
+                horizontal_line_collider.style.width = horizontal_line.style.width;
+                horizontal_line_collider.style.height = settings["HorizontalColliderHeight"] + "px";
+                horizontal_line_collider.style.zIndex = "1";
+                horizontal_line_collider.style.position = "absolute";
+                horizontal_line_collider.style.backgroundColor = "transparent";
+                horizontal_line_collider.style.cursor = "pointer";
+                containerElement.appendChild(horizontal_line_collider);
+
                 containerElement.appendChild(horizontal_line);
                 arrowhead = document.createElement("div");
                 arrowhead.classList.add("arrowhead");
                 arrowhead.style.position = "absolute";
-                arrowhead.style.top = y_counter + avatar_y_counter - 2.5 + "px";
-                arrowhead.style.left = matchingPort.x_offset - 10 + "px";
+                arrowhead.style.top = y_counter + avatar_y_counter - 3 + "px";
+                arrowhead.style.left = matchingPort.x_offset - 12 + "px";
                 arrowhead.style.width = "0px";
                 arrowhead.style.height = "0px";
                 arrowhead.style.borderLeft = "7px solid transparent";
@@ -124,13 +138,23 @@ function update_monitor2(containerElement, yukon_state) {
                 arrowhead.style.borderTop = "7px solid pink";
                 containerElement.appendChild(arrowhead);
 
+                horizontal_line_collider.addEventListener("mouseover", () => {
+                    horizontal_line.style.setProperty("background-color", "red");
+                    arrowhead.style.setProperty("border-top", "7px solid red");
+                    ports.find(p => p.port === port && p.type === "pub" || p.type === "srv");
+                });
+                horizontal_line_collider.addEventListener("mouseout", () => {
+                    horizontal_line.style.removeProperty("background-color");
+                    arrowhead.style.setProperty("border-top", "7px solid pink");
+                });
+
                 if(matchingPort.type === "pub" || matchingPort.type === "srv") {
                     // Arrowhead for the line
                     arrowhead.style.transform = "rotate(270deg)";
                     arrowhead.style.left = matchingPort.x_offset - 10 + "px";
                 } else if (matchingPort.type === "sub" || matchingPort.type === "cln") {
                     arrowhead.style.transform = "rotate(90deg)";
-                    arrowhead.style.left = settings["NodeXOffset"] + settings["NodeWidth"] - 2.5 +  "px";
+                    arrowhead.style.left = settings["NodeXOffset"] + settings["NodeWidth"] - 3 +  "px";
                 }
                 avatar_y_counter += settings["DistancePerHorizontalConnection"];
             }
