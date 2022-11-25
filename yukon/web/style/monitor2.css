@@ -1,4 +1,11 @@
-.node {
+#monitor2 {
+    all: initial;
+}
+#monitor2 * {
+    all: unset;
+}
+
+#monitor2 > .node {
     border: 1px solid darkolivegreen;
     background-color: #d5d5d5;
     color: #a33fff;
@@ -11,17 +18,30 @@
     border-radius: 5px;
 }
 
-.line {
+#monitor2 .line {
+    background-color: black;
+    color: black;
     text-wrap: none;
     height: 100%;
 }
 
-.subscriber {
+#monitor2 .subscriber {
     border: 1px solid black;
     background-color: #d5d5d5;
     color: #a33fff;
 }
 
-td {
+#monitor2  td {
     min-width: 140px;
+}
+
+@media (prefers-color-scheme: dark) {
+    #monitor2 .node {
+        background-color: darkblue;
+        color: white;
+    }
+    #monitor2 .line {
+        background-color: antiquewhite;
+        color: antiquewhite;
+    }
 }

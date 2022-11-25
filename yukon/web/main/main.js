@@ -1,5 +1,5 @@
 import {make_context_menus} from '../modules/context-menu.module.js';
-import {create_directed_graph, update_directed_graph} from '../modules/monitor.module.js';
+import {create_directed_graph, update_directed_graph} from '../modules/panels/monitor.module.js';
 import {
     isRunningInElectron,
     areThereAnyActiveModals,
@@ -30,6 +30,7 @@ import {setUpSubscriptionsComponent} from "../modules/panels/subscriptions.modul
 import {layout_config} from "../modules/panels/_layout_config.module.js"
 import {setUpSettingsComponent} from "../modules/panels/settings.module.js"
 import {setUpMotorControlComponent} from "../modules/panels/motor_control.module.js"
+import {setUpMonitor2Component} from "../modules/panels/monitor2.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
@@ -244,6 +245,13 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                         const containerElement = container.getElement()[0];
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpMotorControlComponent.bind(outsideContext)(container, yukon_state);
+                    });
+                });
+                myLayout.registerComponent("monitor2Component", function (container, componentState) {
+                    registerComponentAction("../monitor2.panel.html", "monitor2Component", container, () => {
+                        const containerElement = container.getElement()[0];
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpMonitor2Component.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 const useSVG = true;

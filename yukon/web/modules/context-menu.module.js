@@ -16,9 +16,9 @@ import {
     make_select_column,
     moreThanOneSelectedConstraint,
     oneSelectedConstraint
-} from "./registers.selection.module.js";
-import {updateRegistersTableColors, showCellValue, editSelectedCellValues} from "./registers.module.js";
-import {rereadNode, rereadPairs} from "./registers.data.module.js";
+} from "./panels/registers.selection.module.js";
+import {updateRegistersTableColors, showCellValue, editSelectedCellValues} from "./panels/registers.module.js";
+import {rereadNode, rereadPairs} from "./panels/registers.data.module.js";
 import {downloadIcon, copyIcon, pasteIcon} from "./icons.module.js";
 import {copyObject} from "./utilities.module.js";
 import {copyTextToClipboard} from "./copy.module.js";
