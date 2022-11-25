@@ -1,6 +1,6 @@
-import {secondsToString} from "./utilities.module.js";
-import {areThereAnyNewOrMissingHashes, updateLastHashes} from './hash_checks.module.js';
-import {meanings, getLinkInfo} from "./meanings.module.js";
+import {secondsToString} from "../utilities.module.js";
+import {areThereAnyNewOrMissingHashes, updateLastHashes} from '../hash_checks.module.js';
+import {meanings, getLinkInfo} from "../meanings.module.js";
 
 export function create_directed_graph(yukon_state) {
     cytoscape.use(cytoscapeKlay);

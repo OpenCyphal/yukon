@@ -1,9 +1,9 @@
-import {areThereAnyNewOrMissingHashes, updateLastHashes} from './hash_checks.module.js';
-import {applyConfiguration} from './yaml.configurations.module.js';
+import {areThereAnyNewOrMissingHashes, updateLastHashes} from '../hash_checks.module.js';
+import {applyConfiguration} from '../yaml.configurations.module.js';
 import {make_select_column, make_select_row, make_select_cell} from './registers.selection.module.js';
 import {update_register_value} from './registers.data.module.js';
-import {getDictionaryValueFieldName} from './utilities.module.js';
-import {createGenericModal} from './modal.module.js';
+import {getDictionaryValueFieldName} from '../utilities.module.js';
+import {createGenericModal} from '../modal.module.js';
 
 export function add_node_id_headers(table_header_row, yukon_state) {
     const avatars_copy = Array.from(yukon_state.current_avatars)

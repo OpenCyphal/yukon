@@ -9,15 +9,15 @@ import {
     loadConfigurationFromOpenDialog,
     return_all_selected_registers_as_yaml
 } from '../modules/yaml.configurations.module.js';
-import {create_registers_table, update_tables} from '../modules/registers.module.js';
+import {create_registers_table, update_tables} from '../modules/panels/registers.module.js';
 import {
     get_all_selected_pairs,
     unselectAll,
     selectAll,
     oneSelectedConstraint,
     moreThanOneSelectedConstraint
-} from '../modules/registers.selection.module.js';
-import {rereadPairs} from "../modules/registers.data.module.js"
+} from '../modules/panels/registers.selection.module.js';
+import {rereadPairs} from "../modules/panels/registers.data.module.js"
 import {initTransports} from "../modules/panels/transports.module.js"
 import {copyTextToClipboard} from "../modules/copy.module.js"
 import {setUpStatusComponent} from "../modules/panels/status.module.js"

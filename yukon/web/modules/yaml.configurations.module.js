@@ -2,8 +2,8 @@ import {
     get_all_selected_pairs,
     select_configuration,
     getAllEntireColumnsThatAreSelected
-} from "./registers.selection.module.js";
-import {update_tables, updateRegistersTableColors} from "./registers.module.js";
+} from "./panels/registers.selection.module.js";
+import {update_tables, updateRegistersTableColors} from "./panels/registers.module.js";
 import {copyObject, JsonParseHelper} from "./utilities.module.js";
 
 export async function applyConfiguration(configuration, set_node_id, applyPairs, yukon_state) {

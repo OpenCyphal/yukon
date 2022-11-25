@@ -1,5 +1,5 @@
 import {updateRegistersTableColors} from "./registers.module.js";
-import {copyObject, getDictionaryValueFieldName} from "./utilities.module.js";
+import {copyObject, getDictionaryValueFieldName} from "../utilities.module.js";
 
 function trueFalseDecider(stringInput) {
     stringInput = stringInput.trim().toLowerCase();
