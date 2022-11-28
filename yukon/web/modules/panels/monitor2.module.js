@@ -16,12 +16,13 @@ settings.DistanceBetweenLines = 60;
 settings.HorizontalColliderHeight = 17;
 settings.HorizontalColliderOffsetY = (settings.HorizontalColliderHeight - 1) / 2
 settings.HorizontalLabelOffsetY = 10;
-settings.LabelLeftMargin = 5;
+settings.LabelLeftMargin = 12;
 settings.VerticalColliderWidth = 9;
 export function setUpMonitor2Component(container, yukon_state) {
-    const containerElement = container.getElement()[0].querySelector("#monitor2");
+    const containerElement = container.getElement()[0];
+    const monitor2Div = containerElement.querySelector("#monitor2");
     setInterval(() => {
-        update_monitor2(containerElement, yukon_state);
+        update_monitor2(containerElement, monitor2Div, yukon_state);
     }, 1000);
 }
 function isContainerPopulated(containerElement) {
@@ -47,17 +48,17 @@ function removeHighlightFromElement(object) {
         object.element.style.removeProperty("background-color");
     }
 }
-function update_monitor2(containerElement, yukon_state) {
+function update_monitor2(containerElement, monitor2Div, yukon_state) {
     if (!areThereAnyNewOrMissingHashes("monitor2_hash", yukon_state)) {
         updateLastHashes("monitor2_hash", yukon_state);
         // If there are any elements in my_graph.elements() then we can return, otherwise we need to make a graph (below)
-        if (isContainerPopulated(containerElement)) {
+        if (isContainerPopulated(monitor2Div)) {
             return;
         }
     }
     updateLastHashes("monitor2_hash", yukon_state);
     // Clear the container
-    containerElement.innerHTML = "";
+    monitor2Div.innerHTML = "";
     // Add all nodes
     let y_counter = settings["PageMarginTop"];
     let ports = [];
@@ -121,7 +122,7 @@ function update_monitor2(containerElement, yukon_state) {
         const total_ports = avatar.ports.cln.length + avatar.ports.srv.length + avatar.ports.pub.length + avatar.ports.sub.length;
         console.assert(total_ports >= 0);
         let avatar_height = Math.max(total_ports * settings["DistancePerHorizontalConnection"] + settings["AvatarConnectionPadding"], settings["AvatarMinHeight"]);
-        const node = addNode(avatar, y_counter, avatar_height, avatar.name,  containerElement, yukon_state);
+        const node = addNode(avatar, y_counter, avatar_height, avatar.name,  monitor2Div, yukon_state);
         const nodeIdDiv = document.createElement("div");
         nodeIdDiv.classList.add("node_id");
         nodeIdDiv.innerHTML = node_id;
@@ -148,7 +149,7 @@ function update_monitor2(containerElement, yukon_state) {
                 horizontal_line.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + "px";
                 horizontal_line.style.width = matchingPort.x_offset - settings["NodeXOffset"] - settings["NodeWidth"] + "px";
                 horizontal_line.style.height = "1px";
-                containerElement.appendChild(horizontal_line);
+                monitor2Div.appendChild(horizontal_line);
                 // Create an invisible collider div for horizontal_line, it should have a height of 10px
                 const horizontal_line_collider = document.createElement("div");
                 horizontal_line_collider.classList.add("horizontal_line_collider");
@@ -156,11 +157,11 @@ function update_monitor2(containerElement, yukon_state) {
                 horizontal_line_collider.style.left = horizontal_line.style.left;
                 horizontal_line_collider.style.width = horizontal_line.style.width;
                 horizontal_line_collider.style.height = settings["HorizontalColliderHeight"] + "px";
-                horizontal_line_collider.style.zIndex = "2";
+                horizontal_line_collider.style.zIndex = "1";
                 horizontal_line_collider.style.position = "absolute";
                 horizontal_line_collider.style.backgroundColor = "transparent";
                 horizontal_line_collider.style.cursor = "pointer";
-                containerElement.appendChild(horizontal_line_collider);
+                monitor2Div.appendChild(horizontal_line_collider);
                 // Place a label above the horizontal line at the left side
                 const horizontal_line_label = document.createElement("label");
                 horizontal_line_label.classList.add("horizontal_line_label");
@@ -170,7 +171,7 @@ function update_monitor2(containerElement, yukon_state) {
                 horizontal_line_label.style.height = settings.DistancePerHorizontalConnection + "px";
                 horizontal_line_label.style.position = "absolute";
                 horizontal_line_label.innerHTML = currentLinkDsdlDatatype;
-                containerElement.appendChild(horizontal_line_label);
+                monitor2Div.appendChild(horizontal_line_label);
 
 
                 arrowhead = document.createElement("div");
@@ -183,7 +184,7 @@ function update_monitor2(containerElement, yukon_state) {
                 arrowhead.style.borderLeft = "7px solid transparent";
                 arrowhead.style.borderRight = "7px solid transparent";
                 arrowhead.style.borderTop = "7px solid pink";
-                containerElement.appendChild(arrowhead);
+                monitor2Div.appendChild(arrowhead);
                 let toggledOn = {value: false};
                 linesByPortAndPortType.push({"element": horizontal_line, "port": port, "type": port_type, "toggledOn": toggledOn});
                 linesByPortAndPortType.push({"element": arrowhead, "port": port, "type": port_type, "toggledOn": toggledOn});
@@ -240,7 +241,22 @@ function update_monitor2(containerElement, yukon_state) {
         line.style.height = y_counter + "px";
         line.style.top = settings["VerticalLineMarginTop"] + "px";
         line.style.left = port.x_offset + "px";
-        line.innerText = "-" + port.port;
+        // Make a label for the line, positioned 2 pixels to the right of the line, positioned sticky
+        let port_label = document.createElement("label");
+        port_label.classList.add("port_label");
+        port_label.style.position = "absolute";
+
+        function update_port_label_position() {
+            if(port_label) {
+                port_label.style.top = containerElement.scrollTop + settings["VerticalLineMarginTop"] + "px";
+                window.requestAnimationFrame(update_port_label_position);
+            }
+        }
+        window.requestAnimationFrame(update_port_label_position);
+        port_label.style.top = settings["VerticalLineMarginTop"] + "px";
+        port_label.style.left = port.x_offset + 5 + "px";
+        port_label.innerText = port.port;
+        monitor2Div.appendChild(port_label);
         let toggledOn = {value: false};
         linesByPortAndPortType.push({"element": line, "port": port.port, "type": "vertical", "toggledOn": toggledOn});
         // Create a collider for the line
@@ -251,7 +267,7 @@ function update_monitor2(containerElement, yukon_state) {
         line_collider.style.height = line.style.height;
         line_collider.style.top = line.style.top;
         line_collider.style.left = port.x_offset - ((settings["VerticalColliderWidth"] - 1) / 2) + "px";
-        line_collider.style.zIndex = "1";
+        line_collider.style.zIndex = "2";
         line_collider.style.backgroundColor = "transparent";
         line_collider.style.cursor = "pointer";
         line_collider.addEventListener("mouseover", () => {
@@ -278,8 +294,8 @@ function update_monitor2(containerElement, yukon_state) {
                 });
             }
         });
-        containerElement.appendChild(line_collider);
-        containerElement.appendChild(line);
+        monitor2Div.appendChild(line_collider);
+        monitor2Div.appendChild(line);
     }
 }
 function addNode(avatar, y, height, text, container, yukon_state) {

@@ -46,6 +46,11 @@
     min-width: 140px;
 }
 
+#monitor2 .port_label {
+    background-color: black;
+    color: white;
+}
+
 @media (prefers-color-scheme: dark) {
     #monitor2 .node {
         background-color: darkblue;
