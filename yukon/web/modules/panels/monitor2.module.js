@@ -121,7 +121,11 @@ function update_monitor2(containerElement, yukon_state) {
         const total_ports = avatar.ports.cln.length + avatar.ports.srv.length + avatar.ports.pub.length + avatar.ports.sub.length;
         console.assert(total_ports >= 0);
         let avatar_height = Math.max(total_ports * settings["DistancePerHorizontalConnection"] + settings["AvatarConnectionPadding"], settings["AvatarMinHeight"]);
-        const node = addNode(avatar, y_counter, avatar_height, avatar.name + ": " + total_ports,  containerElement, yukon_state);
+        const node = addNode(avatar, y_counter, avatar_height, avatar.name,  containerElement, yukon_state);
+        const nodeIdDiv = document.createElement("div");
+        nodeIdDiv.classList.add("node_id");
+        nodeIdDiv.innerHTML = node_id;
+        node.appendChild(nodeIdDiv);
         let avatar_y_counter = settings["AvatarConnectionPadding"];
         for (const port_type of Object.keys(avatar.ports)) {
             for (const port of avatar.ports[port_type]) {
