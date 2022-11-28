@@ -197,8 +197,11 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 }
                 if(currentLinkObject !== undefined) {
                     currentLinkDsdlDatatype = currentLinkObject.datatype || "";
+                    if(currentLinkObject.name) {
+                        currentLinkDsdlDatatype += ":" + currentLinkObject.name;
+                    }
                 } else {
-                    currentLinkDsdlDatatype = fixed_datatype_short || fixed_datatype_full || "problem";
+                    currentLinkDsdlDatatype = fixed_datatype_full || "problem";
                 }
                 let horizontal_line = null;
                 let arrowhead = null;

@@ -26,27 +26,30 @@ def get_datatypes_from_packages_directory_path(path: Path) -> typing.Any:
         # sys.path.remove(str(package_folder.absolute()))
 
         queue: Queue = Queue()
-        queue.put(package)
+        queue.put((package, None))  # No previous class
         counter = 0
         try:
             while True:
                 counter += 1
-                module_or_class = queue.get_nowait()
+                module_or_class, previous_module_or_class = queue.get_nowait()
                 elements = inspect.getmembers(module_or_class, lambda x: inspect.ismodule(x) or inspect.isclass(x))
                 for element in elements:
-                    if inspect.isclass(element[1]) and not hasattr(element[1], "_deserialize_"):
+                    if element[1].__name__ == "object" or element[1].__name__ == "type":
                         continue
-                    queue.put(element[1])
+                    queue.put((element[1], module_or_class))  # Previous class was module_or_class
                 if inspect.isclass(module_or_class):
                     _class = module_or_class
+                    if not hasattr(module_or_class, "_deserialize_"):
+                        continue
                     try:
                         model = pycyphal.dsdl.get_model(_class)
                     except Exception:
                         logger.exception("Failed to get model for %s", _class)
                         continue
                     if hasattr(_class, "_FIXED_PORT_ID_"):
+                        desired_class_name = _class.__name__
                         return_object["fixed_id_messages"][str(_class._FIXED_PORT_ID_)] = {
-                            "short_name": _class.__name__,
+                            "short_name": desired_class_name,
                             "full_name": model.full_name,
                         }
                     elif hasattr(_class, "_serialize_"):
