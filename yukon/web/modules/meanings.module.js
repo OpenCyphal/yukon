@@ -42,7 +42,7 @@ export function getLinkInfo(subject_id, node_id, yukon_state) {
     }
     return Array.from(new Set(infos));
 }
-export function getRelatedLinks(subject_id, yukon_state) {
+export function getRelatedLinks(port, yukon_state) {
     let links = [];
     for (const avatar of yukon_state.current_avatars) {
         const registersKeys = Object.keys(avatar.registers_values);
@@ -51,8 +51,10 @@ export function getRelatedLinks(subject_id, yukon_state) {
             const register_name_split = register_name.split(".");
             const link_name = register_name_split[register_name_split.length - 2];
             const value = avatar.registers_values[register_name];
-            if (parseInt(value) === subject_id && register_name.endsWith(".id")) {
-                links.push({name: link_name, node_id: avatar.node_id, subject_id: subject_id, type: register_name_split[1]});
+            if (parseInt(value) === port && register_name.endsWith(".id")) {
+                const datatype_key = registersKeys.find((a) => a.endsWith(link_name + ".type"));
+                const datatype = avatar.registers_values[datatype_key];
+                links.push({name: link_name, node_id: avatar.node_id, "port": port, type: register_name_split[1], "datatype": datatype});
             }
         }
     }

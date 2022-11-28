@@ -1,4 +1,5 @@
 import {areThereAnyNewOrMissingHashes, updateLastHashes} from "../hash_checks.module.js";
+import {getRelatedLinks} from "../meanings.module.js";
 
 const settings = {};
 settings.VerticalLineMarginTop = 5;
@@ -15,6 +16,8 @@ settings.DistanceBetweenLines = 60;
 settings.HorizontalColliderHeight = 17;
 settings.HorizontalColliderOffsetY = (settings.HorizontalColliderHeight - 1) / 2
 settings.HorizontalLabelOffsetY = 10;
+settings.LabelLeftMargin = 5;
+settings.VerticalColliderWidth = 9;
 export function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0].querySelector("#monitor2");
     setInterval(() => {
@@ -24,8 +27,25 @@ export function setUpMonitor2Component(container, yukon_state) {
 function isContainerPopulated(containerElement) {
     return containerElement.querySelectorAll(".node").length > 0;
 }
-function getLinkInfo(port_nr) {
-
+let linesByPortAndPortType = [];
+function findRelatedObjects(port) {
+    return linesByPortAndPortType.filter((line) => {
+        return line.port === port;
+    });
+}
+function highlightElement(object) {
+    if(object.element.classList.contains("arrowhead")) {
+        object.element.style.setProperty("border-top", "7px solid red");
+    } else {
+        object.element.style.setProperty("background-color", "red");
+    }
+}
+function removeHighlightFromElement(object) {
+    if(object.element.classList.contains("arrowhead")) {
+        object.element.style.setProperty("border-top", "7px solid pink");
+    } else {
+        object.element.style.removeProperty("background-color");
+    }
 }
 function update_monitor2(containerElement, yukon_state) {
     if (!areThereAnyNewOrMissingHashes("monitor2_hash", yukon_state)) {
@@ -95,6 +115,7 @@ function update_monitor2(containerElement, yukon_state) {
         }
     }
     for(const avatar of yukon_state.current_avatars) {
+        const node_id = avatar.node_id;
         console.log("Avatar in update_monitor2", avatar);
         // Add the sizes of ports.cln, ports.srv, ports.pub, ports.sub
         const total_ports = avatar.ports.cln.length + avatar.ports.srv.length + avatar.ports.pub.length + avatar.ports.sub.length;
@@ -108,6 +129,13 @@ function update_monitor2(containerElement, yukon_state) {
                 if(matchingPort === undefined || (matchingPort && matchingPort.x_offset === 0)) {
                     continue;
                 }
+                // Getting info about more links than necessary for later highlighting purposes
+                const relatedLinks = getRelatedLinks(port, yukon_state);
+                const currentLinkObject = relatedLinks.find(link => link.port === port && link.type === port_type);
+                let currentLinkDsdlDatatype = null;
+                if(currentLinkObject !== undefined) {
+                    currentLinkDsdlDatatype = currentLinkObject.datatype || "";
+                }
                 let horizontal_line = null;
                 let arrowhead = null;
                 horizontal_line = document.createElement("div");
@@ -116,6 +144,7 @@ function update_monitor2(containerElement, yukon_state) {
                 horizontal_line.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + "px";
                 horizontal_line.style.width = matchingPort.x_offset - settings["NodeXOffset"] - settings["NodeWidth"] + "px";
                 horizontal_line.style.height = "1px";
+                containerElement.appendChild(horizontal_line);
                 // Create an invisible collider div for horizontal_line, it should have a height of 10px
                 const horizontal_line_collider = document.createElement("div");
                 horizontal_line_collider.classList.add("horizontal_line_collider");
@@ -123,17 +152,23 @@ function update_monitor2(containerElement, yukon_state) {
                 horizontal_line_collider.style.left = horizontal_line.style.left;
                 horizontal_line_collider.style.width = horizontal_line.style.width;
                 horizontal_line_collider.style.height = settings["HorizontalColliderHeight"] + "px";
-                horizontal_line_collider.style.zIndex = "1";
+                horizontal_line_collider.style.zIndex = "2";
                 horizontal_line_collider.style.position = "absolute";
                 horizontal_line_collider.style.backgroundColor = "transparent";
                 horizontal_line_collider.style.cursor = "pointer";
                 containerElement.appendChild(horizontal_line_collider);
                 // Place a label above the horizontal line at the left side
-                const horiontal_line_label = document.createElement("div");
-                horiontal_line_label.classList.add("horizontal_line_label");
-                horiontal_line_label.style.top = y_counter + avatar_y_counter - settings["HorizontalLabelOffsetY"] + "px";
+                const horizontal_line_label = document.createElement("label");
+                horizontal_line_label.classList.add("horizontal_line_label");
+                horizontal_line_label.style.top = y_counter + avatar_y_counter - settings["HorizontalLabelOffsetY"] + "px";
+                horizontal_line_label.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + settings.LabelLeftMargin + "px";
+                horizontal_line_label.style.width = settings.LinkInfoWidth  - settings.LabelLeftMargin + "px";
+                horizontal_line_label.style.height = settings.DistancePerHorizontalConnection + "px";
+                horizontal_line_label.style.position = "absolute";
+                horizontal_line_label.innerHTML = currentLinkDsdlDatatype;
+                containerElement.appendChild(horizontal_line_label);
 
-                containerElement.appendChild(horizontal_line);
+
                 arrowhead = document.createElement("div");
                 arrowhead.classList.add("arrowhead");
                 arrowhead.style.position = "absolute";
@@ -145,15 +180,37 @@ function update_monitor2(containerElement, yukon_state) {
                 arrowhead.style.borderRight = "7px solid transparent";
                 arrowhead.style.borderTop = "7px solid pink";
                 containerElement.appendChild(arrowhead);
-
+                let toggledOn = {value: false};
+                linesByPortAndPortType.push({"element": horizontal_line, "port": port, "type": port_type, "toggledOn": toggledOn});
+                linesByPortAndPortType.push({"element": arrowhead, "port": port, "type": port_type, "toggledOn": toggledOn});
                 horizontal_line_collider.addEventListener("mouseover", () => {
                     horizontal_line.style.setProperty("background-color", "red");
                     arrowhead.style.setProperty("border-top", "7px solid red");
-                    ports.find(p => p.port === port && p.type === "pub" || p.type === "srv");
                 });
                 horizontal_line_collider.addEventListener("mouseout", () => {
-                    horizontal_line.style.removeProperty("background-color");
-                    arrowhead.style.setProperty("border-top", "7px solid pink");
+                    if(!toggledOn.value) {
+                        horizontal_line.style.removeProperty("background-color");
+                        arrowhead.style.setProperty("border-top", "7px solid pink");
+                    }
+                });
+                horizontal_line_collider.addEventListener("click", () => {
+                    toggledOn.value = !toggledOn.value;
+                    if(toggledOn.value) {
+                        horizontal_line.style.setProperty("background-color", "red");
+                        arrowhead.style.setProperty("border-top", "7px solid red");
+                        findRelatedObjects(port).forEach(object => {
+                            highlightElement(object)
+                            object["toggledOn"].value = true;
+                        })
+                    } else {
+                        horizontal_line.style.removeProperty("background-color");
+                        arrowhead.style.setProperty("border-top", "7px solid pink");
+                        findRelatedObjects(port).forEach(object => {
+                            removeHighlightFromElement(object);
+                            object["toggledOn"].value = false;
+                        })
+                    }
+                    // ports.find(p => p.port === port && p.type === "pub" || p.type === "srv");
                 });
 
                 if(matchingPort.type === "pub" || matchingPort.type === "srv") {
@@ -180,6 +237,44 @@ function update_monitor2(containerElement, yukon_state) {
         line.style.top = settings["VerticalLineMarginTop"] + "px";
         line.style.left = port.x_offset + "px";
         line.innerText = "-" + port.port;
+        let toggledOn = {value: false};
+        linesByPortAndPortType.push({"element": line, "port": port.port, "type": "vertical", "toggledOn": toggledOn});
+        // Create a collider for the line
+        const line_collider = document.createElement("div");
+        line_collider.classList.add("line_collider");
+        line_collider.style.width = settings["VerticalColliderWidth"] + "px";
+        line_collider.style.position = "absolute";
+        line_collider.style.height = line.style.height;
+        line_collider.style.top = line.style.top;
+        line_collider.style.left = port.x_offset - ((settings["VerticalColliderWidth"] - 1) / 2) + "px";
+        line_collider.style.zIndex = "1";
+        line_collider.style.backgroundColor = "transparent";
+        line_collider.style.cursor = "pointer";
+        line_collider.addEventListener("mouseover", () => {
+            line.style.setProperty("background-color", "red");
+        });
+        line_collider.addEventListener("mouseout", () => {
+            if(!toggledOn.value) {
+                line.style.removeProperty("background-color");
+            }
+        });
+        line_collider.addEventListener("click", () => {
+            toggledOn.value = !toggledOn.value;
+            if(toggledOn.value) {
+                line.style.setProperty("background-color", "red");
+                findRelatedObjects(port.port).forEach(object => {
+                    highlightElement(object)
+                    object["toggledOn"].value = true;
+                })
+            } else {
+                line.style.removeProperty("background-color");
+                findRelatedObjects(port.port).forEach(object => {
+                    removeHighlightFromElement(object);
+                    object["toggledOn"].value = false;
+                });
+            }
+        });
+        containerElement.appendChild(line_collider);
         containerElement.appendChild(line);
     }
 }
