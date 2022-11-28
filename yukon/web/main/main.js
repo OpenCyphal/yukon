@@ -623,6 +623,11 @@ import {setUpMonitor2Component} from "../modules/panels/monitor2.module.js"
         }
         document.addEventListener('keydown', function (e) {
             if (e.code === "Escape") {
+                const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
+                const hoveredContainerObject = returnArray[1];
+                if (!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
+                    return;
+                }
                 if (escape_timer) {
                     clearTimeout(escape_timer);
                     escape_timer = null;

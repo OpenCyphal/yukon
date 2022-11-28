@@ -1,5 +1,6 @@
 import {areThereAnyNewOrMissingHashes, updateLastHashes} from "../hash_checks.module.js";
 import {getRelatedLinks} from "../meanings.module.js";
+import {getHoveredContainerElementAndContainerObject} from "../utilities.module.js";
 
 const settings = {};
 settings.VerticalLineMarginTop = 5;
@@ -18,37 +19,83 @@ settings.HorizontalColliderOffsetY = (settings.HorizontalColliderHeight - 1) / 2
 settings.HorizontalLabelOffsetY = 10;
 settings.LabelLeftMargin = 12;
 settings.VerticalColliderWidth = 9;
-export function setUpMonitor2Component(container, yukon_state) {
-    const containerElement = container.getElement()[0];
-    const monitor2Div = containerElement.querySelector("#monitor2");
-    setInterval(() => {
-        update_monitor2(containerElement, monitor2Div, yukon_state);
-    }, 1000);
-}
-function isContainerPopulated(containerElement) {
-    return containerElement.querySelectorAll(".node").length > 0;
-}
+settings.LinkLabelColor = "transparent";
+settings.LinkLabelTextColor = "black";
+settings.LinkLabelHighlightColor = "black";
+settings.LinkLabelHighlightTextColor = "white";
 let linesByPortAndPortType = [];
-function findRelatedObjects(port) {
-    return linesByPortAndPortType.filter((line) => {
-        return line.port === port;
-    });
-}
 function highlightElement(object) {
     if(object.element.classList.contains("arrowhead")) {
         object.element.style.setProperty("border-top", "7px solid red");
-    } else {
+     } else if (object.element.classList.contains("horizontal_line_label") && object.element.tagName === "LABEL") {
+        object.element.style.setProperty("background-color", settings.LinkLabelHighlightColor);
+        object.element.style.setProperty("color", settings.LinkLabelHighlightTextColor);
+    } else if (object.element.classList.contains("horizontal_line") || object.element.classList.contains("line")) {
         object.element.style.setProperty("background-color", "red");
     }
 }
 function removeHighlightFromElement(object) {
     if(object.element.classList.contains("arrowhead")) {
         object.element.style.setProperty("border-top", "7px solid pink");
-    } else {
+    } else if (object.element.classList.contains("horizontal_line_label") && object.element.tagName === "LABEL") {
+        object.element.style.setProperty("background-color", settings.LinkLabelColor);
+        object.element.style.setProperty("color", settings.LinkLabelTextColor);
+    } else if (object.element.classList.contains("horizontal_line") || object.element.classList.contains("line")) {
         object.element.style.removeProperty("background-color");
     }
 }
-function update_monitor2(containerElement, monitor2Div, yukon_state) {
+function unhighlightAll() {
+    for (const object of linesByPortAndPortType) {
+        object.toggledOn.value = false;
+        removeHighlightFromElement(object);
+    }
+}
+export function setUpMonitor2Component(container, yukon_state) {
+    const containerElement = container.getElement()[0];
+    const monitor2Div = containerElement.querySelector("#monitor2");
+    setInterval(async () => {
+        await update_monitor2(containerElement, monitor2Div, yukon_state);
+    }, 1000);
+    let escape_timer = null;
+    document.addEventListener('keydown', function (e) {
+        if (e.code === "Escape") {
+            const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
+            const hoveredContainerObject = returnArray[1];
+            if (!hoveredContainerObject || hoveredContainerObject.title !== "monitor2Component") {
+                return;
+            }
+            if (escape_timer) {
+                clearTimeout(escape_timer);
+                escape_timer = null;
+                unhighlightAll();
+            } else {
+                escape_timer = setTimeout(function () {
+                    escape_timer = null;
+                }, 400);
+            }
+        }
+    });
+}
+function isContainerPopulated(containerElement) {
+    return containerElement.querySelectorAll(".node").length > 0;
+}
+
+function findRelatedObjects(port) {
+    return linesByPortAndPortType.filter((line) => {
+        return line.port === port;
+    });
+}
+
+function compareAvatar(a, b) {
+    if (a.node_id < b.node_id) {
+        return -1;
+    }
+    if (a.node_id > b.node_id) {
+        return 1;
+    }
+    return 0;
+}
+async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     if (!areThereAnyNewOrMissingHashes("monitor2_hash", yukon_state)) {
         updateLastHashes("monitor2_hash", yukon_state);
         // If there are any elements in my_graph.elements() then we can return, otherwise we need to make a graph (below)
@@ -115,7 +162,10 @@ function update_monitor2(containerElement, monitor2Div, yukon_state) {
             }
         }
     }
-    for(const avatar of yukon_state.current_avatars) {
+    const datatypes_response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
+    const avatars_copy = Array.from(yukon_state.current_avatars)
+    avatars_copy.sort(compareAvatar);
+    for(const avatar of avatars_copy) {
         const node_id = avatar.node_id;
         console.log("Avatar in update_monitor2", avatar);
         // Add the sizes of ports.cln, ports.srv, ports.pub, ports.sub
@@ -137,9 +187,18 @@ function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 // Getting info about more links than necessary for later highlighting purposes
                 const relatedLinks = getRelatedLinks(port, yukon_state);
                 const currentLinkObject = relatedLinks.find(link => link.port === port && link.type === port_type);
+                let toggledOn = {value: false};
                 let currentLinkDsdlDatatype = null;
+                let fixed_datatype_short = null;
+                let fixed_datatype_full = null;
+                if(datatypes_response["fixed_id_messages"][port] !== undefined) {
+                    fixed_datatype_short = datatypes_response["fixed_id_messages"][port]["short_name"];
+                    fixed_datatype_full = datatypes_response["fixed_id_messages"][port]["full_name"];
+                }
                 if(currentLinkObject !== undefined) {
                     currentLinkDsdlDatatype = currentLinkObject.datatype || "";
+                } else {
+                    currentLinkDsdlDatatype = fixed_datatype_short || fixed_datatype_full || "problem";
                 }
                 let horizontal_line = null;
                 let arrowhead = null;
@@ -148,7 +207,7 @@ function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 horizontal_line.style.top = y_counter + avatar_y_counter + "px";
                 horizontal_line.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + "px";
                 horizontal_line.style.width = matchingPort.x_offset - settings["NodeXOffset"] - settings["NodeWidth"] + "px";
-                horizontal_line.style.height = "1px";
+                horizontal_line.style.height = "2px";
                 monitor2Div.appendChild(horizontal_line);
                 // Create an invisible collider div for horizontal_line, it should have a height of 10px
                 const horizontal_line_collider = document.createElement("div");
@@ -167,10 +226,21 @@ function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 horizontal_line_label.classList.add("horizontal_line_label");
                 horizontal_line_label.style.top = y_counter + avatar_y_counter - settings["HorizontalLabelOffsetY"] + "px";
                 horizontal_line_label.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + settings.LabelLeftMargin + "px";
-                horizontal_line_label.style.width = settings.LinkInfoWidth  - settings.LabelLeftMargin + "px";
+                horizontal_line_label.style.width = "fit-content"; // settings.LinkInfoWidth  - settings.LabelLeftMargin + "px";
                 horizontal_line_label.style.height = settings.DistancePerHorizontalConnection + "px";
                 horizontal_line_label.style.position = "absolute";
                 horizontal_line_label.innerHTML = currentLinkDsdlDatatype;
+                horizontal_line_label.style.zIndex = "4";
+                horizontal_line_label.addEventListener("mouseover", () => {
+                    horizontal_line_label.style.backgroundColor = settings["LinkLabelHighlightColor"];
+                    horizontal_line_label.style.color = settings["LinkLabelHighlightTextColor"];
+                });
+                horizontal_line_label.addEventListener("mouseout", () => {
+                    if(!toggledOn.value) {
+                        horizontal_line_label.style.backgroundColor = settings["LinkLabelColor"];
+                        horizontal_line_label.style.color = settings["LinkLabelTextColor"];
+                    }
+                });
                 monitor2Div.appendChild(horizontal_line_label);
 
 
@@ -185,9 +255,9 @@ function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 arrowhead.style.borderRight = "7px solid transparent";
                 arrowhead.style.borderTop = "7px solid pink";
                 monitor2Div.appendChild(arrowhead);
-                let toggledOn = {value: false};
                 linesByPortAndPortType.push({"element": horizontal_line, "port": port, "type": port_type, "toggledOn": toggledOn});
                 linesByPortAndPortType.push({"element": arrowhead, "port": port, "type": port_type, "toggledOn": toggledOn});
+                linesByPortAndPortType.push({"element": horizontal_line_label, "port": port, "type": port_type, "toggledOn": toggledOn});
                 horizontal_line_collider.addEventListener("mouseover", () => {
                     horizontal_line.style.setProperty("background-color", "red");
                     arrowhead.style.setProperty("border-top", "7px solid red");
