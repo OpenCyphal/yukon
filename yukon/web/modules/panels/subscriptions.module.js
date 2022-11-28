@@ -102,7 +102,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
             const datatype_full = response["fixed_id_messages"][id]["full_name"];
             // Add a new option to the select
             const option = document.createElement('option');
-            option.innerHTML = datatype_short + "(" + id + ")";
+            option.innerHTML = datatype_full + "(" + id + ")";
             option.value = datatype_full;
             iSelectFixedIdMessageType.appendChild(option);
         }

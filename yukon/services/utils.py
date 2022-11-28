@@ -39,7 +39,7 @@ def get_datatypes_from_packages_directory_path(path: Path) -> typing.Any:
                     queue.put((element[1], module_or_class))  # Previous class was module_or_class
                 if inspect.isclass(module_or_class):
                     _class = module_or_class
-                    if not hasattr(module_or_class, "_deserialize_"):
+                    if not hasattr(module_or_class, "_deserialize_") and not hasattr(module_or_class, "_serialize_"):
                         continue
                     try:
                         model = pycyphal.dsdl.get_model(_class)
