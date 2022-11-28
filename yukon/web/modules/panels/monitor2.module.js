@@ -14,6 +14,7 @@ settings.PubLineXOffset = settings.NodeXOffset + settings.NodeWidth + settings.L
 settings.DistanceBetweenLines = 60;
 settings.HorizontalColliderHeight = 17;
 settings.HorizontalColliderOffsetY = (settings.HorizontalColliderHeight - 1) / 2
+settings.HorizontalLabelOffsetY = 10;
 export function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0].querySelector("#monitor2");
     setInterval(() => {
@@ -127,6 +128,10 @@ function update_monitor2(containerElement, yukon_state) {
                 horizontal_line_collider.style.backgroundColor = "transparent";
                 horizontal_line_collider.style.cursor = "pointer";
                 containerElement.appendChild(horizontal_line_collider);
+                // Place a label above the horizontal line at the left side
+                const horiontal_line_label = document.createElement("div");
+                horiontal_line_label.classList.add("horizontal_line_label");
+                horiontal_line_label.style.top = y_counter + avatar_y_counter - settings["HorizontalLabelOffsetY"] + "px";
 
                 containerElement.appendChild(horizontal_line);
                 arrowhead = document.createElement("div");

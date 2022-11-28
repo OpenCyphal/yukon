@@ -52,7 +52,7 @@ export function getRelatedLinks(subject_id, yukon_state) {
             const link_name = register_name_split[register_name_split.length - 2];
             const value = avatar.registers_values[register_name];
             if (parseInt(value) === subject_id && register_name.endsWith(".id")) {
-                links.push({name: link_name, node_id: avatar.node_id, subject_id: subject_id, type:});
+                links.push({name: link_name, node_id: avatar.node_id, subject_id: subject_id, type: register_name_split[1]});
             }
         }
     }
