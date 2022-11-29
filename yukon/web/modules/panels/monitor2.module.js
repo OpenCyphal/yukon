@@ -75,6 +75,46 @@ export function setUpMonitor2Component(container, yukon_state) {
             }
         }
     });
+    let posObject = { top: 0, left: 0, x: 0, y: 0 };
+    const mouseDownHandler = function (e) {
+        if (e.which !== 2) {
+            return;
+        }
+        e.preventDefault();
+        containerElement.style.userSelect = 'none';
+        containerElement.style.cursor = 'grabbing';
+        posObject = {
+            // The current scroll
+            left: containerElement.scrollLeft,
+            top: containerElement.scrollTop,
+            // Get the current mouse position
+            x: e.clientX,
+            y: e.clientY,
+        };
+
+        document.addEventListener('mousemove', mouseMoveHandler);
+        document.addEventListener('mouseup', mouseUpHandler);
+    };
+    const mouseMoveHandler = function (e) {
+        // How far the mouse has been moved
+        const dx = e.clientX - posObject.x;
+        const dy = e.clientY - posObject.y;
+
+        // Scroll the element
+        containerElement.scrollTop = posObject.top - dy;
+        containerElement.scrollLeft = posObject.left - dx;
+    };
+    const mouseUpHandler = function (e) {
+        if (e.which !== 2) {
+            return;
+        }
+        e.preventDefault();
+        containerElement.style.cursor = 'grab';
+        containerElement.style.removeProperty('user-select');
+        document.removeEventListener('mousemove', mouseMoveHandler);
+        document.removeEventListener('mouseup', mouseUpHandler);
+    };
+    document.addEventListener('mousedown', mouseDownHandler);
 }
 function isContainerPopulated(containerElement) {
     return containerElement.querySelectorAll(".node").length > 0;
@@ -198,10 +238,10 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 if(currentLinkObject !== undefined) {
                     currentLinkDsdlDatatype = currentLinkObject.datatype || "";
                     if(currentLinkObject.name) {
-                        currentLinkDsdlDatatype += ":" + currentLinkObject.name;
+                        currentLinkDsdlDatatype = currentLinkObject.name + ":" + currentLinkDsdlDatatype;
                     }
                 } else {
-                    currentLinkDsdlDatatype = fixed_datatype_full || "problem";
+                    currentLinkDsdlDatatype = fixed_datatype_full || "There is no info about this link";
                 }
                 let horizontal_line = null;
                 let arrowhead = null;
@@ -234,6 +274,8 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 horizontal_line_label.style.position = "absolute";
                 horizontal_line_label.innerHTML = currentLinkDsdlDatatype;
                 horizontal_line_label.style.zIndex = "4";
+                horizontal_line_label.style.backgroundColor = settings["LinkLabelColor"];
+                horizontal_line_label.style.color = settings["LinkLabelTextColor"];
                 horizontal_line_label.addEventListener("mouseover", () => {
                     horizontal_line_label.style.backgroundColor = settings["LinkLabelHighlightColor"];
                     horizontal_line_label.style.color = settings["LinkLabelHighlightTextColor"];
