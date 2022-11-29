@@ -416,13 +416,32 @@ export function make_context_menus(yukon_state) {
             {
                 content: "Add subscriber",
                 events: {
+                    adjust: async (contextMenuContext, element, button) => {
+                        button.innerHTML = "Subscribe to " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
+                    },
                     click: async (e, elementOpenedOn) => {
                         const portType = elementOpenedOn.getAttribute("data-port-type");
                         const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
                         console.log("Adding subscriber to port " + portType + portNr);
                     }
                 }
-            }],
+            },
+            {
+                content: "Remove all subscribers",
+                events: {
+                    adjust: async (contextMenuContext, element, button) => {
+                        // Can use this to remove the button if it shouldn't be shown in this case
+                        // element.parentElement.removeChild(element);
+                        button.innerHTML = "Remove all subscribers of " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
+                    },
+                    click: async (e, elementOpenedOn) => {
+                        const portType = elementOpenedOn.getAttribute("data-port-type");
+                        const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
+                        console.log("Adding subscriber to port " + portType + portNr);
+                    }
+                }
+            }
+        ],
     });
     monitor2_vertical_line_context_menu.init();
 }

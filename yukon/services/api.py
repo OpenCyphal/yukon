@@ -483,7 +483,12 @@ class Api:
         return jsonify(response)
 
     def fetch_messages_for_subscription_specifiers(self, specifiers: str) -> Response:
-        """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
+        """
+        A specifier is a subject_id concatenated with a datatype, separated by a colon.
+
+        The DTO, which specifiers is a JSON serialized list of,
+        contains an additional counter also separated by a colon.
+        """
         specifiers_object = json.loads(specifiers)
         dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
         mapping = {}
@@ -494,6 +499,14 @@ class Api:
                     break
         # This jsonify is why I made sure to set up the JSON encoder for dsdl
         return jsonify(mapping)
+
+    def get_current_available_subscription_specifiers(self) -> Response:
+        """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
+        specifiers = []
+        for specifier, messages_store in self.state.queues.subscribed_messages.items():
+            specifiers.append(str(specifier))
+        specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
+        return jsonify(specifiers_return_value)
 
     def get_known_datatypes_from_dsdl(self) -> Response:
         # iterate through the paths in PYTHONPATH

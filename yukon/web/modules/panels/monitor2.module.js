@@ -28,7 +28,7 @@ settings.LinkLabelTextColor = "black";
 settings.LinkLabelHighlightColor = "black";
 settings.LinkLabelHighlightTextColor = "white";
 // Add random shades of orange to the list
-settings.HighlightColorsRaw = ["red", "blue", "green", "yellow", "orange", "purple", "pink", "brown"];
+settings.HighlightColorsRaw = ["red", "blue", "green", "yellow", "orange", "purple", "brown"];
 settings.HighlightColors = [];
 // Use a for loop to generate the structure
 for(const color of settings.HighlightColorsRaw) {
@@ -94,6 +94,8 @@ export function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0];
     const monitor2Div = containerElement.querySelector("#monitor2");
     setInterval(async () => {
+        yukon_state.subscription_specifiers = await yukon_state.zubax_apij.get_current_available_subscription_specifiers();
+        yukon_state.subscription_specifiers_previous_hash = yukon_state.subscription_specifiers_hash;
         await update_monitor2(containerElement, monitor2Div, yukon_state);
     }, 1000);
     let escape_timer = null;
@@ -418,7 +420,6 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                         const relatedObjects = findRelatedObjects(port);
                         removeHighlightsFromObjects(relatedObjects);
                         relatedObjects.forEach(object => {
-                            removeHighlightFromElement(object);
                             object["toggledOn"].value = false;
                         })
                     }
