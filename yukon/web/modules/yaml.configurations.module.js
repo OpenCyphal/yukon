@@ -189,14 +189,14 @@ export async function return_all_selected_registers_as_yaml(pairs, yukon_state) 
     let yaml_string = await serverFormatYaml(pairs_object);
     if (yukon_state.settings.simplifyRegisters) {
         let intermediary_structure = await zubax_apij.simplify_configuration(json_string)
-        if (contains_single_node && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
+        if (contains_single_node && !yukon_state.settings.alwaysSaveAsNetworkConfig) {
             intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
         }
         const simplified_yaml_string = await serverFormatYaml(intermediary_structure);
         return parseYamlStringsToNumbers(simplified_yaml_string);
     } else {
         let intermediary_structure = JSON.parse(yaml_string, JsonParseHelper);
-        if (contains_single_node && !yukon_state.settings.alwaysSaveAsNetoworkConfig) {
+        if (contains_single_node && !yukon_state.settings.alwaysSaveAsNetworkConfig) {
             intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
         }
         const yaml_string_modified = await serverFormatYaml(intermediary_structure);
