@@ -40,7 +40,8 @@ def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
 def set_file_server_handler(state: "yukon.domain.god_state.GodState") -> None:
     def _handle_path_change(new_value: str) -> None:
         logger.info("File server path changed to " + new_value)
-        state.cyphal.file_server.roots = [new_value]
+        if state.cyphal.file_server:
+            state.cyphal.file_server.roots = [new_value]
 
     def _handle_enabled_change(should_be_enabled: bool) -> None:
         is_already_running = state.cyphal.file_server is not None
