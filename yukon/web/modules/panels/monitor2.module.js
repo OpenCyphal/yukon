@@ -1,6 +1,9 @@
 import {areThereAnyNewOrMissingHashes, updateLastHashes} from "../hash_checks.module.js";
 import {getRelatedLinks} from "../meanings.module.js";
-import {getHoveredContainerElementAndContainerObject, secondsToString} from "../utilities.module.js";
+import {
+    getHoveredContainerElementAndContainerObject,
+    secondsToColonSeparatedString
+} from "../utilities.module.js";
 
 const settings = {};
 settings.VerticalLineMarginTop = 3;
@@ -244,6 +247,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     avatars_copy.sort(compareAvatar);
     for(const avatar of avatars_copy) {
         const node_id = avatar.node_id;
+        const get_up_to_date_avatar = () => { return yukon_state.current_avatars.find(a => a.node_id === node_id); };
         console.log("Avatar in update_monitor2", avatar);
         // Add the sizes of ports.cln, ports.srv, ports.pub, ports.sub
         const total_ports = avatar.ports.cln.length + avatar.ports.srv.length + avatar.ports.pub.length + avatar.ports.sub.length;
@@ -259,7 +263,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         const fieldsObject = {"Name": avatar.name, "Health": avatar.last_heartbeat.health_text,
             "Software Version": avatar.versions.software_version,
             "Hardware Version": avatar.versions.hardware_version,
-            "Uptime": secondsToString(avatar.last_heartbeat.uptime),
+            "Uptime": secondsToColonSeparatedString(avatar.last_heartbeat.uptime),
             "Node ID": avatar.node_id};
         // Make a div for each: health, software_version, hardware_version, uptime
         for(const field of Object.keys(fieldsObject)) {
@@ -271,6 +275,15 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             const valueDiv = document.createElement("div");
             valueDiv.classList.add("value");
             valueDiv.innerHTML = fieldsObject[field];
+            if(field === "Uptime") {
+                let intervalId = null;
+                intervalId = setInterval(() => {
+                    valueDiv.innerHTML = secondsToColonSeparatedString(get_up_to_date_avatar().last_heartbeat.uptime);
+                    if(!valueDiv.parentElement) {
+                        clearInterval(intervalId);
+                    }
+                }, 1000);
+            }
             node.appendChild(valueDiv);
         }
         let avatar_y_counter = settings["AvatarConnectionPadding"];
@@ -355,6 +368,8 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 port_number_label.style.zIndex = "4";
                 port_number_label.style.backgroundColor = settings["LinkLabelHighlightColor"];
                 port_number_label.style.color = settings["LinkLabelHighlightTextColor"];
+                // Align text right
+                port_number_label.style.textAlign = "right";
                 monitor2Div.appendChild(port_number_label);
 
                 monitor2Div.appendChild(horizontal_line_label);

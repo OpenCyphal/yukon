@@ -10,6 +10,14 @@ export function secondsToString(seconds) {
     const numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
     return numyears + " years " + numdays + " days " + numhours + " hours " + numminutes + " minutes " + numseconds + " seconds";
 }
+export function secondsToColonSeparatedString(seconds) {
+
+    const numhours = Math.floor(seconds  / 86400);
+    const numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
+    const numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
+    // Use zero padding on hours and minutes and seconds
+    return numhours.toString().padStart(2, '0') + ":" + numminutes.toString().padStart(2, '0') + ":" + numseconds.toString().padStart(2, '0');
+}
 
 export function JsonParseHelper(k, v) {
     if (v === Infinity) {
