@@ -1,6 +1,6 @@
 import {areThereAnyNewOrMissingHashes, updateLastHashes} from "../hash_checks.module.js";
 import {getRelatedLinks} from "../meanings.module.js";
-import {getHoveredContainerElementAndContainerObject} from "../utilities.module.js";
+import {getHoveredContainerElementAndContainerObject, secondsToString} from "../utilities.module.js";
 
 const settings = {};
 settings.VerticalLineMarginTop = 5;
@@ -8,9 +8,9 @@ settings.PageMarginTop = 20;
 settings.NodeXOffset = 20;
 settings.DistancePerHorizontalConnection = 20;
 settings.DistanceBetweenNodes = 2;
-settings.NodeWidth = 150;
+settings.NodeWidth = 250;
 settings.AvatarMinHeight = 50;
-settings.AvatarConnectionPadding = 10;
+settings.AvatarConnectionPadding = 20;
 settings.LinkInfoWidth = 300;
 settings.PubLineXOffset = settings.NodeXOffset + settings.NodeWidth + settings.LinkInfoWidth + 20;
 settings.DistanceBetweenLines = 60;
@@ -212,11 +212,30 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         const total_ports = avatar.ports.cln.length + avatar.ports.srv.length + avatar.ports.pub.length + avatar.ports.sub.length;
         console.assert(total_ports >= 0);
         let avatar_height = Math.max(total_ports * settings["DistancePerHorizontalConnection"] + settings["AvatarConnectionPadding"], settings["AvatarMinHeight"]);
-        const node = addNode(avatar, y_counter, avatar_height, avatar.name,  monitor2Div, yukon_state);
-        const nodeIdDiv = document.createElement("div");
-        nodeIdDiv.classList.add("node_id");
-        nodeIdDiv.innerHTML = node_id;
-        node.appendChild(nodeIdDiv);
+        const node = addNode(avatar, y_counter, avatar_height, "",  monitor2Div, yukon_state);
+        /*
+            health_cell.innerHTML = yukon_state.current_avatars[i].last_heartbeat.health_text;
+            software_version_cell.innerHTML = yukon_state.current_avatars[i].versions.software_version;
+            hardware_version_cell.innerHTML = yukon_state.current_avatars[i].versions.hardware_version;
+            uptime_cell.innerHTML = secondsToString(yukon_state.current_avatars[i].last_heartbeat.uptime);
+         */
+        const fieldsObject = {"Name": avatar.name, "Health": avatar.last_heartbeat.health_text,
+            "Software Version": avatar.versions.software_version,
+            "Hardware Version": avatar.versions.hardware_version,
+            "Uptime": secondsToString(avatar.last_heartbeat.uptime),
+            "Node ID": avatar.node_id};
+        // Make a div for each: health, software_version, hardware_version, uptime
+        for(const field of Object.keys(fieldsObject)) {
+            const fieldDiv = document.createElement("div");
+            fieldDiv.classList.add("field");
+            fieldDiv.innerHTML = field;
+            fieldDiv.style.fontWeight = "bold";
+            node.appendChild(fieldDiv);
+            const valueDiv = document.createElement("div");
+            valueDiv.classList.add("value");
+            valueDiv.innerHTML = fieldsObject[field];
+            node.appendChild(valueDiv);
+        }
         let avatar_y_counter = settings["AvatarConnectionPadding"];
         for (const port_type of Object.keys(avatar.ports)) {
             for (const port of avatar.ports[port_type]) {
@@ -286,6 +305,21 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                         horizontal_line_label.style.color = settings["LinkLabelTextColor"];
                     }
                 });
+                // Create a label for the port number on the left side of the horizontal line
+                const port_number_label = document.createElement("label");
+                port_number_label.classList.add("port_number_label");
+                port_number_label.style.top = y_counter + avatar_y_counter - settings["HorizontalLabelOffsetY"] + "px";
+                // align it 50px to the left from the left side of the horizontal line
+                port_number_label.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 50 + "px");
+                port_number_label.style.width = "45px";
+                port_number_label.style.height = settings.DistancePerHorizontalConnection + "px";
+                port_number_label.style.position = "absolute";
+                port_number_label.innerHTML = port;
+                port_number_label.style.zIndex = "4";
+                port_number_label.style.backgroundColor = settings["LinkLabelHighlightColor"];
+                port_number_label.style.color = settings["LinkLabelHighlightTextColor"];
+                monitor2Div.appendChild(port_number_label);
+
                 monitor2Div.appendChild(horizontal_line_label);
 
 
