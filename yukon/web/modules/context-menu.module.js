@@ -409,4 +409,20 @@ export function make_context_menus(yukon_state) {
 
     })
     cy_context_menu.init();
+    const monitor2_vertical_line_context_menu = new ContextMenu({
+        target: ".line_collider",
+        mode: "dark",
+        menuItems: [
+            {
+                content: "Add subscriber",
+                events: {
+                    click: async (e, elementOpenedOn) => {
+                        const portType = elementOpenedOn.getAttribute("data-port-type");
+                        const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
+                        console.log("Adding subscriber to port " + portType + portNr);
+                    }
+                }
+            }],
+    });
+    monitor2_vertical_line_context_menu.init();
 }

@@ -3,7 +3,7 @@ import {getRelatedLinks} from "../meanings.module.js";
 import {getHoveredContainerElementAndContainerObject, secondsToString} from "../utilities.module.js";
 
 const settings = {};
-settings.VerticalLineMarginTop = 5;
+settings.VerticalLineMarginTop = 3;
 settings.PageMarginTop = 20;
 settings.NodeXOffset = 20;
 settings.DistancePerHorizontalConnection = 20;
@@ -16,38 +16,75 @@ settings.PubLineXOffset = settings.NodeXOffset + settings.NodeWidth + settings.L
 settings.DistanceBetweenLines = 60;
 settings.HorizontalColliderHeight = 17;
 settings.HorizontalColliderOffsetY = (settings.HorizontalColliderHeight - 1) / 2
-settings.HorizontalLabelOffsetY = 10;
+settings.HorizontalLabelOffsetY = 20;
+settings.HorizontalPortLabelOffsetY = 10;
 settings.LabelLeftMargin = 12;
 settings.VerticalColliderWidth = 9;
 settings.LinkLabelColor = "transparent";
 settings.LinkLabelTextColor = "black";
 settings.LinkLabelHighlightColor = "black";
 settings.LinkLabelHighlightTextColor = "white";
+// Add random shades of orange to the list
+settings.HighlightColorsRaw = ["red", "blue", "green", "yellow", "orange", "purple", "pink", "brown"];
+settings.HighlightColors = [];
+// Use a for loop to generate the structure
+for(const color of settings.HighlightColorsRaw) {
+    settings.HighlightColors.push({color: color, taken: false});
+}
+
 let linesByPortAndPortType = [];
-function highlightElement(object) {
-    if(object.element.classList.contains("arrowhead")) {
-        object.element.style.setProperty("border-top", "7px solid red");
-     } else if (object.element.classList.contains("horizontal_line_label") && object.element.tagName === "LABEL") {
-        object.element.style.setProperty("background-color", settings.LinkLabelHighlightColor);
-        object.element.style.setProperty("color", settings.LinkLabelHighlightTextColor);
-    } else if (object.element.classList.contains("horizontal_line") || object.element.classList.contains("line")) {
-        object.element.style.setProperty("background-color", "red");
+function pickHighlightColor(objects) {
+    for (const color of settings.HighlightColors) {
+        if (color.taken === false) {
+            color.taken = true;
+            for(const object of objects) {
+                object.takenColor = color;
+            }
+            return color.color;
+        }
+    }
+    return "red";
+}
+function highlightElement(element, color) {
+    if(element.classList.contains("arrowhead")) {
+        element.style.setProperty("border-top", "7px solid " + color);
+     } else if (element.classList.contains("horizontal_line_label") && element.tagName === "LABEL") {
+        element.style.setProperty("background-color", settings.LinkLabelHighlightColor);
+        element.style.setProperty("color", settings.LinkLabelHighlightTextColor);
+    } else if (element.classList.contains("horizontal_line") || element.classList.contains("line")) {
+        element.style.setProperty("background-color", color);
     }
 }
-function removeHighlightFromElement(object) {
-    if(object.element.classList.contains("arrowhead")) {
-        object.element.style.setProperty("border-top", "7px solid pink");
-    } else if (object.element.classList.contains("horizontal_line_label") && object.element.tagName === "LABEL") {
-        object.element.style.setProperty("background-color", settings.LinkLabelColor);
-        object.element.style.setProperty("color", settings.LinkLabelTextColor);
-    } else if (object.element.classList.contains("horizontal_line") || object.element.classList.contains("line")) {
-        object.element.style.removeProperty("background-color");
+function highlightElements(objects) {
+    const pickedHighlightColor = pickHighlightColor(objects);
+    for(const object of objects) {
+        highlightElement(object.element, pickedHighlightColor);
+    }
+}
+function removeHighlightsFromObjects(objects) {
+    for (const object of objects) {
+        object.toggledOn.value = false;
+        if(object.takenColor) {
+            const takenColor = settings.HighlightColors.find((color) => { return color.color === object.takenColor.color; });
+            takenColor.taken = false;
+        }
+        removeHighlightFromElement(object.element);
+    }
+}
+function removeHighlightFromElement(element) {
+    if(element.classList.contains("arrowhead")) {
+        element.style.setProperty("border-top", "7px solid pink");
+    } else if (element.classList.contains("horizontal_line_label") && element.tagName === "LABEL") {
+        element.style.setProperty("background-color", settings.LinkLabelColor);
+        element.style.setProperty("color", settings.LinkLabelTextColor);
+    } else if (element.classList.contains("horizontal_line") || element.classList.contains("line")) {
+        element.style.removeProperty("background-color");
     }
 }
 function unhighlightAll() {
     for (const object of linesByPortAndPortType) {
         object.toggledOn.value = false;
-        removeHighlightFromElement(object);
+        removeHighlightFromElement(object.element);
     }
 }
 export function setUpMonitor2Component(container, yukon_state) {
@@ -308,7 +345,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 // Create a label for the port number on the left side of the horizontal line
                 const port_number_label = document.createElement("label");
                 port_number_label.classList.add("port_number_label");
-                port_number_label.style.top = y_counter + avatar_y_counter - settings["HorizontalLabelOffsetY"] + "px";
+                port_number_label.style.top = y_counter + avatar_y_counter - settings.HorizontalPortLabelOffsetY + "px";
                 // align it 50px to the left from the left side of the horizontal line
                 port_number_label.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 50 + "px");
                 port_number_label.style.width = "45px";
@@ -338,8 +375,10 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 linesByPortAndPortType.push({"element": arrowhead, "port": port, "type": port_type, "toggledOn": toggledOn});
                 linesByPortAndPortType.push({"element": horizontal_line_label, "port": port, "type": port_type, "toggledOn": toggledOn});
                 horizontal_line_collider.addEventListener("mouseover", () => {
-                    horizontal_line.style.setProperty("background-color", "red");
-                    arrowhead.style.setProperty("border-top", "7px solid red");
+                    if(!toggledOn.value) {
+                        horizontal_line.style.setProperty("background-color", "red");
+                        arrowhead.style.setProperty("border-top", "7px solid red");
+                    }
                 });
                 horizontal_line_collider.addEventListener("mouseout", () => {
                     if(!toggledOn.value) {
@@ -352,14 +391,18 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                     if(toggledOn.value) {
                         horizontal_line.style.setProperty("background-color", "red");
                         arrowhead.style.setProperty("border-top", "7px solid red");
-                        findRelatedObjects(port).forEach(object => {
-                            highlightElement(object)
+                        const relatedObjects = findRelatedObjects(port);
+                        highlightElements(relatedObjects)
+                        relatedObjects.forEach(object => {
+
                             object["toggledOn"].value = true;
                         })
                     } else {
                         horizontal_line.style.removeProperty("background-color");
                         arrowhead.style.setProperty("border-top", "7px solid pink");
-                        findRelatedObjects(port).forEach(object => {
+                        const relatedObjects = findRelatedObjects(port);
+                        removeHighlightsFromObjects(relatedObjects);
+                        relatedObjects.forEach(object => {
                             removeHighlightFromElement(object);
                             object["toggledOn"].value = false;
                         })
@@ -410,6 +453,8 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         linesByPortAndPortType.push({"element": line, "port": port.port, "type": "vertical", "toggledOn": toggledOn});
         // Create a collider for the line
         const line_collider = document.createElement("div");
+        line_collider.setAttribute("data-port", port.port);
+        line_collider.setAttribute("data-port-type", port.type);
         line_collider.classList.add("line_collider");
         line_collider.style.width = settings["VerticalColliderWidth"] + "px";
         line_collider.style.position = "absolute";
@@ -420,7 +465,9 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         line_collider.style.backgroundColor = "transparent";
         line_collider.style.cursor = "pointer";
         line_collider.addEventListener("mouseover", () => {
-            line.style.setProperty("background-color", "red");
+            if(!toggledOn.value) {
+                line.style.setProperty("background-color", "red");
+            }
         });
         line_collider.addEventListener("mouseout", () => {
             if(!toggledOn.value) {
@@ -431,14 +478,16 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             toggledOn.value = !toggledOn.value;
             if(toggledOn.value) {
                 line.style.setProperty("background-color", "red");
-                findRelatedObjects(port.port).forEach(object => {
-                    highlightElement(object)
+                const relatedObjects = findRelatedObjects(port.port);
+                highlightElements(relatedObjects);
+                relatedObjects.forEach(object => {
                     object["toggledOn"].value = true;
                 })
             } else {
                 line.style.removeProperty("background-color");
-                findRelatedObjects(port.port).forEach(object => {
-                    removeHighlightFromElement(object);
+                const relatedObjects = findRelatedObjects(port.port);
+                removeHighlightsFromObjects(relatedObjects);
+                relatedObjects.forEach(object => {
                     object["toggledOn"].value = false;
                 });
             }
