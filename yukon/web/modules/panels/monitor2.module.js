@@ -96,6 +96,14 @@ function unhighlightAll() {
         removeHighlightFromElement(object.element);
     }
 }
+export function makeSimpleSubscriptionFrame(port_nr, yukon_state) {
+    const frame = document.createElement("div");
+    frame.classList.add("simple_subscription_frame");
+    // Look through publishers on this port and see what the most common published datatype is, then use that to fill in a select input
+    // Also take the `const response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();` and use it to fill in the select input
+
+    return frame;
+}
 function drawSubscriptions(subscriptionsDiv) {
     if (settings.SubscriptionsOffset === null) {
         // Subscriptions cannot be drawn currently before any nodes and ports have been drawn
@@ -107,12 +115,12 @@ function drawSubscriptions(subscriptionsDiv) {
     }
     for (const child of subscriptionsDiv.children) {
         const specifier = child.getAttribute("data-specifier");
+        const isBeingSetup = child.getAttribute("data-is-being-setup");
         const isExisting = existing_specifiers[specifier];
-        if (!isExisting) {
+        if (!isExisting && !isBeingSetup) {
             child.parentElement.removeChild(child);
         }
     }
-    subscriptionsDiv.innerHTML = "";
     let vertical_offset_counter = settings.SubscriptionsVerticalOffset;
     if (!yukon_state.subscription_specifiers) {
         return;
