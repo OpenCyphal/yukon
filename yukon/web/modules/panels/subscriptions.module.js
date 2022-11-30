@@ -1,4 +1,4 @@
-import {getKnownDatatypes} from "../utilities.module.js";
+import { getKnownDatatypes } from "../utilities.module.js";
 
 export async function setUpSubscriptionsComponent(container, yukon_state) {
     const containerElement = container.getElement()[0];
@@ -214,11 +214,16 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
         labelLogToConsole.innerHTML = "Log to console";
         divLogToConsole.appendChild(labelLogToConsole);
         divLatestMessage.appendChild(divLogToConsole);
-
+        let fetchIntervalId = null;
         async function fetch() {
             const full_specifiers = [desiredSubjectIdValue + ":" + selectedDatatype + ":" + current_messages.length];
             const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
             const messages = result[Object.keys(result)[0]]
+            if (!messages) {
+                clearInterval(fetchIntervalId);
+                div.parentElement.removeChild(div);
+                return;
+            }
             for (const message of messages) {
                 if (inputLogToConsole.checked) {
                     yukon_state.addLocalMessage(JSON.stringify(message.message), 20);
@@ -228,7 +233,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
             pLatestMessage.innerHTML = JSON.stringify(current_messages[current_messages.length - 1]);
         }
 
-        setInterval(fetch, 300);
+        fetchIntervalId = setInterval(fetch, 300);
         // Add a button for removing the subscription
         const btnRemoveSubscription = document.createElement('button');
         btnRemoveSubscription.classList.add('btn');

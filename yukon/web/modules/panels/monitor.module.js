@@ -1,6 +1,6 @@
-import {secondsToString} from "../utilities.module.js";
-import {areThereAnyNewOrMissingHashes, updateLastHashes} from '../hash_checks.module.js';
-import {meanings, getLinkInfo} from "../meanings.module.js";
+import { secondsToString } from "../utilities.module.js";
+import { areThereAnyNewOrMissingHashes, updateLastHashes } from '../hash_checks.module.js';
+import { meanings, getLinkInfo } from "../meanings.module.js";
 
 export function create_directed_graph(yukon_state) {
     cytoscape.use(cytoscapeKlay);
@@ -23,12 +23,12 @@ export function create_directed_graph(yukon_state) {
         {
             selector: 'edge',
             style:
-                {
-                    width: 2,
-                    targetArrowShape: 'triangle',
-                    curveStyle: 'bezier',
-                    // 'label': 'data(label)' // maps to data.label
-                }
+            {
+                width: 2,
+                targetArrowShape: 'triangle',
+                curveStyle: 'bezier',
+                // 'label': 'data(label)' // maps to data.label
+            }
         },
         {
             selector: 'node[?publish_subject]',
@@ -89,12 +89,12 @@ export function create_directed_graph(yukon_state) {
         {
             selector: 'edge',
             style:
-                {
-                    width: 2,
-                    targetArrowShape: 'triangle',
-                    curveStyle: 'bezier',
-                    // 'label': 'data(label)' // maps to data.label
-                }
+            {
+                width: 2,
+                targetArrowShape: 'triangle',
+                curveStyle: 'bezier',
+                // 'label': 'data(label)' // maps to data.label
+            }
         },
         {
             selector: 'node[?publish_subject]',
@@ -370,23 +370,22 @@ export function update_directed_graph(yukon_state) {
     let available_publishers = {};
     let available_servers = {};
     for (const avatar of yukon_state.current_avatars) {
-        console.log(avatar);
-        my_graph.add([{data: {id: avatar.node_id, node: true, label: avatar.node_id + "\n" + avatar.name}}]);
+        my_graph.add([{ data: { id: avatar.node_id, node: true, label: avatar.node_id + "\n" + avatar.name } }]);
         if (!avatar.ports) {
             continue;
         }
         // Add a node for each pub and connect, then connect avatar to every pub node
         for (const pub of avatar.ports.pub) {
-            my_graph.add([{data: {id: pub, "publish_subject": true, label: pub + "\nsubject"}}])
+            my_graph.add([{ data: { id: pub, "publish_subject": true, label: pub + "\nsubject" } }])
             available_publishers[pub] = true;
-            my_graph.add([{data: {source: avatar.node_id, target: pub, "publish_edge": true}}]);
+            my_graph.add([{ data: { source: avatar.node_id, target: pub, "publish_edge": true } }]);
         }
         // clients should point to servers
         // client node --> [port] --> server node
         // publisher node --> [port] --> subscriber node
         for (const srv of avatar.ports.srv) {
-            my_graph.add([{data: {id: srv, serve_subject: true, label: srv + "\nservice"}}])
-            my_graph.add([{data: {source: srv, target: avatar.node_id, label: "A nice label", "serve_edge": true}}])
+            my_graph.add([{ data: { id: srv, serve_subject: true, label: srv + "\nservice" } }])
+            my_graph.add([{ data: { source: srv, target: avatar.node_id, label: "A nice label", "serve_edge": true } }])
         }
 
     }
@@ -407,7 +406,7 @@ export function update_directed_graph(yukon_state) {
                             label: assembled_text
                         }
                     }]);
-                    my_graph.add([{data: {source: sub, target: avatar.node_id + "" + sub, label: "A nice label"}}]);
+                    my_graph.add([{ data: { source: sub, target: avatar.node_id + "" + sub, label: "A nice label" } }]);
                     my_graph.add([{
                         data: {
                             source: avatar.node_id + "" + sub,
@@ -416,14 +415,14 @@ export function update_directed_graph(yukon_state) {
                         }
                     }]);
                 } else {
-                    my_graph.add([{data: {source: sub, target: avatar.node_id, label: "A nice label"}}])
+                    my_graph.add([{ data: { source: sub, target: avatar.node_id, label: "A nice label" } }])
                 }
 
             }
         }
         for (const cln of avatar.ports.cln) {
             if (available_servers[cln]) {
-                my_graph.add([{data: {source: avatar.node_id, target: cln, label: "A nice label"}}]);
+                my_graph.add([{ data: { source: avatar.node_id, target: cln, label: "A nice label" } }]);
             }
         }
     }

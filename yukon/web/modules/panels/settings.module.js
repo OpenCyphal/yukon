@@ -1,7 +1,6 @@
 export async function setUpSettingsComponent(container, yukon_state) {
     const containerElement = container.getElement()[0];
     yukon_state.all_settings = await yukon_state.zubax_apij.get_settings();
-    console.log("got settings into UI")
     let settings = yukon_state.all_settings;
     const settingsDiv = containerElement.querySelector("#settings-div")
     const settingsDebugDiv = containerElement.querySelector("#settings-debug-div");
@@ -178,7 +177,6 @@ export async function setUpSettingsComponent(container, yukon_state) {
                 parentDiv.appendChild(cardDiv);
                 createSettingsDiv(value, cardBodyDiv, settings, realDictionaryKey);
             } else {
-                console.log("the actual type is " + typeof value);
                 const formGroupDiv = document.createElement("div");
                 formGroupDiv.classList.add("form-check");
                 formGroupDiv.classList.add("mb-3");
@@ -290,7 +288,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             btnAddString.classList.add("btn-primary");
             btnAddString.innerText = "Add path";
             btnAddString.addEventListener("click", function () {
-                settings.push({"__type__": "dirpath", "value": ""});
+                settings.push({ "__type__": "dirpath", "value": "" });
                 parentDiv.innerHTML = "";
                 createSettingsDiv(settings, parentDiv, parentSettings, null);
             });

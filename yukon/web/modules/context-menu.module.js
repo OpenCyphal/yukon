@@ -414,9 +414,30 @@ export function make_context_menus(yukon_state) {
         mode: "dark",
         menuItems: [
             {
+                content: "Show messages history on this subject",
+                events: {
+                    adjust: async (contextMenuContext, element, button) => {
+                        const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
+                        if(portType !== "pub") {
+                            element.parentElement.removeChild(element);
+                        }
+                        button.innerHTML = "Show message history for " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
+                    },
+                    click: async (e, elementOpenedOn) => {
+                        const portType = elementOpenedOn.getAttribute("data-port-type");
+                        const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
+
+                    }
+                }
+            },
+            {
                 content: "Add subscriber",
                 events: {
                     adjust: async (contextMenuContext, element, button) => {
+                        const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
+                        if(portType !== "pub") {
+                            element.parentElement.removeChild(element);
+                        }
                         button.innerHTML = "Subscribe to " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
                     },
                     click: async (e, elementOpenedOn) => {
@@ -430,8 +451,10 @@ export function make_context_menus(yukon_state) {
                 content: "Remove all subscribers",
                 events: {
                     adjust: async (contextMenuContext, element, button) => {
-                        // Can use this to remove the button if it shouldn't be shown in this case
-                        // element.parentElement.removeChild(element);
+                        const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
+                        if(portType !== "pub") {
+                            element.parentElement.removeChild(element);
+                        }
                         button.innerHTML = "Remove all subscribers of " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
                     },
                     click: async (e, elementOpenedOn) => {

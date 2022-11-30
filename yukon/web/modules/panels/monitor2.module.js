@@ -1,5 +1,5 @@
-import {areThereAnyNewOrMissingHashes, updateLastHashes} from "../hash_checks.module.js";
-import {getRelatedLinks} from "../meanings.module.js";
+import { areThereAnyNewOrMissingHashes, updateLastHashes } from "../hash_checks.module.js";
+import { getRelatedLinks } from "../meanings.module.js";
 import {
     getHoveredContainerElementAndContainerObject,
     secondsToColonSeparatedString
@@ -30,9 +30,11 @@ settings.LinkLabelHighlightTextColor = "white";
 // Add random shades of orange to the list
 settings.HighlightColorsRaw = ["red", "blue", "green", "yellow", "orange", "purple", "brown"];
 settings.HighlightColors = [];
+settings.SubscriptionsOffset = null;
+settings.SubscriptionsVerticalOffset = settings.PageMarginTop;
 // Use a for loop to generate the structure
-for(const color of settings.HighlightColorsRaw) {
-    settings.HighlightColors.push({color: color, taken: false});
+for (const color of settings.HighlightColorsRaw) {
+    settings.HighlightColors.push({ color: color, taken: false });
 }
 
 let linesByPortAndPortType = [];
@@ -40,7 +42,7 @@ function pickHighlightColor(objects) {
     for (const color of settings.HighlightColors) {
         if (color.taken === false) {
             color.taken = true;
-            for(const object of objects) {
+            for (const object of objects) {
                 object.takenColor = color;
             }
             return color.color;
@@ -49,9 +51,9 @@ function pickHighlightColor(objects) {
     return "red";
 }
 function highlightElement(element, color) {
-    if(element.classList.contains("arrowhead")) {
+    if (element.classList.contains("arrowhead")) {
         element.style.setProperty("border-top", "7px solid " + color);
-     } else if (element.classList.contains("horizontal_line_label") && element.tagName === "LABEL") {
+    } else if (element.classList.contains("horizontal_line_label") && element.tagName === "LABEL") {
         element.style.setProperty("background-color", settings.LinkLabelHighlightColor);
         element.style.setProperty("color", settings.LinkLabelHighlightTextColor);
     } else if (element.classList.contains("horizontal_line") || element.classList.contains("line")) {
@@ -60,14 +62,14 @@ function highlightElement(element, color) {
 }
 function highlightElements(objects) {
     const pickedHighlightColor = pickHighlightColor(objects);
-    for(const object of objects) {
+    for (const object of objects) {
         highlightElement(object.element, pickedHighlightColor);
     }
 }
 function removeHighlightsFromObjects(objects) {
     for (const object of objects) {
         object.toggledOn.value = false;
-        if(object.takenColor) {
+        if (object.takenColor) {
             const takenColor = settings.HighlightColors.find((color) => { return color.color === object.takenColor.color; });
             takenColor.taken = false;
         }
@@ -75,7 +77,7 @@ function removeHighlightsFromObjects(objects) {
     }
 }
 function removeHighlightFromElement(element) {
-    if(element.classList.contains("arrowhead")) {
+    if (element.classList.contains("arrowhead")) {
         element.style.setProperty("border-top", "7px solid pink");
     } else if (element.classList.contains("horizontal_line_label") && element.tagName === "LABEL") {
         element.style.setProperty("background-color", settings.LinkLabelColor);
@@ -87,15 +89,59 @@ function removeHighlightFromElement(element) {
 function unhighlightAll() {
     for (const object of linesByPortAndPortType) {
         object.toggledOn.value = false;
+        if (object.takenColor) {
+            const takenColor = settings.HighlightColors.find((color) => { return color.color === object.takenColor.color; });
+            takenColor.taken = false;
+        }
         removeHighlightFromElement(object.element);
+    }
+}
+function drawSubscriptions(subscriptionsDiv) {
+    if (settings.SubscriptionsOffset === null) {
+        // Subscriptions cannot be drawn currently before any nodes and ports have been drawn
+        return;
+    }
+    const existing_specifiers = {};
+    for (const specifier of yukon_state.subscription_specifiers.specifiers) {
+        existing_specifiers[specifier] = true;
+    }
+    for (const child of subscriptionsDiv.children) {
+        const specifier = child.getAttribute("data-specifier");
+        const isExisting = existing_specifiers[specifier];
+        if (!isExisting) {
+            child.parentElement.removeChild(child);
+        }
+    }
+    subscriptionsDiv.innerHTML = "";
+    let vertical_offset_counter = settings.SubscriptionsVerticalOffset;
+    if (!yukon_state.subscription_specifiers) {
+        return;
+    }
+    for (const specifier of yukon_state.subscription_specifiers.specifiers) {
+        console.log("Drawing subscription specifier", specifier);
+        const subscriptionElement = document.createElement("div");
+        subscriptionElement.classList.add("subscription");
+        subscriptionElement.innerText = specifier;
+        subscriptionElement.style.position = "absolute";
+        subscriptionElement.style.top = vertical_offset_counter + "px";
+        subscriptionElement.style.left = settings.SubscriptionsOffset + "px";
+        subscriptionsDiv.appendChild(subscriptionElement);
+        vertical_offset_counter += 20;
     }
 }
 export function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0];
     const monitor2Div = containerElement.querySelector("#monitor2");
+    const subscriptionsDiv = containerElement.querySelector("#subscriptions");
     setInterval(async () => {
         yukon_state.subscription_specifiers = await yukon_state.zubax_apij.get_current_available_subscription_specifiers();
+        if (typeof yukon_state.subscription_specifiers_previous_hash === "undefined" || yukon_state.subscription_specifiers_previous_hash !== yukon_state.subscription_specifiers.hash) {
+            drawSubscriptions(subscriptionsDiv);
+        }
         yukon_state.subscription_specifiers_previous_hash = yukon_state.subscription_specifiers_hash;
+
+    }, 1500);
+    setInterval(async () => {
         await update_monitor2(containerElement, monitor2Div, yukon_state);
     }, 1000);
     let escape_timer = null;
@@ -191,15 +237,15 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     // Add all nodes
     let y_counter = settings["PageMarginTop"];
     let ports = [];
-    for(const avatar of yukon_state.current_avatars) {
+    for (const avatar of yukon_state.current_avatars) {
         for (const port_type of Object.keys(avatar.ports)) {
             for (const port of avatar.ports[port_type]) {
-                if(port === "") {
+                if (port === "") {
                     continue;
                 }
                 let alreadyExistingPorts = ports.filter(p => p.port === port && p.type === port_type);
                 if (alreadyExistingPorts.length === 0) {
-                    ports.push({"type": port_type, "port": port, "x_offset": 0});
+                    ports.push({ "type": port_type, "port": port, "x_offset": 0 });
                 }
             }
         }
@@ -222,8 +268,8 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     }
     ports.sort(comparePorts);
     let x_counter = settings["PubLineXOffset"];
-    for(const port of ports) {
-        if(port.type === "pub") {
+    for (const port of ports) {
+        if (port.type === "pub") {
             port.x_offset = x_counter;
             x_counter += settings["DistanceBetweenLines"];
         } else if (port.type === "srv") {
@@ -231,15 +277,15 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             x_counter += settings["DistanceBetweenLines"];
         }
     }
-    for(const port of ports) {
-        if(port.type === "sub") {
+    for (const port of ports) {
+        if (port.type === "sub") {
             let pub_port = ports.find(p => p.type === "pub" && p.port === port.port);
-            if(pub_port !== undefined) {
+            if (pub_port !== undefined) {
                 port.x_offset = pub_port.x_offset;
             }
         } else if (port.type === "cln") {
             let srv_port = ports.find(p => p.type === "srv" && p.port === port.port);
-            if(srv_port !== undefined) {
+            if (srv_port !== undefined) {
                 port.x_offset = srv_port.x_offset;
             }
         }
@@ -247,28 +293,29 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     const datatypes_response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
     const avatars_copy = Array.from(yukon_state.current_avatars)
     avatars_copy.sort(compareAvatar);
-    for(const avatar of avatars_copy) {
+    for (const avatar of avatars_copy) {
         const node_id = avatar.node_id;
         const get_up_to_date_avatar = () => { return yukon_state.current_avatars.find(a => a.node_id === node_id); };
-        console.log("Avatar in update_monitor2", avatar);
         // Add the sizes of ports.cln, ports.srv, ports.pub, ports.sub
         const total_ports = avatar.ports.cln.length + avatar.ports.srv.length + avatar.ports.pub.length + avatar.ports.sub.length;
         console.assert(total_ports >= 0);
         let avatar_height = Math.max(total_ports * settings["DistancePerHorizontalConnection"] + settings["AvatarConnectionPadding"], settings["AvatarMinHeight"]);
-        const node = addNode(avatar, y_counter, avatar_height, "",  monitor2Div, yukon_state);
+        const node = addNode(avatar, y_counter, avatar_height, "", monitor2Div, yukon_state);
         /*
             health_cell.innerHTML = yukon_state.current_avatars[i].last_heartbeat.health_text;
             software_version_cell.innerHTML = yukon_state.current_avatars[i].versions.software_version;
             hardware_version_cell.innerHTML = yukon_state.current_avatars[i].versions.hardware_version;
             uptime_cell.innerHTML = secondsToString(yukon_state.current_avatars[i].last_heartbeat.uptime);
          */
-        const fieldsObject = {"Name": avatar.name, "Health": avatar.last_heartbeat.health_text,
+        const fieldsObject = {
+            "Name": avatar.name, "Health": avatar.last_heartbeat.health_text,
             "Software Version": avatar.versions.software_version,
             "Hardware Version": avatar.versions.hardware_version,
             "Uptime": secondsToColonSeparatedString(avatar.last_heartbeat.uptime),
-            "Node ID": avatar.node_id};
+            "Node ID": avatar.node_id
+        };
         // Make a div for each: health, software_version, hardware_version, uptime
-        for(const field of Object.keys(fieldsObject)) {
+        for (const field of Object.keys(fieldsObject)) {
             const fieldDiv = document.createElement("div");
             fieldDiv.classList.add("field");
             fieldDiv.innerHTML = field;
@@ -277,11 +324,11 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             const valueDiv = document.createElement("div");
             valueDiv.classList.add("value");
             valueDiv.innerHTML = fieldsObject[field];
-            if(field === "Uptime") {
+            if (field === "Uptime") {
                 let intervalId = null;
                 intervalId = setInterval(() => {
                     valueDiv.innerHTML = secondsToColonSeparatedString(get_up_to_date_avatar().last_heartbeat.uptime);
-                    if(!valueDiv.parentElement) {
+                    if (!valueDiv.parentElement) {
                         clearInterval(intervalId);
                     }
                 }, 1000);
@@ -292,23 +339,23 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         for (const port_type of Object.keys(avatar.ports)) {
             for (const port of avatar.ports[port_type]) {
                 const matchingPort = ports.find(p => p.port === port && p.type === port_type);
-                if(matchingPort === undefined || (matchingPort && matchingPort.x_offset === 0)) {
+                if (matchingPort === undefined || (matchingPort && matchingPort.x_offset === 0)) {
                     continue;
                 }
                 // Getting info about more links than necessary for later highlighting purposes
                 const relatedLinks = getRelatedLinks(port, yukon_state);
                 const currentLinkObject = relatedLinks.find(link => link.port === port && link.type === port_type);
-                let toggledOn = {value: false};
+                let toggledOn = { value: false };
                 let currentLinkDsdlDatatype = null;
                 let fixed_datatype_short = null;
                 let fixed_datatype_full = null;
-                if(datatypes_response["fixed_id_messages"][port] !== undefined) {
+                if (datatypes_response["fixed_id_messages"][port] !== undefined) {
                     fixed_datatype_short = datatypes_response["fixed_id_messages"][port]["short_name"];
                     fixed_datatype_full = datatypes_response["fixed_id_messages"][port]["full_name"];
                 }
-                if(currentLinkObject !== undefined) {
+                if (currentLinkObject !== undefined) {
                     currentLinkDsdlDatatype = currentLinkObject.datatype || "";
-                    if(currentLinkObject.name) {
+                    if (currentLinkObject.name) {
                         currentLinkDsdlDatatype = currentLinkObject.name + ":" + currentLinkDsdlDatatype;
                     }
                 } else {
@@ -352,7 +399,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                     horizontal_line_label.style.color = settings["LinkLabelHighlightTextColor"];
                 });
                 horizontal_line_label.addEventListener("mouseout", () => {
-                    if(!toggledOn.value) {
+                    if (!toggledOn.value) {
                         horizontal_line_label.style.backgroundColor = settings["LinkLabelColor"];
                         horizontal_line_label.style.color = settings["LinkLabelTextColor"];
                     }
@@ -388,30 +435,31 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 arrowhead.style.borderRight = "7px solid transparent";
                 arrowhead.style.borderTop = "7px solid pink";
                 monitor2Div.appendChild(arrowhead);
-                linesByPortAndPortType.push({"element": horizontal_line, "port": port, "type": port_type, "toggledOn": toggledOn});
-                linesByPortAndPortType.push({"element": arrowhead, "port": port, "type": port_type, "toggledOn": toggledOn});
-                linesByPortAndPortType.push({"element": horizontal_line_label, "port": port, "type": port_type, "toggledOn": toggledOn});
+                linesByPortAndPortType.push({ "element": horizontal_line, "port": port, "type": port_type, "toggledOn": toggledOn });
+                linesByPortAndPortType.push({ "element": arrowhead, "port": port, "type": port_type, "toggledOn": toggledOn });
+                linesByPortAndPortType.push({ "element": horizontal_line_label, "port": port, "type": port_type, "toggledOn": toggledOn });
                 horizontal_line_collider.addEventListener("mouseover", () => {
-                    if(!toggledOn.value) {
-                        horizontal_line.style.setProperty("background-color", "red");
-                        arrowhead.style.setProperty("border-top", "7px solid red");
+                    if (!toggledOn.value) {
+                        highlightElement(horizontal_line, "red");
+                        highlightElement(arrowhead, "red");
+                        highlightElement(horizontal_line_label, "none");
                     }
                 });
                 horizontal_line_collider.addEventListener("mouseout", () => {
-                    if(!toggledOn.value) {
-                        horizontal_line.style.removeProperty("background-color");
-                        arrowhead.style.setProperty("border-top", "7px solid pink");
+                    if (!toggledOn.value) {
+                        removeHighlightFromElement(horizontal_line);
+                        removeHighlightFromElement(arrowhead);
+                        removeHighlightFromElement(horizontal_line_label);
                     }
                 });
                 horizontal_line_collider.addEventListener("click", () => {
                     toggledOn.value = !toggledOn.value;
-                    if(toggledOn.value) {
+                    if (toggledOn.value) {
                         horizontal_line.style.setProperty("background-color", "red");
                         arrowhead.style.setProperty("border-top", "7px solid red");
                         const relatedObjects = findRelatedObjects(port);
                         highlightElements(relatedObjects)
                         relatedObjects.forEach(object => {
-
                             object["toggledOn"].value = true;
                         })
                     } else {
@@ -426,21 +474,21 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                     // ports.find(p => p.port === port && p.type === "pub" || p.type === "srv");
                 });
 
-                if(matchingPort.type === "pub" || matchingPort.type === "srv") {
+                if (matchingPort.type === "pub" || matchingPort.type === "srv") {
                     // Arrowhead for the line
                     arrowhead.style.transform = "rotate(270deg)";
                     arrowhead.style.left = matchingPort.x_offset - 10 + "px";
                 } else if (matchingPort.type === "sub" || matchingPort.type === "cln") {
                     arrowhead.style.transform = "rotate(90deg)";
-                    arrowhead.style.left = settings["NodeXOffset"] + settings["NodeWidth"] - 3 +  "px";
+                    arrowhead.style.left = settings["NodeXOffset"] + settings["NodeWidth"] - 3 + "px";
                 }
                 avatar_y_counter += settings["DistancePerHorizontalConnection"];
             }
         }
         y_counter += avatar_height + settings["DistanceBetweenNodes"];
     }
-
-    for (const port of ports.filter(p => p.type === "pub" || p.type === "srv")) {
+    const publishers_and_services = ports.filter(p => p.type === "pub" || p.type === "srv");
+    for (const port of publishers_and_services) {
         // Create a line like <div class="line" style="width: 4px; position: absolute; top:20px; left: 140px">-42</div>-->
         let line = document.createElement("div");
         line.classList.add("line");
@@ -455,7 +503,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         port_label.style.position = "absolute";
 
         function update_port_label_position() {
-            if(port_label) {
+            if (port_label) {
                 port_label.style.top = containerElement.scrollTop + settings["VerticalLineMarginTop"] + "px";
                 window.requestAnimationFrame(update_port_label_position);
             }
@@ -465,8 +513,8 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         port_label.style.left = port.x_offset + 5 + "px";
         port_label.innerText = port.port;
         monitor2Div.appendChild(port_label);
-        let toggledOn = {value: false};
-        linesByPortAndPortType.push({"element": line, "port": port.port, "type": "vertical", "toggledOn": toggledOn});
+        let toggledOn = { value: false };
+        linesByPortAndPortType.push({ "element": line, "port": port.port, "type": "vertical", "toggledOn": toggledOn });
         // Create a collider for the line
         const line_collider = document.createElement("div");
         line_collider.setAttribute("data-port", port.port);
@@ -481,18 +529,18 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         line_collider.style.backgroundColor = "transparent";
         line_collider.style.cursor = "pointer";
         line_collider.addEventListener("mouseover", () => {
-            if(!toggledOn.value) {
+            if (!toggledOn.value) {
                 line.style.setProperty("background-color", "red");
             }
         });
         line_collider.addEventListener("mouseout", () => {
-            if(!toggledOn.value) {
+            if (!toggledOn.value) {
                 line.style.removeProperty("background-color");
             }
         });
         line_collider.addEventListener("click", () => {
             toggledOn.value = !toggledOn.value;
-            if(toggledOn.value) {
+            if (toggledOn.value) {
                 line.style.setProperty("background-color", "red");
                 const relatedObjects = findRelatedObjects(port.port);
                 highlightElements(relatedObjects);
@@ -511,6 +559,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         monitor2Div.appendChild(line_collider);
         monitor2Div.appendChild(line);
     }
+    settings.SubscriptionsOffset = publishers_and_services[publishers_and_services.length - 1].x_offset + settings.DistanceBetweenLines + 10;
 }
 function addNode(avatar, y, height, text, container, yukon_state) {
     // Verify that the avatar is not undefined
