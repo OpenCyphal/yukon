@@ -161,11 +161,14 @@ def loading_settings_into_yukon(state: GodState) -> None:
 def add_all_dsdl_paths_to_pythonpath(state: GodState) -> None:
     """This function adds all paths in state.settings.dsdl_paths to the python path."""
     dsdl_search_directories_setting = state.settings.get("DSDL search directories")
+    normalized_sys_path = [Path(path).resolve() for path in sys.path]
     if dsdl_search_directories_setting:
         for path_object in dsdl_search_directories_setting:
             path = path_object["value"].value
-            if path not in sys.path:
-                process_dsdl_path(Path(path))
-                sys.path.append(path)
+            normalized_path = Path(path).resolve()
+            if normalized_path not in normalized_sys_path:
+                process_dsdl_path(Path(normalized_path))
+                sys.path.append(normalized_path)
         # Save the current sys.path into os.environ["PYTHONPATH"]
-        os.environ["PYTHONPATH"] = ":".join(sys.path)
+        separator = ";" if os.name == "nt" else ":"
+        os.environ["PYTHONPATH"] = separator.join(sys.path)
