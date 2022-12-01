@@ -1,6 +1,5 @@
 export async function setUpSettingsComponent(container, yukon_state) {
     const containerElement = container.getElement()[0];
-    yukon_state.all_settings = await yukon_state.zubax_apij.get_settings();
     let settings = yukon_state.all_settings;
     const settingsDiv = containerElement.querySelector("#settings-div")
     const settingsDebugDiv = containerElement.querySelector("#settings-debug-div");
@@ -229,8 +228,9 @@ export async function setUpSettingsComponent(container, yukon_state) {
                         input.classList.add("form-control");
                         input.value = value;
                         input.addEventListener("change", async function () {
-                            settings[key] = input.value;
+                            settings[key] = parseFloat(input.value);
                         });
+                        input.title = "Number field"
                         formGroupDiv.appendChild(input);
                     } else {
                         const input = document.createElement("input");
@@ -240,6 +240,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                         input.addEventListener("change", async function () {
                             settings[key] = input.value;
                         });
+                        input.title = "Text field";
                         formGroupDiv.appendChild(input);
                     }
                 }

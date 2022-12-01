@@ -6,36 +6,49 @@ import {
 } from "../utilities.module.js";
 
 const settings = {};
-settings.VerticalLineMarginTop = 3;
-settings.PageMarginTop = 20;
-settings.NodeXOffset = 20;
-settings.DistancePerHorizontalConnection = 20;
-settings.DistanceBetweenNodes = 2;
-settings.NodeWidth = 250;
-settings.AvatarMinHeight = 50;
-settings.AvatarConnectionPadding = 20;
-settings.LinkInfoWidth = 300;
-settings.PubLineXOffset = settings.NodeXOffset + settings.NodeWidth + settings.LinkInfoWidth + 20;
-settings.DistanceBetweenLines = 60;
-settings.HorizontalColliderHeight = 17;
-settings.HorizontalColliderOffsetY = (settings.HorizontalColliderHeight - 1) / 2
-settings.HorizontalLabelOffsetY = 20;
-settings.HorizontalPortLabelOffsetY = 10;
-settings.LabelLeftMargin = 12;
-settings.VerticalColliderWidth = 9;
-settings.LinkLabelColor = "transparent";
-settings.LinkLabelTextColor = "black";
-settings.LinkLabelHighlightColor = "black";
-settings.LinkLabelHighlightTextColor = "white";
-// Add random shades of orange to the list
-settings.HighlightColorsRaw = ["red", "blue", "green", "yellow", "orange", "purple", "brown"];
-settings.HighlightColors = [];
-settings.SubscriptionsOffset = null;
-settings.SubscriptionsVerticalOffset = settings.PageMarginTop;
-// Use a for loop to generate the structure
-for (const color of settings.HighlightColorsRaw) {
-    settings.HighlightColors.push({ color: color, taken: false });
+function fillSettings(yukon_state) {
+    settings.VerticalLineMarginTop = 3;
+    settings.PageMarginTop = 20;
+    settings.NodeXOffset = 20;
+    settings.DistancePerHorizontalConnection = yukon_state.all_settings["Monitor view"]["Distance per horizontal connection"];
+    settings.DistanceBetweenNodes = 2;
+    settings.NodeWidth = yukon_state.all_settings["Monitor view"]["Node width"];
+    settings.AvatarMinHeight = 50;
+    settings.AvatarConnectionPadding = 20;
+    settings.LinkInfoWidth = yukon_state.all_settings["Monitor view"]["Link info width"];
+    settings.PubLineXOffset = settings.NodeXOffset + settings.NodeWidth + settings.LinkInfoWidth + 20;
+    settings.DistanceBetweenLines = yukon_state.all_settings["Monitor view"]["Distance between vertical lines"];
+    settings.HorizontalColliderHeight = 17;
+    settings.HorizontalColliderOffsetY = (settings.HorizontalColliderHeight - 1) / 2
+    settings.HorizontalLabelOffsetY = 20;
+    settings.HorizontalPortLabelOffsetY = 10;
+    settings.LabelLeftMargin = 12;
+    settings.VerticalColliderWidth = 9;
+    settings.LinkLabelColor = "transparent";
+    settings.LinkLabelTextColor = "black";
+    settings.LinkLabelHighlightColor = "black";
+    settings.LinkLabelHighlightTextColor = "white";
+    settings.ServicePortLabelBgColor = "lightblue";
+    settings.ServicePortLabelColor = "black";
+    // Add random shades of orange to the list
+    settings.HighlightColorsRaw = ["red", "blue", "green", "yellow", "orange", "purple", "brown"];
+    settings.HighlightColors = [];
+    settings.SubscriptionsOffset = null;
+    settings.SubscriptionsVerticalOffset = settings.PageMarginTop;
+    settings.ShowLinkNameOnSeparateLine = yukon_state.all_settings["Monitor view"]["Show link name below horizontal lines"]
+    if (settings.ShowLinkNameOnSeparateLine) {
+        settings.DistancePerHorizontalConnection = settings.DistancePerHorizontalConnection * 2;
+        settings.LinkNameOffset = -3;
+        if (yukon_state.all_settings["Monitor view"]["Show name above datatype"]) {
+            settings.ShowNameAboveDatatype = true;
+        }
+    }
+    // Use a for loop to generate the structure
+    for (const color of settings.HighlightColorsRaw) {
+        settings.HighlightColors.push({ color: color, taken: false });
+    }
 }
+
 
 let linesByPortAndPortType = [];
 function pickHighlightColor(objects) {
@@ -141,6 +154,7 @@ export function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0];
     const monitor2Div = containerElement.querySelector("#monitor2");
     const subscriptionsDiv = containerElement.querySelector("#subscriptions");
+    fillSettings(yukon_state);
     setInterval(async () => {
         yukon_state.subscription_specifiers = await yukon_state.zubax_apij.get_current_available_subscription_specifiers();
         if (typeof yukon_state.subscription_specifiers_previous_hash === "undefined" || yukon_state.subscription_specifiers_previous_hash !== yukon_state.subscription_specifiers.hash) {
@@ -176,6 +190,7 @@ export function setUpMonitor2Component(container, yukon_state) {
         if (e.which !== 2) {
             return;
         }
+        yukon_state.grabbing_in_monitor_view = true;
         e.preventDefault();
         containerElement.style.userSelect = 'none';
         containerElement.style.cursor = 'grabbing';
@@ -205,7 +220,8 @@ export function setUpMonitor2Component(container, yukon_state) {
             return;
         }
         e.preventDefault();
-        containerElement.style.cursor = 'grab';
+        yukon_state.grabbing_in_monitor_view = false;
+        containerElement.style.cursor = 'default';
         containerElement.style.removeProperty('user-select');
         document.removeEventListener('mousemove', mouseMoveHandler);
         document.removeEventListener('mouseup', mouseUpHandler);
@@ -363,7 +379,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 }
                 if (currentLinkObject !== undefined) {
                     currentLinkDsdlDatatype = currentLinkObject.datatype || "";
-                    if (currentLinkObject.name) {
+                    if (currentLinkObject.name && !settings.ShowLinkNameOnSeparateLine) {
                         currentLinkDsdlDatatype = currentLinkObject.name + ":" + currentLinkDsdlDatatype;
                     }
                 } else {
@@ -390,16 +406,30 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 horizontal_line_collider.style.backgroundColor = "transparent";
                 horizontal_line_collider.style.cursor = "pointer";
                 monitor2Div.appendChild(horizontal_line_collider);
+                let link_name_label = null;
+                if (settings.ShowLinkNameOnSeparateLine && typeof currentLinkObject === "object" && currentLinkObject.name) {
+                    link_name_label = document.createElement("label");
+                    link_name_label.classList.add("link_name_label");
+                    link_name_label.style.top = y_counter + avatar_y_counter - settings.LinkNameOffset + "px";
+                    link_name_label.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + settings.LabelLeftMargin + "px";
+                    link_name_label.style.width = "fit-content";
+                    link_name_label.style.zIndex = "0";
+                    link_name_label.style.position = "absolute";
+                    link_name_label.style.backgroundColor = "transparent";
+                    link_name_label.style.cursor = "pointer";
+                    link_name_label.innerHTML = currentLinkObject.name || "";
+                    monitor2Div.appendChild(link_name_label);
+                }
                 // Place a label above the horizontal line at the left side
                 const horizontal_line_label = document.createElement("label");
                 horizontal_line_label.classList.add("horizontal_line_label");
                 horizontal_line_label.style.top = y_counter + avatar_y_counter - settings["HorizontalLabelOffsetY"] + "px";
                 horizontal_line_label.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + settings.LabelLeftMargin + "px";
                 horizontal_line_label.style.width = "fit-content"; // settings.LinkInfoWidth  - settings.LabelLeftMargin + "px";
-                horizontal_line_label.style.height = settings.DistancePerHorizontalConnection + "px";
+                horizontal_line_label.style.height = "fit-content";
                 horizontal_line_label.style.position = "absolute";
                 horizontal_line_label.innerHTML = currentLinkDsdlDatatype;
-                horizontal_line_label.style.zIndex = "4";
+                horizontal_line_label.style.zIndex = "0";
                 horizontal_line_label.style.backgroundColor = settings["LinkLabelColor"];
                 horizontal_line_label.style.color = settings["LinkLabelTextColor"];
                 horizontal_line_label.addEventListener("mouseover", () => {
@@ -412,6 +442,12 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                         horizontal_line_label.style.color = settings["LinkLabelTextColor"];
                     }
                 });
+                if (settings.ShowLinkNameOnSeparateLine && settings.ShowNameAboveDatatype && link_name_label) {
+                    // Swap the top of horizontal_line_label and link_name_label
+                    const temp_value = horizontal_line_label.style.top;
+                    horizontal_line_label.style.top = link_name_label.style.top;
+                    link_name_label.style.top = temp_value;
+                }
                 // Create a label for the port number on the left side of the horizontal line
                 const port_number_label = document.createElement("label");
                 port_number_label.classList.add("port_number_label");
@@ -423,8 +459,13 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 port_number_label.style.position = "absolute";
                 port_number_label.innerHTML = port;
                 port_number_label.style.zIndex = "4";
-                port_number_label.style.backgroundColor = settings["LinkLabelHighlightColor"];
-                port_number_label.style.color = settings["LinkLabelHighlightTextColor"];
+                if (port_type === "srv") {
+                    port_number_label.style.backgroundColor = settings["ServicePortLabelBgColor"];
+                    port_number_label.style.setProperty("color", settings["ServicePortLabelColor"], "important");
+                } else {
+                    port_number_label.style.backgroundColor = settings["LinkLabelHighlightColor"];
+                    port_number_label.style.color = settings["LinkLabelHighlightTextColor"];
+                }
                 // Align text right
                 port_number_label.style.textAlign = "right";
                 monitor2Div.appendChild(port_number_label);
@@ -447,14 +488,14 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 linesByPortAndPortType.push({ "element": arrowhead, "port": port, "type": port_type, "toggledOn": toggledOn });
                 linesByPortAndPortType.push({ "element": horizontal_line_label, "port": port, "type": port_type, "toggledOn": toggledOn });
                 horizontal_line_collider.addEventListener("mouseover", () => {
-                    if (!toggledOn.value) {
+                    if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
                         highlightElement(horizontal_line, "red");
                         highlightElement(arrowhead, "red");
                         highlightElement(horizontal_line_label, "none");
                     }
                 });
                 horizontal_line_collider.addEventListener("mouseout", () => {
-                    if (!toggledOn.value) {
+                    if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
                         removeHighlightFromElement(horizontal_line);
                         removeHighlightFromElement(arrowhead);
                         removeHighlightFromElement(horizontal_line_label);
@@ -537,12 +578,12 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         line_collider.style.backgroundColor = "transparent";
         line_collider.style.cursor = "pointer";
         line_collider.addEventListener("mouseover", () => {
-            if (!toggledOn.value) {
+            if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
                 line.style.setProperty("background-color", "red");
             }
         });
         line_collider.addEventListener("mouseout", () => {
-            if (!toggledOn.value) {
+            if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
                 line.style.removeProperty("background-color");
             }
         });
@@ -567,7 +608,9 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         monitor2Div.appendChild(line_collider);
         monitor2Div.appendChild(line);
     }
-    settings.SubscriptionsOffset = publishers_and_services[publishers_and_services.length - 1].x_offset + settings.DistanceBetweenLines + 10;
+    if (publishers_and_services.length > 0) {
+        settings.SubscriptionsOffset = publishers_and_services[publishers_and_services.length - 1].x_offset + settings.DistanceBetweenLines + 10;
+    }
 }
 function addNode(avatar, y, height, text, container, yukon_state) {
     // Verify that the avatar is not undefined

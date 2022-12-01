@@ -168,7 +168,7 @@ def add_all_dsdl_paths_to_pythonpath(state: GodState) -> None:
             normalized_path = Path(path).resolve()
             if normalized_path not in normalized_sys_path:
                 process_dsdl_path(Path(normalized_path))
-                sys.path.append(normalized_path)
+                sys.path.append(str(normalized_path))
         # Save the current sys.path into os.environ["PYTHONPATH"]
         separator = ";" if os.name == "nt" else ":"
         os.environ["PYTHONPATH"] = separator.join(sys.path)

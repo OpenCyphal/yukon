@@ -38,6 +38,7 @@ import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
     yukon_state.autosize = autosize;
     yukon_state.navigator = window.navigator;
     yukon_state.jsyaml = jsyaml;
+    yukon_state.all_settings = await yukon_state.zubax_apij.get_settings();
     if (!isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_browser();
     }

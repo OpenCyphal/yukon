@@ -165,6 +165,14 @@ class GodState:
             "DroneCAN firmware substitution": {
                 "Enabled": ReactiveValue(False),
                 "Substitute firmware path": {"__type__": "filepath", "value": ReactiveValue("")},
+            },
+            "Monitor view": {
+                "Show link name below horizontal lines": ReactiveValue(False),
+                "Link info width": ReactiveValue(300),
+                "Distance between vertical lines": ReactiveValue(60),
+                "Node width": ReactiveValue(250),
+                "Distance per horizontal connection": ReactiveValue(20),
+                "Show name above datatype": ReactiveValue(False),
             }
             # "some_files": [{"__type__": "filepath", "value": ""}],
             # "ui_settings": {
