@@ -439,12 +439,12 @@ export function make_context_menus(yukon_state) {
                             element.parentElement.removeChild(element);
                         }
                         button.innerHTML = "Subscribe to " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
-                        yukon_state.subscriptions_being_set_up.push({ subject_id: parseInt(contextMenuContext.elementOpenedOn.getAttribute("data-port")) });
                     },
                     click: async (e, elementOpenedOn) => {
                         const portType = elementOpenedOn.getAttribute("data-port-type");
                         const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
                         console.log("Adding subscriber to port " + portType + portNr);
+                        yukon_state.subscriptions_being_set_up.push({ subject_id: parseInt(elementOpenedOn.getAttribute("data-port")) });
                     }
                 }
             },
