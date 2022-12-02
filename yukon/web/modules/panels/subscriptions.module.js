@@ -240,7 +240,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
         btnRemoveSubscription.classList.add('btn-danger');
         btnRemoveSubscription.innerHTML = "Remove subscription";
         btnRemoveSubscription.addEventListener('click', async () => {
-            const result = await yukon_state.zubax_apij.unsubscribe(subscription.subject_id, selectedDatatype);
+            const result = await yukon_state.zubax_apij.unsubscribe(`${subscription.subject_id}${selectedDatatype}`);
             if (result.success) {
                 div.remove();
             } else {

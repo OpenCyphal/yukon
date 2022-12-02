@@ -35,6 +35,7 @@ function fillSettings(yukon_state) {
     settings.HighlightColors = [];
     settings.SubscriptionsOffset = null;
     settings.SubscriptionsVerticalOffset = settings.PageMarginTop;
+    settings.SubscriptionsVerticalSpacing = 20;
     settings.ShowLinkNameOnSeparateLine = yukon_state.all_settings["Monitor view"]["Show link name below horizontal lines"]
     if (settings.ShowLinkNameOnSeparateLine) {
         settings.DistancePerHorizontalConnection = settings.DistancePerHorizontalConnection * 2;
@@ -138,6 +139,7 @@ function drawSubscriptions(subscriptionsDiv) {
     if (!yukon_state.subscription_specifiers) {
         return;
     }
+    const subscriptionElementsToBePlaced = [];
     for (const specifier of yukon_state.subscription_specifiers.specifiers) {
         console.log("Drawing subscription specifier", specifier);
         const subscriptionElement = document.createElement("div");
@@ -146,8 +148,26 @@ function drawSubscriptions(subscriptionsDiv) {
         subscriptionElement.style.position = "absolute";
         subscriptionElement.style.top = vertical_offset_counter + "px";
         subscriptionElement.style.left = settings.SubscriptionsOffset + "px";
+        // Add a button for unsubscribing
+        const unsubscribeButton = document.createElement("button");
+        unsubscribeButton.innerText = "Unsubscribe";
+        unsubscribeButton.addEventListener("click", async () => {
+            const response = await yukon_state.zubax_apij.unsubscribe(specifier);
+            if (response.success) {
+                yukon_state.subscription_specifiers.specifiers = yukon_state.subscription_specifiers.specifiers.filter((specifier_) => { return specifier_ !== specifier; });
+                drawSubscriptions(subscriptionsDiv);
+            } else {
+                console.error("Failed to unsubscribe: " + response.error);
+            }
+        });
+        subscriptionElement.appendChild(unsubscribeButton);
+        subscriptionElementsToBePlaced.push([subscriptionElement, specifier]);
         subscriptionsDiv.appendChild(subscriptionElement);
-        vertical_offset_counter += 20;
+
+    }
+    for (const [subscriptionElement, specifier] of subscriptionElementsToBePlaced) {
+        subscriptionElement.top = vertical_offset_counter;
+        vertical_offset_counter += subscriptionElement.scrollHeight + settings.SubscriptionsVerticalSpacing;
     }
 }
 export function setUpMonitor2Component(container, yukon_state) {
@@ -437,6 +457,9 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 horizontal_line_label.style.width = "fit-content"; // settings.LinkInfoWidth  - settings.LabelLeftMargin + "px";
                 horizontal_line_label.style.height = "fit-content";
                 horizontal_line_label.style.position = "absolute";
+                if (currentLinkDsdlDatatype.endsWith(".Response")) {
+                    currentLinkDsdlDatatype = currentLinkDsdlDatatype.replace(".Response", "");
+                }
                 horizontal_line_label.innerHTML = currentLinkDsdlDatatype;
                 horizontal_line_label.style.zIndex = "0";
                 horizontal_line_label.style.backgroundColor = settings["LinkLabelColor"];

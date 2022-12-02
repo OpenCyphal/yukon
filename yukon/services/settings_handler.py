@@ -16,7 +16,7 @@ from yukon.domain.proxy_objects import ReactiveValue
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.services.flash_dronecan_firmware_with_cyphal_firmware import run_dronecan_firmware_updater
 from yukon.services.settings_changed_actions import set_handlers_for_configuration_changes
-from yukon.services.utils import process_dsdl_path
+from yukon.services.utils import process_dsdl_path, add_path_to_sys_path
 from yukon.domain.god_state import GodState
 
 try:
@@ -161,15 +161,10 @@ def loading_settings_into_yukon(state: GodState) -> None:
 def add_all_dsdl_paths_to_pythonpath(state: GodState) -> None:
     """This function adds all paths in state.settings.dsdl_paths to the python path."""
     dsdl_search_directories_setting = state.settings.get("DSDL search directories")
-    normalized_sys_path = [str(Path(path).resolve()) for path in sys.path]
     if dsdl_search_directories_setting:
         for path_object in dsdl_search_directories_setting:
             path = path_object["value"].value
-            normalized_path = Path(path).resolve()
-            if str(normalized_path) not in normalized_sys_path:
-                process_dsdl_path(Path(normalized_path))
-                sys.path.append(str(normalized_path))
-                logger.debug("Added %r to sys.path", normalized_path)
+            add_path_to_sys_path(path)
         # Save the current sys.path into os.environ["PYTHONPATH"]
         separator = ";" if os.name == "nt" else ":"
         os.environ["PYTHONPATH"] = separator.join(sys.path)

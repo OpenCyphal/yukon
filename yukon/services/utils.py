@@ -12,6 +12,15 @@ import pycyphal
 logger = logging.getLogger(__name__)
 
 
+def add_path_to_sys_path(path: str) -> None:
+    normalized_sys_paths = [str(Path(path).resolve()) for path in sys.path]
+    normalized_path = Path(path).resolve()
+    if str(normalized_path) not in normalized_sys_paths:
+        process_dsdl_path(Path(normalized_path))
+        sys.path.append(str(normalized_path))
+        logger.debug("Added %r to sys.path", normalized_path)
+
+
 def get_datatypes_from_packages_directory_path(path: Path) -> typing.Any:
     """The path is to a folder like .compiled which contains dsdl packages"""
     return_object: typing.Any = {
@@ -20,7 +29,7 @@ def get_datatypes_from_packages_directory_path(path: Path) -> typing.Any:
     }
     for package_folder_str in list(next(os.walk(path))[1]):
         package_folder = (path / package_folder_str).absolute()
-        sys.path.append(str(package_folder.absolute()))
+        add_path_to_sys_path(str(package_folder.absolute()))
         package = importlib.import_module(package_folder.name)
         # pycyphal.util.import_submodules(package)
         # sys.path.remove(str(package_folder.absolute()))

@@ -472,10 +472,8 @@ class Api:
             raise Exception("Failed to receive a response for subscribing.")
         return jsonify(response)
 
-    def unsubscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
-        if subject_id:
-            subject_id = int(subject_id)
-        self.state.queues.god_queue.put_nowait(UnsubscribeRequest(SubjectSpecifier(subject_id, datatype)))
+    def unsubscribe(self, specifier: str) -> Response:
+        self.state.queues.god_queue.put_nowait(UnsubscribeRequest(SubjectSpecifier.from_string(specifier)))
         try:
             response = self.state.queues.unsubscribe_requests_responses.get(timeout=5)
         except Empty:
