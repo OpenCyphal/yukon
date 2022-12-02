@@ -545,7 +545,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         }
         y_counter += avatar_height + settings["DistanceBetweenNodes"];
     }
-    const publishers_and_services = ports.filter(p => p.type === "pub" || p.type === "srv");
+    const publishers_and_services = ports.filter(p => p.x_offset !== 0);
     for (const port of publishers_and_services) {
         // Create a line like <div class="line" style="width: 4px; position: absolute; top:20px; left: 140px">-42</div>-->
         let line = document.createElement("div");
