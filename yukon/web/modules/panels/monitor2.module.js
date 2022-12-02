@@ -2,7 +2,8 @@ import { areThereAnyNewOrMissingHashes, updateLastHashes } from "../hash_checks.
 import { getRelatedLinks } from "../meanings.module.js";
 import {
     getHoveredContainerElementAndContainerObject,
-    secondsToColonSeparatedString
+    secondsToColonSeparatedString,
+    getDatatypesForPort
 } from "../utilities.module.js";
 
 const settings = {};
@@ -118,7 +119,7 @@ export function makeSimpleSubscriptionFrame(port_nr, yukon_state) {
 
     return frame;
 }
-function drawSubscriptions(subscriptionsDiv) {
+async function drawSubscriptions(subscriptionsDiv, yukon_state) {
     if (settings.SubscriptionsOffset === null) {
         // Subscriptions cannot be drawn currently before any nodes and ports have been drawn
         return;
@@ -127,23 +128,32 @@ function drawSubscriptions(subscriptionsDiv) {
     for (const specifier of yukon_state.subscription_specifiers.specifiers) {
         existing_specifiers[specifier] = true;
     }
+    const existing_divs = {};
+    let height_of_existing_divs = settings.PageMarginTop;
     for (const child of subscriptionsDiv.children) {
         const specifier = child.getAttribute("data-specifier");
         const isBeingSetup = child.getAttribute("data-is-being-setup");
         const isExisting = existing_specifiers[specifier];
         if (!isExisting && !isBeingSetup) {
             child.parentElement.removeChild(child);
+        } else {
+            existing_divs[specifier] = true;
+            height_of_existing_divs += child.scrollHeight + settings.SubscriptionsVerticalSpacing;
         }
     }
-    let vertical_offset_counter = settings.SubscriptionsVerticalOffset;
+    let vertical_offset_counter = height_of_existing_divs || settings.SubscriptionsVerticalOffset;
     if (!yukon_state.subscription_specifiers) {
         return;
     }
     const subscriptionElementsToBePlaced = [];
     for (const specifier of yukon_state.subscription_specifiers.specifiers) {
+        if (existing_divs[specifier]) {
+            continue;
+        }
         console.log("Drawing subscription specifier", specifier);
         const subscriptionElement = document.createElement("div");
         subscriptionElement.classList.add("subscription");
+        subscriptionElement.setAttribute("data-specifier", specifier);
         subscriptionElement.innerText = specifier;
         subscriptionElement.style.position = "absolute";
         subscriptionElement.style.top = vertical_offset_counter + "px";
@@ -155,7 +165,7 @@ function drawSubscriptions(subscriptionsDiv) {
             const response = await yukon_state.zubax_apij.unsubscribe(specifier);
             if (response.success) {
                 yukon_state.subscription_specifiers.specifiers = yukon_state.subscription_specifiers.specifiers.filter((specifier_) => { return specifier_ !== specifier; });
-                drawSubscriptions(subscriptionsDiv);
+                await drawSubscriptions(subscriptionsDiv, yukon_state);
             } else {
                 console.error("Failed to unsubscribe: " + response.error);
             }
@@ -168,6 +178,42 @@ function drawSubscriptions(subscriptionsDiv) {
         subscriptionElement.style.top = vertical_offset_counter + "px";
         vertical_offset_counter += subscriptionElement.scrollHeight + settings.SubscriptionsVerticalSpacing;
     }
+    for (const subscription of yukon_state.subscriptions_being_set_up) {
+        if (subscription.element) {
+            continue;
+        }
+        // Add a div with a select input for the datatype and a button for subscribing
+        const subscriptionElement = document.createElement("div");
+        subscription.element = subscriptionElement;
+        subscriptionElement.classList.add("subscription");
+        subscriptionElement.setAttribute("data-is-being-setup", "true");
+        subscriptionElement.style.position = "absolute";
+        subscriptionElement.style.top = vertical_offset_counter + "px";
+        subscriptionElement.style.left = settings.SubscriptionsOffset + "px";
+        const select = document.createElement("select");
+        const datatypesOfPort = await getDatatypesForPort(subscription.subject_id, yukon_state);
+        for (const datatype of datatypesOfPort) {
+            const option = document.createElement("option");
+            option.value = datatype;
+            option.innerText = datatype;
+            select.appendChild(option);
+        }
+        subscriptionElement.appendChild(select);
+        const subscribeButton = document.createElement("button");
+        subscribeButton.innerText = "Subscribe";
+        subscribeButton.addEventListener("click", async () => {
+            const response = await yukon_state.zubax_apij.subscribe(subscription.subject_id, select.value);
+            if (response.success) {
+                yukon_state.subscription_specifiers.specifiers.push(select.value);
+                await drawSubscriptions(subscriptionsDiv, yukon_state);
+            } else {
+                console.error("Failed to subscribe: " + response.error);
+            }
+        });
+        subscriptionElement.appendChild(subscribeButton);
+        subscriptionsDiv.appendChild(subscriptionElement);
+        vertical_offset_counter += subscriptionElement.scrollHeight + settings.SubscriptionsVerticalSpacing;
+    }
 }
 export function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0];
@@ -177,7 +223,7 @@ export function setUpMonitor2Component(container, yukon_state) {
     setInterval(async () => {
         yukon_state.subscription_specifiers = await yukon_state.zubax_apij.get_current_available_subscription_specifiers();
         if (typeof yukon_state.subscription_specifiers_previous_hash === "undefined" || yukon_state.subscription_specifiers_previous_hash !== yukon_state.subscription_specifiers.hash) {
-            drawSubscriptions(subscriptionsDiv);
+            await drawSubscriptions(subscriptionsDiv, yukon_state);
         }
         yukon_state.subscription_specifiers_previous_hash = yukon_state.subscription_specifiers_hash;
 
@@ -328,11 +374,13 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             let pub_port = ports.find(p => p.type === "pub" && p.port === port.port);
             if (pub_port !== undefined) {
                 port.x_offset = pub_port.x_offset;
+                port.auxiliary = true;
             }
         } else if (port.type === "cln") {
             let srv_port = ports.find(p => p.type === "srv" && p.port === port.port);
             if (srv_port !== undefined) {
                 port.x_offset = srv_port.x_offset;
+                port.auxiliary = true;
             }
         }
     }
@@ -567,7 +615,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         }
         y_counter += avatar_height + settings["DistanceBetweenNodes"];
     }
-    const publishers_and_services = ports.filter(p => p.x_offset !== 0);
+    const publishers_and_services = ports.filter(p => p.x_offset !== 0 && !p.auxiliary);
     for (const port of publishers_and_services) {
         // Create a line like <div class="line" style="width: 4px; position: absolute; top:20px; left: 140px">-42</div>-->
         let line = document.createElement("div");

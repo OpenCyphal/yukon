@@ -17,6 +17,7 @@ var yukon_state = {
     // Key is subject_id concatenated with datatype, value is an object
     // The value object contains { messages: [], counter: 0}
     "subscriptions": {},
+    "subscriptions_being_set_up": [],
 
     "existingHashesSet": {},
     "last_slcan_list_hash": null,

@@ -4,6 +4,15 @@
 /*#monitor2 * {*/
 /*    !*all: unset;*!*/
 /*}*/
+#subscriptions {
+    padding: 20px;
+    position: relative;
+}
+
+#subscriptions .subscription {
+    position: relative;
+    margin-right: 20px;
+}
 
 #monitor2>.node {
     font: 12px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;

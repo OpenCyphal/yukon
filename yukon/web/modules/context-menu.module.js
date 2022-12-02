@@ -17,11 +17,11 @@ import {
     moreThanOneSelectedConstraint,
     oneSelectedConstraint
 } from "./panels/registers.selection.module.js";
-import {updateRegistersTableColors, showCellValue, editSelectedCellValues} from "./panels/registers.module.js";
-import {rereadNode, rereadPairs} from "./panels/registers.data.module.js";
-import {downloadIcon, copyIcon, pasteIcon} from "./icons.module.js";
-import {copyObject} from "./utilities.module.js";
-import {copyTextToClipboard} from "./copy.module.js";
+import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./panels/registers.module.js";
+import { rereadNode, rereadPairs } from "./panels/registers.data.module.js";
+import { downloadIcon, copyIcon, pasteIcon } from "./icons.module.js";
+import { copyObject } from "./utilities.module.js";
+import { copyTextToClipboard } from "./copy.module.js";
 
 export function make_context_menus(yukon_state) {
     const addLocalMessage = yukon_state.addLocalMessage;
@@ -418,7 +418,7 @@ export function make_context_menus(yukon_state) {
                 events: {
                     adjust: async (contextMenuContext, element, button) => {
                         const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
-                        if(portType !== "pub") {
+                        if (portType !== "pub") {
                             element.parentElement.removeChild(element);
                         }
                         button.innerHTML = "Show message history for " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
@@ -435,10 +435,11 @@ export function make_context_menus(yukon_state) {
                 events: {
                     adjust: async (contextMenuContext, element, button) => {
                         const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
-                        if(portType !== "pub") {
+                        if (portType !== "pub") {
                             element.parentElement.removeChild(element);
                         }
                         button.innerHTML = "Subscribe to " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
+                        yukon_state.subscriptions_being_set_up.push({ subject_id: parseInt(contextMenuContext.elementOpenedOn.getAttribute("data-port")) });
                     },
                     click: async (e, elementOpenedOn) => {
                         const portType = elementOpenedOn.getAttribute("data-port-type");
@@ -452,7 +453,7 @@ export function make_context_menus(yukon_state) {
                 events: {
                     adjust: async (contextMenuContext, element, button) => {
                         const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
-                        if(portType !== "pub") {
+                        if (portType !== "pub") {
                             element.parentElement.removeChild(element);
                         }
                         button.innerHTML = "Remove all subscribers of " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
