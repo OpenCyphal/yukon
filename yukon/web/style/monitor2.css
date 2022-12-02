@@ -5,7 +5,7 @@
 /*    !*all: unset;*!*/
 /*}*/
 
-#monitor2 > .node {
+#monitor2>.node {
     font: 12px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
     border: 1px solid darkolivegreen;
     background-color: #d5d5d5;
@@ -19,6 +19,7 @@
     position: absolute;
     border-radius: 5px;
     word-break: break-all;
+    min-height: fit-content !important;
 }
 
 #monitor2 .line {
@@ -42,7 +43,7 @@
     color: #a33fff;
 }
 
-#monitor2  td {
+#monitor2 td {
     min-width: 140px;
 }
 
@@ -56,6 +57,7 @@
         background-color: darkblue;
         color: white;
     }
+
     #monitor2 .line {
         background-color: antiquewhite;
         color: antiquewhite;

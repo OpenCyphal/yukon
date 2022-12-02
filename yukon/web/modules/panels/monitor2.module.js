@@ -299,6 +299,9 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         } else if (port.type === "srv") {
             port.x_offset = x_counter;
             x_counter += settings["DistanceBetweenLines"];
+        } else if (port.type === "sub" && !ports.find(p => p.type === "pub" && p.port === port.port)) {
+            port.x_offset = x_counter;
+            x_counter += settings["DistanceBetweenLines"];
         }
     }
     for (const port of ports) {
@@ -317,20 +320,12 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     const datatypes_response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
     const avatars_copy = Array.from(yukon_state.current_avatars)
     avatars_copy.sort(compareAvatar);
+    let nodesToBePositioned = [];
     for (const avatar of avatars_copy) {
         const node_id = avatar.node_id;
         const get_up_to_date_avatar = () => { return yukon_state.current_avatars.find(a => a.node_id === node_id); };
         // Add the sizes of ports.cln, ports.srv, ports.pub, ports.sub
-        const total_ports = avatar.ports.cln.length + avatar.ports.srv.length + avatar.ports.pub.length + avatar.ports.sub.length;
-        console.assert(total_ports >= 0);
-        let avatar_height = Math.max(total_ports * settings["DistancePerHorizontalConnection"] + settings["AvatarConnectionPadding"], settings["AvatarMinHeight"]);
-        const node = addNode(avatar, y_counter, avatar_height, "", monitor2Div, yukon_state);
-        /*
-            health_cell.innerHTML = yukon_state.current_avatars[i].last_heartbeat.health_text;
-            software_version_cell.innerHTML = yukon_state.current_avatars[i].versions.software_version;
-            hardware_version_cell.innerHTML = yukon_state.current_avatars[i].versions.hardware_version;
-            uptime_cell.innerHTML = secondsToString(yukon_state.current_avatars[i].last_heartbeat.uptime);
-         */
+        const node = addNode(avatar, "", monitor2Div, yukon_state);
         const fieldsObject = {
             "Name": avatar.name, "Health": avatar.last_heartbeat.health_text,
             "Software Version": avatar.versions.software_version,
@@ -359,6 +354,20 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             }
             node.appendChild(valueDiv);
         }
+        /*
+            health_cell.innerHTML = yukon_state.current_avatars[i].last_heartbeat.health_text;
+            software_version_cell.innerHTML = yukon_state.current_avatars[i].versions.software_version;
+            hardware_version_cell.innerHTML = yukon_state.current_avatars[i].versions.hardware_version;
+            uptime_cell.innerHTML = secondsToString(yukon_state.current_avatars[i].last_heartbeat.uptime);
+         */
+        nodesToBePositioned.push([node, avatar]);
+    }
+    for (const [node, avatar] of nodesToBePositioned) {
+        const total_ports = avatar.ports.cln.length + avatar.ports.srv.length + avatar.ports.pub.length + avatar.ports.sub.length;
+        console.assert(total_ports >= 0);
+        const avatar_height = Math.max(total_ports * settings["DistancePerHorizontalConnection"] + settings["AvatarConnectionPadding"], node.scrollHeight);
+        node.style.height = avatar_height + "px";
+        node.style.top = y_counter + "px";
         let avatar_y_counter = settings["AvatarConnectionPadding"];
         for (const port_type of Object.keys(avatar.ports)) {
             for (const port of avatar.ports[port_type]) {
@@ -612,16 +621,13 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         settings.SubscriptionsOffset = publishers_and_services[publishers_and_services.length - 1].x_offset + settings.DistanceBetweenLines + 10;
     }
 }
-function addNode(avatar, y, height, text, container, yukon_state) {
+function addNode(avatar, text, container, yukon_state) {
     // Verify that the avatar is not undefined
     console.assert(avatar !== undefined);
     let node = document.createElement("div");
     node.classList.add("node");
-    node.style.top = y + "px";
     node.style.left = settings.NodeXOffset + "px";
-    node.style.height = height + "px";
-    node.style.maxHeight = height + "px";
-    node.style.minHeight = height + "px";
+    // Delay the setting of height until its contents are loaded
     node.style.setProperty("border-sizing", "border-box");
     node.style.width = settings.NodeWidth + "px";
     // node.style.backgroundColor = avatar.color;
