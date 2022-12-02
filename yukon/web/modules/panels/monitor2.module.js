@@ -163,10 +163,9 @@ function drawSubscriptions(subscriptionsDiv) {
         subscriptionElement.appendChild(unsubscribeButton);
         subscriptionElementsToBePlaced.push([subscriptionElement, specifier]);
         subscriptionsDiv.appendChild(subscriptionElement);
-
     }
     for (const [subscriptionElement, specifier] of subscriptionElementsToBePlaced) {
-        subscriptionElement.top = vertical_offset_counter;
+        subscriptionElement.style.top = vertical_offset_counter + "px";
         vertical_offset_counter += subscriptionElement.scrollHeight + settings.SubscriptionsVerticalSpacing;
     }
 }

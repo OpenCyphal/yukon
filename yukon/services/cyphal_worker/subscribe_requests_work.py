@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 async def do_subscribe_requests_work(state: GodState, subscribe_request: SubscribeRequest) -> None:
-    logger.warning("Current PYTHONPATH: %s", sys.path)
+    logger.debug("Current PYTHONPATH: %s", sys.path)
     add_all_dsdl_paths_to_pythonpath(state)
     try:
         if not subscribe_request.specifier.subject_id:
