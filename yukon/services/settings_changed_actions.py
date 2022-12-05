@@ -122,6 +122,9 @@ async def send_store_presistent_states_to_node(
             if message:
                 logger.error(message)
             retry_count += 1
+        else:
+            logger.info("Successfully sent store persistent states to node %s", str(target_node_id))
+            return
 
 
 def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
@@ -141,8 +144,8 @@ def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
                                 logger.setLevel(logging.DEBUG)
                                 logger.debug("Handling allocation of node %d", allocated_node_id)
                                 if new_mode == "Automatic persistent allocation":
-                                    logger.debug("Now sending store persistent states to all nodes")
-                                    state.cyphal_worker_asyncio_loop.call_soon_threadsafe(
+                                    logger.debug("Now sending store persistent states to node %d", allocated_node_id)
+                                    state.cyphal_worker_asyncio_loop.create_task(
                                         send_store_presistent_states_to_node(state, allocated_node_id, delay=0.5)
                                     )
 
