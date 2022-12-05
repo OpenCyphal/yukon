@@ -54,9 +54,6 @@ jobs:
       - name: Testing GUI
         run: |
           source venv/bin/activate
-          PYTHONPATH=".:.." nox -s mypy
-          PYTHONPATH=".:.." nox -s black
-          PYTHONPATH=".:.." nox -s pylint
       - name: Configure SSH
         if: github.ref == 'refs/heads/main'
         run: |

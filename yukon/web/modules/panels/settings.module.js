@@ -1,7 +1,5 @@
 export async function setUpSettingsComponent(container, yukon_state) {
     const containerElement = container.getElement()[0];
-    yukon_state.all_settings = await yukon_state.zubax_apij.get_settings();
-    console.log("got settings into UI")
     let settings = yukon_state.all_settings;
     const settingsDiv = containerElement.querySelector("#settings-div")
     const settingsDebugDiv = containerElement.querySelector("#settings-debug-div");
@@ -80,7 +78,11 @@ export async function setUpSettingsComponent(container, yukon_state) {
             radioInput.type = "radio";
             radioInput.name = settings["name"];
             radioInput.id = settings["name"] + i;
-            radioInput.checked = settings["chosen_value"] === settings["values"][i];
+            let value_in_settings = settings["values"][i];
+            if (typeof settings["values"][i] === "object") {
+                value_in_settings = settings["values"][i]["value"];
+            }
+            radioInput.checked = settings["chosen_value"] === value_in_settings;
             radioInput.addEventListener("change", function () {
                 if (this.checked) {
                     settings["chosen_value"] = value;
@@ -178,7 +180,6 @@ export async function setUpSettingsComponent(container, yukon_state) {
                 parentDiv.appendChild(cardDiv);
                 createSettingsDiv(value, cardBodyDiv, settings, realDictionaryKey);
             } else {
-                console.log("the actual type is " + typeof value);
                 const formGroupDiv = document.createElement("div");
                 formGroupDiv.classList.add("form-check");
                 formGroupDiv.classList.add("mb-3");
@@ -231,8 +232,9 @@ export async function setUpSettingsComponent(container, yukon_state) {
                         input.classList.add("form-control");
                         input.value = value;
                         input.addEventListener("change", async function () {
-                            settings[key] = input.value;
+                            settings[key] = parseFloat(input.value);
                         });
+                        input.title = "Number field"
                         formGroupDiv.appendChild(input);
                     } else {
                         const input = document.createElement("input");
@@ -242,6 +244,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                         input.addEventListener("change", async function () {
                             settings[key] = input.value;
                         });
+                        input.title = "Text field";
                         formGroupDiv.appendChild(input);
                     }
                 }
@@ -290,7 +293,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             btnAddString.classList.add("btn-primary");
             btnAddString.innerText = "Add path";
             btnAddString.addEventListener("click", function () {
-                settings.push({"__type__": "dirpath", "value": ""});
+                settings.push({ "__type__": "dirpath", "value": "" });
                 parentDiv.innerHTML = "";
                 createSettingsDiv(settings, parentDiv, parentSettings, null);
             });

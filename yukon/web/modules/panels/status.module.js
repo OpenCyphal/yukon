@@ -11,7 +11,7 @@ export function setUpStatusComponent(yukon_state) {
             return;
         }
         // Take every avatar from yukon_state.current_avatars and make a row in the table
-        for (var i = 0; i < yukon_state.current_avatars.length; i++) {
+        for (let i = 0; i < yukon_state.current_avatars.length; i++) {
             const row = table_body.insertRow(i);
             const node_id = row.insertCell(0);
             node_id.innerHTML = yukon_state.current_avatars[i].node_id;

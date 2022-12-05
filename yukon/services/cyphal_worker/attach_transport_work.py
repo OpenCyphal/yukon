@@ -3,6 +3,7 @@ import os
 import platform
 import traceback
 import logging
+import typing
 
 import pycyphal
 from pycyphal.application import make_transport
@@ -43,6 +44,10 @@ async def do_attach_transport_work(state: GodState, atr: AttachTransportRequest)
         attach_transport_response = AttachTransportResponse(True, atr.requested_interface.iface)
         state.cyphal.transports_list.append(atr.requested_interface)
         state.queues.attach_transport_response.put(attach_transport_response)
+        if isinstance(state.callbacks.get("yukon_node_attached"), typing.List):
+            for callback in state.callbacks["yukon_node_attached"]:
+                if callable(callback):
+                    callback()
         if atr.requested_interface.is_udp:
             state.cyphal.already_used_transport_interfaces[atr.requested_interface.udp_iface] = True
         else:
@@ -71,6 +76,7 @@ async def do_attach_transport_work(state: GodState, atr: AttachTransportRequest)
         state.queues.attach_transport_response.put(attach_transport_response)
     except Exception as e:
         tb = traceback.format_exc()
+        _logger.critical("Error in attach_transport_work: %s", tb)
         attach_transport_response = AttachTransportResponse(False, tb, str(e))
         state.queues.attach_transport_response.put(attach_transport_response)
     # else:

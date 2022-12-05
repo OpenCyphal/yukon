@@ -1,3 +1,5 @@
+import { getRelatedLinks } from "./meanings.module.js";
+
 export function copyObject(object) {
     return structuredClone(object)
 }
@@ -9,6 +11,14 @@ export function secondsToString(seconds) {
     const numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
     const numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
     return numyears + " years " + numdays + " days " + numhours + " hours " + numminutes + " minutes " + numseconds + " seconds";
+}
+export function secondsToColonSeparatedString(seconds) {
+
+    const numhours = Math.floor(seconds / 86400);
+    const numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
+    const numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
+    // Use zero padding on hours and minutes and seconds
+    return numhours.toString().padStart(2, '0') + ":" + numminutes.toString().padStart(2, '0') + ":" + numseconds.toString().padStart(2, '0');
 }
 
 export function JsonParseHelper(k, v) {
@@ -61,6 +71,49 @@ export function isRunningInElectron(yukon_state) {
 
 export function areThereAnyActiveModals() {
     return document.querySelectorAll('#modal').length > 0
+}
+function createPortStructure(yukon_state) {
+    let ports = [];
+    for (const avatar of yukon_state.current_avatars) {
+        for (const port_type of Object.keys(avatar.ports)) {
+            for (const port of avatar.ports[port_type]) {
+                if (port === "") {
+                    continue;
+                }
+                let alreadyExistingPorts = ports.filter(p => p.port === port && p.type === port_type);
+                if (alreadyExistingPorts.length === 0) {
+                    ports.push({ "type": port_type, "port": port });
+                }
+            }
+        }
+    }
+    return ports;
+}
+export async function getDatatypesForPort(portNr, yukon_state) {
+    const chosenDatatypes = {};
+    const relatedLinks = getRelatedLinks(portNr, yukon_state);
+    //const ports = createPortStructure(yukon_state);
+    const currentLinkObjects = relatedLinks.filter(link => link.port === portNr && (link.type === "sub" || link.type === "pub"));
+    let fixed_datatype_short = null;
+    let fixed_datatype_full = null;
+    const datatypes_response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
+    if (datatypes_response["fixed_id_messages"][portNr] !== undefined) {
+        fixed_datatype_short = datatypes_response["fixed_id_messages"][portNr]["short_name"];
+        fixed_datatype_full = datatypes_response["fixed_id_messages"][portNr]["full_name"];
+        chosenDatatypes[fixed_datatype_full] = 1;
+    }
+    if (currentLinkObjects.length > 0) {
+        for (const link of currentLinkObjects) {
+            chosenDatatypes[link.datatype] = chosenDatatypes[link.datatype] || 1;
+        }
+    }
+    const structureForSorting = [];
+    for (const datatype of Object.keys(chosenDatatypes)) {
+        structureForSorting.push({ "name": datatype, "count": chosenDatatypes[datatype] });
+    }
+    structureForSorting.sort((a, b) => b.count - a.count);
+    const sortedDatatypes = structureForSorting.map((a) => a.name);
+    return sortedDatatypes;
 }
 
 export function waitForElm(selector, timeOutMilliSeconds) {

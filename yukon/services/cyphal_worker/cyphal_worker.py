@@ -92,6 +92,10 @@ def cyphal_worker(state: GodState) -> None:
             state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
 
             make_tracers_trackers(state)
+            # if isinstance(state.callbacks.get("yukon_node_created"), typing.List):
+            #     for callback in state.callbacks["yukon_node_created"]:
+            #         if callable(callback):
+            #             callback(state)
 
             logger.debug("Tracers should have been set up.")
             while state.gui.gui_running:
@@ -113,14 +117,6 @@ def cyphal_worker(state: GodState) -> None:
                     await do_subscribe_requests_work(state, queue_element)
                 elif isinstance(queue_element, UnsubscribeRequest):
                     await do_unsubscribe_requests_work(state, queue_element)
-                elif isinstance(queue_element, StartFileServerRequest):
-                    state.cyphal.file_server = FileServer(
-                        state.cyphal.local_node, [state.settings["Firmware updates"]["File path"]["value"].value]
-                    )
-                    logger.info(
-                        "File server started on path " + state.settings["Firmware updates"]["File path"]["value"].value
-                    )
-                    state.cyphal.file_server.start()
                 elif isinstance(queue_element, RequestRunDronecanFirmwareUpdater):
                     logger.debug("A request to run the DroneCAN firmware updater was received.")
                     fpath = state.settings["DroneCAN firmware substitution"]["Substitute firmware path"]["value"].value

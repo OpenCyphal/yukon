@@ -2,6 +2,8 @@ import logging
 import pathlib
 import sqlite3
 from typing import Optional, Union
+from collections.abc import MutableSequence
+import typing
 
 import pycyphal
 from pycyphal.application.plug_and_play import (
@@ -60,6 +62,7 @@ class CentralizedAllocator(Allocator):
         self._pub2 = self.node.make_publisher(NodeIDAllocationData_2)
         self._pub1.send_timeout = self.DEFAULT_PUBLICATION_TIMEOUT
         self._pub2.send_timeout = self.DEFAULT_PUBLICATION_TIMEOUT
+        self.allocated_node_hooks: typing.List[typing.Callable] = []
         self.running = False
 
         node.add_lifetime_hooks(self.start, self.close)
@@ -120,6 +123,10 @@ class CentralizedAllocator(Allocator):
         _logger.info("Publishing allocation response v1: %s", msg)
         self._pub1.priority = priority
         self._pub1.publish_soon(msg)
+        if isinstance(self.allocated_node_hooks, MutableSequence):
+            for hook in self.allocated_node_hooks:
+                assert callable(hook)
+                hook(allocated_node_id)
 
     def _respond_v2(self, priority: pycyphal.transport.Priority, unique_id: bytes, allocated_node_id: int) -> None:
         msg = NodeIDAllocationData_2(
@@ -129,3 +136,7 @@ class CentralizedAllocator(Allocator):
         _logger.info("Publishing allocation response v2: %s", msg)
         self._pub2.priority = priority
         self._pub2.publish_soon(msg)
+        if isinstance(self.allocated_node_hooks, MutableSequence):
+            for hook in self.allocated_node_hooks:
+                assert callable(hook)
+                hook(allocated_node_id)

@@ -14,6 +14,12 @@ export const layout_config = {
                                     content: [
                                         {
                                             type: 'component',
+                                            componentName: 'monitor2Component',
+                                            isClosable: true,
+                                            title: 'Monitor2',
+                                        },
+                                        {
+                                            type: 'component',
                                             componentName: 'monitorComponent',
                                             isClosable: true,
                                             title: 'Monitor',
@@ -29,12 +35,6 @@ export const layout_config = {
                                             componentName: 'settingsComponent',
                                             isClosable: true,
                                             title: 'Settings',
-                                        },
-                                        {
-                                            type: 'component',
-                                            componentName: 'motorControlComponent',
-                                            isClosable: true,
-                                            title: 'Motor control',
                                         },
                                     ]
                                 },

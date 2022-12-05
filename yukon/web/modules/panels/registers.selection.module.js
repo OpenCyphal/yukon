@@ -225,7 +225,7 @@ export function make_select_cell(avatar, register_name, is_mouse_over, yukon_sta
                     "node_id": avatar.node_id,
                     "register_name": register_name
                 }, yukon_state);
-                for (var i = 0; i < allCells.length; i++) {
+                for (let i = 0; i < allCells.length; i++) {
                     const cell = allCells[i];
                     yukon_state.selections.selected_registers[[cell.node_id, cell.register_name]] = true;
                 }

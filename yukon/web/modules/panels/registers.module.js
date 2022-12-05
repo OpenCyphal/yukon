@@ -1,9 +1,9 @@
-import {areThereAnyNewOrMissingHashes, updateLastHashes} from './hash_checks.module.js';
-import {applyConfiguration} from './yaml.configurations.module.js';
+import {areThereAnyNewOrMissingHashes, updateLastHashes} from '../hash_checks.module.js';
+import {applyConfiguration} from '../yaml.configurations.module.js';
 import {make_select_column, make_select_row, make_select_cell} from './registers.selection.module.js';
 import {update_register_value} from './registers.data.module.js';
-import {getDictionaryValueFieldName} from './utilities.module.js';
-import {createGenericModal} from './modal.module.js';
+import {getDictionaryValueFieldName} from '../utilities.module.js';
+import {createGenericModal} from '../modal.module.js';
 
 export function add_node_id_headers(table_header_row, yukon_state) {
     const avatars_copy = Array.from(yukon_state.current_avatars)
@@ -636,7 +636,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
     for (const node_id in pairs) {
         const registers = pairs[node_id];
         for (const register_name in registers) {
-            const avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id === node_id);
+            const avatar = yukon_state.current_avatars.find((avatar) => avatar.node_id.toString() === node_id.toString());
             const explodedRegister = avatar.registers_exploded_values[register_name];
             const isMutable = explodedRegister["_meta_"].mutable;
             const isPersistent = explodedRegister["_meta_"].persistent;

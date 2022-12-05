@@ -16,12 +16,12 @@ import {
     make_select_column,
     moreThanOneSelectedConstraint,
     oneSelectedConstraint
-} from "./registers.selection.module.js";
-import {updateRegistersTableColors, showCellValue, editSelectedCellValues} from "./registers.module.js";
-import {rereadNode, rereadPairs} from "./registers.data.module.js";
-import {downloadIcon, copyIcon, pasteIcon} from "./icons.module.js";
-import {copyObject} from "./utilities.module.js";
-import {copyTextToClipboard} from "./copy.module.js";
+} from "./panels/registers.selection.module.js";
+import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./panels/registers.module.js";
+import { rereadNode, rereadPairs } from "./panels/registers.data.module.js";
+import { downloadIcon, copyIcon, pasteIcon } from "./icons.module.js";
+import { copyObject } from "./utilities.module.js";
+import { copyTextToClipboard } from "./copy.module.js";
 
 export function make_context_menus(yukon_state) {
     const addLocalMessage = yukon_state.addLocalMessage;
@@ -409,4 +409,63 @@ export function make_context_menus(yukon_state) {
 
     })
     cy_context_menu.init();
+    const monitor2_vertical_line_context_menu = new ContextMenu({
+        target: ".line_collider",
+        mode: "dark",
+        menuItems: [
+            {
+                content: "Show messages history on this subject",
+                events: {
+                    adjust: async (contextMenuContext, element, button) => {
+                        const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
+                        if (portType !== "pub") {
+                            element.parentElement.removeChild(element);
+                        }
+                        button.innerHTML = "Show message history for " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
+                    },
+                    click: async (e, elementOpenedOn) => {
+                        const portType = elementOpenedOn.getAttribute("data-port-type");
+                        const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
+
+                    }
+                }
+            },
+            {
+                content: "Add subscriber",
+                events: {
+                    adjust: async (contextMenuContext, element, button) => {
+                        const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
+                        if (portType !== "pub") {
+                            element.parentElement.removeChild(element);
+                        }
+                        button.innerHTML = "Subscribe to " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
+                    },
+                    click: async (e, elementOpenedOn) => {
+                        const portType = elementOpenedOn.getAttribute("data-port-type");
+                        const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
+                        console.log("Adding subscriber to port " + portType + portNr);
+                        yukon_state.subscriptions_being_set_up.push({ subject_id: parseInt(elementOpenedOn.getAttribute("data-port")) });
+                    }
+                }
+            },
+            {
+                content: "Remove all subscribers",
+                events: {
+                    adjust: async (contextMenuContext, element, button) => {
+                        const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
+                        if (portType !== "pub") {
+                            element.parentElement.removeChild(element);
+                        }
+                        button.innerHTML = "Remove all subscribers of " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
+                    },
+                    click: async (e, elementOpenedOn) => {
+                        const portType = elementOpenedOn.getAttribute("data-port-type");
+                        const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
+                        console.log("Adding subscriber to port " + portType + portNr);
+                    }
+                }
+            }
+        ],
+    });
+    monitor2_vertical_line_context_menu.init();
 }

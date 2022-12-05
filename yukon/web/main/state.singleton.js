@@ -17,6 +17,7 @@ var yukon_state = {
     // Key is subject_id concatenated with datatype, value is an object
     // The value object contains { messages: [], counter: 0}
     "subscriptions": {},
+    "subscriptions_being_set_up": [],
 
     "existingHashesSet": {},
     "last_slcan_list_hash": null,
@@ -34,7 +35,7 @@ var yukon_state = {
         "isTableCellTextSelectable": false,
         "simplifyRegisters": true,
         "preferSmallerFileSelectionDialog": false,
-        "alwaysSaveAsNetoworkConfig": false,
+        "alwaysSaveAsNetworkConfig": false,
         "yamlFlowLevel": -1,
         "column_edge_snap_distance": 10,
     }

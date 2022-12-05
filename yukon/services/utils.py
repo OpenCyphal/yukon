@@ -12,6 +12,15 @@ import pycyphal
 logger = logging.getLogger(__name__)
 
 
+def add_path_to_sys_path(path: str) -> None:
+    normalized_sys_paths = [str(Path(path).resolve()) for path in sys.path]
+    normalized_path = Path(path).resolve()
+    if str(normalized_path) not in normalized_sys_paths:
+        process_dsdl_path(Path(normalized_path))
+        sys.path.append(str(normalized_path))
+        logger.debug("Added %r to sys.path", normalized_path)
+
+
 def get_datatypes_from_packages_directory_path(path: Path) -> typing.Any:
     """The path is to a folder like .compiled which contains dsdl packages"""
     return_object: typing.Any = {
@@ -20,33 +29,36 @@ def get_datatypes_from_packages_directory_path(path: Path) -> typing.Any:
     }
     for package_folder_str in list(next(os.walk(path))[1]):
         package_folder = (path / package_folder_str).absolute()
-        sys.path.append(str(package_folder.absolute()))
+        add_path_to_sys_path(str(package_folder.absolute()))
         package = importlib.import_module(package_folder.name)
         # pycyphal.util.import_submodules(package)
         # sys.path.remove(str(package_folder.absolute()))
 
         queue: Queue = Queue()
-        queue.put(package)
+        queue.put((package, None))  # No previous class
         counter = 0
         try:
             while True:
                 counter += 1
-                module_or_class = queue.get_nowait()
+                module_or_class, previous_module_or_class = queue.get_nowait()
                 elements = inspect.getmembers(module_or_class, lambda x: inspect.ismodule(x) or inspect.isclass(x))
                 for element in elements:
-                    if inspect.isclass(element[1]) and not hasattr(element[1], "_deserialize_"):
+                    if element[1].__name__ == "object" or element[1].__name__ == "type":
                         continue
-                    queue.put(element[1])
+                    queue.put((element[1], module_or_class))  # Previous class was module_or_class
                 if inspect.isclass(module_or_class):
                     _class = module_or_class
+                    if not hasattr(module_or_class, "_deserialize_") and not hasattr(module_or_class, "_serialize_"):
+                        continue
                     try:
                         model = pycyphal.dsdl.get_model(_class)
                     except Exception:
                         logger.exception("Failed to get model for %s", _class)
                         continue
                     if hasattr(_class, "_FIXED_PORT_ID_"):
+                        desired_class_name = _class.__name__
                         return_object["fixed_id_messages"][str(_class._FIXED_PORT_ID_)] = {
-                            "short_name": _class.__name__,
+                            "short_name": desired_class_name,
                             "full_name": model.full_name,
                         }
                     elif hasattr(_class, "_serialize_"):

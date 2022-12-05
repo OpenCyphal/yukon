@@ -8,6 +8,7 @@ import typing
 import logging
 from datetime import datetime
 from pathlib import Path
+from collections.abc import MutableSequence
 
 from ruamel import yaml
 from ruamel.yaml.scanner import ScannerError
@@ -16,7 +17,7 @@ from yukon.domain.proxy_objects import ReactiveValue
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.services.flash_dronecan_firmware_with_cyphal_firmware import run_dronecan_firmware_updater
 from yukon.services.settings_changed_actions import set_handlers_for_configuration_changes
-from yukon.services.utils import process_dsdl_path
+from yukon.services.utils import process_dsdl_path, add_path_to_sys_path
 from yukon.domain.god_state import GodState
 
 try:
@@ -147,6 +148,17 @@ def loading_settings_into_yukon(state: GodState) -> None:
                         loaded_settings[key] = value
                     else:
                         recursive_update_settings(value, loaded_settings[key])
+                elif settings.get("__type__") == "radio":
+                    # Iterate over loaded_settings.get("values") and check if it already has every value from settings.get("values")
+                    values_in_loaded_settings = loaded_settings.get("values")
+                    values_in_settings = settings.get("values")
+                    if isinstance(values_in_loaded_settings, MutableSequence) and isinstance(
+                        values_in_settings, MutableSequence
+                    ):
+                        for value in values_in_settings:
+                            if value not in values_in_loaded_settings:
+                                logger.debug(f"Adding value {value} to loaded_settings")
+                                values_in_loaded_settings.append(value)
                 else:
                     if key not in loaded_settings:
                         logger.debug(f"Adding key {key} to loaded_settings")
@@ -164,8 +176,7 @@ def add_all_dsdl_paths_to_pythonpath(state: GodState) -> None:
     if dsdl_search_directories_setting:
         for path_object in dsdl_search_directories_setting:
             path = path_object["value"].value
-            if path not in sys.path:
-                process_dsdl_path(Path(path))
-                sys.path.append(path)
+            add_path_to_sys_path(path)
         # Save the current sys.path into os.environ["PYTHONPATH"]
-        os.environ["PYTHONPATH"] = ":".join(sys.path)
+        separator = ";" if os.name == "nt" else ":"
+        os.environ["PYTHONPATH"] = separator.join(sys.path)

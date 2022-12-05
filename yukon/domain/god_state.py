@@ -152,6 +152,10 @@ class GodState:
             "Node allocation": {
                 "__type__": "radio",
                 "values": [
+                    {
+                        "value": "Automatic persistent allocation",
+                        "description": "This will take some more time, the node will be restarted after it gets its node-id.",
+                    },
                     "Automatic",
                     {"value": "Manual", "description": "Haven't implemented this yet "},
                 ],
@@ -165,21 +169,19 @@ class GodState:
             "DroneCAN firmware substitution": {
                 "Enabled": ReactiveValue(False),
                 "Substitute firmware path": {"__type__": "filepath", "value": ReactiveValue("")},
-            }
-            # "some_files": [{"__type__": "filepath", "value": ""}],
-            # "ui_settings": {
-            #     "Save location": {
-            #         "__type__": "radio",
-            #         "values": [
-            #             "Cloud",
-            #             {"value": "Computer", "description": "Your pc pretty much"},
-            #             "Device",
-            #             "Mobile phone",
-            #         ],
-            #         "chosen_value": "Cloud",
-            #         "name": "Save location (nice!)",
-            #     },
-            # },
+            },
+            "Monitor view": {
+                "Show link name below horizontal lines": ReactiveValue(False),
+                "Link info width": ReactiveValue(300),
+                "Distance between vertical lines": ReactiveValue(60),
+                "Node width": ReactiveValue(250),
+                "Distance per horizontal connection": ReactiveValue(20),
+                "Show name above datatype": ReactiveValue(False),
+            },
+        }
+        self.callbacks: typing.Any = {
+            "yukon_node_created": [],
+            "yukon_node_attached": [],
         }
         self.last_settings_hash: int = 0
         self.dronecan_traffic_queues = DroneCanTrafficQueues()

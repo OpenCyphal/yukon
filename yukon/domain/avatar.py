@@ -264,11 +264,6 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         json_object: Any = {
             "node_id": self._node_id,
             "hash": self.__hash__(),
-            "monitor_view_hash": hash(frozenset(self._ports.pub))
-            ^ hash(frozenset(self._ports.sub))
-            ^ hash(frozenset(self._ports.cln))
-            ^ hash(frozenset(self._ports.srv))
-            ^ hash(self._info.name.tobytes().decode() if self._info is not None else None),
             "name": self._info.name.tobytes().decode() if self._info is not None else None,
             "last_heartbeat": {
                 "health": health_value,
@@ -291,6 +286,14 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             "registers_exploded_values": self.register_exploded_values,
             "registers_hash": hash(json.dumps(self.register_exploded_values, sort_keys=True)),
         }
+        json_object["monitor_view_hash"] = (
+            hash(frozenset(self._ports.pub))
+            ^ hash(frozenset(self._ports.sub))
+            ^ hash(frozenset(self._ports.cln))
+            ^ hash(frozenset(self._ports.srv))
+            ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
+        )
+        json_object["monitor2_hash"] = json_object["monitor_view_hash"]
         return json_object
 
     def __hash__(self) -> int:

@@ -25,8 +25,7 @@ export const meanings = {
 
 export function getLinkInfo(subject_id, node_id, yukon_state) {
     let infos = [];
-    for (let i = 0; i < yukon_state.current_avatars.length; i++) {
-        const avatar = yukon_state.current_avatars[i];
+    for (const avatar of yukon_state.current_avatars) {
         if (avatar.node_id === node_id || !node_id) {
             const registersKeys = Object.keys(avatar.registers_values);
             for (let j = 0; j < registersKeys.length; j++) {
@@ -42,4 +41,22 @@ export function getLinkInfo(subject_id, node_id, yukon_state) {
         }
     }
     return Array.from(new Set(infos));
+}
+export function getRelatedLinks(port, yukon_state) {
+    let links = [];
+    for (const avatar of yukon_state.current_avatars) {
+        const registersKeys = Object.keys(avatar.registers_values);
+        for (let j = 0; j < registersKeys.length; j++) {
+            const register_name = registersKeys[j];
+            const register_name_split = register_name.split(".");
+            const link_name = register_name_split[register_name_split.length - 2];
+            const value = avatar.registers_values[register_name];
+            if (parseInt(value) === port && register_name.endsWith(".id")) {
+                const datatype_key = registersKeys.find((a) => a.endsWith(link_name + ".type"));
+                const datatype = avatar.registers_values[datatype_key];
+                links.push({name: link_name, node_id: avatar.node_id, "port": port, type: register_name_split[1], "datatype": datatype});
+            }
+        }
+    }
+    return Array.from(new Set(links));
 }

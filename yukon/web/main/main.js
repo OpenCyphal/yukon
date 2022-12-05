@@ -1,5 +1,5 @@
-import {make_context_menus} from '../modules/context-menu.module.js';
-import {create_directed_graph, update_directed_graph} from '../modules/monitor.module.js';
+import { make_context_menus } from '../modules/context-menu.module.js';
+import { create_directed_graph, update_directed_graph } from '../modules/panels/monitor.module.js';
 import {
     isRunningInElectron,
     areThereAnyActiveModals,
@@ -9,27 +9,28 @@ import {
     loadConfigurationFromOpenDialog,
     return_all_selected_registers_as_yaml
 } from '../modules/yaml.configurations.module.js';
-import {create_registers_table, update_tables} from '../modules/registers.module.js';
+import { create_registers_table, update_tables } from '../modules/panels/registers.module.js';
 import {
     get_all_selected_pairs,
     unselectAll,
     selectAll,
     oneSelectedConstraint,
     moreThanOneSelectedConstraint
-} from '../modules/registers.selection.module.js';
-import {rereadPairs} from "../modules/registers.data.module.js"
-import {initTransports} from "../modules/panels/transports.module.js"
-import {copyTextToClipboard} from "../modules/copy.module.js"
-import {setUpStatusComponent} from "../modules/panels/status.module.js"
-import {setUpTransportsListComponent} from "../modules/panels/transports-list.module.js"
-import {setUpCommandsComponent} from "../modules/panels/commands.module.js"
-import {update_avatars_dto} from "../modules/data.module.js"
-import {setUpMessagesComponent} from "../modules/panels/messages.module.js"
-import {setUpRegisterUpdateLogComponent} from "../modules/panels/register_update_log.module.js"
-import {setUpSubscriptionsComponent} from "../modules/panels/subscriptions.module.js"
-import {layout_config} from "../modules/panels/_layout_config.module.js"
-import {setUpSettingsComponent} from "../modules/panels/settings.module.js"
-import {setUpMotorControlComponent} from "../modules/panels/motor_control.module.js"
+} from '../modules/panels/registers.selection.module.js';
+import { rereadPairs } from "../modules/panels/registers.data.module.js"
+import { initTransports } from "../modules/panels/transports.module.js"
+import { copyTextToClipboard } from "../modules/copy.module.js"
+import { setUpStatusComponent } from "../modules/panels/status.module.js"
+import { setUpTransportsListComponent } from "../modules/panels/transports-list.module.js"
+import { setUpCommandsComponent } from "../modules/panels/commands.module.js"
+import { update_avatars_dto } from "../modules/data.module.js"
+import { setUpMessagesComponent } from "../modules/panels/messages.module.js"
+import { setUpRegisterUpdateLogComponent } from "../modules/panels/register_update_log.module.js"
+import { setUpSubscriptionsComponent } from "../modules/panels/subscriptions.module.js"
+import { layout_config } from "../modules/panels/_layout_config.module.js"
+import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
+import { setUpMotorControlComponent } from "../modules/panels/motor_control.module.js"
+import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
@@ -37,6 +38,7 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
     yukon_state.autosize = autosize;
     yukon_state.navigator = window.navigator;
     yukon_state.jsyaml = jsyaml;
+    yukon_state.all_settings = await yukon_state.zubax_apij.get_settings();
     if (!isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_browser();
     }
@@ -246,6 +248,13 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                         setUpMotorControlComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
+                myLayout.registerComponent("monitor2Component", function (container, componentState) {
+                    registerComponentAction("../monitor2.panel.html", "monitor2Component", container, () => {
+                        const containerElement = container.getElement()[0];
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
+                        setUpMonitor2Component.bind(outsideContext)(container, yukon_state);
+                    });
+                });
                 const useSVG = true;
                 let caretDownImgSrc = null;
                 let caretUpImgSrc = null;
@@ -326,7 +335,6 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
 
                     stack.on('activeContentItemChanged', function (contentItem) {
                         const activeElementName = stack.getActiveContentItem().config.componentName;
-                        console.log("Active element changed to " + activeElementName);
                         const doesRequireAutoScroll = activeElementName === "messagesComponent";
                         const requiresSettingsButton = stack.getActiveContentItem().config.hasOwnProperty("doesRequireSettingsButton") && stack.getActiveContentItem().config.doesRequireSettingsButton === true;
                         if (!requiresSettingsButton) {
@@ -341,7 +349,6 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
                                 spanAutoScroll.style.display = "none";
                             }
                         }
-                        console.log(activeElementName + " requires settings button: " + requiresSettingsButton);
                         const container = stack.getActiveContentItem().container.getElement()[0];
                         // If the key "isExpanded" is not contained in the state of the container
 
@@ -615,6 +622,11 @@ import {setUpMotorControlComponent} from "../modules/panels/motor_control.module
         }
         document.addEventListener('keydown', function (e) {
             if (e.code === "Escape") {
+                const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
+                const hoveredContainerObject = returnArray[1];
+                if (!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
+                    return;
+                }
                 if (escape_timer) {
                     clearTimeout(escape_timer);
                     escape_timer = null;

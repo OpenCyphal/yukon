@@ -1,27 +1,80 @@
-.node {
+/*#monitor2 {*/
+/*    !*all: initial;*!*/
+/*}*/
+/*#monitor2 * {*/
+/*    !*all: unset;*!*/
+/*}*/
+#subscriptions {
+    padding: 20px;
+    position: relative;
+}
+
+#subscriptions .subscription {
+    position: relative;
+    margin-right: 20px;
+}
+
+#monitor2>.node {
+    font: 12px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
     border: 1px solid darkolivegreen;
     background-color: #d5d5d5;
     color: #a33fff;
     padding: 0.5em;
+    padding-right: 50px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     align-items: flex-start;
     position: absolute;
     border-radius: 5px;
+    word-break: break-all;
+    min-height: fit-content !important;
 }
 
-.line {
+#monitor2 .line {
+    position: absolute;
+    background-color: black;
+    color: black;
     text-wrap: none;
-    height: 100%;
+    height: 100vh;
 }
 
-.subscriber {
+#monitor2 .horizontal_line {
+    position: absolute;
+    background-color: black;
+    color: black;
+    text-wrap: none;
+}
+
+#monitor2 .subscriber {
     border: 1px solid black;
     background-color: #d5d5d5;
     color: #a33fff;
 }
 
-td {
+#monitor2 td {
     min-width: 140px;
+}
+
+#monitor2 .port_label {
+    background-color: black;
+    color: white;
+}
+
+@media (prefers-color-scheme: dark) {
+    #monitor2 .node {
+        background-color: darkblue;
+        color: white;
+    }
+
+    #monitor2 .line {
+        background-color: antiquewhite;
+        color: antiquewhite;
+    }
+
+    #monitor2 .horizontal_line {
+        background-color: antiquewhite;
+        color: antiquewhite;
+        text-wrap: none;
+    }
 }

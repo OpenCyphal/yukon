@@ -1,4 +1,5 @@
 import os, subprocess
+os.environ["PYTHONPATH"] = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.compiled"))
 
 os.environ["UAVCAN__SUB__TEMPERATURE_SETPOINT__ID"] = "2345"
 
