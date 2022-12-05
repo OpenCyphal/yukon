@@ -129,7 +129,7 @@ def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
         if (new_mode in ["Automatic", "Automatic persistent allocation"]) and not state.cyphal.centralized_allocator:
             logger.info("Some kind of automatic allocator is now enabled")
             # For the current thread, the same event loop is used
-            def _run_allocator(state: "yukon.domain.god_state.GodState") -> None:
+            def _run_allocator() -> None:
                 def _run_allocator_inner() -> None:
                     try:
                         if state.cyphal.local_node:
@@ -138,6 +138,8 @@ def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
                             state.cyphal.centralized_allocator.start()
 
                             def allocated_hook(allocated_node_id: int) -> None:
+                                logger.setLevel(logging.DEBUG)
+                                logger.debug("Handling allocation of node %d", allocated_node_id)
                                 if new_mode == "Automatic persistent allocation":
                                     logger.debug("Now sending store persistent states to all nodes")
                                     state.cyphal_worker_asyncio_loop.call_soon_threadsafe(
@@ -167,7 +169,7 @@ def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
                     assert state.cyphal.local_node.id
                     state.cyphal_worker_asyncio_loop.call_soon_threadsafe(_run_allocator_inner)
 
-            _run_allocator(state)
+            _run_allocator()
         elif new_mode == "Manual" and state.cyphal.centralized_allocator:
             logger.info("Allocator is now stopped")
             state.cyphal.centralized_allocator.close()

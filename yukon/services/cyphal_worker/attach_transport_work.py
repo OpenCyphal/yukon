@@ -47,7 +47,7 @@ async def do_attach_transport_work(state: GodState, atr: AttachTransportRequest)
         if isinstance(state.callbacks.get("yukon_node_attached"), typing.List):
             for callback in state.callbacks["yukon_node_attached"]:
                 if callable(callback):
-                    callback(state)
+                    callback()
         if atr.requested_interface.is_udp:
             state.cyphal.already_used_transport_interfaces[atr.requested_interface.udp_iface] = True
         else:

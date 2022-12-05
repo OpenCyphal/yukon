@@ -92,11 +92,10 @@ def cyphal_worker(state: GodState) -> None:
             state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
 
             make_tracers_trackers(state)
-            await asyncio.sleep(0.2)  # Allow node_id to be assigned or something like that
-            if isinstance(state.callbacks.get("yukon_node_created"), typing.List):
-                for callback in state.callbacks["yukon_node_created"]:
-                    if callable(callback):
-                        callback(state)
+            # if isinstance(state.callbacks.get("yukon_node_created"), typing.List):
+            #     for callback in state.callbacks["yukon_node_created"]:
+            #         if callable(callback):
+            #             callback(state)
 
             logger.debug("Tracers should have been set up.")
             while state.gui.gui_running:

@@ -12,7 +12,6 @@ from pycyphal.transport import (
     Transfer,
 )
 import typing
-from typing import Optional, Sequence
 from pycyphal.transport.udp import UDPTransport, UDPOutputSession, UDPInputSession
 
 
