@@ -8,6 +8,7 @@ import typing
 import logging
 from datetime import datetime
 from pathlib import Path
+from collections.abc import MutableSequence
 
 from ruamel import yaml
 from ruamel.yaml.scanner import ScannerError
@@ -147,6 +148,17 @@ def loading_settings_into_yukon(state: GodState) -> None:
                         loaded_settings[key] = value
                     else:
                         recursive_update_settings(value, loaded_settings[key])
+                elif settings.get("__type__") == "radio":
+                    # Iterate over loaded_settings.get("values") and check if it already has every value from settings.get("values")
+                    values_in_loaded_settings = loaded_settings.get("values")
+                    values_in_settings = settings.get("values")
+                    if isinstance(values_in_loaded_settings, MutableSequence) and isinstance(
+                        values_in_settings, MutableSequence
+                    ):
+                        for value in values_in_settings:
+                            if value not in values_in_loaded_settings:
+                                logger.debug(f"Adding value {value} to loaded_settings")
+                                values_in_loaded_settings.append(value)
                 else:
                     if key not in loaded_settings:
                         logger.debug(f"Adding key {key} to loaded_settings")

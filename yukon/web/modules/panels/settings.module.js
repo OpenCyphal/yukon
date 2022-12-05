@@ -78,7 +78,11 @@ export async function setUpSettingsComponent(container, yukon_state) {
             radioInput.type = "radio";
             radioInput.name = settings["name"];
             radioInput.id = settings["name"] + i;
-            radioInput.checked = settings["chosen_value"] === settings["values"][i];
+            let value_in_settings = settings["values"][i];
+            if (typeof settings["values"][i] === "object") {
+                value_in_settings = settings["values"][i]["value"];
+            }
+            radioInput.checked = settings["chosen_value"] === value_in_settings;
             radioInput.addEventListener("change", function () {
                 if (this.checked) {
                     settings["chosen_value"] = value;
