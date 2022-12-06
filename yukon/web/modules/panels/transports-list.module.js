@@ -83,6 +83,20 @@ export function setUpTransportsListComponent(yukon_state) {
                 transport_interface.appendChild(can_mtu);
                 transport_interface.appendChild(can_arbitration_rate);
                 transport_interface.appendChild(can_data_rate);
+                // Add a button for copying the can_iface to the clipboard
+                const copy_button = document.createElement('button');
+                copy_button.classList.add("btn");
+                copy_button.classList.add("btn-primary");
+                copy_button.innerText = "Copy interface for Yakut";
+                copy_button.addEventListener('click', function() {
+                    let text = "";
+                    text += "export UAVCAN__CAN__IFACE=" + _interface.iface + "\n";
+                    text += "export UAVCAN__CAN__MTU=" + _interface.mtu + "\n";
+                    text += `export UAVCAN__CAN__BITRATE="${_interface.rate_arb} ${_interface.rate_data}"\n`;
+                    text += "export UAVCAN__NODE__ID=$(yakut accommodate)\n";
+                    navigator.clipboard.writeText(text);
+                });
+                transport_interface.appendChild(copy_button);
             }
             transport_interface.classList.add('transport_interface');
             // Add a button to remove the interface

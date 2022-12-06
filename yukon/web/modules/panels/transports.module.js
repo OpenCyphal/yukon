@@ -499,6 +499,45 @@ export function initTransports(container, yukon_state) {
             feedbackMessageDiv.innerHTML = resultObject.message_short;
         }
     });
+    const btnCopyToYakut = containerElem.querySelector("#btnCopyToYakut");
+    btnCopyToYakut.addEventListener('click', async function () {
+        if (currentSelectedTransportType[1] == transports.UDP.UDP) {
+            console.log("UDP");
+            const udp_iface = containerElem.querySelector('#iUdpIface').value;
+            const udp_mtu = containerElem.querySelector('#iUdpMtu').value;
+            const node_id = containerElem.querySelector('#iNodeId').value;
+            let text = "";
+            text += "export UAVCAN__UDP__IFACE=" + udp_iface + "\n";
+            text += "export UAVCAN__UDP__MTU=" + udp_mtu + "\n";
+            text += "export UAVCAN__NODE__ID=$(yakut accommodate)\n";
+            navigator.clipboard.writeText(text);
+        } else {
+            console.log("CAN");
+            let port = "";
+            const useSocketCan = currentSelectedTransportType[1] == transports.CAN.SOCKETCAN;
+            if (currentSelectedTransportType[1] != transports.CAN.MANUAL) {
+                let port_type = "";
+                if (useSocketCan) {
+                    port_type = "socketcan";
+                } else {
+                    port_type = "slcan";
+                }
+                port = port_type + ":" + sTransport.value;
+            } else {
+                port = iTransport.value;
+            }
+            const data_rate = containerElem.querySelector('#iDataRate').value;
+            const arb_rate = containerElem.querySelector('#iArbRate').value;
+            const node_id = containerElem.querySelector('#iNodeId').value;
+            const mtu = containerElem.querySelector('#iMtu').value;
+            let text = "";
+            text += "export UAVCAN__CAN__IFACE=" + port + "\n";
+            text += "export UAVCAN__CAN__MTU=" + mtu + "\n";
+            text += `export UAVCAN__CAN__BITRATE="${arb_rate} ${data_rate}"\n`;
+            text += "export UAVCAN__NODE__ID=$(yakut accommodate)\n";
+            navigator.clipboard.writeText(text);
+        }
+    });
     // Toggle between showing divTypeTransport and divSelectTransport by clicking on the respective buttons
     const divTypeTransport = containerElem.querySelector('#divTypeTransport');
     const divSelectTransport = containerElem.querySelector('#divSelectTransport');
