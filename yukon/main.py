@@ -108,10 +108,65 @@ def run_electron(state: GodState) -> None:
         open_webbrowser(state)
 
 
+def webbrowser_open_wrapper(url: str) -> bool:
+    """This one has a timeout"""
+    # if the webbrowser.open function doesn't return in 1 second then return false
+    # run the webbrowser.open function in a thread and return its return value if it returns in 1 second
+    # if it doesn't return in 1 second then return false
+    logger.info("The time-outing webbrowser.open function is being called")
+    did_open_webbrowser = False
+
+    def run_webbrowser_open() -> None:
+        nonlocal did_open_webbrowser
+        did_open_webbrowser = webbrowser.open(url)
+
+    t = threading.Thread(target=run_webbrowser_open, daemon=True)
+    t.start()
+    start_time = monotonic()
+    while t.is_alive():
+        if monotonic() - start_time > 1:
+            return False
+        sleep(0.1)
+        logger.info("Timeout function is sleeping")
+    return did_open_webbrowser
+
+
 def open_webbrowser(state: GodState) -> None:
     while not state.gui.is_port_decided:
-        sleep(1)
-    webbrowser.open(f"http://localhost:{state.gui.server_port}/main/main.html")
+        sleep(0.5)
+    logger.info("Opening web browser")
+    tried_webbrowser_open = False
+    tried_xdg_open_or_similar = False
+    while not state.gui.is_running_in_browser:
+        if not tried_webbrowser_open:
+            webbrowser_open_wrapper(f"http://localhost:{state.gui.server_port}/main/main.html")
+            tried_webbrowser_open = True
+
+        # Use a shell to launch chrome and firefox on url f"http://localhost:{state.gui.server_port}/main/main.html"
+        # If the user is on linux, then use xdg-open
+        # If the user is on mac, then use open
+        # If the user is on windows, then use start
+        # If the user is on any other OS, then use the default browser
+        if tried_webbrowser_open and not tried_xdg_open_or_similar:
+            if sys.platform == "linux":
+                logger.info("Using xdg-open to open the browser")
+                subprocess.call(["xdg-open", f"http://localhost:{state.gui.server_port}/main/main.html"])
+                tried_xdg_open_or_similar = True
+            elif sys.platform == "darwin":
+                logger.info("Using open to open the browser")
+                subprocess.call(["open", f"http://localhost:{state.gui.server_port}/main/main.html"])
+                tried_xdg_open_or_similar = True
+            elif sys.platform == "win32":
+                logger.info("Using start to open the browser")
+                subprocess.call(["start", f"http://localhost:{state.gui.server_port}/main/main.html"])
+                tried_xdg_open_or_similar = True
+
+        if tried_webbrowser_open and tried_xdg_open_or_similar:
+            logger.warning(
+                "The browser wasn't opened, please open it manually at URL %s",
+                f"http://localhost:{state.gui.server_port}/main/main.html",
+            )
+        sleep(2)
 
 
 def run_server(state: GodState) -> None:
@@ -233,6 +288,9 @@ def auto_exit_task() -> int:
 
 
 async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arguments: bool = True) -> int:
+    from yukon.version import __version__
+
+    print("Version of Yukon: " + __version__)
     asyncio.get_event_loop().slow_callback_duration = 35
     if get_stop_after_value():
         auto_exit_thread = threading.Thread(target=auto_exit_task)
