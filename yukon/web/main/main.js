@@ -309,10 +309,12 @@ import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
                     stack.header.controlsContainer.prepend(btnPanelShowHideToggle);
                     // Does stack have the messages panel?
                     let hasMessagesPanel = false;
-                    for (let component of stack.config.content) {
-                        if (component.componentName === "messagesComponent") {
-                            hasMessagesPanel = true;
-                            break;
+                    if(stack.config && stack.config.content) {
+                        for (let component of stack.config.content) {
+                            if (component.componentName === "messagesComponent") {
+                                hasMessagesPanel = true;
+                                break;
+                            }
                         }
                     }
                     let spanAutoScroll = null;

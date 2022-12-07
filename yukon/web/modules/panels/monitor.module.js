@@ -292,9 +292,15 @@ function createMonitorPopup(text, yukon_state) {
 
 function getDrawingAspectRatio() {
     const cy = document.getElementById('cy');
-    const cy_width = cy.clientWidth;
-    const cy_height = cy.clientHeight;
-    return cy_width / cy_height;
+    try {
+        const cy_width = cy.clientWidth;
+        const cy_height = cy.clientHeight;
+        return cy_width / cy_height;
+    } catch (e) {
+        console.error(e);
+        return 1;
+    }
+    
 }
 
 export function refresh_graph_layout(my_graph) {
