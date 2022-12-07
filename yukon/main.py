@@ -167,6 +167,7 @@ def open_webbrowser(state: GodState) -> None:
                 f"http://localhost:{state.gui.server_port}/main/main.html",
             )
         sleep(2)
+    print("Good to go, Yukon is now open in a browser.")
 
 
 def run_server(state: GodState) -> None:
