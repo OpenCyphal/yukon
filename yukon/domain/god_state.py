@@ -173,10 +173,13 @@ class GodState:
             "Monitor view": {
                 "Show link name below horizontal lines": ReactiveValue(False),
                 "Link info width": ReactiveValue(300),
+                "Vertical line width": ReactiveValue(2),
+                "Horizontal line width": ReactiveValue(2),
                 "Distance between vertical lines": ReactiveValue(60),
                 "Node width": ReactiveValue(250),
                 "Distance per horizontal connection": ReactiveValue(20),
                 "Show name above datatype": ReactiveValue(False),
+                "Hightlight colors": ["red", "blue", "green", "yellow", "orange", "purple", "brown"],
             },
         }
         self.callbacks: typing.Any = {

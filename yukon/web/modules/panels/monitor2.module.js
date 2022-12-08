@@ -24,6 +24,8 @@ function fillSettings(yukon_state) {
     settings.HorizontalColliderOffsetY = (settings.HorizontalColliderHeight - 1) / 2
     settings.HorizontalLabelOffsetY = 20;
     settings.HorizontalPortLabelOffsetY = 10;
+    settings.HorizontalLineWidth = yukon_state.all_settings["Monitor view"]["Horizontal line width"];
+    settings.VerticalLineWidth = yukon_state.all_settings["Monitor view"]["Vertical line width"];
     settings.LabelLeftMargin = 12;
     settings.VerticalColliderWidth = 9;
     settings.LinkLabelColor = "transparent";
@@ -33,7 +35,7 @@ function fillSettings(yukon_state) {
     settings.ServicePortLabelBgColor = "lightblue";
     settings.ServicePortLabelColor = "black";
     // Add random shades of orange to the list
-    settings.HighlightColorsRaw = ["red", "blue", "green", "yellow", "orange", "purple", "brown"];
+    settings.HighlightColorsRaw = yukon_state.all_settings["Monitor view"]["Highlight colors"];
     settings.HighlightColors = [];
     settings.SubscriptionsOffset = null;
     settings.SubscriptionsVerticalOffset = settings.PageMarginTop;
@@ -469,7 +471,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 horizontal_line.style.top = y_counter + avatar_y_counter + "px";
                 horizontal_line.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + "px";
                 horizontal_line.style.width = matchingPort.x_offset - settings["NodeXOffset"] - settings["NodeWidth"] + "px";
-                horizontal_line.style.height = "2px";
+                horizontal_line.style.height = settings.HorizontalLineWidth + "px";
                 monitor2Div.appendChild(horizontal_line);
                 // Create an invisible collider div for horizontal_line, it should have a height of 10px
                 const horizontal_line_collider = document.createElement("div");
@@ -621,7 +623,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         // Create a line like <div class="line" style="width: 4px; position: absolute; top:20px; left: 140px">-42</div>-->
         let line = document.createElement("div");
         line.classList.add("line");
-        line.style.width = "4px";
+        line.style.width = settings.VerticalLineWidth + "px";
         line.style.position = "absolute";
         line.style.height = y_counter + "px";
         line.style.top = settings["VerticalLineMarginTop"] + "px";
