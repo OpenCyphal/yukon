@@ -58,7 +58,7 @@ def cyphal_worker(state: GodState) -> None:
     async def _internal_method() -> None:
         try:
             my_registry = make_registry()
-            my_registry["uavcan.node.id"] = 13
+            my_registry["uavcan.node.id"] = 1
             state.cyphal.local_node = make_node(
                 NodeInfo(name="org.opencyphal.yukon"), my_registry, reconfigurable_transport=True
             )
