@@ -1,5 +1,6 @@
 import { areThereAnyNewOrMissingHashes, updateLastHashes } from "../hash_checks.module.js";
 import { getRelatedLinks } from "../meanings.module.js";
+import { waitForElm } from "../utilities.module.js"
 import {
     getHoveredContainerElementAndContainerObject,
     secondsToColonSeparatedString,
@@ -215,9 +216,9 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
         vertical_offset_counter += subscriptionElement.scrollHeight + settings.SubscriptionsVerticalSpacing;
     }
 }
-export function setUpMonitor2Component(container, yukon_state) {
+export async function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0];
-    const monitor2Div = containerElement.querySelector("#monitor2");
+    const monitor2Div = await waitForElm("#monitor2", 7000);
     const subscriptionsDiv = containerElement.querySelector("#subscriptions");
     fillSettings(yukon_state);
     setInterval(async () => {
