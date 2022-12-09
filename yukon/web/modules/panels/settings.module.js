@@ -288,17 +288,27 @@ export async function setUpSettingsComponent(container, yukon_state) {
             //     parentDiv.innerHTML = "";
             //     createSettingsDiv(settings, parentDiv);
             // });
+            const btnAddPath = document.createElement("button");
+            btnAddPath.classList.add("btn");
+            btnAddPath.classList.add("btn-primary");
+            btnAddPath.innerText = "Add path";
+            btnAddPath.addEventListener("click", function () {
+                settings.push({ "__type__": "dirpath", "value": "" });
+                parentDiv.innerHTML = "";
+                createSettingsDiv(settings, parentDiv, parentSettings, null);
+            });
             const btnAddString = document.createElement("button");
             btnAddString.classList.add("btn");
             btnAddString.classList.add("btn-primary");
-            btnAddString.innerText = "Add path";
+            btnAddString.innerText = "Add string";
             btnAddString.addEventListener("click", function () {
-                settings.push({ "__type__": "dirpath", "value": "" });
+                settings.push("");
                 parentDiv.innerHTML = "";
                 createSettingsDiv(settings, parentDiv, parentSettings, null);
             });
             // btnGroupDiv.appendChild(btnAddBool);
             // btnGroupDiv.appendChild(btnAddInt);
+            btnGroupDiv.appendChild(btnAddPath);
             btnGroupDiv.appendChild(btnAddString);
             parentDiv.appendChild(btnGroupDiv);
         }
