@@ -73,22 +73,6 @@ def cyphal_worker(state: GodState) -> None:
 
             task = asyncio.create_task(forward_dronecan_loop())
 
-            def handle_transmit_message_to_dronecan(
-                redundant_capture: pycyphal.transport.redundant.RedundantCapture,
-            ) -> None:
-                if not state.dronecan.is_running:
-                    return
-                # TODO: This should actually make sure it is a CAN capture not any other transport
-                if isinstance(redundant_capture, pycyphal.transport.redundant.RedundantCapture):
-                    capture = redundant_capture.inferior
-                    if isinstance(capture, CANCapture):
-                        can_frame = dronecan.driver.CANFrame(
-                            capture.frame.identifier, capture.frame.data, True, canfd=False
-                        )
-                        logger.debug("Dronecan is receiving a message: %r", can_frame)
-                        state.dronecan_traffic_queues.input_queue.put_nowait(can_frame)
-
-            state.cyphal.local_node.presentation.transport.begin_capture(handle_transmit_message_to_dronecan)
             state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
 
             make_tracers_trackers(state)

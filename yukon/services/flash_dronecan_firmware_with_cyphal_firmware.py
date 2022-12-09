@@ -92,7 +92,7 @@ def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
                 state.dronecan.node.request(req, event.entry.node_id, lambda e: None)
 
         state.dronecan.node_monitor.add_update_handler(node_update)
-
+        state.dronecan.is_running = True
         # The allocator and the node monitor will be running in the background, requiring no additional attention
         # When they are no longer needed, they should be finalized by calling close():
         while True:
