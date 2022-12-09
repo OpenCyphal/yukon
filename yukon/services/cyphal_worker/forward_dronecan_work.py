@@ -17,7 +17,10 @@ async def do_forward_dronecan_work(state: GodState) -> None:
         logger.debug("There are CAN frames to forward to dronecan")
         envelopes_to_send: typing.List[Envelope] = []
         transport = typing.cast(CANTransport, state.cyphal.local_node.presentation.transport)
-        for frame in state.dronecan_traffic_queues.output_queue.queue:
+        max_work_counter = 0
+        while not state.dronecan_traffic_queues.output_queue.empty() and max_work_counter < 200:
+            frame: dronecan.driver.CANFrame = state.dronecan_traffic_queues.output_queue.get_nowait()
+            max_work_counter += 1
             # This is a dronecan construct
             assert isinstance(frame, dronecan.driver.CANFrame)
             # This is a pycyphal construct

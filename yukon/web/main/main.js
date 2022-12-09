@@ -58,11 +58,9 @@ import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
 
     async function setUpRegistersComponent(immediateCreateTable) {
         if (immediateCreateTable) {
-            await update_avatars_dto(yukon_state);
             update_tables(true);
         }
         setInterval(async () => {
-            await update_avatars_dto(yukon_state);
             update_tables();
         }, 893);
         let timer = null;

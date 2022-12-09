@@ -179,7 +179,7 @@ class GodState:
                 "Node width": ReactiveValue(250),
                 "Distance per horizontal connection": ReactiveValue(20),
                 "Show name above datatype": ReactiveValue(False),
-                "Hightlight colors": ["red", "blue", "green", "yellow", "orange", "purple", "brown"],
+                "Highlight colors": ["red", "blue", "green", "yellow", "orange", "purple", "brown"],
             },
         }
         self.callbacks: typing.Any = {
