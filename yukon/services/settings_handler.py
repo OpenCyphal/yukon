@@ -79,8 +79,13 @@ def equals_dict(object1, object2):
             elif isinstance(object2_value, (int, float, str, bool)):
                 if value.value != object2_value:
                     return False
-        elif value != object2_value:
-            return False
+        elif isinstance(value, (int, float, str, bool )):
+            if isinstance(object2_value, ReactiveValue):
+                if value != object2_value.value:
+                    return False
+            elif isinstance(object2_value, (int, float, str, bool)):
+                if value != object2_value:
+                    return False
     return True
 
 def equals_list(list1, list2):
@@ -147,7 +152,15 @@ def modify_settings_values_from_a_new_copy(
             if isinstance(value, ReactiveValue) and value.value not in new_settings:
                 logger.info("Planning to remove %r", value)
                 elements_to_remove.append(value)
-            if isinstance(value, (list, dict)) and value not in new_settings:
+            # Check if the value is in new_settings, if not remove it, check using equals_dict and equals_list
+            if isinstance(value, (list, dict)) and not any(
+                [
+                    equals_dict(value, new_settings_element)
+                    if isinstance(value, dict)
+                    else equals_list(value, new_settings_element)
+                    for new_settings_element in new_settings
+                    ]
+                    ):
                 logger.info("Planning to remove %r", value)
                 elements_to_remove.append(value)
             if isinstance(value, (list, dict)):
@@ -171,10 +184,28 @@ def modify_settings_values_from_a_new_copy(
         for value in new_settings:
             value_exists = False
             for current_value in current_settings:
-                if isinstance(current_value, ReactiveValue) and current_value.value == value:
+                if isinstance(current_value, ReactiveValue):
+                    if isinstance(value, (int, float, bool, str)):
+                        if current_value.value == value:
+                            value_exists = True
+                            break
+                    elif isinstance(value, ReactiveValue):
+                        if current_value.value == value.value:
+                            value_exists = True
+                            break
+                if isinstance(current_value, (int, float, bool, str)):
+                    if isinstance(value, (int, float, bool, str)):
+                        if current_value == value:
+                            value_exists = True
+                            break
+                    elif isinstance(value, ReactiveValue):
+                        if current_value == value.value:
+                            value_exists = True
+                            break
+                elif isinstance(current_value, dict) and equals_dict(current_value, value):
                     value_exists = True
                     break
-                elif isinstance(current_value, (dict, list)) and current_value == value:
+                elif isinstance(current_value, list) and equals_list(current_value, value):
                     value_exists = True
                     break
             if not value_exists:
