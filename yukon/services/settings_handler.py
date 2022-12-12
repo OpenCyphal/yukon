@@ -58,7 +58,7 @@ def load_settings(load_location: Path) -> typing.Any:
 
 
 # logger.setLevel(logging.DEBUG)
-def equals_dict(object1, object2):
+def equals_dict(object1: dict, object2: dict) -> bool:
     """Check that all keys in object1 are in object2 and that the values are equal"""
     if not isinstance(object1, dict) or not isinstance(object2, dict):
         return False
@@ -79,7 +79,7 @@ def equals_dict(object1, object2):
             elif isinstance(object2_value, (int, float, str, bool)):
                 if value.value != object2_value:
                     return False
-        elif isinstance(value, (int, float, str, bool )):
+        elif isinstance(value, (int, float, str, bool)):
             if isinstance(object2_value, ReactiveValue):
                 if value != object2_value.value:
                     return False
@@ -88,7 +88,8 @@ def equals_dict(object1, object2):
                     return False
     return True
 
-def equals_list(list1, list2):
+
+def equals_list(list1: list, list2: list) -> bool:
     """Check that all elements in list1 are in list2, use equals_dict to check if a dict is in both lists"""
     if not isinstance(list1, list) or not isinstance(list2, list):
         return False
@@ -124,7 +125,6 @@ def equals_list(list1, list2):
             if not value_found:
                 return False
     return True
-    
 
 
 def modify_settings_values_from_a_new_copy(
@@ -159,20 +159,22 @@ def modify_settings_values_from_a_new_copy(
                     if isinstance(value, dict)
                     else equals_list(value, new_settings_element)
                     for new_settings_element in new_settings
-                    ]
-                    ):
+                ]
+            ):
                 logger.info("Planning to remove %r", value)
                 elements_to_remove.append(value)
             if isinstance(value, (list, dict)):
                 logger.debug("Entering list %r for modification", current_settings)
-                if len(current_settings) == len(new_settings): # This will break when the user is fast with modifying the settings
+                if len(current_settings) == len(
+                    new_settings
+                ):  # This will break when the user is fast with modifying the settings
                     modify_settings_values_from_a_new_copy(current_settings[index], new_settings[index])
             # elif isinstance(value, ReactiveValue):
-                # Remove all items in the list that are ReactiveValues
-                # logger.debug("Modifying %r", current_settings[index])
-                # current_settings[index].value = new_settings[index]
-                # elements_to_remove.append(value)
-                # logger.debug("Modified %r", current_settings[index])
+            # Remove all items in the list that are ReactiveValues
+            # logger.debug("Modifying %r", current_settings[index])
+            # current_settings[index].value = new_settings[index]
+            # elements_to_remove.append(value)
+            # logger.debug("Modified %r", current_settings[index])
         if len(elements_to_remove) > 0:
             logger.debug("Removing %r", elements_to_remove)
         current_settings_length_before_removal = len(current_settings)

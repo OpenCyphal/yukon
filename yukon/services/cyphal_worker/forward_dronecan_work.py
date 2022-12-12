@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 # logger.setLevel(logging.DEBUG)
 
-def make_handler_for_transmit(state: GodState):
+
+def make_handler_for_transmit(state: GodState) -> typing.Callable[[pycyphal.transport.can.CANCapture], None]:
     def handle_transmit_message_to_dronecan(can_capture: pycyphal.transport.can.CANCapture) -> None:
         if not state.dronecan.is_running or can_capture.own:
             logger.debug("Not forwarding a message %r", can_capture)
@@ -23,7 +24,9 @@ def make_handler_for_transmit(state: GodState):
                 can_capture.frame.identifier, can_capture.frame.data, True, canfd=False
             )
             state.dronecan_traffic_queues.input_queue.put_nowait(can_frame)
+
     return handle_transmit_message_to_dronecan
+
 
 async def do_forward_dronecan_work(state: GodState) -> None:
     if not state.dronecan_traffic_queues.output_queue.empty():
