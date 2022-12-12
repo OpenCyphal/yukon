@@ -216,7 +216,22 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
                 }
                 current_messages.push(message);
             }
-            pLatestMessage.innerHTML = JSON.stringify(current_messages[current_messages.length - 1]);
+            const lastMessageObject = current_messages[current_messages.length - 1];
+            const yaml_text = await yukon_state.zubax_api.json_to_yaml(JSON.stringify(lastMessageObject));
+            // If yaml_text contains a newline, it will be split into multiple lines
+            if (yaml_text.includes("\n")) {
+                pLatestMessage.innerHTML = "";
+                const lines_split = yaml_text.split("\n");
+                for (const line of lines_split) {
+                    const p = document.createElement("p");
+                    p.style.whiteSpace = "pre";
+                    p.innerHTML = line;
+                    pLatestMessage.appendChild(p);
+                }
+            } else {
+                pLatestMessage.innerHTML = yaml_text;
+            }
+
         }
 
         fetchIntervalId = setInterval(fetch, 300);

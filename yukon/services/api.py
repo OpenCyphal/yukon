@@ -457,6 +457,10 @@ class Api:
         text_response = Dumper().dumps(yaml.load(yaml_in, Loader))
         return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
 
+    def json_to_yaml(self, json_in: str) -> Response:
+        text_response = Dumper().dumps(json.loads(json_in))
+        return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
+
     def add_register_update_log_item(self, register_name: str, register_value: str, node_id: str, success: str) -> None:
         """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
         add_register_update_log_item(self.state, register_name, register_value, node_id, bool(success))
