@@ -78,6 +78,9 @@
 #subscriptions-inner-area>div.subscription>h3 {
     font-size: 0.9rem;
 }
+#subscriptions-inner-area>div.subscription>p {
+    font-size: 0.9rem;
+}
 
 
 @media (prefers-color-scheme: dark) {
