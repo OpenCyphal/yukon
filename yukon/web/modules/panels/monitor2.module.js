@@ -158,9 +158,6 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
         subscriptionElement.classList.add("subscription");
         subscriptionElement.setAttribute("data-specifier", specifier);
         subscriptionElement.innerText = specifier;
-        subscriptionElement.style.position = "absolute";
-        subscriptionElement.style.top = vertical_offset_counter + "px";
-        subscriptionElement.style.left = settings.SubscriptionsOffset + "px";
         // Add a button for unsubscribing
         const unsubscribeButton = document.createElement("button");
         unsubscribeButton.innerText = "Unsubscribe";
@@ -188,11 +185,11 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
         // Add a div with a select input for the datatype and a button for subscribing
         const subscriptionElement = document.createElement("div");
         subscription.element = subscriptionElement;
+        const header = document.createElement("h3");
+        header.innerText = "This is a pending subscription, confirm it by selecting a datatype and clicking the button below";
+        subscriptionElement.appendChild(header);
         subscriptionElement.classList.add("subscription");
         subscriptionElement.setAttribute("data-is-being-setup", "true");
-        subscriptionElement.style.position = "absolute";
-        subscriptionElement.style.top = vertical_offset_counter + "px";
-        subscriptionElement.style.left = settings.SubscriptionsOffset + "px";
         const select = document.createElement("select");
         const datatypesOfPort = await getDatatypesForPort(subscription.subject_id, yukon_state);
         for (const datatype of datatypesOfPort) {
@@ -214,9 +211,7 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
             }
         });
         // Add a header saying "This is a pending subscription, confirm it by selecting a datatype and clicking the button below"
-        const header = document.createElement("h3");
-        header.innerText = "This is a pending subscription, confirm it by selecting a datatype and clicking the button below";
-        subscriptionElement.appendChild(header);
+
         subscriptionElement.appendChild(subscribeButton);
         subscriptionsDiv.appendChild(subscriptionElement);
         vertical_offset_counter += subscriptionElement.scrollHeight + settings.SubscriptionsVerticalSpacing;
@@ -225,14 +220,24 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
 export async function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0];
     const monitor2Div = await waitForElm("#monitor2", 7000);
-    const subscriptionsDiv = containerElement.querySelector("#subscriptions");
     fillSettings(yukon_state);
+    const subscriptionsOuterArea = containerElement.querySelector("#subscriptions-outer-area");
+    const subscriptionsInnerArea = document.createElement("div");
+    subscriptionsInnerArea.id = "subscriptions-inner-area";
+    subscriptionsInnerArea.style.position = "absolute";
+    subscriptionsOuterArea.appendChild(subscriptionsInnerArea);
     setInterval(async () => {
-        yukon_state.subscription_specifiers = await yukon_state.zubax_apij.get_current_available_subscription_specifiers();
-        if (typeof yukon_state.subscription_specifiers_previous_hash === "undefined" || yukon_state.subscription_specifiers_previous_hash !== yukon_state.subscription_specifiers.hash) {
-            await drawSubscriptions(subscriptionsDiv, yukon_state);
+        if (settings.SubscriptionsOffset) {
+            subscriptionsInnerArea.style.left = settings.SubscriptionsOffset + "px";
+            subscriptionsInnerArea.style.top = settings.SubscriptionsVerticalOffset + "px";
+            yukon_state.subscription_specifiers = await yukon_state.zubax_apij.get_current_available_subscription_specifiers();
+            if (typeof yukon_state.subscription_specifiers_previous_hash === "undefined" || yukon_state.subscription_specifiers_previous_hash !== yukon_state.subscription_specifiers.hash) {
+                await drawSubscriptions(subscriptionsInnerArea, yukon_state);
+            }
+            yukon_state.subscription_specifiers_previous_hash = yukon_state.subscription_specifiers_hash;
+        } else {
+            console.warn("Subscriptions offset is not set");
         }
-        yukon_state.subscription_specifiers_previous_hash = yukon_state.subscription_specifiers_hash;
 
     }, 1500);
     setInterval(async () => {

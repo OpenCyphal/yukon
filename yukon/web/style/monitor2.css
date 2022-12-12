@@ -61,6 +61,25 @@
     color: white;
 }
 
+#subscriptions-inner-area {
+    padding: 10px;
+    padding-left: 1em;
+    padding-right: 3em;
+}
+
+#subscriptions-inner-area>div.subscription {
+    margin-top: 0.5em;
+    display: block;
+}
+#subscriptions-inner-area>div.subscription>* {
+    margin-top: 0.5em;
+}
+
+#subscriptions-inner-area>div.subscription>h3 {
+    font-size: 0.9rem;
+}
+
+
 @media (prefers-color-scheme: dark) {
     #monitor2 .node {
         background-color: darkblue;
