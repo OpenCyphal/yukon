@@ -1,6 +1,6 @@
 import { areThereAnyNewOrMissingHashes, updateLastHashes } from "../hash_checks.module.js";
 import { getRelatedLinks } from "../meanings.module.js";
-import { waitForElm } from "../utilities.module.js"
+import { waitForElm, getKnownDatatypes } from "../utilities.module.js";
 import {
     getHoveredContainerElementAndContainerObject,
     secondsToColonSeparatedString,
@@ -253,10 +253,301 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
             select.appendChild(option);
         }
         subscriptionElement.appendChild(select);
+
+        // A checkbox on whether to use complex selection for datatypes
+        const divUseComplexSelection = document.createElement('div');
+        divUseComplexSelection.classList.add('form-check');
+        const inputUseComplexSelection = document.createElement('input');
+        inputUseComplexSelection.classList.add('form-check-input');
+        inputUseComplexSelection.classList.add('checkbox');
+        inputUseComplexSelection.type = 'checkbox';
+        inputUseComplexSelection.checked = false;
+        // I hope the ID isn't too long if I ever need to use it
+        inputUseComplexSelection.id = "inputUseComplexSelection:" + subscription.subject_id + ":" + subscription.datatype;
+        divUseComplexSelection.appendChild(inputUseComplexSelection);
+        const labelUseComplexSelection = document.createElement('label');
+        labelUseComplexSelection.classList.add('form-check-label');
+        labelUseComplexSelection.htmlFor = inputUseComplexSelection.id;
+        labelUseComplexSelection.innerHTML = "Use complex datatype selection";
+        divUseComplexSelection.appendChild(labelUseComplexSelection);
+        subscriptionElement.appendChild(divUseComplexSelection);
+
+        const divComplexSelection = document.createElement('div');
+        divComplexSelection.classList.add('complex-selection');
+        divComplexSelection.style.display = 'none';
+        divComplexSelection.id = "divComplexSelection:" + subscription.subject_id + ":" + subscription.datatype;
+        subscriptionElement.appendChild(divComplexSelection);
+
+
+        /* Create this structure in subscriptionElement:
+        <label for="rbUseManualDatatypeEntry">Type any datatype</label>
+    <div class="mb-3 input-group">
+        <div class="input-group-text">
+            <input class="form-check-input mt-0" type="radio" value=""
+                aria-label="Radio button for following text input" id="rbUseManualDatatypeEntry" name="rbUseSelect">
+        </div>
+        <input id="iManualDatatypeEntry" class="form-control" type="text">
+    </div>
+    <label for="rbUseSelectAdvertised">Select any datatype advertised in .type registers</label>
+    <div class="mb-3 input-group">
+        <div class="input-group-text">
+            <input class="form-check-input mt-0" type="radio" value=""
+                aria-label="Radio button for following text input" id="rbUseSelectAdvertised" name="rbUseSelect">
+        </div>
+        <select id="iSelectDatatype" class="form-select"></select>
+        <button class="btn btn-outline-secondary" type="button" id="btnRefresh1">Refresh</button>
+    </div>
+    <label for="rbUseSelectFixedId">Select a fixed ID message type</label>
+    <div class="mb-3 input-group">
+        <div class="input-group-text">
+            <input class="form-check-input mt-0" type="radio" value=""
+                aria-label="Radio button for following text input" id="rbUseSelectFixedId" name="rbUseSelect">
+        </div>
+        <input type="text" class="form-control" placeholder="Optional nid filter"
+            title="Optional filter that will only show messages from this node id, this filter can be modified and doesn't affect the subscription"
+            aria-label="Node id" id="iFixedIdSubscriptionNodeId">
+        <select id="iSelectFixedIdMessageType" class="form-select"></select>
+        <button class="btn btn-outline-secondary" type="button" id="btnRefresh2">Refresh</button>
+    </div>
+
+        */
+        const labelUseManualDatatypeEntry = document.createElement('label');
+        labelUseManualDatatypeEntry.innerHTML = "Type any datatype";
+        divComplexSelection.appendChild(labelUseManualDatatypeEntry);
+        const divUseManualDatatypeEntry = document.createElement('div');
+        divUseManualDatatypeEntry.classList.add('mb-3');
+        divUseManualDatatypeEntry.classList.add('input-group');
+        const divUseManualDatatypeEntryText = document.createElement('div');
+        divUseManualDatatypeEntryText.classList.add('input-group-text');
+        const rbUseManualDatatypeEntry = document.createElement('input');
+        rbUseManualDatatypeEntry.classList.add('form-check-input');
+        rbUseManualDatatypeEntry.classList.add('mt-0');
+        rbUseManualDatatypeEntry.type = 'radio';
+        rbUseManualDatatypeEntry.value = '';
+        rbUseManualDatatypeEntry.id = "rbUseManualDatatypeEntry:" + subscription.subject_id + ":" + subscription.datatype;
+        rbUseManualDatatypeEntry.name = "rbUseSelect";
+        divUseManualDatatypeEntryText.appendChild(rbUseManualDatatypeEntry);
+        divUseManualDatatypeEntry.appendChild(divUseManualDatatypeEntryText);
+        const iManualDatatypeEntry = document.createElement('input');
+        iManualDatatypeEntry.classList.add('form-control');
+        iManualDatatypeEntry.type = 'text';
+        iManualDatatypeEntry.id = "iManualDatatypeEntry:" + subscription.subject_id + ":" + subscription.datatype;
+        divUseManualDatatypeEntry.appendChild(iManualDatatypeEntry);
+        divComplexSelection.appendChild(divUseManualDatatypeEntry);
+        labelUseManualDatatypeEntry.htmlFor = rbUseManualDatatypeEntry.id;
+
+
+        const labelUseSelectAdvertised = document.createElement('label');
+        labelUseSelectAdvertised.innerHTML = "Select a datatype from the list of advertised datatypes";
+        divComplexSelection.appendChild(labelUseSelectAdvertised);
+        const divUseSelectAdvertised = document.createElement('div');
+        divUseSelectAdvertised.classList.add('mb-3');
+        divUseSelectAdvertised.classList.add('input-group');
+        const divUseSelectAdvertisedText = document.createElement('div');
+        divUseSelectAdvertisedText.classList.add('input-group-text');
+        const rbUseSelectAdvertised = document.createElement('input');
+        rbUseSelectAdvertised.classList.add('form-check-input');
+        rbUseSelectAdvertised.classList.add('mt-0');
+        rbUseSelectAdvertised.type = 'radio';
+        rbUseSelectAdvertised.value = '';
+        rbUseSelectAdvertised.id = "rbUseSelectAdvertised:" + subscription.subject_id + ":" + subscription.datatype;
+        rbUseSelectAdvertised.name = "rbUseSelect";
+        divUseSelectAdvertisedText.appendChild(rbUseSelectAdvertised);
+        divUseSelectAdvertised.appendChild(divUseSelectAdvertisedText);
+        const iSelectDatatype = document.createElement('select');
+        iSelectDatatype.id = "iSelectAdvertised:" + subscription.subject_id + ":" + subscription.datatype;
+        iSelectDatatype.classList.add('form-select');
+        divUseSelectAdvertised.appendChild(iSelectDatatype);
+        const btnRefresh1 = document.createElement('button');
+        btnRefresh1.classList.add('btn');
+        btnRefresh1.classList.add('btn-outline-secondary');
+        btnRefresh1.type = 'button';
+        btnRefresh1.id = "btnRefresh1:" + subscription.subject_id + ":" + subscription.datatype;
+        btnRefresh1.innerHTML = "Refresh";
+        divUseSelectAdvertised.appendChild(btnRefresh1);
+        divComplexSelection.appendChild(divUseSelectAdvertised);
+        labelUseSelectAdvertised.htmlFor = rbUseSelectAdvertised.id;
+
+        const labelUseSelectFixedId = document.createElement('label');
+        labelUseSelectFixedId.innerHTML = "Select a datatype from the list of fixed IDs";
+        divComplexSelection.appendChild(labelUseSelectFixedId);
+        const divUseSelectFixedId = document.createElement('div');
+        divUseSelectFixedId.classList.add('mb-3');
+        divUseSelectFixedId.classList.add('input-group');
+        const divUseSelectFixedIdText = document.createElement('div');
+        divUseSelectFixedIdText.classList.add('input-group-text');
+        const rbUseSelectFixedId = document.createElement('input');
+        rbUseSelectFixedId.classList.add('form-check-input');
+        rbUseSelectFixedId.classList.add('mt-0');
+        rbUseSelectFixedId.type = 'radio';
+        rbUseSelectFixedId.value = '';
+        rbUseSelectFixedId.id = "rbUseSelectFixedId:" + subscription.subject_id + ":" + subscription.datatype;
+        rbUseSelectFixedId.name = "rbUseSelect";
+        divUseSelectFixedIdText.appendChild(rbUseSelectFixedId);
+        divUseSelectFixedId.appendChild(divUseSelectFixedIdText);
+        const iSelectFixedIdMessageType = document.createElement('select');
+        iSelectFixedIdMessageType.id = "iSelectFixedId:" + subscription.subject_id + ":" + subscription.datatype;
+        iSelectFixedIdMessageType.classList.add('form-select');
+        divUseSelectFixedId.appendChild(iSelectFixedIdMessageType);
+        const btnRefresh2 = document.createElement('button');
+        btnRefresh2.classList.add('btn');
+        btnRefresh2.classList.add('btn-outline-secondary');
+        btnRefresh2.type = 'button';
+        btnRefresh2.id = "btnRefresh2:" + subscription.subject_id + ":" + subscription.datatype;
+        btnRefresh2.innerHTML = "Refresh";
+        divUseSelectFixedId.appendChild(btnRefresh2);
+        labelUseSelectFixedId.htmlFor = rbUseSelectFixedId.id;
+        divComplexSelection.appendChild(divUseSelectFixedId);
+
+
+        // Create this HTML structure
+        /* 
+        <label for="rbUseSelectAny">Select any found DSDL datatype</label>
+    <div class="mb-3 input-group">
+        <div class="input-group-text">
+            <input class="form-check-input mt-0" type="radio" value=""
+                aria-label="Radio button for following text input" id="rbUseSelectAny" name="rbUseSelect">
+        </div>
+        <select id="iSelectAny" class="form-select"></select>
+        <button class="btn btn-outline-secondary" type="button" id="btnRefresh3">Refresh</button>
+    </div>*/
+        const divUseSelectAny = document.createElement('div');
+        divUseSelectAny.classList.add('mb-3');
+        divUseSelectAny.classList.add('input-group');
+        const divUseSelectAnyText = document.createElement('div');
+        divUseSelectAnyText.classList.add('input-group-text');
+        const rbUseSelectAny = document.createElement('input');
+        rbUseSelectAny.classList.add('form-check-input');
+        rbUseSelectAny.classList.add('mt-0');
+        rbUseSelectAny.type = 'radio';
+        rbUseSelectAny.value = '';
+        rbUseSelectAny.id = "rbUseSelectAny:" + subscription.subject_id + ":" + subscription.datatype;
+        rbUseSelectAny.name = "rbUseSelect";
+        divUseSelectAnyText.appendChild(rbUseSelectAny);
+        divUseSelectAny.appendChild(divUseSelectAnyText);
+        const iSelectAny = document.createElement('select');
+        iSelectAny.id = "iSelectAny:" + subscription.subject_id + ":" + subscription.datatype;
+        iSelectAny.classList.add('form-select');
+        divUseSelectAny.appendChild(iSelectAny);
+        const btnRefresh3 = document.createElement('button');
+        btnRefresh3.classList.add('btn');
+        btnRefresh3.classList.add('btn-outline-secondary');
+        btnRefresh3.type = 'button';
+        btnRefresh3.id = "btnRefresh3:" + subscription.subject_id + ":" + subscription.datatype;
+        btnRefresh3.innerHTML = "Refresh";
+        divUseSelectAny.appendChild(btnRefresh3);
+        divComplexSelection.appendChild(divUseSelectAny);
+        const labelUseSelectAny = document.createElement('label');
+        labelUseSelectAny.htmlFor = rbUseSelectAny.id;
+        labelUseSelectAny.innerHTML = "Select any found DSDL datatype";
+        divComplexSelection.appendChild(labelUseSelectAny);
+
+        inputUseComplexSelection.addEventListener('change', () => {
+            if (inputUseComplexSelection.checked) {
+                divComplexSelection.style.display = 'block';
+                select.style.display = 'none';
+            } else {
+                divComplexSelection.style.display = 'none';
+                select.style.display = 'block';
+            }
+        });
+
+        const btns = [btnRefresh1, btnRefresh2, btnRefresh3];
+        btns.forEach(btn => {
+            btn.addEventListener('click', async () => {
+                await refreshKnownDatatypes();
+            });
+        });
+
+        async function refreshKnownDatatypes() {
+            // Flash all buttons btnRefresh1, btnRefresh2, btnRefresh3 with text "Refreshing..."
+
+            btns.forEach(btn => {
+                btn.innerHTML = 'Refreshing...';
+                btn.disabled = true;
+                // If the buttons are still disabled after 5 seconds, we assume that the refresh failed.
+                setTimeout(() => {
+                    if (btn.disabled) {
+                        btn.innerHTML = 'Refresh failed';
+                        setTimeout(() => {
+                            btn.innerHTML = 'Refresh';
+                            btn.disabled = false;
+                        }, 1200);
+                    }
+                }, 3000);
+            });
+            const knownDatatypes = getKnownDatatypes(yukon_state);
+            // Alphabetically sort knownDatatypes
+            knownDatatypes.sort();
+            const response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
+            iSelectDatatype.innerHTML = '';
+            iSelectAny.innerHTML = '';
+            iSelectFixedIdMessageType.innerHTML = '';
+            for (const datatype of knownDatatypes) {
+                // Add a new option to the select
+                const option = document.createElement('option');
+                option.value = datatype;
+                option.innerHTML = datatype;
+                iSelectDatatype.appendChild(option);
+            }
+            for (const id in response["fixed_id_messages"]) {
+                const datatype_short = response["fixed_id_messages"][id]["short_name"];
+                const datatype_full = response["fixed_id_messages"][id]["full_name"];
+                // Add a new option to the select
+                const option = document.createElement('option');
+                option.innerHTML = datatype_full + "(" + id + ")";
+                option.value = datatype_full;
+                iSelectFixedIdMessageType.appendChild(option);
+            }
+            response["variable_id_messages"].sort();
+            for (const datatype of response["variable_id_messages"]) {
+                // Add a new option to the select
+                const option = document.createElement('option');
+                option.value = datatype;
+                option.innerHTML = datatype;
+                iSelectAny.appendChild(option);
+            }
+            btns.forEach(btn => {
+                btn.innerHTML = 'Refreshed';
+                btn.disabled = true;
+            });
+            setTimeout(() => {
+                btns.forEach(btn => {
+                    btn.innerHTML = 'Refresh';
+                    btn.disabled = false;
+                });
+            }, 1200);
+        }
+        setTimeout(refreshKnownDatatypes, 3000);
+
+        function getCurrentDesiredDatatype() {
+            if (rbUseSelectAdvertised.checked) {
+                return iSelectDatatype.value;
+            } else if (rbUseSelectFixedId.checked) {
+                return iSelectFixedIdMessageType.value;
+            } else if (rbUseSelectAny.checked) {
+                return iSelectAny.value;
+            } else if (rbUseManualDatatypeEntry.checked) {
+                return iManualDatatypeEntry.value;
+            } else {
+                return null;
+            }
+        }
+
         const subscribeButton = document.createElement("button");
         subscribeButton.innerText = "Subscribe";
         subscribeButton.addEventListener("click", async () => {
-            subscription.datatype = select.value;
+            if (inputUseComplexSelection.checked) {
+                const desiredDatatype = getCurrentDesiredDatatype();
+                if (!desiredDatatype) {
+                    console.error("No datatype selected");
+                    return;
+                }
+                subscription.datatype = desiredDatatype;
+            } else {
+                subscription.datatype = select.value;
+            }
+
             const response = await yukon_state.zubax_apij.subscribe(subscription.subject_id, subscription.datatype);
             if (response.success) {
                 yukon_state.subscription_specifiers.specifiers.push(subscription.subject_id + ":" + subscription.datatype);
