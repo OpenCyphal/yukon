@@ -153,11 +153,37 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
         if (existing_divs[specifier]) {
             continue;
         }
+        const subject_id = specifier.split(":")[0];
+        const datatype = specifier.split(":")[1];
         console.log("Drawing subscription specifier", specifier);
         const subscriptionElement = document.createElement("div");
+        const header1 = document.createElement("h3");
+        header1.innerText = specifier;
+        subscriptionElement.appendChild(header1);
+        const header2 = document.createElement("h3");
+        header2.innerText = "This is an active subscription";
+        subscriptionElement.appendChild(header2);
         subscriptionElement.classList.add("subscription");
         subscriptionElement.setAttribute("data-specifier", specifier);
-        subscriptionElement.innerText = specifier;
+        const pLatestMessage = document.createElement("p");
+        pLatestMessage.innerText = "Yet to receive messages...";
+        subscriptionElement.appendChild(pLatestMessage);
+
+        const divLogToConsole = document.createElement('div');
+        divLogToConsole.classList.add('form-check');
+        const inputLogToConsole = document.createElement('input');
+        inputLogToConsole.classList.add('form-check-input');
+        inputLogToConsole.classList.add('checkbox');
+        inputLogToConsole.type = 'checkbox';
+        inputLogToConsole.id = "inputLogToConsole" + subject_id + ":" + datatype;
+        divLogToConsole.appendChild(inputLogToConsole);
+        const labelLogToConsole = document.createElement('label');
+        labelLogToConsole.classList.add('form-check-label');
+        labelLogToConsole.htmlFor = inputLogToConsole.id;
+        labelLogToConsole.innerHTML = "Log to console";
+        divLogToConsole.appendChild(labelLogToConsole);
+        subscriptionElement.appendChild(divLogToConsole);
+
         // Add a button for unsubscribing
         const unsubscribeButton = document.createElement("button");
         unsubscribeButton.innerText = "Unsubscribe";
@@ -170,6 +196,30 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
                 console.error("Failed to unsubscribe: " + response.error);
             }
         });
+        if (!yukon_state.subscriptions[specifier]) {
+            yukon_state.subscriptions[specifier] = [];
+        }
+        const current_messages = yukon_state.subscriptions[specifier];
+        let fetchIntervalId = null;
+        async function fetch() {
+            const full_specifiers = [specifier + ":" + current_messages.length];
+            const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
+            const messages = result[Object.keys(result)[0]]
+            if (!messages) {
+                clearInterval(fetchIntervalId);
+                header2.innerText = "This subscription has been terminated by the server";
+                return;
+            }
+            for (const message of messages) {
+                if (inputLogToConsole.checked) {
+                    yukon_state.zubax_apij.add_local_message(JSON.stringify(message.message), 20)
+                }
+                current_messages.push(message);
+            }
+            pLatestMessage.innerHTML = JSON.stringify(current_messages[current_messages.length - 1]);
+        }
+
+        fetchIntervalId = setInterval(fetch, 300);
         subscriptionElement.appendChild(unsubscribeButton);
         subscriptionElementsToBePlaced.push([subscriptionElement, specifier]);
         subscriptionsDiv.appendChild(subscriptionElement);
@@ -185,6 +235,10 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
         // Add a div with a select input for the datatype and a button for subscribing
         const subscriptionElement = document.createElement("div");
         subscription.element = subscriptionElement;
+        // Create a h3 for subscription.subject_id
+        const subject_id_display = document.createElement("h3");
+        subject_id_display.innerText = subscription.subject_id;
+        subscriptionElement.appendChild(subject_id_display);
         const header = document.createElement("h3");
         header.innerText = "This is a pending subscription, confirm it by selecting a datatype and clicking the button below";
         subscriptionElement.appendChild(header);
@@ -202,9 +256,10 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
         const subscribeButton = document.createElement("button");
         subscribeButton.innerText = "Subscribe";
         subscribeButton.addEventListener("click", async () => {
-            const response = await yukon_state.zubax_apij.subscribe(subscription.subject_id, select.value);
+            subscription.datatype = select.value;
+            const response = await yukon_state.zubax_apij.subscribe(subscription.subject_id, subscription.datatype);
             if (response.success) {
-                yukon_state.subscription_specifiers.specifiers.push(select.value);
+                yukon_state.subscription_specifiers.specifiers.push(subscription.subject_id + ":" + subscription.datatype);
                 await drawSubscriptions(subscriptionsDiv, yukon_state);
             } else {
                 console.error("Failed to subscribe: " + response.error);
