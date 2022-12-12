@@ -260,6 +260,8 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
             const response = await yukon_state.zubax_apij.subscribe(subscription.subject_id, subscription.datatype);
             if (response.success) {
                 yukon_state.subscription_specifiers.specifiers.push(subscription.subject_id + ":" + subscription.datatype);
+                // Remove subscriptionElement
+                subscriptionElement.parentElement.removeChild(subscriptionElement);
                 await drawSubscriptions(subscriptionsDiv, yukon_state);
             } else {
                 console.error("Failed to subscribe: " + response.error);
