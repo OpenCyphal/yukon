@@ -368,7 +368,7 @@ import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
             }, requiredTimeout);
         } // initializeLayout
         initalizeLayout();
-        setInterval(async () => await update_avatars_dto(yukon_state))
+        setInterval(async () => await update_avatars_dto(yukon_state), 500)
         btnRestoreDefaultLayout.addEventListener("click", function (e) {
             e.preventDefault();
             e.stopPropagation();

@@ -213,6 +213,10 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
                 console.error("Failed to subscribe: " + response.error);
             }
         });
+        // Add a header saying "This is a pending subscription, confirm it by selecting a datatype and clicking the button below"
+        const header = document.createElement("h3");
+        header.innerText = "This is a pending subscription, confirm it by selecting a datatype and clicking the button below";
+        subscriptionElement.appendChild(header);
         subscriptionElement.appendChild(subscribeButton);
         subscriptionsDiv.appendChild(subscriptionElement);
         vertical_offset_counter += subscriptionElement.scrollHeight + settings.SubscriptionsVerticalSpacing;

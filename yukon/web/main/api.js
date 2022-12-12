@@ -1,4 +1,4 @@
-const _zubax_api = {"empty": true}
+const _zubax_api = { "empty": true }
 let zubax_api_ready = false;
 
 function JsonParseHelper(k, v) {
@@ -15,7 +15,7 @@ const zubax_api = new Proxy(_zubax_api, {
     get(target, prop) {
         let url = "http://127.0.0.1:5000/api/" + prop;
         return async function () {
-            let data = {"arguments": []};
+            let data = { "arguments": [] };
             // For each argument in arguments, put it into data.arguments
             for (let i = 0; i < arguments.length; i++) {
                 data.arguments.push(arguments[i]);
@@ -23,7 +23,7 @@ const zubax_api = new Proxy(_zubax_api, {
             // for each element in arguments
             const response = await (fetch(url, {
                 method: 'POST', // *GET, POST, PUT, DELETE, etc.
-                mode: 'cors', // no-cors, *cors, same-origin
+                mode: 'same-origin', // no-cors, *cors, same-origin
                 cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
                 credentials: 'same-origin', // include, *same-origin, omit
                 headers: {
@@ -43,7 +43,7 @@ const zubax_apij = new Proxy(_zubax_api, {
     get(target, prop) {
         let url = "http://127.0.0.1:5000/api/" + prop;
         return async function () {
-            let data = {"arguments": []};
+            let data = { "arguments": [] };
             // For each argument in arguments, put it into data.arguments
             for (let i = 0; i < arguments.length; i++) {
                 data.arguments.push(arguments[i]);
@@ -51,7 +51,7 @@ const zubax_apij = new Proxy(_zubax_api, {
             // for each element in arguments
             const response = await (fetch(url, {
                 method: 'POST', // *GET, POST, PUT, DELETE, etc.
-                mode: 'cors', // no-cors, *cors, same-origin
+                mode: 'same-origin', // no-cors, *cors, same-origin
                 cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
                 credentials: 'same-origin', // include, *same-origin, omit
                 headers: {
@@ -68,7 +68,7 @@ const zubax_apij = new Proxy(_zubax_api, {
     },
 });
 
-const _zubax_reception_api = {"empty": true}
+const _zubax_reception_api = { "empty": true }
 const zubax_reception_api = new Proxy(_zubax_reception_api, {
     get(target, prop) {
         return {
