@@ -114,13 +114,8 @@ function unhighlightAll() {
         removeHighlightFromElement(object.element);
     }
 }
-export function makeSimpleSubscriptionFrame(port_nr, yukon_state) {
-    const frame = document.createElement("div");
-    frame.classList.add("simple_subscription_frame");
-    // Look through publishers on this port and see what the most common published datatype is, then use that to fill in a select input
-    // Also take the `const response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();` and use it to fill in the select input
+async function drawPublishers() {
 
-    return frame;
 }
 async function drawSubscriptions(subscriptionsDiv, yukon_state) {
     if (settings.SubscriptionsOffset === null) {
@@ -981,11 +976,11 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                     // ports.find(p => p.port === port && p.type === "pub" || p.type === "srv");
                 });
 
-                if (matchingPort.type === "pub" || matchingPort.type === "srv") {
+                if (matchingPort.type === "pub" || matchingPort.type === "cln") {
                     // Arrowhead for the line
                     arrowhead.style.transform = "rotate(270deg)";
                     arrowhead.style.left = matchingPort.x_offset - 10 + "px";
-                } else if (matchingPort.type === "sub" || matchingPort.type === "cln") {
+                } else if (matchingPort.type === "sub" || matchingPort.type === "srv") {
                     arrowhead.style.transform = "rotate(90deg)";
                     arrowhead.style.left = settings["NodeXOffset"] + settings["NodeWidth"] - 3 + "px";
                 }
