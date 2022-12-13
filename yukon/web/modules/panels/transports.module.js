@@ -1,4 +1,4 @@
-import {JsonParseHelper} from "../utilities.module.js";
+import { JsonParseHelper } from "../utilities.module.js";
 
 export function initTransports(container, yukon_state) {
     const containerElem = container.getElement()[0];
@@ -99,6 +99,7 @@ export function initTransports(container, yukon_state) {
 
     async function doTheTabSwitching() {
         const h1TransportType = containerElem.querySelector("h1#TransportType");
+        const pythoncanlink = containerElem.querySelector("#pythoncanlink");
         const iTransport = containerElem.querySelector("#iTransport");
         const sTransport = containerElem.querySelector("#sTransport");
         const iMtu = containerElem.querySelector("#iMtu");
@@ -124,6 +125,7 @@ export function initTransports(container, yukon_state) {
         divCandump.style.display = "none";
         divUdpMtu.style.display = "none";
         UDPLinuxWarning.style.display = "none";
+        pythoncanlink.style.display = "none";
         const iArbRate = containerElem.querySelector("#iArbRate");
         const iDataRate = containerElem.querySelector("#iDataRate");
         const iNodeId = containerElem.querySelector("#iNodeId");
@@ -140,6 +142,7 @@ export function initTransports(container, yukon_state) {
             case transports.CAN.MANUAL:
                 h1TransportType.innerHTML = "A connection string";
                 divSelectTransport.style.display = "none";
+                pythoncanlink.style.display = "block";
                 break;
             case transports.UDP.UDP:
                 h1TransportType.innerHTML = "UDP";
@@ -152,6 +155,7 @@ export function initTransports(container, yukon_state) {
                 divUdpMtu.style.display = "block";
                 divMtu.style.display = "none";
                 UDPLinuxWarning.style.display = "block";
+
                 break;
             case transports.CAN.SLCAN: {
                 h1TransportType.innerHTML = "SLCAN";
