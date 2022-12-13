@@ -975,14 +975,28 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                     }
                     // ports.find(p => p.port === port && p.type === "pub" || p.type === "srv");
                 });
-
+                const right_end_of_edge = matchingPort.x_offset;
+                const left_end_of_edge = settings["NodeXOffset"] + settings["NodeWidth"] - 3 + "px"
                 if (matchingPort.type === "pub" || matchingPort.type === "cln") {
                     // Arrowhead for the line
                     arrowhead.style.transform = "rotate(270deg)";
-                    arrowhead.style.left = matchingPort.x_offset - 10 + "px";
+                    arrowhead.style.left = right_end_of_edge - 10 + "px";
                 } else if (matchingPort.type === "sub" || matchingPort.type === "srv") {
                     arrowhead.style.transform = "rotate(90deg)";
-                    arrowhead.style.left = settings["NodeXOffset"] + settings["NodeWidth"] - 3 + "px";
+                    arrowhead.style.left = left_end_of_edge;
+                    // Make a circle and position it at right_end_of_edge
+                    const circle = document.createElement("div");
+                    circle.classList.add("circle");
+                    circle.style.position = "absolute";
+                    circle.style.top = y_counter + avatar_y_counter - 7 + "px";
+                    circle.style.left = right_end_of_edge - 7 + "px";
+                    circle.style.width = "15px";
+                    circle.style.height = "15px";
+                    circle.style.borderRadius = "50%";
+                    circle.style.backgroundColor = "black";
+                    circle.style.zIndex = "4";
+                    monitor2Div.appendChild(circle);
+                    linesByPortAndPortType.push({ "element": circle, "port": port, "type": port_type, "toggledOn": toggledOn });
                 }
                 avatar_y_counter += settings["DistancePerHorizontalConnection"];
             }
