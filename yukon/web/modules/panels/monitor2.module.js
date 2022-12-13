@@ -217,6 +217,10 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
                 current_messages.push(message);
             }
             const lastMessageObject = current_messages[current_messages.length - 1];
+            if (!lastMessageObject) {
+                pLatestMessage = "No messages received yet";
+                return;
+            }
             const yaml_text = await yukon_state.zubax_api.json_to_yaml(JSON.stringify(lastMessageObject));
             // If yaml_text contains a newline, it will be split into multiple lines
             if (yaml_text.includes("\n")) {
