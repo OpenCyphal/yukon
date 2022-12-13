@@ -213,7 +213,7 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
             }
             const lastMessageObject = current_messages[current_messages.length - 1];
             if (!lastMessageObject) {
-                pLatestMessage = "No messages received yet";
+                pLatestMessage.innerHTML = "No messages received yet";
                 return;
             }
             const yaml_text = await yukon_state.zubax_api.json_to_yaml(JSON.stringify(lastMessageObject));
@@ -239,7 +239,7 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
         subscriptionsDiv.appendChild(subscriptionElement);
     }
     for (const [subscriptionElement, specifier] of subscriptionElementsToBePlaced) {
-        subscriptionElement.style.top = vertical_offset_counter + "px";
+        // subscriptionElement.style.top = vertical_offset_counter + "px";
         vertical_offset_counter += subscriptionElement.scrollHeight + settings.SubscriptionsVerticalSpacing;
     }
     for (const subscription of yukon_state.subscriptions_being_set_up) {
@@ -257,6 +257,7 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
         header.innerText = "This is a pending subscription, confirm it by selecting a datatype and clicking the button below";
         subscriptionElement.appendChild(header);
         subscriptionElement.classList.add("subscription");
+        subscriptionElement.style.position = "relative";
         subscriptionElement.setAttribute("data-is-being-setup", "true");
         const select = document.createElement("select");
         const datatypesOfPort = await getDatatypesForPort(subscription.subject_id, yukon_state);
@@ -572,11 +573,25 @@ async function drawSubscriptions(subscriptionsDiv, yukon_state) {
                 console.error("Failed to subscribe: " + response.error);
             }
         });
-        // Add a header saying "This is a pending subscription, confirm it by selecting a datatype and clicking the button below"
+        // Add a close button to the subscriptionElement, align it 0.5 em from the right and 0.5 em from the top
+        // When clicked it should remove the subscriptionElement from the DOM and remove the subscription specifier from the yukon_state.subscriptions_being_set_up
+        const closeButton = document.createElement("button");
+        closeButton.innerText = "X";
+        closeButton.style.borderWidth = "1";
+        closeButton.style.position = "absolute";
+        closeButton.style.right = "0.5em";
+        closeButton.style.top = "0";
+        closeButton.addEventListener("click", () => {
+            subscriptionElement.parentElement.removeChild(subscriptionElement);
+            yukon_state.subscriptions_being_set_up = yukon_state.subscriptions_being_set_up.filter(subscription2 => subscription2 !== subscription);
 
+            // Add a header saying "This is a pending subscription, confirm it by selecting a datatype and clicking the button below"
+        });
         subscriptionElement.appendChild(subscribeButton);
-        subscriptionsDiv.appendChild(subscriptionElement);
         vertical_offset_counter += subscriptionElement.scrollHeight + settings.SubscriptionsVerticalSpacing;
+
+        subscriptionElement.appendChild(closeButton);
+        subscriptionsDiv.appendChild(subscriptionElement);
     }
 }
 export async function setUpMonitor2Component(container, yukon_state) {
