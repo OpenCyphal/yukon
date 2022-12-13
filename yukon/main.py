@@ -1,7 +1,9 @@
 import socket
 import threading
 import webbrowser
+import typing
 from typing import Optional, Any
+import psutil
 import os
 import sys
 import argparse
@@ -197,6 +199,24 @@ def set_logging_levels() -> None:
     logging.getLogger("pycyphal.transport.can.media.pythoncan._pythoncan").setLevel(logging.CRITICAL)
 
 
+def find_yukon_processes() -> typing.List[psutil.Process]:
+    "Return a list of Yukon processes."
+    # Save a list of all processes with their name, pid and ppid, general_process_list
+    # Iterate once through the list to find all the processes with the word electron in their name, add the ppid's of these processes to a set
+    # Iterate over the list of processes again, looking for processes with a ppid in the set that also contain Yukon in their name
+    # Return the list of processes that match the above criteria
+    general_process_list = list(psutil.process_iter(["name", "pid", "ppid"]))
+    ppid_set = set()
+    for p in general_process_list:
+        if "electron" in p.info["name"]:
+            ppid_set.add(p.info["ppid"])
+    yukon_processes = []
+    for p in general_process_list:
+        if p.info["pid"] in ppid_set and "Yukon" in p.info["name"]:
+            yukon_processes.append(p)
+    return yukon_processes
+
+
 def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     loading_settings_into_yukon(state)
     set_logging_levels()
@@ -292,6 +312,14 @@ async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arg
     from yukon.version import __version__
 
     print("Version of Yukon: " + __version__)
+    found_yukons = find_yukon_processes()
+    for proc in found_yukons:
+        logger.info("Found Yukon process: %r", proc)
+    if len(found_yukons) > 1:  # There are some subprocesses actually too and these are counted here I am afraid
+        logger.warning("Yukon is already running.")
+        logger.warning("This might be unintentional.")
+    else:
+        logger.info("No other Yukon is not running.")
     asyncio.get_event_loop().slow_callback_duration = 35
     if get_stop_after_value():
         auto_exit_thread = threading.Thread(target=auto_exit_task)
