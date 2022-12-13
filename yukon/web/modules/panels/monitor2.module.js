@@ -847,6 +847,8 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 // Create an invisible collider div for horizontal_line, it should have a height of 10px
                 const horizontal_line_collider = document.createElement("div");
                 horizontal_line_collider.classList.add("horizontal_line_collider");
+                horizontal_line_collider.setAttribute("data-port", port);
+                horizontal_line_collider.setAttribute("data-port-type", port_type);
                 horizontal_line_collider.style.top = y_counter + avatar_y_counter - settings["HorizontalColliderOffsetY"] + "px";
                 horizontal_line_collider.style.left = horizontal_line.style.left;
                 horizontal_line_collider.style.width = horizontal_line.style.width;
