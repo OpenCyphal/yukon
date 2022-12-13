@@ -32,6 +32,11 @@ import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
 import { setUpMotorControlComponent } from "../modules/panels/motor_control.module.js"
 import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
 
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+yukon_state.port = urlParams.get('port');
+
+
 (async function () {
     yukon_state.zubax_api = zubax_api;
     yukon_state.zubax_apij = zubax_apij;

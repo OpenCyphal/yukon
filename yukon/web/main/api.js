@@ -13,7 +13,7 @@ function JsonParseHelper(k, v) {
 
 const zubax_api = new Proxy(_zubax_api, {
     get(target, prop) {
-        let url = "http://127.0.0.1:5000/api/" + prop;
+        let url = `http://127.0.0.1:${yukon_state.port}/api/${prop}`;
         return async function () {
             let data = { "arguments": [] };
             // For each argument in arguments, put it into data.arguments
@@ -41,7 +41,7 @@ const zubax_api = new Proxy(_zubax_api, {
 });
 const zubax_apij = new Proxy(_zubax_api, {
     get(target, prop) {
-        let url = "http://127.0.0.1:5000/api/" + prop;
+        let url = `http://127.0.0.1:${yukon_state.port}/api/${prop}`;
         return async function () {
             let data = { "arguments": [] };
             // For each argument in arguments, put it into data.arguments
