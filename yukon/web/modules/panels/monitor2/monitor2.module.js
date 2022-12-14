@@ -76,7 +76,7 @@ export async function setUpMonitor2Component(container, yukon_state) {
             if (escape_timer) {
                 clearTimeout(escape_timer);
                 escape_timer = null;
-                unhighlightAll(settings, yukon_state);
+                unhighlightAll(linesByPortAndPortType, settings, yukon_state);
             } else {
                 escape_timer = setTimeout(function () {
                     escape_timer = null;

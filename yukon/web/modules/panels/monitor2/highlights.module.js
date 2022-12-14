@@ -46,7 +46,7 @@ export function removeHighlightFromElement(element, settings, yukon_state) {
         element.style.removeProperty("background-color");
     }
 }
-export function unhighlightAll(settings, yukon_state) {
+export function unhighlightAll(linesByPortAndPortType, settings, yukon_state) {
     for (const object of linesByPortAndPortType) {
         object.toggledOn.value = false;
         if (object.takenColor) {
