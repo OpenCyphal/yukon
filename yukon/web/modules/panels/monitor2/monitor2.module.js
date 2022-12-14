@@ -497,6 +497,49 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
         port_label.style.top = settings["VerticalLineMarginTop"] + "px";
         port_label.style.left = port.x_offset + 5 + "px";
         port_label.innerText = port.port;
+        // When port_label is hovered over, create a popup div aligned to the bottom of the label, it should contain paragraphs for each datatype string returned by "await getDatatypesForPort(subscription.subject_id, yukon_state)";
+        let potentialPopup = null;
+        port_label.addEventListener("click", async () => {
+            if (potentialPopup) {
+                potentialPopup.remove();
+                potentialPopup = null;
+            } else {
+                const datatypes = await getDatatypesForPort(port.port, yukon_state);
+                potentialPopup = document.createElement("div");
+                potentialPopup.classList.add("popup");
+                potentialPopup.style.position = "absolute";
+                potentialPopup.style.top = port_label.getBoundingClientRect().height + "px";
+                potentialPopup.style.left = "0px";
+                potentialPopup.style.backgroundColor = "white";
+                potentialPopup.style.border = "1px solid black";
+                potentialPopup.style.borderRadius = "5px";
+                potentialPopup.style.padding = "5px";
+                potentialPopup.style.zIndex = "5";
+                potentialPopup.style.width = "fit-content(400px)";
+                potentialPopup.style.maxHeight = "300px";
+                potentialPopup.style.overflow = "auto";
+                potentialPopup.style.display = "flex";
+                potentialPopup.style.flexDirection = "column";
+                potentialPopup.style.alignItems = "flex-start";
+                potentialPopup.style.justifyContent = "flex-start";
+                potentialPopup.style.fontSize = "12px";
+                potentialPopup.style.fontFamily = "monospace";
+                potentialPopup.style.fontWeight = "bold";
+                potentialPopup.style.color = "black";
+                potentialPopup.style.boxShadow = "0 0 10px 0 rgba(0,0,0,0.5)";
+                potentialPopup.style.whiteSpace = "pre-wrap";
+                for (const datatype of datatypes) {
+                    const p = document.createElement("p");
+                    p.innerText = datatype;
+                    potentialPopup.appendChild(p);
+                }
+                port_label.appendChild(potentialPopup);
+                if (yukon_state && yukon_state.monitor2) {
+
+                }
+            }
+
+        });
         monitor2Div.appendChild(port_label);
         let toggledOn = { value: false };
         linesByPortAndPortType.push({ "element": line, "port": port.port, "type": "vertical", "toggledOn": toggledOn });
