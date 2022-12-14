@@ -728,12 +728,15 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             }
         }
     }
+    const portOrder = ["pub", "sub", "srv", "cli"]
     function comparePorts(a, b) {
         // Compare ports by type and port number (port) for sorting
-        if (a.type < b.type) {
+        const aPortOrder = portOrder.indexOf(a.type);
+        const bPortOrder = portOrder.indexOf(b.type);
+        if (aPortOrder < bPortOrder) {
             return -1;
         }
-        if (a.type > b.type) {
+        if (aPortOrder > bPortOrder) {
             return 1;
         }
         if (a.port < b.port) {
@@ -825,7 +828,8 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         node.style.height = avatar_height + "px";
         node.style.top = y_counter + "px";
         let avatar_y_counter = settings["AvatarConnectionPadding"];
-        for (const port_type of Object.keys(avatar.ports)) {
+        for (const port_type of portOrder) {
+            if (!avatar.ports[port_type]) { continue; }
             for (const port of avatar.ports[port_type]) {
                 const matchingPort = ports.find(p => p.port === port && p.type === port_type);
                 if (matchingPort === undefined || (matchingPort && matchingPort.x_offset === 0)) {
