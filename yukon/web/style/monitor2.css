@@ -70,7 +70,11 @@
 #subscriptions-inner-area>div.subscription {
     margin-top: 0.5em;
     display: block;
+    min-width: 300px;
+    width: auto;
+    max-width: 700px;
 }
+
 #subscriptions-inner-area>div.subscription>* {
     margin-top: 0.5em;
 }
@@ -78,8 +82,14 @@
 #subscriptions-inner-area>div.subscription>h3 {
     font-size: 0.9rem;
 }
-#subscriptions-inner-area>div.subscription>p {
+
+#subscriptions-inner-area>div.subscription p {
     font-size: 0.9rem;
+    display: inline-block;
+    word-wrap: normal;
+    overflow-wrap: normal;
+    width: 100%;
+    max-width: 100%;
 }
 
 

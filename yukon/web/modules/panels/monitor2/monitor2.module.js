@@ -41,7 +41,13 @@ function comparePorts(a, b) {
 
 export async function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0];
-    const monitor2Div = await waitForElm("#monitor2", 7000);
+    const monitor2Div = await waitForElm("#monitor2", 7000, this);
+    if (monitor2Div === null) {
+        console.error("monitor2Div is null");
+        return;
+    } else {
+        console.log("monitor2Div is not null");
+    }
     fillSettings(settings, yukon_state);
     const subscriptionsOuterArea = containerElement.querySelector("#subscriptions-outer-area");
     const subscriptionsInnerArea = document.createElement("div");
@@ -497,6 +503,7 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
         port_label.style.top = settings["VerticalLineMarginTop"] + "px";
         port_label.style.left = port.x_offset + 5 + "px";
         port_label.innerText = port.port;
+        port_label.title = "Click to see all datatypes in use on the port.";
         // When port_label is hovered over, create a popup div aligned to the bottom of the label, it should contain paragraphs for each datatype string returned by "await getDatatypesForPort(subscription.subject_id, yukon_state)";
         let potentialPopup = null;
         port_label.addEventListener("click", async () => {

@@ -1,8 +1,18 @@
 import { getDatatypesForPort, getKnownDatatypes } from "../../utilities.module.js";
-async function fetch(specifier, current_messages, pLatestMessage, inputLogToConsole, fetchIntervalId, yukon_state) {
-    const full_specifiers = [specifier + ":" + current_messages.length];
+async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchIntervalId, lastCurrentMessagesLength, yukon_state) {
+    const current_messages = yukon_state.subscriptions[specifier];
+    const full_specifiers = [specifier + ":" + yukon_state.subscriptions[specifier].length];
     const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
     const messages = result[Object.keys(result)[0]]
+    if (current_messages.length > 100) {
+        clearInterval(fetchIntervalId.value);
+        return;
+    }
+    if (lastCurrentMessagesLength.value === current_messages.length + messages.length) {
+        return;
+    } else {
+        lastCurrentMessagesLength.value = current_messages.length + messages.length;
+    }
     if (!messages) {
         clearInterval(fetchIntervalId.value);
         header2.innerText = "This subscription has been terminated by the server";
@@ -26,7 +36,7 @@ async function fetch(specifier, current_messages, pLatestMessage, inputLogToCons
         const lines_split = yaml_text.split("\n");
         for (const line of lines_split) {
             const p = document.createElement("p");
-            p.style.whiteSpace = "pre";
+            p.style.whiteSpace = "pre-wrap";
             p.innerHTML = line;
             pLatestMessage.appendChild(p);
         }
@@ -181,8 +191,8 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
         }
         const current_messages = yukon_state.subscriptions[specifier];
         let fetchIntervalId = { value: null };
-
-        fetchIntervalId.value = setInterval(() => fetch(specifier, current_messages, pLatestMessage, inputLogToConsole, fetchIntervalId, yukon_state), 300);
+        let lastCurrentMessagesLength = { value: 0 };
+        fetchIntervalId.value = setInterval(() => fetch(specifier, pLatestMessage, inputLogToConsole, fetchIntervalId, lastCurrentMessagesLength, yukon_state), 300);
         subscriptionElement.appendChild(unsubscribeButton);
         subscriptionElementsToBePlaced.push([subscriptionElement, specifier]);
         subscriptionsDiv.appendChild(subscriptionElement);

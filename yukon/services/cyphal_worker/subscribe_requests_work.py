@@ -32,7 +32,12 @@ async def do_subscribe_requests_work(state: GodState, subscribe_request: Subscri
         def callback(msg: typing.Any, metadata: pycyphal.transport.TransferFrom) -> None:
             messages_store = state.queues.subscribed_messages.get(subscribe_request.specifier)
             if messages_store:
-                message_carrier = MessageCarrier(pycyphal.dsdl.to_builtin(msg), None, messages_store.counter)
+                message_carrier = MessageCarrier(
+                    pycyphal.dsdl.to_builtin(msg),
+                    {"source_node_id": metadata.source_node_id, "timestamp": str(metadata.timestamp.monotonic)},
+                    messages_store.counter,
+                    subscribe_request.specifier.subject_id,
+                )
                 messages_store.counter += 1
                 messages_store.messages.append(message_carrier)
             # add_local_message(state, repr(msg), 20, subscribe_request.specifier.subject_id)
