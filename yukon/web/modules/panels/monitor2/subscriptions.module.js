@@ -1,3 +1,4 @@
+import { getDatatypesForPort, getKnownDatatypes } from "../../utilities.module.js";
 async function fetch(specifier, current_messages, pLatestMessage, inputLogToConsole, fetchIntervalId, yukon_state) {
     const full_specifiers = [specifier + ":" + current_messages.length];
     const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
@@ -33,7 +34,7 @@ async function fetch(specifier, current_messages, pLatestMessage, inputLogToCons
         pLatestMessage.innerHTML = yaml_text;
     }
 }
-function fillExistingDivs(existing_divs, subscriptionsDiv, yukon_state) {
+function fillExistingDivs(existing_divs, existing_specifiers, subscriptionsDiv, yukon_state) {
     for (const child of subscriptionsDiv.children) {
         const specifier = child.getAttribute("data-specifier");
         const isBeingSetup = child.getAttribute("data-is-being-setup");
@@ -105,7 +106,7 @@ async function refreshKnownDatatypes(iSelectFixedIdMessageType, iSelectAny, iSel
     }, 1200);
 }
 
-export async function drawSubscriptions(subscriptionsDiv, yukon_state) {
+export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state) {
     if (settings.SubscriptionsOffset === null) {
         // Subscriptions cannot be drawn currently before any nodes and ports have been drawn
         return;
@@ -121,7 +122,7 @@ export async function drawSubscriptions(subscriptionsDiv, yukon_state) {
         existing_specifiers[specifier] = true;
     }
 
-    fillExistingDivs(existing_divs, subscriptionsDiv, yukon_state);
+    fillExistingDivs(existing_divs, existing_specifiers, subscriptionsDiv, yukon_state);
 
     const subscriptionElementsToBePlaced = [];
     for (const specifier of yukon_state.subscription_specifiers.specifiers) {
@@ -170,7 +171,7 @@ export async function drawSubscriptions(subscriptionsDiv, yukon_state) {
             const response = await yukon_state.zubax_apij.unsubscribe(specifier);
             if (response.success) {
                 yukon_state.subscription_specifiers.specifiers = yukon_state.subscription_specifiers.specifiers.filter((specifier_) => { return specifier_ !== specifier; });
-                await drawSubscriptions(subscriptionsDiv, yukon_state);
+                await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
             } else {
                 console.error("Failed to unsubscribe: " + response.error);
             }
@@ -185,10 +186,6 @@ export async function drawSubscriptions(subscriptionsDiv, yukon_state) {
         subscriptionElement.appendChild(unsubscribeButton);
         subscriptionElementsToBePlaced.push([subscriptionElement, specifier]);
         subscriptionsDiv.appendChild(subscriptionElement);
-    }
-    for (const [subscriptionElement, specifier] of subscriptionElementsToBePlaced) {
-        // subscriptionElement.style.top = vertical_offset_counter + "px";
-        vertical_offset_counter += subscriptionElement.scrollHeight + settings.SubscriptionsVerticalSpacing;
     }
     for (const subscription of yukon_state.subscriptions_being_set_up) {
         if (subscription.element) {
@@ -241,10 +238,8 @@ export async function drawSubscriptions(subscriptionsDiv, yukon_state) {
         divComplexSelection.id = "divComplexSelection:" + subscription.subject_id + ":" + subscription.datatype;
         subscriptionElement.appendChild(divComplexSelection);
 
-        let rbUseSelectAny, rbUseSelectFixedId, rbUseSelectAdvertised, iSelectDatatype, iSelectFixedIdMessageType, iSelectAny, btnRefresh1, btnRefresh2, btnRefresh3;
-        // Nice
-        addComplexSelectionComponents(rbUseSelectAny, rbUseSelectFixedId, rbUseSelectAdvertised, iSelectDatatype, iSelectFixedIdMessageType,
-            iSelectAny, btnRefresh1, btnRefresh2, btnRefresh3, divComplexSelection);
+        let [rbUseManualDatatypeEntry, rbUseSelectAny, rbUseSelectFixedId, rbUseSelectAdvertised, iSelectDatatype, iSelectFixedIdMessageType,
+            iSelectAny, iManualDatatypeEntry, btnRefresh1, btnRefresh2, btnRefresh3] = addComplexSelectionComponents(subscription, divComplexSelection);
 
 
         inputUseComplexSelection.addEventListener('change', () => {
@@ -300,7 +295,7 @@ export async function drawSubscriptions(subscriptionsDiv, yukon_state) {
                 yukon_state.subscription_specifiers.specifiers.push(subscription.subject_id + ":" + subscription.datatype);
                 // Remove subscriptionElement
                 subscriptionElement.parentElement.removeChild(subscriptionElement);
-                await drawSubscriptions(subscriptionsDiv, yukon_state);
+                await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
             } else {
                 console.error("Failed to subscribe: " + response.error);
             }
@@ -320,13 +315,11 @@ export async function drawSubscriptions(subscriptionsDiv, yukon_state) {
             // Add a header saying "This is a pending subscription, confirm it by selecting a datatype and clicking the button below"
         });
         subscriptionElement.appendChild(subscribeButton);
-        vertical_offset_counter += subscriptionElement.scrollHeight + settings.SubscriptionsVerticalSpacing;
-
         subscriptionElement.appendChild(closeButton);
         subscriptionsDiv.appendChild(subscriptionElement);
     }
 }
-function addComplexSelectionComponents(rbUseSelectAny, rbUseSelectFixedId, rbUseSelectAdvertised, iSelectDatatype, iSelectFixedIdMessageType, iSelectAny, btnRefresh1, btnRefresh2, btnRefresh3, divComplexSelection) {
+function addComplexSelectionComponents(subscription, divComplexSelection) {
     const labelUseManualDatatypeEntry = document.createElement('label');
     labelUseManualDatatypeEntry.innerHTML = "Type any datatype";
     divComplexSelection.appendChild(labelUseManualDatatypeEntry);
@@ -335,6 +328,7 @@ function addComplexSelectionComponents(rbUseSelectAny, rbUseSelectFixedId, rbUse
     divUseManualDatatypeEntry.classList.add('input-group');
     const divUseManualDatatypeEntryText = document.createElement('div');
     divUseManualDatatypeEntryText.classList.add('input-group-text');
+
     const rbUseManualDatatypeEntry = document.createElement('input');
     rbUseManualDatatypeEntry.classList.add('form-check-input');
     rbUseManualDatatypeEntry.classList.add('mt-0');
@@ -344,6 +338,7 @@ function addComplexSelectionComponents(rbUseSelectAny, rbUseSelectFixedId, rbUse
     rbUseManualDatatypeEntry.name = "rbUseSelect";
     divUseManualDatatypeEntryText.appendChild(rbUseManualDatatypeEntry);
     divUseManualDatatypeEntry.appendChild(divUseManualDatatypeEntryText);
+
     const iManualDatatypeEntry = document.createElement('input');
     iManualDatatypeEntry.classList.add('form-control');
     iManualDatatypeEntry.type = 'text';
@@ -360,6 +355,7 @@ function addComplexSelectionComponents(rbUseSelectAny, rbUseSelectFixedId, rbUse
     divUseSelectAdvertised.classList.add('input-group');
     const divUseSelectAdvertisedText = document.createElement('div');
     divUseSelectAdvertisedText.classList.add('input-group-text');
+
     const rbUseSelectAdvertised = document.createElement('input');
     rbUseSelectAdvertised.classList.add('form-check-input');
     rbUseSelectAdvertised.classList.add('mt-0');
@@ -369,10 +365,12 @@ function addComplexSelectionComponents(rbUseSelectAny, rbUseSelectFixedId, rbUse
     rbUseSelectAdvertised.name = "rbUseSelect";
     divUseSelectAdvertisedText.appendChild(rbUseSelectAdvertised);
     divUseSelectAdvertised.appendChild(divUseSelectAdvertisedText);
+
     const iSelectDatatype = document.createElement('select');
     iSelectDatatype.id = "iSelectAdvertised:" + subscription.subject_id + ":" + subscription.datatype;
     iSelectDatatype.classList.add('form-select');
     divUseSelectAdvertised.appendChild(iSelectDatatype);
+
     const btnRefresh1 = document.createElement('button');
     btnRefresh1.classList.add('btn');
     btnRefresh1.classList.add('btn-outline-secondary');
@@ -391,6 +389,7 @@ function addComplexSelectionComponents(rbUseSelectAny, rbUseSelectFixedId, rbUse
     divUseSelectFixedId.classList.add('input-group');
     const divUseSelectFixedIdText = document.createElement('div');
     divUseSelectFixedIdText.classList.add('input-group-text');
+
     const rbUseSelectFixedId = document.createElement('input');
     rbUseSelectFixedId.classList.add('form-check-input');
     rbUseSelectFixedId.classList.add('mt-0');
@@ -400,10 +399,12 @@ function addComplexSelectionComponents(rbUseSelectAny, rbUseSelectFixedId, rbUse
     rbUseSelectFixedId.name = "rbUseSelect";
     divUseSelectFixedIdText.appendChild(rbUseSelectFixedId);
     divUseSelectFixedId.appendChild(divUseSelectFixedIdText);
+
     const iSelectFixedIdMessageType = document.createElement('select');
     iSelectFixedIdMessageType.id = "iSelectFixedId:" + subscription.subject_id + ":" + subscription.datatype;
     iSelectFixedIdMessageType.classList.add('form-select');
     divUseSelectFixedId.appendChild(iSelectFixedIdMessageType);
+
     const btnRefresh2 = document.createElement('button');
     btnRefresh2.classList.add('btn');
     btnRefresh2.classList.add('btn-outline-secondary');
@@ -419,6 +420,7 @@ function addComplexSelectionComponents(rbUseSelectAny, rbUseSelectFixedId, rbUse
     divUseSelectAny.classList.add('input-group');
     const divUseSelectAnyText = document.createElement('div');
     divUseSelectAnyText.classList.add('input-group-text');
+
     const rbUseSelectAny = document.createElement('input');
     rbUseSelectAny.classList.add('form-check-input');
     rbUseSelectAny.classList.add('mt-0');
@@ -428,10 +430,12 @@ function addComplexSelectionComponents(rbUseSelectAny, rbUseSelectFixedId, rbUse
     rbUseSelectAny.name = "rbUseSelect";
     divUseSelectAnyText.appendChild(rbUseSelectAny);
     divUseSelectAny.appendChild(divUseSelectAnyText);
+
     const iSelectAny = document.createElement('select');
     iSelectAny.id = "iSelectAny:" + subscription.subject_id + ":" + subscription.datatype;
     iSelectAny.classList.add('form-select');
     divUseSelectAny.appendChild(iSelectAny);
+
     const btnRefresh3 = document.createElement('button');
     btnRefresh3.classList.add('btn');
     btnRefresh3.classList.add('btn-outline-secondary');
@@ -444,4 +448,5 @@ function addComplexSelectionComponents(rbUseSelectAny, rbUseSelectFixedId, rbUse
     labelUseSelectAny.htmlFor = rbUseSelectAny.id;
     labelUseSelectAny.innerHTML = "Select any found DSDL datatype";
     divComplexSelection.appendChild(labelUseSelectAny);
+    return [rbUseManualDatatypeEntry, rbUseSelectAny, rbUseSelectFixedId, rbUseSelectAdvertised, iSelectDatatype, iSelectFixedIdMessageType, iSelectAny, iManualDatatypeEntry, btnRefresh1, btnRefresh2, btnRefresh3]
 }

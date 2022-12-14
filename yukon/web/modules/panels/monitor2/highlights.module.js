@@ -23,7 +23,7 @@ export function highlightElement(element, color, settings, yukon_state) {
 export function highlightElements(objects, settings, yukon_state) {
     const pickedHighlightColor = pickHighlightColor(objects, settings, yukon_state);
     for (const object of objects) {
-        highlightElement(object.element, pickedHighlightColor);
+        highlightElement(object.element, pickedHighlightColor, settings, yukon_state);
     }
 }
 export function removeHighlightsFromObjects(objects, settings, yukon_state) {
