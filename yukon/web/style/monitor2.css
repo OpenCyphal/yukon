@@ -46,6 +46,11 @@
     text-wrap: none;
 }
 
+#monitor2 .circle {
+    background-color: black;
+}
+
+
 #monitor2 .subscriber {
     border: 1px solid black;
     background-color: #d5d5d5;
@@ -59,7 +64,40 @@
 #monitor2 .port_label {
     background-color: black;
     color: white;
+    cursor: pointer;
 }
+
+#subscriptions-inner-area {
+    padding: 10px;
+    padding-left: 1em;
+    padding-right: 3em;
+}
+
+#subscriptions-inner-area>div.subscription {
+    margin-top: 0.5em;
+    display: block;
+    min-width: 300px;
+    width: auto;
+    max-width: 700px;
+}
+
+#subscriptions-inner-area>div.subscription>* {
+    margin-top: 0.5em;
+}
+
+#subscriptions-inner-area>div.subscription>h3 {
+    font-size: 0.9rem;
+}
+
+#subscriptions-inner-area>div.subscription p {
+    font-size: 0.9rem;
+    display: inline-block;
+    word-wrap: normal;
+    overflow-wrap: normal;
+    width: 100%;
+    max-width: 100%;
+}
+
 
 @media (prefers-color-scheme: dark) {
     #monitor2 .node {
@@ -70,6 +108,10 @@
     #monitor2 .line {
         background-color: antiquewhite;
         color: antiquewhite;
+    }
+
+    #monitor2 .circle {
+        background-color: antiquewhite;
     }
 
     #monitor2 .horizontal_line {

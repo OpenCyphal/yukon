@@ -116,14 +116,20 @@ export async function getDatatypesForPort(portNr, yukon_state) {
     return sortedDatatypes;
 }
 
-export function waitForElm(selector, timeOutMilliSeconds) {
+export function waitForElm(selector, timeOutMilliSeconds, context) {
+    let outer_context = this;
+    if (context) {
+        outer_context = context;
+    }
     return new Promise(resolve => {
         let timeOutTimeout
         if (timeOutMilliSeconds) {
-            timeOutTimeout = setTimeout(() => {
+            let timeoutFunction = () => {
                 console.error("Timeout waiting for element: " + selector);
                 resolve(null);
-            }, timeOutMilliSeconds);
+            };
+            timeoutFunction = timeoutFunction.bind(outer_context);
+            timeOutTimeout = setTimeout(timeoutFunction, timeOutMilliSeconds);
         }
         if (document.querySelector(selector)) {
             return resolve(document.querySelector(selector));

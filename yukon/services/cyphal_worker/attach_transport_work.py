@@ -11,6 +11,7 @@ from pycyphal.application import make_transport
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.domain.attach_transport_request import AttachTransportRequest
 from yukon.domain.attach_transport_response import AttachTransportResponse
+from yukon.services.cyphal_worker.forward_dronecan_work import make_handler_for_transmit
 from yukon.services.faulty_transport import FaultyTransport
 from yukon.domain.god_state import GodState
 
@@ -43,6 +44,7 @@ async def do_attach_transport_work(state: GodState, atr: AttachTransportRequest)
         state.cyphal.inferior_transports_by_interface_hashes[str(hash(atr.requested_interface))] = new_transport
         attach_transport_response = AttachTransportResponse(True, atr.requested_interface.iface)
         state.cyphal.transports_list.append(atr.requested_interface)
+        new_transport.begin_capture(make_handler_for_transmit(state))
         state.queues.attach_transport_response.put(attach_transport_response)
         if isinstance(state.callbacks.get("yukon_node_attached"), typing.List):
             for callback in state.callbacks["yukon_node_attached"]:

@@ -1,5 +1,5 @@
 class ContextMenu {
-    constructor({target = null, menuItems = [], mode = "dark"}) {
+    constructor({ target = null, menuItems = [], mode = "dark" }) {
         this.dataOfMenuElements = new WeakMap();
         this.target = target;
         this.menuItems = menuItems;
@@ -49,10 +49,10 @@ class ContextMenu {
             Object.entries(data.events).forEach((event) => {
                 const [key, value] = event;
                 if (key === "adjust") {
-                    if(contextMenuThis.executeOnOpen) {
-                        contextMenuThis.executeOnOpen.push(function() {value(contextMenuThis, element, button);});
+                    if (contextMenuThis.executeOnOpen) {
+                        contextMenuThis.executeOnOpen.push(function () { value(contextMenuThis, element, button); });
                     } else {
-                        contextMenuThis.executeOnOpen = [function() {value(contextMenuThis, element, button);}];
+                        contextMenuThis.executeOnOpen = [function () { value(contextMenuThis, element, button); }];
                     }
                 } else {
                     function wrapper(e) {
@@ -107,10 +107,9 @@ class ContextMenu {
             }
         });
         document.addEventListener("contextmenu", (e) => {
-            // If e.target starts with a . then check if the classList contains the target, if e.target starts with a # then check if the id is the target
-            const isId = this.target[0] === "#";
-            const isClass = this.target[0] === ".";
-            if ((isClass && e.target.classList.contains(this.target.substring(1))) || (isId && e.target.id === this.target.substring(1))) {
+            const targetObject = e.target;
+            const doesTargetMatchCriteria = targetObject.matches(this.target);
+            if (doesTargetMatchCriteria) {
                 this.closeMenu(this.renderedMenu)
                 e.preventDefault();
                 this.renderedMenu = this.renderMenu();
@@ -121,7 +120,7 @@ class ContextMenu {
                 }
                 this.isOpened = true;
 
-                const {clientX, clientY} = e;
+                const { clientX, clientY } = e;
                 document.body.appendChild(this.renderedMenu);
 
                 const positionY =

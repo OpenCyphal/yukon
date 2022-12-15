@@ -22,6 +22,7 @@ def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
         s2 = s1.get("Enabled")
 
         def _handle_setting_change(should_be_running: bool) -> None:
+            logger.info("The setting for DroneCAN firmware substitution is now " + str(should_be_running))
             if state.dronecan.is_running:
                 if not should_be_running:
                     logger.info("DroneCAN firmware substitution is now " + "disabled")
