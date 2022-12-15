@@ -58,6 +58,73 @@ def load_settings(load_location: Path) -> typing.Any:
 
 
 # logger.setLevel(logging.DEBUG)
+def equals_dict(object1: dict, object2: dict) -> bool:
+    """Check that all keys in object1 are in object2 and that the values are equal"""
+    if not isinstance(object1, dict) or not isinstance(object2, dict):
+        return False
+    for key, value in object1.items():
+        if key not in object2:
+            return False
+        object2_value = object2[key]
+        if isinstance(value, dict):
+            if not equals_dict(value, object2_value):
+                return False
+        elif isinstance(value, list):
+            if not equals_list(value, object2_value):
+                return False
+        elif isinstance(value, ReactiveValue):
+            if isinstance(object2_value, ReactiveValue):
+                if value.value != object2_value.value:
+                    return False
+            elif isinstance(object2_value, (int, float, str, bool)):
+                if value.value != object2_value:
+                    return False
+        elif isinstance(value, (int, float, str, bool)):
+            if isinstance(object2_value, ReactiveValue):
+                if value != object2_value.value:
+                    return False
+            elif isinstance(object2_value, (int, float, str, bool)):
+                if value != object2_value:
+                    return False
+    return True
+
+
+def equals_list(list1: list, list2: list) -> bool:
+    """Check that all elements in list1 are in list2, use equals_dict to check if a dict is in both lists"""
+    if not isinstance(list1, list) or not isinstance(list2, list):
+        return False
+    for element in list1:
+        if isinstance(element, dict):
+            if not any([equals_dict(element, list2_element) for list2_element in list2]):
+                return False
+        elif isinstance(element, list):
+            if not any([equals_list(element, list2_element) for list2_element in list2]):
+                return False
+        elif isinstance(element, (int, float, str, bool)):
+            value_found = False
+            for list2_element in list2:
+                if isinstance(list2_element, (int, float, str, bool)):
+                    if element == list2_element:
+                        break
+                elif isinstance(list2_element, ReactiveValue):
+                    if element == list2_element.value:
+                        break
+            if not value_found:
+                return False
+        elif isinstance(element, ReactiveValue):
+            value_found = False
+            for list2_element in list2:
+                if isinstance(list2_element, ReactiveValue):
+                    if element.value == list2_element.value:
+                        value_found = True
+                        break
+                elif isinstance(list2_element, (int, float, str, bool)):
+                    if element.value == list2_element:
+                        value_found = True
+                        break
+            if not value_found:
+                return False
+    return True
 
 
 def modify_settings_values_from_a_new_copy(
@@ -79,14 +146,77 @@ def modify_settings_values_from_a_new_copy(
                 current_settings[key].value = new_settings[key]
                 logger.debug("Modified %r", current_settings[key])
     elif isinstance(current_settings, list):
+        elements_to_remove = []
         for index, value in enumerate(current_settings):
+            # Remove all ReactiveValues in current_settings that don't have a value that is in new_settings
+            if isinstance(value, ReactiveValue) and value.value not in new_settings:
+                logger.info("Planning to remove %r", value)
+                elements_to_remove.append(value)
+            # Check if the value is in new_settings, if not remove it, check using equals_dict and equals_list
+            if isinstance(value, (list, dict)) and not any(
+                [
+                    equals_dict(value, new_settings_element)
+                    if isinstance(value, dict)
+                    else equals_list(value, new_settings_element)
+                    for new_settings_element in new_settings
+                ]
+            ):
+                logger.info("Planning to remove %r", value)
+                elements_to_remove.append(value)
             if isinstance(value, (list, dict)):
                 logger.debug("Entering list %r for modification", current_settings)
-                modify_settings_values_from_a_new_copy(current_settings[index], new_settings[index])
-            elif isinstance(value, ReactiveValue):
-                logger.debug("Modifying %r", current_settings[index])
-                current_settings[index].value = new_settings[index]
-                logger.debug("Modified %r", current_settings[index])
+                if len(current_settings) == len(
+                    new_settings
+                ):  # This will break when the user is fast with modifying the settings
+                    modify_settings_values_from_a_new_copy(current_settings[index], new_settings[index])
+            # elif isinstance(value, ReactiveValue):
+            # Remove all items in the list that are ReactiveValues
+            # logger.debug("Modifying %r", current_settings[index])
+            # current_settings[index].value = new_settings[index]
+            # elements_to_remove.append(value)
+            # logger.debug("Modified %r", current_settings[index])
+        if len(elements_to_remove) > 0:
+            logger.debug("Removing %r", elements_to_remove)
+        current_settings_length_before_removal = len(current_settings)
+        for value in elements_to_remove:
+            current_settings.remove(value)
+        if len(elements_to_remove) > 0:
+            assert len(current_settings) == current_settings_length_before_removal - len(elements_to_remove)
+        # Insert all elements from new_settings that are int, float, bool, str and that don't exist in current_settings
+        for value in new_settings:
+            value_exists = False
+            for current_value in current_settings:
+                if isinstance(current_value, ReactiveValue):
+                    if isinstance(value, (int, float, bool, str)):
+                        if current_value.value == value:
+                            value_exists = True
+                            break
+                    elif isinstance(value, ReactiveValue):
+                        if current_value.value == value.value:
+                            value_exists = True
+                            break
+                if isinstance(current_value, (int, float, bool, str)):
+                    if isinstance(value, (int, float, bool, str)):
+                        if current_value == value:
+                            value_exists = True
+                            break
+                    elif isinstance(value, ReactiveValue):
+                        if current_value == value.value:
+                            value_exists = True
+                            break
+                elif isinstance(current_value, dict) and equals_dict(current_value, value):
+                    value_exists = True
+                    break
+                elif isinstance(current_value, list) and equals_list(current_value, value):
+                    value_exists = True
+                    break
+            if not value_exists:
+                logger.debug("Inserting %r", value)
+                if isinstance(value, (int, float, bool, str)):
+                    current_settings.append(ReactiveValue(value))
+                else:
+                    current_settings.append(value)
+                    recursive_reactivize_settings(value)
     if is_start_of_recursion:
         logger.debug("——————Done modifying settings——————")
 

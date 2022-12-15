@@ -15,7 +15,7 @@ function setUpDebugTextOutComponent(yukon_state) {
         // Parse avatars as json
     }
 
-    setInterval(updateTextOut, 1000);
+    // setInterval(updateTextOut, 1000);
     const cbStopTextOutRefresh = document.querySelector("#cbStopTextOutRefresh");
     cbStopTextOutRefresh.addEventListener("change", () => {
         if (cbStopTextOutRefresh.checked) {

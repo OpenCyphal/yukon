@@ -410,7 +410,7 @@ export function make_context_menus(yukon_state) {
     })
     cy_context_menu.init();
     const monitor2_vertical_line_context_menu = new ContextMenu({
-        target: ".line_collider",
+        target: ".line_collider,.horizontal_line_collider",
         mode: "dark",
         menuItems: [
             {
@@ -435,15 +435,12 @@ export function make_context_menus(yukon_state) {
                 events: {
                     adjust: async (contextMenuContext, element, button) => {
                         const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
-                        if (portType !== "pub") {
+                        if (portType !== "pub" && portType !== "sub") {
                             element.parentElement.removeChild(element);
                         }
                         button.innerHTML = "Subscribe to " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
                     },
                     click: async (e, elementOpenedOn) => {
-                        const portType = elementOpenedOn.getAttribute("data-port-type");
-                        const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
-                        console.log("Adding subscriber to port " + portType + portNr);
                         yukon_state.subscriptions_being_set_up.push({ subject_id: parseInt(elementOpenedOn.getAttribute("data-port")) });
                     }
                 }

@@ -9,6 +9,7 @@ from uuid import UUID
 import pycyphal
 
 import uavcan
+from yukon.domain.message_carrier import MessageCarrier
 from yukon.domain.proxy_objects import ReactiveValue
 
 from yukon.services.value_utils import explode_value
@@ -38,6 +39,15 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                 raise TypeError("ReactiveValue contains unsupported type %r", type(o.value))
         if isinstance(o, UUID):
             return str(o)
+        if isinstance(o, MessageCarrier):
+            metadata = o.metadata
+            metadata["counter"] = o.counter
+            return {
+                o.subject_id: {
+                    "message": o.message,
+                    "_meta_": metadata,
+                }
+            }
         if isinstance(o, DetachTransportResponse):
             return {
                 "is_success": o.is_success,

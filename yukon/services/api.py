@@ -404,13 +404,13 @@ class Api:
         self.state.gui.last_poll_received = monotonic()
         avatar_list = [avatar.to_builtin() for avatar in list(self.state.avatar.avatars_by_node_id.values())]
         avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
-        if self.state.avatar.hide_yakut_avatar:
-            for avatar in avatar_list:
-                amount_of_subscriptions = len(avatar["ports"]["sub"])
-                if avatar["name"] and avatar["name"] == "yakut":
-                    avatar_list.remove(avatar)
-                elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
-                    avatar_list.remove(avatar)
+        # if self.state.avatar.hide_yakut_avatar:
+        #     for avatar in avatar_list:
+        #         amount_of_subscriptions = len(avatar["ports"]["sub"])
+        #         if avatar["name"] and avatar["name"] == "yakut":
+        #             avatar_list.remove(avatar)
+        #         elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
+        #             avatar_list.remove(avatar)
         # return_string = json.dumps(, cls=EnhancedJSONEncoder)
         return jsonify(avatar_dto)
 
@@ -455,6 +455,10 @@ class Api:
 
     def yaml_to_yaml(self, yaml_in: str) -> Response:
         text_response = Dumper().dumps(yaml.load(yaml_in, Loader))
+        return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
+
+    def json_to_yaml(self, json_in: str) -> Response:
+        text_response = Dumper().dumps(json.loads(json_in))
         return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
 
     def add_register_update_log_item(self, register_name: str, register_value: str, node_id: str, success: str) -> None:

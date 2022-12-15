@@ -3,7 +3,6 @@ import {secondsToString} from "../utilities.module.js";
 
 export function setUpStatusComponent(yukon_state) {
     async function update_avatars_table() {
-        await update_avatars_dto(yukon_state);
         var table_body = document.querySelector('#avatars_table tbody');
         table_body.innerHTML = "";
         if (yukon_state.current_avatars.length == 0) {

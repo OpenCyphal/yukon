@@ -38,13 +38,6 @@ export const layout_config = {
                                         },
                                     ]
                                 },
-                                {
-                                    type: 'component',
-                                    componentName: 'subsComponent',
-                                    isClosable: true,
-                                    title: 'Subs',
-                                    width: 30,
-                                },
                             ]
                         },
                         {

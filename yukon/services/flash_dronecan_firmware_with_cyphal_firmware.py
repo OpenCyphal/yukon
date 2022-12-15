@@ -1,5 +1,6 @@
 # pip install dronecan
 
+import math
 import os
 import queue
 import sys
@@ -41,23 +42,10 @@ class GoodDriver(AbstractDriver):
         logger.debug("Sending CAN frame: %r", frame)
         self.state.dronecan_traffic_queues.output_queue.put_nowait(frame)
 
-    def receive(self, timeout: typing.Optional[float] = 0.0) -> typing.Optional[CANFrame]:
-        deadline: typing.Optional[float] = None
-        if timeout == 0 or timeout is None:
-            deadline = 0
-        else:
-            deadline = time.monotonic() + timeout
+    def receive(self, timeout: typing.Optional[float] = None) -> typing.Optional[CANFrame]:
         while not self.state.dronecan_traffic_queues.input_queue.empty():
             try:
-                if deadline is None:
-                    get_timeout = None
-                elif deadline == 0:
-                    # TODO this is a workaround. Zero timeout causes the IPC queue to ALWAYS throw queue.Empty!
-                    get_timeout = 1e-3
-                else:
-                    # TODO this is a workaround. Zero timeout causes the IPC queue to ALWAYS throw queue.Empty!
-                    get_timeout = max(1e-3, deadline - time.monotonic())
-                received_frame = self.state.dronecan_traffic_queues.input_queue.get(timeout=get_timeout)
+                received_frame = self.state.dronecan_traffic_queues.input_queue.get(timeout=timeout or math.inf)
                 logger.debug("Received CAN frame: %r", received_frame)
                 return received_frame
             except queue.Empty:
@@ -92,7 +80,7 @@ def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
                 state.dronecan.node.request(req, event.entry.node_id, lambda e: None)
 
         state.dronecan.node_monitor.add_update_handler(node_update)
-
+        state.dronecan.is_running = True
         # The allocator and the node monitor will be running in the background, requiring no additional attention
         # When they are no longer needed, they should be finalized by calling close():
         while True:

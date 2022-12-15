@@ -30,7 +30,12 @@ import { setUpSubscriptionsComponent } from "../modules/panels/subscriptions.mod
 import { layout_config } from "../modules/panels/_layout_config.module.js"
 import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
 import { setUpMotorControlComponent } from "../modules/panels/motor_control.module.js"
-import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
+import { setUpMonitor2Component } from "../modules/panels/monitor2/monitor2.module.js"
+
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+yukon_state.port = urlParams.get('port');
+
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
@@ -47,23 +52,20 @@ import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
     function setUpMonitorComponent() {
         yukon_state.my_graph = create_directed_graph(yukon_state);
 
-        async function get_and_display_avatars() {
-            await update_avatars_dto(yukon_state);
+        async function display_avatars() {
             update_directed_graph(yukon_state);
         }
 
-        setInterval(get_and_display_avatars, 3000);
+        setInterval(display_avatars, 3000);
         update_directed_graph(yukon_state);
     }
 
 
     async function setUpRegistersComponent(immediateCreateTable) {
         if (immediateCreateTable) {
-            await update_avatars_dto(yukon_state);
             update_tables(true);
         }
         setInterval(async () => {
-            await update_avatars_dto(yukon_state);
             update_tables();
         }, 893);
         let timer = null;
@@ -115,6 +117,7 @@ import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
         }
 
         function addComponentToLayout(componentName, componentText) {
+            console.log("Adding component " + componentName + " to layout");
             const addedComponent = {
                 type: 'component',
                 componentName: componentName,
@@ -153,6 +156,7 @@ import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
         }
 
         function initalizeLayout() {
+            console.log("Initializing layout");
             let hadPreviousLayout = false;
             if (typeof yukon_state.myLayout !== 'undefined') {
                 try {
@@ -171,10 +175,10 @@ import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
                 yukon_state.myLayout = new GoldenLayout(layout_config, document.querySelector("#layout"));
                 var myLayout = yukon_state.myLayout;
                 myLayout.registerComponent('registersComponent', function (container, componentState) {
-                    registerComponentAction("../registers.panel.html", "registersComponent", container, () => {
+                    registerComponentAction("../registers.panel.html", "registersComponent", container, async () => {
                         const containerElement = container.getElement()[0];
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpRegistersComponent.bind(outsideContext)(true);
+                        await setUpRegistersComponent.bind(outsideContext)(true);
                     });
                 });
                 myLayout.registerComponent('statusComponent', function (container, componentState) {
@@ -192,10 +196,10 @@ import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
                     });
                 });
                 myLayout.registerComponent('messagesComponent', function (container, componentState) {
-                    registerComponentAction("../messages.panel.html", "messagesComponent", container, () => {
+                    registerComponentAction("../messages.panel.html", "messagesComponent", container, async () => {
                         const containerElement = container.getElement()[0];
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpMessagesComponent.bind(outsideContext)(container, yukon_state);
+                        await setUpMessagesComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 myLayout.registerComponent('transportsComponent', function (container, componentState) {
@@ -220,25 +224,25 @@ import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
                     });
                 });
                 myLayout.registerComponent("registerUpdateLogComponent", function (container, componentState) {
-                    registerComponentAction("../register_update_log.html", "registerUpdateLogComponent", container, () => {
+                    registerComponentAction("../register_update_log.html", "registerUpdateLogComponent", container, async () => {
                         const containerElement = container.getElement()[0];
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpRegisterUpdateLogComponent.bind(outsideContext)(container, yukon_state);
+                        await setUpRegisterUpdateLogComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 myLayout.registerComponent("subsComponent", function (container, componentState) {
-                    registerComponentAction("../subscriptions.panel.html", "subsComponent", container, () => {
+                    registerComponentAction("../subscriptions.panel.html", "subsComponent", container, async () => {
                         const containerElement = container.getElement()[0];
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpSubscriptionsComponent.bind(outsideContext)(container, yukon_state);
+                        await setUpSubscriptionsComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 myLayout.registerComponent("settingsComponent", function (container, componentState) {
-                    registerComponentAction("../settings.panel.html", "settingsComponent", container, () => {
+                    registerComponentAction("../settings.panel.html", "settingsComponent", container, async () => {
                         const containerElement = container.getElement()[0];
                         yukon_state.settingsComponent = container;
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpSettingsComponent.bind(outsideContext)(container, yukon_state);
+                        await setUpSettingsComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 myLayout.registerComponent("motorControlComponent", function (container, componentState) {
@@ -249,10 +253,10 @@ import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
                     });
                 });
                 myLayout.registerComponent("monitor2Component", function (container, componentState) {
-                    registerComponentAction("../monitor2.panel.html", "monitor2Component", container, () => {
+                    registerComponentAction("../monitor2.panel.html", "monitor2Component", container, async () => {
                         const containerElement = container.getElement()[0];
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpMonitor2Component.bind(outsideContext)(container, yukon_state);
+                        await setUpMonitor2Component.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 const useSVG = true;
@@ -309,7 +313,7 @@ import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
                     stack.header.controlsContainer.prepend(btnPanelShowHideToggle);
                     // Does stack have the messages panel?
                     let hasMessagesPanel = false;
-                    if(stack.config && stack.config.content) {
+                    if (stack.config && stack.config.content) {
                         for (let component of stack.config.content) {
                             if (component.componentName === "messagesComponent") {
                                 hasMessagesPanel = true;
@@ -365,9 +369,11 @@ import { setUpMonitor2Component } from "../modules/panels/monitor2.module.js"
                     });
                 });
                 myLayout.init();
+                console.log("Initialized layout");
             }, requiredTimeout);
         } // initializeLayout
         initalizeLayout();
+        setInterval(async () => await update_avatars_dto(yukon_state), 500)
         btnRestoreDefaultLayout.addEventListener("click", function (e) {
             e.preventDefault();
             e.stopPropagation();
