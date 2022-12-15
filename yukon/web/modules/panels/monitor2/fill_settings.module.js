@@ -30,7 +30,7 @@ export function fillSettings(settings, yukon_state) {
     settings.SubscriptionsOffset = null;
     settings.SubscriptionsVerticalOffset = settings.PageMarginTop;
     settings.SubscriptionsVerticalSpacing = 20;
-    settings.ShowLinkNameOnSeparateLine = yukon_state.all_settings["Monitor view"]["Show link name below horizontal lines"]
+    settings.ShowLinkNameOnSeparateLine = yukon_state.all_settings["Monitor view"]["Show link name on another line"]
     if (settings.ShowLinkNameOnSeparateLine) {
         settings.DistancePerHorizontalConnection = settings.DistancePerHorizontalConnection * 2;
         settings.LinkNameOffset = -3;

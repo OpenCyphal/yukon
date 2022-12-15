@@ -16,7 +16,7 @@ export function highlightElement(element, color, settings, yukon_state) {
     } else if (element.classList.contains("horizontal_line_label") && element.tagName === "LABEL") {
         element.style.setProperty("background-color", settings.LinkLabelHighlightColor);
         element.style.setProperty("color", settings.LinkLabelHighlightTextColor);
-    } else if (element.classList.contains("horizontal_line") || element.classList.contains("line")) {
+    } else if (element.classList.contains("horizontal_line") || element.classList.contains("line") || element.classList.contains("circle")) {
         element.style.setProperty("background-color", color);
     }
 }
@@ -42,7 +42,7 @@ export function removeHighlightFromElement(element, settings, yukon_state) {
     } else if (element.classList.contains("horizontal_line_label") && element.tagName === "LABEL") {
         element.style.setProperty("background-color", settings.LinkLabelColor);
         element.style.setProperty("color", settings.LinkLabelTextColor);
-    } else if (element.classList.contains("horizontal_line") || element.classList.contains("line")) {
+    } else if (element.classList.contains("horizontal_line") || element.classList.contains("line") || element.classList.contains("circle")) {
         element.style.removeProperty("background-color");
     }
 }

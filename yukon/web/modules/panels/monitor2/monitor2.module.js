@@ -267,7 +267,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                     currentLinkDsdlDatatype = fixed_datatype_full || "There is no info about this link";
                 }
 
-                addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, settings, yukon_state);
+                addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, settings, yukon_state);
                 avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
             }
         }
@@ -310,7 +310,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     }
     return node;
 }
-function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, settings, yukon_state) {
+function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, settings, yukon_state) {
     let horizontal_line = null;
     let arrowhead = null;
     horizontal_line = document.createElement("div");
@@ -407,36 +407,36 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     arrowhead = document.createElement("div");
     arrowhead.classList.add("arrowhead");
     arrowhead.style.position = "absolute";
-    arrowhead.style.top = y_counter.value + avatar_y_counter.value - 3 + "px";
+    arrowhead.style.top = y_counter.value + avatar_y_counter.value - 4 + settings.HorizontalLineWidth / 2 + "px";
     arrowhead.style.left = matchingPort.x_offset - 12 + "px";
     arrowhead.style.width = "0px";
     arrowhead.style.height = "0px";
-    arrowhead.style.borderLeft = "7px solid transparent";
-    arrowhead.style.borderRight = "7px solid transparent";
-    arrowhead.style.borderTop = "7px solid pink";
+    arrowhead.style.borderLeft = "9px solid transparent";
+    arrowhead.style.borderRight = "9px solid transparent";
+    arrowhead.style.borderTop = "9px solid pink";
     monitor2Div.appendChild(arrowhead);
     linesByPortAndPortType.push({ "element": horizontal_line, "port": matchingPort.port, "type": matchingPort.type, "toggledOn": toggledOn });
     linesByPortAndPortType.push({ "element": arrowhead, "port": matchingPort.port, "type": matchingPort.type, "toggledOn": toggledOn });
     linesByPortAndPortType.push({ "element": horizontal_line_label, "port": matchingPort.port, "type": matchingPort.type, "toggledOn": toggledOn });
-    horizontal_line_collider.addEventListener("mouseover", () => {
-        if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
-            highlightElement(horizontal_line, "red", settings, yukon_state);
-            highlightElement(arrowhead, "red", settings, yukon_state);
-            highlightElement(horizontal_line_label, "none", settings, yukon_state);
-        }
-    });
-    horizontal_line_collider.addEventListener("mouseout", () => {
-        if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
-            removeHighlightFromElement(horizontal_line, settings, yukon_state);
-            removeHighlightFromElement(arrowhead, settings, yukon_state);
-            removeHighlightFromElement(horizontal_line_label, settings, yukon_state);
-        }
-    });
+    // horizontal_line_collider.addEventListener("mouseover", () => {
+    //     if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
+    //         highlightElement(horizontal_line, "red", settings, yukon_state);
+    //         highlightElement(arrowhead, "red", settings, yukon_state);
+    //         highlightElement(horizontal_line_label, "none", settings, yukon_state);
+    //     }
+    // });
+    // horizontal_line_collider.addEventListener("mouseout", () => {
+    //     if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
+    //         removeHighlightFromElement(horizontal_line, settings, yukon_state);
+    //         removeHighlightFromElement(arrowhead, settings, yukon_state);
+    //         removeHighlightFromElement(horizontal_line_label, settings, yukon_state);
+    //     }
+    // });
     horizontal_line_collider.addEventListener("click", () => {
         toggledOn.value = !toggledOn.value;
         if (toggledOn.value) {
             horizontal_line.style.setProperty("background-color", "red");
-            arrowhead.style.setProperty("border-top", "7px solid red");
+            arrowhead.style.setProperty("border-top-color", "red");
             const relatedObjects = findRelatedObjects(matchingPort.port);
             highlightElements(relatedObjects, settings, yukon_state)
             relatedObjects.forEach(object => {
@@ -444,7 +444,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
             })
         } else {
             horizontal_line.style.removeProperty("background-color");
-            arrowhead.style.setProperty("border-top", "7px solid pink");
+            arrowhead.style.setProperty("border-top-color", "pink");
             const relatedObjects = findRelatedObjects(matchingPort.port);
             removeHighlightsFromObjects(relatedObjects, settings, yukon_state);
             relatedObjects.forEach(object => {
@@ -471,7 +471,6 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
         circle.style.width = "15px";
         circle.style.height = "15px";
         circle.style.borderRadius = "50%";
-        circle.style.backgroundColor = "black";
         circle.style.zIndex = "4";
         monitor2Div.appendChild(circle);
         linesByPortAndPortType.push({ "element": circle, "port": matchingPort.port, "type": matchingPort.type, "toggledOn": toggledOn });
@@ -563,16 +562,16 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
         line_collider.style.zIndex = "2";
         line_collider.style.backgroundColor = "transparent";
         line_collider.style.cursor = "pointer";
-        line_collider.addEventListener("mouseover", () => {
-            if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
-                line.style.setProperty("background-color", "red");
-            }
-        });
-        line_collider.addEventListener("mouseout", () => {
-            if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
-                line.style.removeProperty("background-color");
-            }
-        });
+        // line_collider.addEventListener("mouseover", () => {
+        //     if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
+        //         line.style.setProperty("background-color", "red");
+        //     }
+        // });
+        // line_collider.addEventListener("mouseout", () => {
+        //     if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
+        //         line.style.removeProperty("background-color");
+        //     }
+        // });
         line_collider.addEventListener("click", () => {
             toggledOn.value = !toggledOn.value;
             if (toggledOn.value) {

@@ -3,7 +3,6 @@ import threading
 import webbrowser
 import typing
 from typing import Optional, Any
-import psutil
 import os
 import sys
 import argparse
@@ -13,6 +12,8 @@ import logging
 from time import sleep, monotonic
 import subprocess
 import mimetypes
+
+import psutil
 import sentry_sdk
 
 from yukon.services.settings_handler import loading_settings_into_yukon

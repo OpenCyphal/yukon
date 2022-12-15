@@ -171,7 +171,7 @@ class GodState:
                 "Substitute firmware path": {"__type__": "filepath", "value": ReactiveValue("")},
             },
             "Monitor view": {
-                "Show link name below horizontal lines": ReactiveValue(False),
+                "Show link name on another line": ReactiveValue(False),
                 "Link info width": ReactiveValue(300),
                 "Vertical line width": ReactiveValue(2),
                 "Horizontal line width": ReactiveValue(2),

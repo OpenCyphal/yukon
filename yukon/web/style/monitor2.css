@@ -46,6 +46,11 @@
     text-wrap: none;
 }
 
+#monitor2 .circle {
+    background-color: black;
+}
+
+
 #monitor2 .subscriber {
     border: 1px solid black;
     background-color: #d5d5d5;
@@ -59,6 +64,7 @@
 #monitor2 .port_label {
     background-color: black;
     color: white;
+    cursor: pointer;
 }
 
 #subscriptions-inner-area {
@@ -102,6 +108,10 @@
     #monitor2 .line {
         background-color: antiquewhite;
         color: antiquewhite;
+    }
+
+    #monitor2 .circle {
+        background-color: antiquewhite;
     }
 
     #monitor2 .horizontal_line {
