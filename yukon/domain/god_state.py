@@ -14,6 +14,8 @@ import dronecan.app
 import yukon.services.FileServer
 from yukon.domain.proxy_objects import ReactiveValue
 from yukon.domain.dronecan_traffic_queues import DroneCanTrafficQueues
+from yukon.domain.synchronized_subjects_specifier import SynchronizedSubjectsSpecifier
+from yukon.domain.synchronized_message_store import SynchronizedMessagesStore
 
 from yukon.services.FileServer import FileServer
 from yukon.services.CentralizedAllocator import CentralizedAllocator
@@ -109,6 +111,9 @@ class CyphalState:
     faulty_transport: Optional[FaultyTransport] = field(default_factory=none_factory)
     register_update_log: typing.List[UpdateRegisterLogItem] = field(default_factory=list)
     subscribers_by_subscribe_request: Dict[SubscribeRequest, pycyphal.presentation.Subscriber] = field(
+        default_factory=dict
+    )
+    synchronized_message_stores: Dict[SynchronizedSubjectsSpecifier, SynchronizedMessagesStore] = field(
         default_factory=dict
     )
     centralized_allocator: Optional[CentralizedAllocator] = field(default_factory=none_factory)
