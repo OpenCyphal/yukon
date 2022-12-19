@@ -1,4 +1,4 @@
-import {waitForElm} from "../utilities.module.js"
+import { waitForElm } from "../utilities.module.js"
 
 export async function setUpMessagesComponent(container, yukon_state) {
     const containerElement = container.getElement()[0];
@@ -159,6 +159,9 @@ export async function setUpMessagesComponent(container, yukon_state) {
             const li = document.createElement("div");
             li.classList.add("messageElement");
             // Split el.messages into lines
+            if (typeof el.message !== "string") {
+                continue;
+            }
             const lines = el.message.split("\n");
             let firstLetterOfSeverityText = "";
             if (el.severity_text.length > 0) {
