@@ -484,6 +484,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
             // arrowhead.style.setProperty("border-top-color", "pink");
             const relatedObjects = findRelatedObjects(matchingPort.port);
             unselectPort(matchingPort.port, yukon_state);
+            setPortStateAsUnhiglighted(matchingPort.port, yukon_state);
             removeHighlightsFromObjects(relatedObjects, settings, yukon_state);
             if (!onlyTurnOnRelatedObjects) {
                 relatedObjects.forEach(object => {
