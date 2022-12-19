@@ -312,7 +312,12 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
                     const datatype = infoObject.datatype;
                     specifiers.push(subject_id + ":" + datatype);
                 }
-                yukon_state.zubax_apij.subscribe_synchronized(JSON.stringify(specifiers));
+                const response = await yukon_state.zubax_apij.subscribe_synchronized(JSON.stringify(specifiers));
+                if (response.success) {
+
+                } else {
+
+                }
             } else {
                 const infoObject = list_of_subscription_getters[0]();
                 const subject_id = infoObject.subject_id;

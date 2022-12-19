@@ -7,6 +7,8 @@ from pathlib import Path
 from queue import Empty
 from time import sleep, monotonic
 import logging
+import threading
+import traceback
 
 import yaml
 from uuid import uuid4
@@ -510,30 +512,38 @@ class Api:
         return jsonify(mapping)
 
     def subscribe_synchronized(self, specifiers: str):
-        def subscribe_task():
-            specifiers_object = json.loads(specifiers)
-            synchronized_subjects_specifier = SynchronizedSubjectsSpecifier.from_list()
-            dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
-            subscribers = []
-            for dto in dtos:
-                new_subscriber = self.state.cyphal.local_node.make_subscriber(dto.datatype, dto.subject_id)
-                subscribers.append(new_subscriber)
-            synchronizer = MonotonicClusteringSynchronizer(subscribers, get_local_reception_timestamp, 0.1)
-            synchronized_message_store = SynchronizedMessageStore()
-            counter = 0
+        result_ready_event = threading.Event()
 
-            def message_receiver(messages: typing.Tuple[typing.Any]):
-                timestamp = None
-                # Missing a messages list and the timestamp
-                synchronized_message_group = SynchronizedMessageGroup()
-                for message in messages:
-                    synchronized_message_carrier = SynchronizedMessageCarrier(message, None, counter)
-                    counter += 1
-                    synchronized_message_group.carriers.append(synchronized_message_carrier)
+        def subscribe_task():
+            try:
+                specifiers_object = json.loads(specifiers)
+                synchronized_subjects_specifier = SynchronizedSubjectsSpecifier.from_list()
+                dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
+                subscribers = []
+                for dto in dtos:
+                    new_subscriber = self.state.cyphal.local_node.make_subscriber(dto.datatype, dto.subject_id)
+                    subscribers.append(new_subscriber)
+                synchronizer = MonotonicClusteringSynchronizer(subscribers, get_local_reception_timestamp, 0.1)
+                synchronized_message_store = SynchronizedMessageStore()
+                counter = 0
+
+                def message_receiver(messages: typing.Tuple[typing.Any]):
+                    timestamp = None
+                    # Missing a messages list and the timestamp
+                    synchronized_message_group = SynchronizedMessageGroup()
+                    for message in messages:
+                        synchronized_message_carrier = SynchronizedMessageCarrier(message, None, counter)
+                        counter += 1
+                        synchronized_message_group.carriers.append(synchronized_message_carrier)
+
+            except Exception as e:
+                print("Exception in subscribe_synchronized: " + str(e))
+                tb = traceback.format_exc()
 
             # synchronizer.receive_in_background
 
         self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(subscribe_task)
+        result_ready_event.wait()
 
     def fetch_synchronized_messages_for_specifiers(self, specifiers: str, counter: int) -> Response:
         """Specifiers is a JSON serialized list of specifiers."""
