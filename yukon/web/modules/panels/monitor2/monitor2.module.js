@@ -41,6 +41,7 @@ function comparePorts(a, b) {
 
 export async function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0];
+    yukon_state.monitor2ContainerElement = containerElement;
     const monitor2Div = await waitForElm("#monitor2", 7000, this);
     if (monitor2Div === null) {
         console.error("monitor2Div is null");

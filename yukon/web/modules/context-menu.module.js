@@ -474,18 +474,33 @@ export function make_context_menus(yukon_state) {
                 content: "Add synchronized subscriber",
                 events: {
                     adjust: async (contextMenuContext, element, button) => {
-                        const portsWithThisNr = yukon_state.monitor2selections.filter((portNr1) => portNr1 === parseInt(portNr));
-                        const amountOfPortsWithThisNr = portsWithThisNr.length;
-                        const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
-                        if (portType !== "pub" && portType !== "sub") {
-                            element.parentElement.removeChild(element);
-                        }
-                        if (amountOfPortsWithThisNr > 1) {
-                            button.innerHTML = "Subscribe to " + portsWithThisNr.join(", ") + " synchronously";
+                        const portsSelected = yukon_state.monitor2selections;
+                        const portsSelectedNr = portsSelected.length;
+                        // TODO: Find which of the numbers correspond to publishers (don't want to subscribe to services)
+                        if (portsSelectedNr > 1) {
+                            button.innerHTML = "Subscribe to " + portsSelected.join(", ") + " synchronously";
                         }
                     },
                     click: async (e, elementOpenedOn) => {
-                        yukon_state.subscriptions_being_set_up.push({ subject_id: parseInt(elementOpenedOn.getAttribute("data-port")) });
+                        yukon_state.subscriptions_being_set_up.push({ subject_ids: yukon_state.monitor2selections.slice() });
+                    }
+                }
+            },
+            {
+                content: "Add separate subscribers",
+                events: {
+                    adjust: async (contextMenuContext, element, button) => {
+                        const portsSelected = yukon_state.monitor2selections;
+                        const portsSelectedNr = portsSelected.length;
+                        // TODO: Find which of the numbers correspond to publishers (don't want to subscribe to services)
+                        if (portsSelectedNr > 1) {
+                            button.innerHTML = "Subscribe to " + portsSelected.join(", ") + " separately";
+                        }
+                    },
+                    click: async (e, elementOpenedOn) => {
+                        for (const portNr of yukon_state.monitor2selections) {
+                            yukon_state.subscriptions_being_set_up.push({ subject_id: portNr });
+                        }
                     }
                 }
             },
