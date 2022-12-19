@@ -181,6 +181,27 @@ function positionAndPreparePorts(ports, x_counter, settings, yukon_state) {
         }
     }
 }
+function isPortSelected(portNr, yukon_state) {
+    if (typeof yukon_state.monitor2selections !== undefined && Array.isArray(yukon_state.monitor2selections)) {
+        return yukon_state.monitor2selections.includes(portNr);
+    } else {
+        return false;
+    }
+}
+function selectPort(portNr, yukon_state) {
+    if (typeof yukon_state.monitor2selections !== undefined && Array.isArray(yukon_state.monitor2selections)) {
+        if (!yukon_state.monitor2selections.includes(portNr)) {
+            yukon_state.monitor2selections.push(portNr);
+        }
+    } else {
+        yukon_state.monitor2selections = [portNr];
+    }
+}
+function unselectPort(portNr) {
+    if (typeof yukon_state.monitor2selections !== undefined && Array.isArray(yukon_state.monitor2selections)) {
+        yukon_state.monitor2selections = yukon_state.monitor2selections.filter((p) => p !== portNr);
+    }
+}
 async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     if (!areThereAnyNewOrMissingHashes("monitor2_hash", yukon_state)) {
         updateLastHashes("monitor2_hash", yukon_state);
@@ -432,12 +453,12 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     //         removeHighlightFromElement(horizontal_line_label, settings, yukon_state);
     //     }
     // });
-    horizontal_line_collider.addEventListener("click", () => {
-        toggledOn.value = !toggledOn.value;
-        if (toggledOn.value) {
+    function changeStateOfElement(value_of_toggledOn, onlyTurnOnRelatedObjects) {
+        if (value_of_toggledOn) {
             horizontal_line.style.setProperty("background-color", "red");
             arrowhead.style.setProperty("border-top-color", "red");
             const relatedObjects = findRelatedObjects(matchingPort.port);
+            selectPort(matchingPort.port);
             highlightElements(relatedObjects, settings, yukon_state)
             relatedObjects.forEach(object => {
                 object["toggledOn"].value = true;
@@ -446,13 +467,21 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
             horizontal_line.style.removeProperty("background-color");
             arrowhead.style.setProperty("border-top-color", "pink");
             const relatedObjects = findRelatedObjects(matchingPort.port);
+            unselectPort(matchingPort.port);
             removeHighlightsFromObjects(relatedObjects, settings, yukon_state);
-            relatedObjects.forEach(object => {
-                object["toggledOn"].value = false;
-            })
+            if (!onlyTurnOnRelatedObjects) {
+                relatedObjects.forEach(object => {
+                    object["toggledOn"].value = false;
+                })
+            }
         }
-        // ports.find(p => p.port === port && p.type === "pub" || p.type === "srv");
+    }
+    horizontal_line_collider.addEventListener("click", () => {
+        toggledOn.value = !toggledOn.value;
+        changeStateOfElement(toggledOn.value)
     });
+
+    changeStateOfElement(isPortSelected(matchingPort.port), true);
     const right_end_of_edge = matchingPort.x_offset;
     const left_end_of_edge = settings["NodeXOffset"] + settings["NodeWidth"] - 3 + "px"
     if (matchingPort.type === "pub" || matchingPort.type === "cln") {
