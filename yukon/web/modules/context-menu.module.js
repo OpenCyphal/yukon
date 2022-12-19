@@ -442,6 +442,7 @@ export function make_context_menus(yukon_state) {
                     },
                     click: async (e, elementOpenedOn) => {
                         yukon_state.subscriptions_being_set_up.push({ subject_id: parseInt(elementOpenedOn.getAttribute("data-port")) });
+                        yukon_state.monitor2shouldScrollWhenNewSubscribeFrame = true;
                     }
                 }
             },

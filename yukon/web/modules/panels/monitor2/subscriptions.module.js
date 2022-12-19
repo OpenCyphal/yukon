@@ -327,6 +327,13 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
         subscriptionElement.appendChild(subscribeButton);
         subscriptionElement.appendChild(closeButton);
         subscriptionsDiv.appendChild(subscriptionElement);
+        setTimeout(() => {
+            if (yukon_state.monitor2shouldScrollWhenNewSubscribeFrame) {
+                yukon_state.monitor2ContainerElement.scrollLeft = yukon_state.monitor2ContainerElement.scrollWidth;
+                yukon_state.monitor2ContainerElement.scrollTop = 0;
+                yukon_state.monitor2shouldScrollWhenNewSubscribeFrame = false;
+            }
+        }, 100)
     }
 }
 function addComplexSelectionComponents(subscription, divComplexSelection) {
