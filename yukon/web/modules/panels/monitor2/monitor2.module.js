@@ -145,6 +145,36 @@ function findRelatedObjects(port) {
     });
 }
 
+function changeStateOfElement(portNr, value_of_toggledOn, dontTurnOffRelatedObjects, yukon_state) {
+    if (value_of_toggledOn) {
+        // horizontal_line.style.setProperty("background-color", "red");
+        // arrowhead.style.setProperty("border-top-color", "red");
+        const relatedObjects = findRelatedObjects(portNr);
+        selectPort(portNr, yukon_state);
+        if (!isPortStateHighlighted(portNr, yukon_state)) {
+            setPortStateAsHiglighted(portNr, yukon_state);
+            highlightElements(relatedObjects, settings, yukon_state);
+        } else {
+            console.log("Port " + portNr + " is already highlighted");
+        }
+        relatedObjects.forEach(object => {
+            object["toggledOn"].value = true;
+        })
+    } else {
+        // horizontal_line.style.removeProperty("background-color");
+        // arrowhead.style.setProperty("border-top-color", "pink");
+        const relatedObjects = findRelatedObjects(portNr);
+        unselectPort(portNr, yukon_state);
+        setPortStateAsUnhiglighted(portNr, yukon_state);
+        removeHighlightsFromObjects(relatedObjects, settings, yukon_state);
+        if (!dontTurnOffRelatedObjects) {
+            relatedObjects.forEach(object => {
+                object["toggledOn"].value = false;
+            })
+        }
+    }
+}
+
 function compareAvatar(a, b) {
     if (a.node_id < b.node_id) {
         return -1;
@@ -464,38 +494,10 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     //         removeHighlightFromElement(horizontal_line_label, settings, yukon_state);
     //     }
     // });
-    function changeStateOfElement(value_of_toggledOn, onlyTurnOnRelatedObjects) {
-        if (value_of_toggledOn) {
-            // horizontal_line.style.setProperty("background-color", "red");
-            // arrowhead.style.setProperty("border-top-color", "red");
-            const relatedObjects = findRelatedObjects(matchingPort.port);
-            selectPort(matchingPort.port, yukon_state);
-            if (!isPortStateHighlighted(matchingPort.port, yukon_state)) {
-                setPortStateAsHiglighted(matchingPort.port, yukon_state);
-                highlightElements(relatedObjects, settings, yukon_state);
-            } else {
-                console.log("Port " + matchingPort.port + " is already highlighted");
-            }
-            relatedObjects.forEach(object => {
-                object["toggledOn"].value = true;
-            })
-        } else {
-            // horizontal_line.style.removeProperty("background-color");
-            // arrowhead.style.setProperty("border-top-color", "pink");
-            const relatedObjects = findRelatedObjects(matchingPort.port);
-            unselectPort(matchingPort.port, yukon_state);
-            setPortStateAsUnhiglighted(matchingPort.port, yukon_state);
-            removeHighlightsFromObjects(relatedObjects, settings, yukon_state);
-            if (!onlyTurnOnRelatedObjects) {
-                relatedObjects.forEach(object => {
-                    object["toggledOn"].value = false;
-                })
-            }
-        }
-    }
+
     horizontal_line_collider.addEventListener("click", () => {
         toggledOn.value = !toggledOn.value;
-        changeStateOfElement(toggledOn.value)
+        changeStateOfElement(matchingPort.port, toggledOn.value, false, yukon_state)
     });
 
     const normalContext = this;
@@ -504,7 +506,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
         // in this case the vertical lines are created later and here we wait for them to be created
         // so that they can also be highlighted.
         // TODO: To reduce the delay, set up a list of callbacks for this when all is rendered otherwise
-        changeStateOfElement.bind(normalContext)(isPortSelected(matchingPort.port, yukon_state), true);
+        changeStateOfElement.bind(normalContext)(matchingPort.port, isPortSelected(matchingPort.port, yukon_state), true, yukon_state);
     }, 1000);
 
     const right_end_of_edge = matchingPort.x_offset;
@@ -628,21 +630,7 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
         // });
         line_collider.addEventListener("click", () => {
             toggledOn.value = !toggledOn.value;
-            if (toggledOn.value) {
-                line.style.setProperty("background-color", "red");
-                const relatedObjects = findRelatedObjects(port.port);
-                highlightElements(relatedObjects, settings, yukon_state);
-                relatedObjects.forEach(object => {
-                    object["toggledOn"].value = true;
-                })
-            } else {
-                line.style.removeProperty("background-color");
-                const relatedObjects = findRelatedObjects(port.port);
-                removeHighlightsFromObjects(relatedObjects, settings, yukon_state);
-                relatedObjects.forEach(object => {
-                    object["toggledOn"].value = false;
-                });
-            }
+            changeStateOfElement(port.port, toggledOn.value, false, yukon_state);
         });
         monitor2Div.appendChild(line_collider);
         monitor2Div.appendChild(line);
