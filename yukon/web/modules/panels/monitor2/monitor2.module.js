@@ -7,7 +7,7 @@ import {
     getDatatypesForPort
 } from "../../utilities.module.js";
 import { fillSettings } from "./fill_settings.module.js";
-import { highlightElement, highlightElements, removeHighlightsFromObjects, removeHighlightFromElement, unhighlightAll } from "./highlights.module.js";
+import { highlightElement, highlightElements, removeHighlightsFromObjects, removeHighlightFromElement, unhighlightAll, setPortStateAsHiglighted, setPortStateAsUnhiglighted, isPortStateHighlighted } from "./highlights.module.js";
 import { drawSubscriptions } from "./subscriptions.module.js";
 
 const settings = {};
@@ -189,12 +189,17 @@ function isPortSelected(portNr, yukon_state) {
     }
 }
 function selectPort(portNr, yukon_state) {
+    // It returns true if the port was not selected before
     if (typeof yukon_state.monitor2selections !== undefined && Array.isArray(yukon_state.monitor2selections)) {
         if (!yukon_state.monitor2selections.includes(portNr)) {
             yukon_state.monitor2selections.push(portNr);
+            return true;
+        } else {
+            return false;
         }
     } else {
         yukon_state.monitor2selections = [portNr];
+        return true;
     }
 }
 function unselectPort(portNr) {
@@ -213,6 +218,9 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     updateLastHashes("monitor2_hash", yukon_state);
     // Clear the container
     monitor2Div.innerHTML = "";
+    for (const color of settings.HighlightColors) {
+        color.taken = false;
+    }
     // Add all nodes
     let y_counter = { value: settings["PageMarginTop"] };
     yukon_state.monitor2 = {};
@@ -224,6 +232,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 if (port === "") {
                     continue;
                 }
+                setPortStateAsUnhiglighted(port, yukon_state);
                 let alreadyExistingPorts = ports.filter(p => p.port === port && p.type === port_type);
                 if (alreadyExistingPorts.length === 0) {
                     ports.push({ "type": port_type, "port": port, "x_offset": 0 });
@@ -455,19 +464,24 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     // });
     function changeStateOfElement(value_of_toggledOn, onlyTurnOnRelatedObjects) {
         if (value_of_toggledOn) {
-            horizontal_line.style.setProperty("background-color", "red");
-            arrowhead.style.setProperty("border-top-color", "red");
+            // horizontal_line.style.setProperty("background-color", "red");
+            // arrowhead.style.setProperty("border-top-color", "red");
             const relatedObjects = findRelatedObjects(matchingPort.port);
-            selectPort(matchingPort.port);
-            highlightElements(relatedObjects, settings, yukon_state)
+            selectPort(matchingPort.port, yukon_state);
+            if (!isPortStateHighlighted(matchingPort.port, yukon_state)) {
+                setPortStateAsHiglighted(matchingPort.port, yukon_state);
+                highlightElements(relatedObjects, settings, yukon_state);
+            } else {
+                console.log("Port " + matchingPort.port + " is already highlighted");
+            }
             relatedObjects.forEach(object => {
                 object["toggledOn"].value = true;
             })
         } else {
-            horizontal_line.style.removeProperty("background-color");
-            arrowhead.style.setProperty("border-top-color", "pink");
+            // horizontal_line.style.removeProperty("background-color");
+            // arrowhead.style.setProperty("border-top-color", "pink");
             const relatedObjects = findRelatedObjects(matchingPort.port);
-            unselectPort(matchingPort.port);
+            unselectPort(matchingPort.port, yukon_state);
             removeHighlightsFromObjects(relatedObjects, settings, yukon_state);
             if (!onlyTurnOnRelatedObjects) {
                 relatedObjects.forEach(object => {
@@ -481,7 +495,15 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
         changeStateOfElement(toggledOn.value)
     });
 
-    changeStateOfElement(isPortSelected(matchingPort.port), true);
+    const normalContext = this;
+    setTimeout(() => {
+        // This is done with a timeout to make sure that all related objects are created,
+        // in this case the vertical lines are created later and here we wait for them to be created
+        // so that they can also be highlighted.
+        // TODO: To reduce the delay, set up a list of callbacks for this when all is rendered otherwise
+        changeStateOfElement.bind(normalContext)(isPortSelected(matchingPort.port, yukon_state), true);
+    }, 1000);
+
     const right_end_of_edge = matchingPort.x_offset;
     const left_end_of_edge = settings["NodeXOffset"] + settings["NodeWidth"] - 3 + "px"
     if (matchingPort.type === "pub" || matchingPort.type === "cln") {

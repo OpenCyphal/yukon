@@ -16,6 +16,7 @@ from pycyphal.presentation.subscription_synchronizer.monotonic_clustering import
 from yukon.domain.synchronized_message_carrier import SynchronizedMessageCarrier
 from yukon.domain.synchronized_message_store import SynchronizedMessageStore
 from yukon.domain.synchronized_message_group import SynchronizedMessageGroup
+from yukon.domain.synchronized_subjects_specifier import SynchronizedSubjectsSpecifier
 
 
 from yukon.domain.detach_transport_request import DetachTransportRequest
@@ -519,13 +520,16 @@ class Api:
                 subscribers.append(new_subscriber)
             synchronizer = MonotonicClusteringSynchronizer(subscribers, get_local_reception_timestamp, 0.1)
             synchronized_message_store = SynchronizedMessageStore()
+            counter = 0
 
             def message_receiver(messages: typing.Tuple[typing.Any]):
                 timestamp = None
                 # Missing a messages list and the timestamp
                 synchronized_message_group = SynchronizedMessageGroup()
                 for message in messages:
-                    synchronized_message_carrier = SynchronizedMessageCarrier(, timestamp)
+                    synchronized_message_carrier = SynchronizedMessageCarrier(message, None, counter)
+                    counter += 1
+                    synchronized_message_group.carriers.append(synchronized_message_carrier)
 
             # synchronizer.receive_in_background
 
@@ -536,14 +540,8 @@ class Api:
         specifiers_object = json.loads(specifiers)
         dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
         """An array containing arrays of synchronized messages"""
-        returned_message_pairs = []
-        # for specifier, messages_store in self.state.queues.subscribed_messages.items():
-        #     for dto in dtos:
-        #         if dto.does_equal_specifier(specifier):
-        #             mapping[str(dto)] = messages_store.messages
-        #             break
-        # # This jsonify is why I made sure to set up the JSON encoder for dsdl
-        return jsonify(mapping)
+        synchronized_messages_store = self.state.synchronized_message_stores.get(SynchronizedSubjectsSpecifier(dtos))
+        return jsonify(synchronized_messages_store.messages[counter:])
 
     def get_current_available_subscription_specifiers(self) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""

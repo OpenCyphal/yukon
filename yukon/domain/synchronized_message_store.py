@@ -7,7 +7,7 @@ from yukon.domain.synchronized_message_group import SynchronizedMessageGroup
 
 
 @dataclass
-class SynchronizedMessagesStore:
+class SynchronizedMessageStore:
     messages: typing.List[SynchronizedMessageGroup] = field(default_factory=list)
     counter: int = 0
 
