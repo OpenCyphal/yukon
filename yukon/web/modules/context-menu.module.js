@@ -465,4 +465,30 @@ export function make_context_menus(yukon_state) {
         ],
     });
     monitor2_vertical_line_context_menu.init();
+    const monitor2_general_context_menu = new ContextMenu({
+        target: ".lm_content:has(> #monitor2)",
+        mode: "dark",
+        menuItems: [
+            {
+                content: "Add synchronized subscriber",
+                events: {
+                    adjust: async (contextMenuContext, element, button) => {
+                        const portsWithThisNr = yukon_state.monitor2selections.filter((portNr1) => portNr1 === parseInt(portNr));
+                        const amountOfPortsWithThisNr = portsWithThisNr.length;
+                        const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
+                        if (portType !== "pub" && portType !== "sub") {
+                            element.parentElement.removeChild(element);
+                        }
+                        if (amountOfPortsWithThisNr > 1) {
+                            button.innerHTML = "Subscribe to " + portsWithThisNr.join(", ") + " synchronously";
+                        }
+                    },
+                    click: async (e, elementOpenedOn) => {
+                        yukon_state.subscriptions_being_set_up.push({ subject_id: parseInt(elementOpenedOn.getAttribute("data-port")) });
+                    }
+                }
+            },
+        ],
+    });
+    monitor2_general_context_menu.init();
 }
