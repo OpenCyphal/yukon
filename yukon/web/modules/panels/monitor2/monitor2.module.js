@@ -60,10 +60,16 @@ export async function setUpMonitor2Component(container, yukon_state) {
             subscriptionsInnerArea.style.left = settings.SubscriptionsOffset + "px";
             subscriptionsInnerArea.style.top = settings.SubscriptionsVerticalOffset + "px";
             yukon_state.subscription_specifiers = await yukon_state.zubax_apij.get_current_available_subscription_specifiers();
+            yukon_state.sync_subscription_specifiers = await yukon_state.zubax_apij.get_current_available_synchronized_subscription_specifiers();
             if (typeof yukon_state.subscription_specifiers_previous_hash === "undefined" || yukon_state.subscription_specifiers_previous_hash !== yukon_state.subscription_specifiers.hash) {
                 await drawSubscriptions(subscriptionsInnerArea, settings, yukon_state);
             }
             yukon_state.subscription_specifiers_previous_hash = yukon_state.subscription_specifiers_hash;
+            // Do the same for the hash of the synchronized subscriptions
+            if (typeof yukon_state.sync_subscription_specifiers_previous_hash === "undefined" || yukon_state.sync_subscription_specifiers_previous_hash !== yukon_state.sync_subscription_specifiers.hash) {
+                await drawSubscriptions(subscriptionsInnerArea, settings, yukon_state);
+            }
+            yukon_state.sync_subscription_specifiers_previous_hash = yukon_state.sync_subscription_specifiers_hash;
         } else {
             console.warn("Subscriptions offset is not set");
         }

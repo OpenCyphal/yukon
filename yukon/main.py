@@ -203,8 +203,10 @@ def set_logging_levels() -> None:
 def find_yukon_processes() -> typing.List[psutil.Process]:
     "Return a list of Yukon processes."
     # Save a list of all processes with their name, pid and ppid, general_process_list
-    # Iterate once through the list to find all the processes with the word electron in their name, add the ppid's of these processes to a set
-    # Iterate over the list of processes again, looking for processes with a ppid in the set that also contain Yukon in their name
+    # Iterate once through the list to find all the processes with the word electron in their name,
+    # add the ppid's of these processes to a set
+    # Iterate over the list of processes again,
+    # looking for processes with a ppid in the set that also contain Yukon in their name
     # Return the list of processes that match the above criteria
     general_process_list = list(psutil.process_iter(["name", "pid", "ppid"]))
     ppid_set = set()

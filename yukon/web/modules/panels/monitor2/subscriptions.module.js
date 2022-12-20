@@ -44,6 +44,12 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
         pLatestMessage.innerHTML = yaml_text;
     }
 }
+async function fetchForSync(settings, yukon_state) {
+    const current_messages = yukon_state.subscriptions[specifier];
+    const full_specifiers = [specifier + ":" + yukon_state.subscriptions[specifier].length];
+    const result = await yukon_state.zubax_apij.fetch_synchronized_messages_for_specifiers(JSON.stringify(full_specifiers));
+    const messages = result[Object.keys(result)[0]]
+}
 function fillExistingDivs(existing_divs, existing_specifiers, subscriptionsDiv, yukon_state) {
     for (const child of subscriptionsDiv.children) {
         const specifier = child.getAttribute("data-specifier");
@@ -115,6 +121,96 @@ async function refreshKnownDatatypes(iSelectFixedIdMessageType, iSelectAny, iSel
         });
     }, 1200);
 }
+async function createSubscriptionElement(specifier, subscriptionsDiv, subscriptionElementsToBePlaced, settings, yukon_state) {
+    const subject_id = specifier.split(":")[0];
+    const datatype = specifier.split(":")[1];
+    console.log("Drawing subscription specifier", specifier);
+    const subscriptionElement = document.createElement("div");
+    const header1 = document.createElement("h3");
+    header1.innerText = specifier;
+    yukon_state.monitor2.ports.find((port) => {
+        return port.port === subject_id;
+    });
+    subscriptionElement.appendChild(header1);
+    const header2 = document.createElement("h3");
+    header2.innerText = "This is an active subscription";
+
+    subscriptionElement.appendChild(header2);
+    subscriptionElement.classList.add("subscription");
+    subscriptionElement.setAttribute("data-specifier", specifier);
+    const pLatestMessage = document.createElement("p");
+    pLatestMessage.innerText = "Yet to receive messages...";
+    subscriptionElement.appendChild(pLatestMessage);
+
+    const divLogToConsole = document.createElement('div');
+    divLogToConsole.classList.add('form-check');
+    const inputLogToConsole = document.createElement('input');
+    inputLogToConsole.classList.add('form-check-input');
+    inputLogToConsole.classList.add('checkbox');
+    inputLogToConsole.type = 'checkbox';
+    inputLogToConsole.id = "inputLogToConsole" + subject_id + ":" + datatype;
+    divLogToConsole.appendChild(inputLogToConsole);
+    const labelLogToConsole = document.createElement('label');
+    labelLogToConsole.classList.add('form-check-label');
+    labelLogToConsole.htmlFor = inputLogToConsole.id;
+    labelLogToConsole.innerHTML = "Log to console";
+    divLogToConsole.appendChild(labelLogToConsole);
+    subscriptionElement.appendChild(divLogToConsole);
+
+    // Add a button for unsubscribing
+    const unsubscribeButton = document.createElement("button");
+    unsubscribeButton.innerText = "Unsubscribe";
+    unsubscribeButton.addEventListener("click", async () => {
+        const response = await yukon_state.zubax_apij.unsubscribe(specifier);
+        if (response.success) {
+            yukon_state.subscription_specifiers.specifiers = yukon_state.subscription_specifiers.specifiers.filter((specifier_) => { return specifier_ !== specifier; });
+            await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
+        } else {
+            console.error("Failed to unsubscribe: " + response.error);
+        }
+    });
+    if (!yukon_state.subscriptions[specifier]) {
+        yukon_state.subscriptions[specifier] = [];
+    }
+    const current_messages = yukon_state.subscriptions[specifier];
+    let fetchIntervalId = { value: null };
+    let lastCurrentMessagesLength = { value: 0 };
+    fetchIntervalId.value = setInterval(() => fetch(specifier, pLatestMessage, inputLogToConsole, fetchIntervalId, lastCurrentMessagesLength, yukon_state), 300);
+    subscriptionElement.appendChild(unsubscribeButton);
+    subscriptionElementsToBePlaced.push([subscriptionElement, specifier]);
+    subscriptionsDiv.appendChild(subscriptionElement);
+}
+async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv, settings, yukon_state) {
+    const subscriptionElement = document.createElement("div");
+    subscriptionElement.classList.add("subscription");
+    subscriptionElement.setAttribute("data-specifier", specifiersString);
+    const header1 = document.createElement("h3");
+    header1.innerText = "Synchronous subscription";
+    subscriptionElement.appendChild(header1);
+    const header2 = document.createElement("h3");
+    header2.innerText = specifiersString;
+    subscriptionElement.appendChild(header2);
+    const pLatestMessage = document.createElement("p");
+    pLatestMessage.innerText = "Yet to receive messages...";
+    subscriptionElement.appendChild(pLatestMessage);
+    subscriptionsDiv.appendChild(subscriptionElement);
+    // Add a button for unsubscribing
+    const unsubscribeButton = document.createElement("button");
+    unsubscribeButton.innerText = "Unsubscribe";
+    unsubscribeButton.addEventListener("click", async () => {
+        const response = await yukon_state.zubax_apij.unsubscribe_synchronized(specifiersString);
+        if (response.success) {
+            yukon_state.sync_subscription_specifiers.specifiers = yukon_state.sync_subscription_specifiers.specifiers.filter((specifier_) => { return specifier_ !== specifiersString; });
+            await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
+        } else {
+            console.error("Failed to unsubscribe: " + response.error);
+        }
+    });
+    subscriptionElement.appendChild(unsubscribeButton);
+    let fetchIntervalId = { value: null };
+    let lastCurrentMessagesLength = { value: 0 };
+    fetchIntervalId.value = setInterval(() => fetch(specifier, pLatestMessage, inputLogToConsole, fetchIntervalId, lastCurrentMessagesLength, yukon_state), 300);
+}
 export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state) {
     if (settings.SubscriptionsOffset === null) {
         // Subscriptions cannot be drawn currently before any nodes and ports have been drawn
@@ -138,63 +234,14 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
         if (existing_divs[specifier]) {
             continue;
         }
-        const subject_id = specifier.split(":")[0];
-        const datatype = specifier.split(":")[1];
-        console.log("Drawing subscription specifier", specifier);
-        const subscriptionElement = document.createElement("div");
-        const header1 = document.createElement("h3");
-        header1.innerText = specifier;
-        yukon_state.monitor2.ports.find((port) => {
-            return port.port === subject_id;
-        });
-        subscriptionElement.appendChild(header1);
-        const header2 = document.createElement("h3");
-        header2.innerText = "This is an active subscription";
+        createSubscriptionElement(specifier, subscriptionsDiv, subscriptionElementsToBePlaced, settings, yukon_state);
+    }
 
-        subscriptionElement.appendChild(header2);
-        subscriptionElement.classList.add("subscription");
-        subscriptionElement.setAttribute("data-specifier", specifier);
-        const pLatestMessage = document.createElement("p");
-        pLatestMessage.innerText = "Yet to receive messages...";
-        subscriptionElement.appendChild(pLatestMessage);
-
-        const divLogToConsole = document.createElement('div');
-        divLogToConsole.classList.add('form-check');
-        const inputLogToConsole = document.createElement('input');
-        inputLogToConsole.classList.add('form-check-input');
-        inputLogToConsole.classList.add('checkbox');
-        inputLogToConsole.type = 'checkbox';
-        inputLogToConsole.id = "inputLogToConsole" + subject_id + ":" + datatype;
-        divLogToConsole.appendChild(inputLogToConsole);
-        const labelLogToConsole = document.createElement('label');
-        labelLogToConsole.classList.add('form-check-label');
-        labelLogToConsole.htmlFor = inputLogToConsole.id;
-        labelLogToConsole.innerHTML = "Log to console";
-        divLogToConsole.appendChild(labelLogToConsole);
-        subscriptionElement.appendChild(divLogToConsole);
-
-        // Add a button for unsubscribing
-        const unsubscribeButton = document.createElement("button");
-        unsubscribeButton.innerText = "Unsubscribe";
-        unsubscribeButton.addEventListener("click", async () => {
-            const response = await yukon_state.zubax_apij.unsubscribe(specifier);
-            if (response.success) {
-                yukon_state.subscription_specifiers.specifiers = yukon_state.subscription_specifiers.specifiers.filter((specifier_) => { return specifier_ !== specifier; });
-                await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
-            } else {
-                console.error("Failed to unsubscribe: " + response.error);
-            }
-        });
-        if (!yukon_state.subscriptions[specifier]) {
-            yukon_state.subscriptions[specifier] = [];
+    for (const specifiersString of yukon_state.sync_subscription_specifiers.specifiers) {
+        if (existing_divs[specifiersString]) {
+            continue;
         }
-        const current_messages = yukon_state.subscriptions[specifier];
-        let fetchIntervalId = { value: null };
-        let lastCurrentMessagesLength = { value: 0 };
-        fetchIntervalId.value = setInterval(() => fetch(specifier, pLatestMessage, inputLogToConsole, fetchIntervalId, lastCurrentMessagesLength, yukon_state), 300);
-        subscriptionElement.appendChild(unsubscribeButton);
-        subscriptionElementsToBePlaced.push([subscriptionElement, specifier]);
-        subscriptionsDiv.appendChild(subscriptionElement);
+        createSyncSubscriptionElement(specifiersString, subscriptionsDiv, subscriptionElementsToBePlaced, settings, yukon_state);
     }
     let list_of_subscription_getters = [];
     for (const subscription of yukon_state.subscriptions_being_set_up) {
@@ -345,7 +392,7 @@ async function subscribeCallback(isSynchronous, subscriptionElement, list_of_sub
         const infoObject = list_of_subscription_getters[0]();
         const subject_id = infoObject.subject_id;
         const datatype = infoObject.datatype;
-        if (!desiredDatatype) {
+        if (!datatype) {
             console.error("No datatype selected");
             return;
         }

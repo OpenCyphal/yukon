@@ -13,6 +13,14 @@ import traceback
 import yaml
 from uuid import uuid4
 from time import time
+
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader  # type: ignore
+import websockets
+from flask import jsonify, Response
+
 from pycyphal.presentation.subscription_synchronizer import get_local_reception_timestamp
 from pycyphal.presentation.subscription_synchronizer.monotonic_clustering import MonotonicClusteringSynchronizer
 from yukon.domain.synchronized_message_carrier import SynchronizedMessageCarrier
@@ -23,6 +31,7 @@ from yukon.domain.synchronized_subjects_specifier import SynchronizedSubjectsSpe
 
 from yukon.domain.detach_transport_request import DetachTransportRequest
 from yukon.domain.proxy_objects import ReactiveValue
+from yukon.services.dtype_loader import load_dtype
 from yukon.services.settings_handler import (
     save_settings,
     load_settings,
@@ -36,14 +45,6 @@ from yukon.services.utils import get_datatypes_from_packages_directory_path
 from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
 from yukon.domain.subject_specifier import SubjectSpecifier
 from yukon.domain.subscribe_request import SubscribeRequest
-
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader  # type: ignore
-import websockets
-from flask import jsonify, Response
-
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_log_item import UpdateRegisterLogItem
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
@@ -511,7 +512,7 @@ class Api:
         # This jsonify is why I made sure to set up the JSON encoder for dsdl
         return jsonify(mapping)
 
-    def subscribe_synchronized(self, specifiers: str):
+    def subscribe_synchronized(self, specifiers: str) -> Response:
         result_ready_event = threading.Event()
         was_subscription_success: bool = False
         message: str = ""
@@ -519,13 +520,15 @@ class Api:
 
         def subscribe_task():
             try:
-                if self.state.synchronizers_by_specifier.get(synchronized_subjects_specifier):
-                    raise Exception("Already subscribed to synchronized messages for this specifier.")
                 specifiers_object = json.loads(specifiers)
                 synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
+                if self.state.cyphal.synchronizers_by_specifier.get(synchronized_subjects_specifier):
+                    raise Exception("Already subscribed to synchronized messages for this specifier.")
                 subscribers = []
                 for dto in synchronized_subjects_specifier.specifiers:
-                    new_subscriber = self.state.cyphal.local_node.make_subscriber(dto.datatype, dto.subject_id)
+                    new_subscriber = self.state.cyphal.local_node.make_subscriber(
+                        load_dtype(dto.datatype), dto.subject_id
+                    )
                     subscribers.append(new_subscriber)
                 synchronizer = MonotonicClusteringSynchronizer(subscribers, get_local_reception_timestamp, tolerance)
                 self.state.cyphal.synchronizers_by_specifier[synchronized_subjects_specifier] = synchronizer
@@ -547,6 +550,7 @@ class Api:
             except Exception as e:
                 print("Exception in subscribe_synchronized: " + str(e))
                 tb = traceback.format_exc()
+                logger.error(tb)
                 message = tb
 
             # synchronizer.receive_in_background
@@ -571,17 +575,17 @@ class Api:
                 }
             )
 
-    def unsubscribe_synchronized(self, specifiers: str):
+    def unsubscribe_synchronized(self, specifiers: str) -> Response:
         try:
             specifiers_object = json.loads(specifiers)
             synchronizer = self.state.cyphal.synchronizers_by_specifier.get(
                 SynchronizedSubjectsSpecifier(specifiers_object)
             )
             synchronizer.close()
-            return {"success": True, "specifiers": specifiers}
+            return jsonify({"success": True, "specifiers": specifiers})
         except:
             tb = traceback.format_exc()
-            return {"success": False, "specifiers": specifiers, "message": tb}
+            return jsonify({"success": False, "specifiers": specifiers, "message": tb})
 
     def fetch_synchronized_messages_for_specifiers(self, specifiers: str, counter: int) -> Response:
         """Specifiers is a JSON serialized list of specifiers."""
