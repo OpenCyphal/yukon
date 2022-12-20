@@ -4,10 +4,6 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
     const full_specifiers = [specifier + ":" + yukon_state.subscriptions[specifier].length];
     const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
     const messages = result[Object.keys(result)[0]]
-    if (current_messages.length > 100) {
-        clearInterval(fetchIntervalId.value);
-        return;
-    }
     if (lastCurrentMessagesLength.value === current_messages.length + messages.length) {
         return;
     } else {
@@ -44,11 +40,19 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
         pLatestMessage.innerHTML = yaml_text;
     }
 }
-async function fetchForSync(settings, yukon_state) {
-    const current_messages = yukon_state.subscriptions[specifier];
-    const full_specifiers = [specifier + ":" + yukon_state.subscriptions[specifier].length];
-    const result = await yukon_state.zubax_apij.fetch_synchronized_messages_for_specifiers(JSON.stringify(full_specifiers));
-    const messages = result[Object.keys(result)[0]]
+async function fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, lastCurrentMessagesLength, settings, yukon_state) {
+    const result = await yukon_state.zubax_apij.fetch_synchronized_messages_for_specifiers(specifiersString, lastCurrentMessagesLength.value);
+    if (!result) {
+        clearInterval(fetchIntervalId.value);
+        pLatestMessage.innerText = "This subscription has been terminated by the server";
+        return;
+    }
+    pLatestMessage.innerText = result[result.length - 1];
+    if (lastCurrentMessagesLength.value === current_messages.length + messages.length) {
+        return;
+    } else {
+        lastCurrentMessagesLength.value = current_messages.length + messages.length;
+    }
 }
 function fillExistingDivs(existing_divs, existing_specifiers, subscriptionsDiv, yukon_state) {
     for (const child of subscriptionsDiv.children) {
@@ -209,7 +213,7 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     subscriptionElement.appendChild(unsubscribeButton);
     let fetchIntervalId = { value: null };
     let lastCurrentMessagesLength = { value: 0 };
-    fetchIntervalId.value = setInterval(() => fetch(specifier, pLatestMessage, inputLogToConsole, fetchIntervalId, lastCurrentMessagesLength, yukon_state), 300);
+    fetchIntervalId.value = setInterval(() => fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, lastCurrentMessagesLength, settings, yukon_state), 300);
 }
 export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state) {
     if (settings.SubscriptionsOffset === null) {
@@ -241,7 +245,7 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
         if (existing_divs[specifiersString]) {
             continue;
         }
-        createSyncSubscriptionElement(specifiersString, subscriptionsDiv, subscriptionElementsToBePlaced, settings, yukon_state);
+        createSyncSubscriptionElement(specifiersString, subscriptionsDiv, settings, yukon_state);
     }
     let list_of_subscription_getters = [];
     for (const subscription of yukon_state.subscriptions_being_set_up) {

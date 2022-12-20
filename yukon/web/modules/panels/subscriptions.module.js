@@ -161,7 +161,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
         div.classList.add('m-1');
         div.id = "divSubscription" + subscription.subject_id + ":" + subscription.datatype;
         divMessagesHere.appendChild(div);
-        // Add a h5/
+        // Add a h5
         const h5 = document.createElement('h5');
         h5.classList.add('card-header');
         if (subscription.subject_id == null) {

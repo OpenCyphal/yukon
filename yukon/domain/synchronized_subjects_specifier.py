@@ -11,7 +11,7 @@ from yukon.domain.subject_specifier import SubjectSpecifier
 class SynchronizedSubjectsSpecifier:
     specifiers: typing.List[SubjectSpecifier]
 
-    def __init__(self, specifiers: typing.List[str]) -> None:
+    def __init__(self, specifiers: typing.List[typing.Union[str, SubjectSpecifier]]) -> None:
         self.specifiers = []
         for specifier in specifiers:
             if isinstance(specifier, str):

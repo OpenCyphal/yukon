@@ -518,7 +518,7 @@ class Api:
         message: str = ""
         tolerance = 0.1
 
-        def subscribe_task():
+        def subscribe_task() -> None:
             try:
                 specifiers_object = json.loads(specifiers)
                 synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
@@ -538,7 +538,7 @@ class Api:
                 ] = synchronized_message_store
                 counter = 0
 
-                def message_receiver(messages: typing.Tuple[typing.Any]):
+                def message_receiver(messages: typing.Tuple[typing.Any]) -> None:
                     timestamp = None
                     # Missing a messages list and the timestamp
                     synchronized_message_group = SynchronizedMessageGroup()
@@ -590,9 +590,11 @@ class Api:
     def fetch_synchronized_messages_for_specifiers(self, specifiers: str, counter: int) -> Response:
         """Specifiers is a JSON serialized list of specifiers."""
         specifiers_object = json.loads(specifiers)
-        dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
+        specifier_objects = [SubjectSpecifier.from_string(x) for x in specifiers_object]
         """An array containing arrays of synchronized messages"""
-        synchronized_messages_store = self.state.synchronized_message_stores.get(SynchronizedSubjectsSpecifier(dtos))
+        synchronized_messages_store = self.state.synchronized_message_stores.get(
+            SynchronizedSubjectsSpecifier(specifier_objects)
+        )
         return jsonify(synchronized_messages_store.messages[counter:])
 
     def get_current_available_subscription_specifiers(self) -> Response:
