@@ -196,7 +196,7 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
         subscriptionElementsToBePlaced.push([subscriptionElement, specifier]);
         subscriptionsDiv.appendChild(subscriptionElement);
     }
-    list_of_subscription_getters = [];
+    let list_of_subscription_getters = [];
     for (const subscription of yukon_state.subscriptions_being_set_up) {
         if (subscription.element) {
             continue;
@@ -304,57 +304,10 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
         const subscribeButton = document.createElement("button");
         subscribeButton.innerText = "Subscribe";
         subscribeButton.addEventListener("click", async () => {
-            if (isSynchronous) {
-                let specifiers = [];
-                for (const getter of list_of_subscription_getters) {
-                    const infoObject = getter();
-                    const subject_id = infoObject.subject_id;
-                    const datatype = infoObject.datatype;
-                    specifiers.push(subject_id + ":" + datatype);
-                }
-                const response = await yukon_state.zubax_apij.subscribe_synchronized(JSON.stringify(specifiers));
-                if (response.success) {
-
-                } else {
-
-                }
-            } else {
-                const infoObject = list_of_subscription_getters[0]();
-                const subject_id = infoObject.subject_id;
-                const datatype = infoObject.datatype;
-                if (!desiredDatatype) {
-                    console.error("No datatype selected");
-                    return;
-                }
-
-                const response = await yukon_state.zubax_apij.subscribe(subject_id, datatype);
-                if (response.success) {
-                    yukon_state.subscription_specifiers.specifiers.push(subject_id + ":" + datatype);
-                    // Remove subscriptionElement
-                    subscriptionElement.parentElement.removeChild(subscriptionElement);
-                    await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
-                } else {
-                    console.error("Failed to subscribe: " + response.error);
-                }
-            }
+            subscribeCallback(isSynchronous, subscriptionElement, list_of_subscription_getters, settings, subscriptionsDiv, yukon_state);
         });
-
-        // Add a close button to the subscriptionElement, align it 0.5 em from the right and 0.5 em from the top
-        // When clicked it should remove the subscriptionElement from the DOM and remove the subscription specifier from the yukon_state.subscriptions_being_set_up
-        const closeButton = document.createElement("button");
-        closeButton.innerText = "X";
-        closeButton.style.borderWidth = "1";
-        closeButton.style.position = "absolute";
-        closeButton.style.right = "0.5em";
-        closeButton.style.top = "0";
-        closeButton.addEventListener("click", () => {
-            subscriptionElement.parentElement.removeChild(subscriptionElement);
-            yukon_state.subscriptions_being_set_up = yukon_state.subscriptions_being_set_up.filter(subscription2 => subscription2 !== subscription);
-
-            // Add a header saying "This is a pending subscription, confirm it by selecting a datatype and clicking the button below"
-        });
+        createSubscriptionElementCloseButton(subscriptionElement, subscription, yukon_state);
         subscriptionElement.appendChild(subscribeButton);
-        subscriptionElement.appendChild(closeButton);
         subscriptionsDiv.appendChild(subscriptionElement);
         setTimeout(() => {
             if (yukon_state.monitor2shouldScrollWhenNewSubscribeFrame) {
@@ -364,6 +317,66 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
             }
         }, 100)
     }
+}
+// This function is called when the user clicks the "Subscribe" button
+async function subscribeCallback(isSynchronous, subscriptionElement, list_of_subscription_getters, settings, subscriptionsDiv, yukon_state) {
+    if (isSynchronous) {
+        let specifiers = [];
+        for (const getter of list_of_subscription_getters) {
+            const infoObject = getter();
+            const subject_id = infoObject.subject_id;
+            const datatype = infoObject.datatype;
+            specifiers.push(subject_id + ":" + datatype);
+        }
+        const response = await yukon_state.zubax_apij.subscribe_synchronized(JSON.stringify(specifiers));
+        if (response.success) {
+            if (response.message && response.message.length > 0) {
+                console.log("A message was returned as a response to the subscription request: " + response.message);
+            }
+            console.log("Subscribed to " + response.specifiers);
+            console.log("Used tolerance: " + response.tolerance);
+        } else {
+            console.log("The sync subscription request failed")
+            if (response.message && response.message.length > 0) {
+                console.error("A message was returned as a response to the subscription request: " + response.message);
+            }
+        }
+    } else {
+        const infoObject = list_of_subscription_getters[0]();
+        const subject_id = infoObject.subject_id;
+        const datatype = infoObject.datatype;
+        if (!desiredDatatype) {
+            console.error("No datatype selected");
+            return;
+        }
+
+        const response = await yukon_state.zubax_apij.subscribe(subject_id, datatype);
+        if (response.success) {
+            yukon_state.subscription_specifiers.specifiers.push(subject_id + ":" + datatype);
+            // Remove subscriptionElement
+            subscriptionElement.parentElement.removeChild(subscriptionElement);
+            await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
+        } else {
+            console.error("Failed to subscribe: " + response.error);
+        }
+    }
+}
+function createSubscriptionElementCloseButton(subscriptionElement, subscription, yukon_state) {
+    // Add a close button to the subscriptionElement, align it 0.5 em from the right and 0.5 em from the top
+    // When clicked it should remove the subscriptionElement from the DOM and remove the subscription specifier from the yukon_state.subscriptions_being_set_up
+    const closeButton = document.createElement("button");
+    closeButton.innerText = "X";
+    closeButton.style.borderWidth = "1";
+    closeButton.style.position = "absolute";
+    closeButton.style.right = "0.5em";
+    closeButton.style.top = "0";
+    closeButton.addEventListener("click", () => {
+        subscriptionElement.parentElement.removeChild(subscriptionElement);
+        yukon_state.subscriptions_being_set_up = yukon_state.subscriptions_being_set_up.filter(subscription2 => subscription2 !== subscription);
+
+        // Add a header saying "This is a pending subscription, confirm it by selecting a datatype and clicking the button below"
+    });
+    subscriptionElement.appendChild(closeButton);
 }
 function addComplexSelectionComponents(subscription, divComplexSelection) {
     const labelUseManualDatatypeEntry = document.createElement('label');

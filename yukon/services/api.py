@@ -513,18 +513,26 @@ class Api:
 
     def subscribe_synchronized(self, specifiers: str):
         result_ready_event = threading.Event()
+        was_subscription_success: bool = False
+        message: str = ""
+        tolerance = 0.1
 
         def subscribe_task():
             try:
+                if self.state.synchronizers_by_specifier.get(synchronized_subjects_specifier):
+                    raise Exception("Already subscribed to synchronized messages for this specifier.")
                 specifiers_object = json.loads(specifiers)
-                synchronized_subjects_specifier = SynchronizedSubjectsSpecifier.from_list()
-                dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
+                synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
                 subscribers = []
-                for dto in dtos:
+                for dto in synchronized_subjects_specifier.specifiers:
                     new_subscriber = self.state.cyphal.local_node.make_subscriber(dto.datatype, dto.subject_id)
                     subscribers.append(new_subscriber)
-                synchronizer = MonotonicClusteringSynchronizer(subscribers, get_local_reception_timestamp, 0.1)
+                synchronizer = MonotonicClusteringSynchronizer(subscribers, get_local_reception_timestamp, tolerance)
+                self.state.cyphal.synchronizers_by_specifier[synchronized_subjects_specifier] = synchronizer
                 synchronized_message_store = SynchronizedMessageStore()
+                self.state.cyphal.synchronized_message_stores[
+                    synchronized_subjects_specifier
+                ] = synchronized_message_store
                 counter = 0
 
                 def message_receiver(messages: typing.Tuple[typing.Any]):
@@ -539,11 +547,41 @@ class Api:
             except Exception as e:
                 print("Exception in subscribe_synchronized: " + str(e))
                 tb = traceback.format_exc()
+                message = tb
 
             # synchronizer.receive_in_background
 
         self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(subscribe_task)
-        result_ready_event.wait()
+        if result_ready_event.wait(1.7):
+            return jsonify(
+                {
+                    "success": was_subscription_success,
+                    "specifiers": specifiers,
+                    "message": message,
+                    "tolerance": tolerance,
+                }
+            )
+        else:
+            return jsonify(
+                {
+                    "success": False,
+                    "specifiers": specifiers,
+                    "message": "Timed out waiting for a response from the Cyphal worker thread.",
+                    "tolerance": tolerance,
+                }
+            )
+
+    def unsubscribe_synchronized(self, specifiers: str):
+        try:
+            specifiers_object = json.loads(specifiers)
+            synchronizer = self.state.cyphal.synchronizers_by_specifier.get(
+                SynchronizedSubjectsSpecifier(specifiers_object)
+            )
+            synchronizer.close()
+            return {"success": True, "specifiers": specifiers}
+        except:
+            tb = traceback.format_exc()
+            return {"success": False, "specifiers": specifiers, "message": tb}
 
     def fetch_synchronized_messages_for_specifiers(self, specifiers: str, counter: int) -> Response:
         """Specifiers is a JSON serialized list of specifiers."""
@@ -557,6 +595,14 @@ class Api:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
         specifiers = []
         for specifier, messages_store in self.state.queues.subscribed_messages.items():
+            specifiers.append(str(specifier))
+        specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
+        return jsonify(specifiers_return_value)
+
+    def get_current_available_synchronized_subscription_specifiers(self) -> Response:
+        """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
+        specifiers = []
+        for specifier, messages_store in self.state.cyphal.synchronized_message_stores.items():
             specifiers.append(str(specifier))
         specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
         return jsonify(specifiers_return_value)
