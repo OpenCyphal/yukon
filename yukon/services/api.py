@@ -538,14 +538,21 @@ class Api:
                 ] = synchronized_message_store
                 counter = 0
 
-                def message_receiver(messages: typing.Tuple[typing.Any]) -> None:
+                def message_receiver(*messages: typing.Tuple[typing.Any]) -> None:
+                    nonlocal counter
                     timestamp = None
                     # Missing a messages list and the timestamp
                     synchronized_message_group = SynchronizedMessageGroup()
                     for message in messages:
-                        synchronized_message_carrier = SynchronizedMessageCarrier(message, None, counter)
+                        synchronized_message_carrier = SynchronizedMessageCarrier(
+                            message,
+                            None,
+                            counter,
+                        )
                         counter += 1
                         synchronized_message_group.carriers.append(synchronized_message_carrier)
+
+                synchronizer.receive_in_background(message_receiver)
 
             except Exception as e:
                 print("Exception in subscribe_synchronized: " + str(e))
@@ -592,7 +599,7 @@ class Api:
         specifiers_object = json.loads(specifiers)
         specifier_objects = [SubjectSpecifier.from_string(x) for x in specifiers_object]
         """An array containing arrays of synchronized messages"""
-        synchronized_messages_store = self.state.synchronized_message_stores.get(
+        synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
             SynchronizedSubjectsSpecifier(specifier_objects)
         )
         return jsonify(synchronized_messages_store.messages[counter:])

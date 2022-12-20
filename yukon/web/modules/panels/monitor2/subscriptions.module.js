@@ -47,12 +47,14 @@ async function fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, l
         pLatestMessage.innerText = "This subscription has been terminated by the server";
         return;
     }
-    pLatestMessage.innerText = result[result.length - 1];
+    let current_messages = yukon_state.subscriptions[specifiersString];
+    let messages = result;
     if (lastCurrentMessagesLength.value === current_messages.length + messages.length) {
         return;
     } else {
         lastCurrentMessagesLength.value = current_messages.length + messages.length;
     }
+    pLatestMessage.innerText = result[result.length - 1];
 }
 function fillExistingDivs(existing_divs, existing_specifiers, subscriptionsDiv, yukon_state) {
     for (const child of subscriptionsDiv.children) {
@@ -210,6 +212,9 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
             console.error("Failed to unsubscribe: " + response.error);
         }
     });
+    if (!yukon_state.subscriptions[specifiersString]) {
+        yukon_state.subscriptions[specifiersString] = [];
+    }
     subscriptionElement.appendChild(unsubscribeButton);
     let fetchIntervalId = { value: null };
     let lastCurrentMessagesLength = { value: 0 };
@@ -228,6 +233,9 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
     }
     // Fill existing specifiers
     for (const specifier of yukon_state.subscription_specifiers.specifiers) {
+        existing_specifiers[specifier] = true;
+    }
+    for (const specifier of yukon_state.sync_subscription_specifiers.specifiers) {
         existing_specifiers[specifier] = true;
     }
 
