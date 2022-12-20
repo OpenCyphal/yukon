@@ -23,6 +23,9 @@ from flask import jsonify, Response
 
 from pycyphal.presentation.subscription_synchronizer import get_local_reception_timestamp
 from pycyphal.presentation.subscription_synchronizer.monotonic_clustering import MonotonicClusteringSynchronizer
+
+import pycyphal.dsdl
+
 from yukon.domain.synchronized_message_carrier import SynchronizedMessageCarrier
 from yukon.domain.synchronized_message_store import SynchronizedMessageStore
 from yukon.domain.synchronized_message_group import SynchronizedMessageGroup
@@ -543,14 +546,16 @@ class Api:
                     timestamp = None
                     # Missing a messages list and the timestamp
                     synchronized_message_group = SynchronizedMessageGroup()
-                    for message in messages:
+                    for index, message in enumerate(messages):
                         synchronized_message_carrier = SynchronizedMessageCarrier(
-                            message,
+                            pycyphal.dsdl.to_builtin(message[0]),
                             None,
                             counter,
+                            synchronized_subjects_specifier.specifiers[index].subject_id,
                         )
                         counter += 1
                         synchronized_message_group.carriers.append(synchronized_message_carrier)
+                    synchronized_message_store.messages.append(synchronized_message_group)
 
                 synchronizer.receive_in_background(message_receiver)
 

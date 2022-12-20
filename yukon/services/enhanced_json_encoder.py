@@ -11,6 +11,7 @@ import pycyphal
 import uavcan
 from yukon.domain.message_carrier import MessageCarrier
 from yukon.domain.proxy_objects import ReactiveValue
+from yukon.domain.synchronized_message_carrier import SynchronizedMessageCarrier
 
 from yukon.services.value_utils import explode_value
 from yukon.domain.attach_transport_response import AttachTransportResponse
@@ -42,6 +43,16 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         if isinstance(o, MessageCarrier):
             metadata = o.metadata
             metadata["counter"] = o.counter
+            return {
+                o.subject_id: {
+                    "message": o.message,
+                    "_meta_": metadata,
+                }
+            }
+        if isinstance(o, SynchronizedMessageCarrier):
+            metadata = o.metadata
+            metadata["counter"] = o.counter
+            metadata["subject_id"] = o.subject_id
             return {
                 o.subject_id: {
                     "message": o.message,

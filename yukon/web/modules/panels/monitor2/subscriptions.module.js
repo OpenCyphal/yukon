@@ -42,7 +42,7 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
 }
 async function fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, lastCurrentMessagesLength, settings, yukon_state) {
     const result = await yukon_state.zubax_apij.fetch_synchronized_messages_for_specifiers(specifiersString, lastCurrentMessagesLength.value);
-    if (!result) {
+    if (!result || result.error) {
         clearInterval(fetchIntervalId.value);
         pLatestMessage.innerText = "This subscription has been terminated by the server";
         return;
@@ -54,7 +54,7 @@ async function fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, l
     } else {
         lastCurrentMessagesLength.value = current_messages.length + messages.length;
     }
-    pLatestMessage.innerText = result[result.length - 1];
+    pLatestMessage.innerText = JSON.stringify(result[result.length - 1]);
 }
 function fillExistingDivs(existing_divs, existing_specifiers, subscriptionsDiv, yukon_state) {
     for (const child of subscriptionsDiv.children) {
