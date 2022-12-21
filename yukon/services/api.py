@@ -44,7 +44,7 @@ from yukon.services.settings_handler import (
     modify_settings_values_from_a_new_copy,
 )
 from yukon.domain.unsubscribe_request import UnsubscribeRequest
-from yukon.services.utils import get_datatypes_from_packages_directory_path
+from yukon.services.utils import clamp, get_datatypes_from_packages_directory_path, tolerance_from_key_delta
 from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
 from yukon.domain.subject_specifier import SubjectSpecifier
 from yukon.domain.subscribe_request import SubscribeRequest
@@ -540,12 +540,24 @@ class Api:
                     synchronized_subjects_specifier
                 ] = synchronized_message_store
                 counter = 0
+                prev_key: typing.Any = None
 
                 def message_receiver(*messages: typing.Tuple[typing.Any]) -> None:
-                    nonlocal counter
+                    nonlocal counter, prev_key
                     timestamp = None
                     # Missing a messages list and the timestamp
                     synchronized_message_group = SynchronizedMessageGroup()
+                    try:
+                        key = sum(get_local_reception_timestamp(x) for x in messages) / len(messages)
+                        if prev_key is not None:
+                            synchronizer.tolerance = clamp(
+                                (1e-6, 10.0),
+                                (synchronizer.tolerance + tolerance_from_key_delta(prev_key, key)) * 0.5,
+                            )
+                        prev_key = key
+                    except:
+                        tb = traceback.format_exc()
+                        logger.error(tb)
                     for index, message in enumerate(messages):
                         synchronized_message_carrier = SynchronizedMessageCarrier(
                             pycyphal.dsdl.to_builtin(message[0]),
