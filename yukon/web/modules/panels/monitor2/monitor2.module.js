@@ -7,7 +7,7 @@ import {
     getDatatypesForPort
 } from "../../utilities.module.js";
 import { fillSettings } from "./fill_settings.module.js";
-import { highlightElement, highlightElements, removeHighlightsFromObjects, removeHighlightFromElement, unhighlightAll } from "./highlights.module.js";
+import { highlightElement, highlightElements, removeHighlightsFromObjects, removeHighlightFromElement, unhighlightAll, setPortStateAsHiglighted, setPortStateAsUnhiglighted, isPortStateHighlighted } from "./highlights.module.js";
 import { drawSubscriptions } from "./subscriptions.module.js";
 
 const settings = {};
@@ -41,6 +41,7 @@ function comparePorts(a, b) {
 
 export async function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0];
+    yukon_state.monitor2ContainerElement = containerElement;
     const monitor2Div = await waitForElm("#monitor2", 7000, this);
     if (monitor2Div === null) {
         console.error("monitor2Div is null");
@@ -59,10 +60,16 @@ export async function setUpMonitor2Component(container, yukon_state) {
             subscriptionsInnerArea.style.left = settings.SubscriptionsOffset + "px";
             subscriptionsInnerArea.style.top = settings.SubscriptionsVerticalOffset + "px";
             yukon_state.subscription_specifiers = await yukon_state.zubax_apij.get_current_available_subscription_specifiers();
+            yukon_state.sync_subscription_specifiers = await yukon_state.zubax_apij.get_current_available_synchronized_subscription_specifiers();
             if (typeof yukon_state.subscription_specifiers_previous_hash === "undefined" || yukon_state.subscription_specifiers_previous_hash !== yukon_state.subscription_specifiers.hash) {
                 await drawSubscriptions(subscriptionsInnerArea, settings, yukon_state);
             }
             yukon_state.subscription_specifiers_previous_hash = yukon_state.subscription_specifiers_hash;
+            // Do the same for the hash of the synchronized subscriptions
+            if (typeof yukon_state.sync_subscription_specifiers_previous_hash === "undefined" || yukon_state.sync_subscription_specifiers_previous_hash !== yukon_state.sync_subscription_specifiers.hash) {
+                await drawSubscriptions(subscriptionsInnerArea, settings, yukon_state);
+            }
+            yukon_state.sync_subscription_specifiers_previous_hash = yukon_state.sync_subscription_specifiers_hash;
         } else {
             console.warn("Subscriptions offset is not set");
         }
@@ -83,6 +90,8 @@ export async function setUpMonitor2Component(container, yukon_state) {
                 clearTimeout(escape_timer);
                 escape_timer = null;
                 unhighlightAll(linesByPortAndPortType, settings, yukon_state);
+                yukon_state.monitor2PortHighlights = [];
+                yukon_state.monitor2selections = [];
             } else {
                 escape_timer = setTimeout(function () {
                     escape_timer = null;
@@ -143,6 +152,36 @@ function findRelatedObjects(port) {
     });
 }
 
+function changeStateOfElement(portNr, value_of_toggledOn, dontTurnOffRelatedObjects, yukon_state) {
+    if (value_of_toggledOn) {
+        // horizontal_line.style.setProperty("background-color", "red");
+        // arrowhead.style.setProperty("border-top-color", "red");
+        const relatedObjects = findRelatedObjects(portNr);
+        selectPort(portNr, yukon_state);
+        if (!isPortStateHighlighted(portNr, yukon_state)) {
+            setPortStateAsHiglighted(portNr, yukon_state);
+            highlightElements(relatedObjects, settings, yukon_state);
+        } else {
+            console.log("Port " + portNr + " is already highlighted");
+        }
+        relatedObjects.forEach(object => {
+            object["toggledOn"].value = true;
+        })
+    } else {
+        // horizontal_line.style.removeProperty("background-color");
+        // arrowhead.style.setProperty("border-top-color", "pink");
+        const relatedObjects = findRelatedObjects(portNr);
+        unselectPort(portNr, yukon_state);
+        setPortStateAsUnhiglighted(portNr, yukon_state);
+        removeHighlightsFromObjects(relatedObjects, settings, yukon_state);
+        if (!dontTurnOffRelatedObjects) {
+            relatedObjects.forEach(object => {
+                object["toggledOn"].value = false;
+            })
+        }
+    }
+}
+
 function compareAvatar(a, b) {
     if (a.node_id < b.node_id) {
         return -1;
@@ -181,6 +220,32 @@ function positionAndPreparePorts(ports, x_counter, settings, yukon_state) {
         }
     }
 }
+function isPortSelected(portNr, yukon_state) {
+    if (typeof yukon_state.monitor2selections !== undefined && Array.isArray(yukon_state.monitor2selections)) {
+        return yukon_state.monitor2selections.includes(portNr);
+    } else {
+        return false;
+    }
+}
+function selectPort(portNr, yukon_state) {
+    // It returns true if the port was not selected before
+    if (typeof yukon_state.monitor2selections !== undefined && Array.isArray(yukon_state.monitor2selections)) {
+        if (!yukon_state.monitor2selections.includes(portNr)) {
+            yukon_state.monitor2selections.push(portNr);
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        yukon_state.monitor2selections = [portNr];
+        return true;
+    }
+}
+function unselectPort(portNr) {
+    if (typeof yukon_state.monitor2selections !== undefined && Array.isArray(yukon_state.monitor2selections)) {
+        yukon_state.monitor2selections = yukon_state.monitor2selections.filter((p) => p !== portNr);
+    }
+}
 async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     if (!areThereAnyNewOrMissingHashes("monitor2_hash", yukon_state)) {
         updateLastHashes("monitor2_hash", yukon_state);
@@ -192,6 +257,9 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     updateLastHashes("monitor2_hash", yukon_state);
     // Clear the container
     monitor2Div.innerHTML = "";
+    for (const color of settings.HighlightColors) {
+        color.taken = false;
+    }
     // Add all nodes
     let y_counter = { value: settings["PageMarginTop"] };
     yukon_state.monitor2 = {};
@@ -203,6 +271,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 if (port === "") {
                     continue;
                 }
+                setPortStateAsUnhiglighted(port, yukon_state);
                 let alreadyExistingPorts = ports.filter(p => p.port === port && p.type === port_type);
                 if (alreadyExistingPorts.length === 0) {
                     ports.push({ "type": port_type, "port": port, "x_offset": 0 });
@@ -432,27 +501,21 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     //         removeHighlightFromElement(horizontal_line_label, settings, yukon_state);
     //     }
     // });
+
     horizontal_line_collider.addEventListener("click", () => {
         toggledOn.value = !toggledOn.value;
-        if (toggledOn.value) {
-            horizontal_line.style.setProperty("background-color", "red");
-            arrowhead.style.setProperty("border-top-color", "red");
-            const relatedObjects = findRelatedObjects(matchingPort.port);
-            highlightElements(relatedObjects, settings, yukon_state)
-            relatedObjects.forEach(object => {
-                object["toggledOn"].value = true;
-            })
-        } else {
-            horizontal_line.style.removeProperty("background-color");
-            arrowhead.style.setProperty("border-top-color", "pink");
-            const relatedObjects = findRelatedObjects(matchingPort.port);
-            removeHighlightsFromObjects(relatedObjects, settings, yukon_state);
-            relatedObjects.forEach(object => {
-                object["toggledOn"].value = false;
-            })
-        }
-        // ports.find(p => p.port === port && p.type === "pub" || p.type === "srv");
+        changeStateOfElement(matchingPort.port, toggledOn.value, false, yukon_state)
     });
+
+    const normalContext = this;
+    setTimeout(() => {
+        // This is done with a timeout to make sure that all related objects are created,
+        // in this case the vertical lines are created later and here we wait for them to be created
+        // so that they can also be highlighted.
+        // TODO: To reduce the delay, set up a list of callbacks for this when all is rendered otherwise
+        changeStateOfElement.bind(normalContext)(matchingPort.port, isPortSelected(matchingPort.port, yukon_state), true, yukon_state);
+    }, 1000);
+
     const right_end_of_edge = matchingPort.x_offset;
     const left_end_of_edge = settings["NodeXOffset"] + settings["NodeWidth"] - 3 + "px"
     if (matchingPort.type === "pub" || matchingPort.type === "cln") {
@@ -574,21 +637,7 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
         // });
         line_collider.addEventListener("click", () => {
             toggledOn.value = !toggledOn.value;
-            if (toggledOn.value) {
-                line.style.setProperty("background-color", "red");
-                const relatedObjects = findRelatedObjects(port.port);
-                highlightElements(relatedObjects, settings, yukon_state);
-                relatedObjects.forEach(object => {
-                    object["toggledOn"].value = true;
-                })
-            } else {
-                line.style.removeProperty("background-color");
-                const relatedObjects = findRelatedObjects(port.port);
-                removeHighlightsFromObjects(relatedObjects, settings, yukon_state);
-                relatedObjects.forEach(object => {
-                    object["toggledOn"].value = false;
-                });
-            }
+            changeStateOfElement(port.port, toggledOn.value, false, yukon_state);
         });
         monitor2Div.appendChild(line_collider);
         monitor2Div.appendChild(line);

@@ -18,6 +18,7 @@ var yukon_state = {
     // The value object contains { messages: [], counter: 0}
     "subscriptions": {},
     "subscriptions_being_set_up": [],
+    "sync_subscription_specifiers": {},
 
     "existingHashesSet": {},
     "last_slcan_list_hash": null,

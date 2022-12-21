@@ -10,6 +10,32 @@ function pickHighlightColor(objects, settings, yukon_state) {
     }
     return "red";
 }
+export function isPortStateHighlighted(portNr, yukon_state) {
+    if (typeof yukon_state.monitor2PortHighlights !== undefined && Array.isArray(yukon_state.monitor2PortHighlights)) {
+        return yukon_state.monitor2PortHighlights.includes(portNr);
+    } else {
+        return false;
+    }
+}
+export function setPortStateAsHiglighted(portNr, yukon_state) {
+    // It returns true if the port was not selected before
+    if (typeof yukon_state.monitor2PortHighlights !== undefined && Array.isArray(yukon_state.monitor2PortHighlights)) {
+        if (!yukon_state.monitor2PortHighlights.includes(portNr)) {
+            yukon_state.monitor2PortHighlights.push(portNr);
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        yukon_state.monitor2PortHighlights = [portNr];
+        return true;
+    }
+}
+export function setPortStateAsUnhiglighted(portNr, yukon_state) {
+    if (typeof yukon_state.monitor2PortHighlights !== undefined && Array.isArray(yukon_state.monitor2PortHighlights)) {
+        yukon_state.monitor2PortHighlights = yukon_state.monitor2PortHighlights.filter((p) => p !== portNr);
+    }
+}
 export function highlightElement(element, color, settings, yukon_state) {
     if (element.classList.contains("arrowhead")) {
         element.style.setProperty("border-top", "7px solid " + color);

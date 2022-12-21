@@ -7,13 +7,34 @@ from pathlib import Path
 from queue import Empty
 from time import sleep, monotonic
 import logging
+import threading
+import traceback
 
 import yaml
 from uuid import uuid4
 from time import time
 
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader  # type: ignore
+import websockets
+from flask import jsonify, Response
+
+from pycyphal.presentation.subscription_synchronizer import get_local_reception_timestamp
+from pycyphal.presentation.subscription_synchronizer.monotonic_clustering import MonotonicClusteringSynchronizer
+
+import pycyphal.dsdl
+
+from yukon.domain.synchronized_message_carrier import SynchronizedMessageCarrier
+from yukon.domain.synchronized_message_store import SynchronizedMessageStore
+from yukon.domain.synchronized_message_group import SynchronizedMessageGroup
+from yukon.domain.synchronized_subjects_specifier import SynchronizedSubjectsSpecifier
+
+
 from yukon.domain.detach_transport_request import DetachTransportRequest
 from yukon.domain.proxy_objects import ReactiveValue
+from yukon.services.dtype_loader import load_dtype
 from yukon.services.settings_handler import (
     save_settings,
     load_settings,
@@ -23,18 +44,10 @@ from yukon.services.settings_handler import (
     modify_settings_values_from_a_new_copy,
 )
 from yukon.domain.unsubscribe_request import UnsubscribeRequest
-from yukon.services.utils import get_datatypes_from_packages_directory_path
+from yukon.services.utils import clamp, get_datatypes_from_packages_directory_path, tolerance_from_key_delta
 from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
 from yukon.domain.subject_specifier import SubjectSpecifier
 from yukon.domain.subscribe_request import SubscribeRequest
-
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader  # type: ignore
-import websockets
-from flask import jsonify, Response
-
 from yukon.domain.reread_registers_request import RereadRegistersRequest
 from yukon.domain.update_register_log_item import UpdateRegisterLogItem
 from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
@@ -502,10 +515,124 @@ class Api:
         # This jsonify is why I made sure to set up the JSON encoder for dsdl
         return jsonify(mapping)
 
+    def subscribe_synchronized(self, specifiers: str) -> Response:
+        result_ready_event = threading.Event()
+        was_subscription_success: bool = False
+        message: str = ""
+        tolerance = 0.1
+
+        def subscribe_task() -> None:
+            try:
+                specifiers_object = json.loads(specifiers)
+                synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
+                if self.state.cyphal.synchronizers_by_specifier.get(synchronized_subjects_specifier):
+                    raise Exception("Already subscribed to synchronized messages for this specifier.")
+                subscribers = []
+                for dto in synchronized_subjects_specifier.specifiers:
+                    new_subscriber = self.state.cyphal.local_node.make_subscriber(
+                        load_dtype(dto.datatype), dto.subject_id
+                    )
+                    subscribers.append(new_subscriber)
+                synchronizer = MonotonicClusteringSynchronizer(subscribers, get_local_reception_timestamp, tolerance)
+                self.state.cyphal.synchronizers_by_specifier[synchronized_subjects_specifier] = synchronizer
+                synchronized_message_store = SynchronizedMessageStore()
+                self.state.cyphal.synchronized_message_stores[
+                    synchronized_subjects_specifier
+                ] = synchronized_message_store
+                counter = 0
+                prev_key: typing.Any = None
+
+                def message_receiver(*messages: typing.Tuple[typing.Any]) -> None:
+                    nonlocal counter, prev_key
+                    timestamp = None
+                    # Missing a messages list and the timestamp
+                    synchronized_message_group = SynchronizedMessageGroup()
+                    try:
+                        key = sum(get_local_reception_timestamp(x) for x in messages) / len(messages)
+                        if prev_key is not None:
+                            synchronizer.tolerance = clamp(
+                                (1e-6, 10.0),
+                                (synchronizer.tolerance + tolerance_from_key_delta(prev_key, key)) * 0.5,
+                            )
+                        prev_key = key
+                    except:
+                        tb = traceback.format_exc()
+                        logger.error(tb)
+                    for index, message in enumerate(messages):
+                        synchronized_message_carrier = SynchronizedMessageCarrier(
+                            pycyphal.dsdl.to_builtin(message[0]),
+                            None,
+                            counter,
+                            synchronized_subjects_specifier.specifiers[index].subject_id,
+                        )
+                        counter += 1
+                        synchronized_message_group.carriers.append(synchronized_message_carrier)
+                    synchronized_message_store.messages.append(synchronized_message_group)
+
+                synchronizer.receive_in_background(message_receiver)
+
+            except Exception as e:
+                print("Exception in subscribe_synchronized: " + str(e))
+                tb = traceback.format_exc()
+                logger.error(tb)
+                message = tb
+
+            # synchronizer.receive_in_background
+
+        self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(subscribe_task)
+        if result_ready_event.wait(1.7):
+            return jsonify(
+                {
+                    "success": was_subscription_success,
+                    "specifiers": specifiers,
+                    "message": message,
+                    "tolerance": tolerance,
+                }
+            )
+        else:
+            return jsonify(
+                {
+                    "success": False,
+                    "specifiers": specifiers,
+                    "message": "Timed out waiting for a response from the Cyphal worker thread.",
+                    "tolerance": tolerance,
+                }
+            )
+
+    def unsubscribe_synchronized(self, specifiers: str) -> Response:
+        try:
+            specifiers_object = json.loads(specifiers)
+            synchronizer = self.state.cyphal.synchronizers_by_specifier.get(
+                SynchronizedSubjectsSpecifier(specifiers_object)
+            )
+            synchronizer.close()
+            return jsonify({"success": True, "specifiers": specifiers})
+        except:
+            tb = traceback.format_exc()
+            return jsonify({"success": False, "specifiers": specifiers, "message": tb})
+
+    def fetch_synchronized_messages_for_specifiers(self, specifiers: str, counter: int) -> Response:
+        """Specifiers is a JSON serialized list of specifiers."""
+        specifiers_object = json.loads(specifiers)
+        specifier_objects = [SubjectSpecifier.from_string(x) for x in specifiers_object]
+        """An array containing arrays of synchronized messages"""
+        synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
+            SynchronizedSubjectsSpecifier(specifier_objects)
+        )
+        return jsonify(synchronized_messages_store.messages[counter:])
+
     def get_current_available_subscription_specifiers(self) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
         specifiers = []
         for specifier, messages_store in self.state.queues.subscribed_messages.items():
+            specifiers.append(str(specifier))
+        specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
+        return jsonify(specifiers_return_value)
+
+    def get_current_available_synchronized_subscription_specifiers(self) -> Response:
+        """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
+        specifiers = []
+        for specifier, messages_store in self.state.cyphal.synchronized_message_stores.items():
             specifiers.append(str(specifier))
         specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
         return jsonify(specifiers_return_value)

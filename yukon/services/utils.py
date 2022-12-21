@@ -6,6 +6,7 @@ import typing
 from pathlib import Path
 from queue import Queue, Empty
 import logging
+from typing import TypeVar
 
 import pycyphal
 
@@ -82,3 +83,16 @@ def process_dsdl_path(path: Path) -> None:
     #         logger.warning("Failed to import %s", package_folder.name)
     #     finally:
     #         sys.path.remove(str(package_folder.absolute()))
+
+
+# These are for calculating the tolerance for the MonotonicClusteringSynchronizer
+T = TypeVar("T")
+
+
+def tolerance_from_key_delta(old: T, new: T) -> T:
+    return (new - old) * 0.5  # type: ignore
+
+
+def clamp(lo_hi: tuple[T, T], val: T) -> T:
+    lo, hi = lo_hi
+    return min(max(lo, val), hi)  # type: ignore
