@@ -11,6 +11,7 @@ import dronecan
 import pycyphal
 from dronecan.node import Node
 import dronecan.app
+from yukon.domain.publisher import YukonPublisher
 import yukon.services.FileServer
 from yukon.domain.proxy_objects import ReactiveValue
 from yukon.domain.dronecan_traffic_queues import DroneCanTrafficQueues
@@ -119,6 +120,7 @@ class CyphalState:
     synchronizers_by_specifier: Dict[
         SynchronizedSubjectsSpecifier, "pycyphal.presentation.subscription_synchronizer.Synchronizer"
     ] = field(default_factory=dict)
+    publishers_by_id: Dict[UUID, YukonPublisher] = field(default_factory=dict)
     centralized_allocator: Optional[CentralizedAllocator] = field(default_factory=none_factory)
     file_server: Optional[yukon.services.FileServer.FileServer] = field(default_factory=none_factory)
 
