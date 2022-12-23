@@ -1,5 +1,6 @@
 import socket
 import threading
+import time
 import webbrowser
 import typing
 from typing import Optional, Any
@@ -140,7 +141,8 @@ def open_webbrowser(state: GodState) -> None:
     logger.info("Opening web browser")
     tried_webbrowser_open = False
     tried_xdg_open_or_similar = False
-    while not state.gui.is_running_in_browser:
+    browser_not_opened_counter = 0
+    while not state.gui.is_running_in_browser and state.gui.gui_running:
         if not tried_webbrowser_open:
             webbrowser_open_wrapper(f"http://localhost:{state.gui.server_port}/main/main.html")
             tried_webbrowser_open = True
@@ -169,6 +171,11 @@ def open_webbrowser(state: GodState) -> None:
                 "The browser wasn't opened, please open it manually at URL %s",
                 f"http://localhost:{state.gui.server_port}/main/main.html",
             )
+            browser_not_opened_counter += 1
+            if browser_not_opened_counter > 10:
+                logger.error("The browser wasn't opened, exiting")
+                state.gui.gui_running = False
+                sys.exit(1)
         sleep(2)
     print("Good to go, Yukon is now open in a browser.")
 
@@ -177,7 +184,7 @@ def run_server(state: GodState) -> None:
     # Check if the port state.gui.server_port is available, means that it can be used
     # If it is not available, then increment the port number and check again
     # If it is available, then use it
-    while not state.gui.is_port_decided:
+    while not state.gui.is_port_decided and state.gui.gui_running:
         a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         location = ("127.0.0.1", state.gui.server_port)
         is_port_available = a_socket.connect_ex(location) != 0
@@ -257,6 +264,14 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         else:
             start_electron_thread = threading.Thread(target=run_electron, args=[state], daemon=True)
             start_electron_thread.start()
+            # Make a thread that will check if state.is_target_client_known is True and state.is_running_in_browser is False after 10 seconds
+            # If it isn't then try opening a web browser
+            def check_if_electron_is_running() -> None:
+                time.sleep(10)
+                if not state.gui.is_running_in_browser and state.gui.is_target_client_known:
+                    open_webbrowser(state)
+
+            thread = threading.Thread(target=check_if_electron_is_running, daemon=True)
     else:
         os.environ.setdefault("IS_DEBUG", "1")
     if (

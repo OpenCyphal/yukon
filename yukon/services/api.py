@@ -453,12 +453,10 @@ class Api:
             self.state.queues.reread_register_names.put(RereadRegisterNamesRequest(node_id_as_int))
 
     def announce_running_in_electron(self) -> None:
-        self.state.gui.is_running_in_electron = True
         self.state.gui.is_running_in_browser = False
         self.state.gui.is_target_client_known = True
 
     def announce_running_in_browser(self) -> None:
-        self.state.gui.is_running_in_electron = False
         self.state.gui.is_running_in_browser = True
         self.state.gui.is_target_client_known = True
 

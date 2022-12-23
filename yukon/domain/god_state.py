@@ -76,6 +76,7 @@ class QueuesState:
 class GuiState:
     """A class that holds all GUI references used by the god state."""
 
+    # This gui_running is actually an application wide flag that is used to stop the application
     gui_running: bool = True
     last_poll_received: float = 0.0
     time_allowed_between_polls: float = 6.5
