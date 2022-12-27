@@ -568,6 +568,7 @@ class Api:
                     synchronized_message_store.messages.append(synchronized_message_group)
 
                 synchronizer.receive_in_background(message_receiver)
+                result_ready_event.set()
 
             except Exception as e:
                 print("Exception in subscribe_synchronized: " + str(e))

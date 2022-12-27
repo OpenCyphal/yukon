@@ -54,7 +54,13 @@ async function fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, l
     } else {
         lastCurrentMessagesLength.value = current_messages.length + messages.length;
     }
-    const yaml_text = await yukon_state.zubax_api.json_to_yaml(JSON.stringify(result[result.length - 1]));
+    const json_object = result[result.length - 1];
+    if (!json_object) {
+        pLatestMessage.innerHTML = "No messages received yet";
+        return;
+    }
+    const json_text = JSON.stringify(json_object);
+    const yaml_text = await yukon_state.zubax_api.json_to_yaml(json_text);
     if (yaml_text.includes("\n")) {
         pLatestMessage.innerHTML = "";
         const lines_split = yaml_text.split("\n");
@@ -178,7 +184,7 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     // Add a button for unsubscribing
     const unsubscribeButton = document.createElement("button");
     unsubscribeButton.innerText = "Unsubscribe";
-    unsubscribeButton.addEventListener("click", async () => {
+    const unsubscribeHandler = async () => {
         const response = await yukon_state.zubax_apij.unsubscribe(specifier);
         if (response.success) {
             yukon_state.subscription_specifiers.specifiers = yukon_state.subscription_specifiers.specifiers.filter((specifier_) => { return specifier_ !== specifier; });
@@ -186,7 +192,19 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
         } else {
             console.error("Failed to unsubscribe: " + response.error);
         }
-    });
+    };
+    unsubscribeButton.addEventListener("click", unsubscribeHandler);
+
+    subscriptionElement.style.position = "relative";
+
+    const closeButton = document.createElement("button");
+    closeButton.innerText = "X";
+    closeButton.style.borderWidth = "1";
+    closeButton.style.position = "absolute";
+    closeButton.style.right = "0.5em";
+    closeButton.style.top = "0";
+    closeButton.addEventListener("click", unsubscribeHandler);
+    subscriptionElement.appendChild(closeButton);
     if (!yukon_state.subscriptions[specifier]) {
         yukon_state.subscriptions[specifier] = [];
     }
@@ -215,15 +233,29 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     // Add a button for unsubscribing
     const unsubscribeButton = document.createElement("button");
     unsubscribeButton.innerText = "Unsubscribe";
-    unsubscribeButton.addEventListener("click", async () => {
+    const unsubscribeHandler = async () => {
         const response = await yukon_state.zubax_apij.unsubscribe_synchronized(specifiersString);
         if (response.success) {
+            const specifiers_length = yukon_state.sync_subscription_specifiers.specifiers.length;
             yukon_state.sync_subscription_specifiers.specifiers = yukon_state.sync_subscription_specifiers.specifiers.filter((specifier_) => { return specifier_ !== specifiersString; });
+            // Make sure that something was actually removed
+            console.assert(specifiers_length === yukon_state.sync_subscription_specifiers.specifiers.length + 1);
             await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
         } else {
             console.error("Failed to unsubscribe: " + response.error);
         }
-    });
+    };
+    unsubscribeButton.addEventListener("click", unsubscribeHandler);
+    subscriptionElement.style.position = "relative";
+
+    const closeButton = document.createElement("button");
+    closeButton.innerText = "X";
+    closeButton.style.borderWidth = "1";
+    closeButton.style.position = "absolute";
+    closeButton.style.right = "0.5em";
+    closeButton.style.top = "0";
+    closeButton.addEventListener("click", unsubscribeHandler);
+    subscriptionElement.appendChild(closeButton);
     if (!yukon_state.subscriptions[specifiersString]) {
         yukon_state.subscriptions[specifiersString] = [];
     }
@@ -404,6 +436,8 @@ async function subscribeCallback(isSynchronous, subscriptionElement, list_of_sub
             if (response.message && response.message.length > 0) {
                 console.log("A message was returned as a response to the subscription request: " + response.message);
             }
+            // Remove subscriptionElement
+            subscriptionElement.parentElement.removeChild(subscriptionElement);
             console.log("Subscribed to " + response.specifiers);
             console.log("Used tolerance: " + response.tolerance);
         } else {
@@ -443,8 +477,9 @@ function createSubscriptionElementCloseButton(subscriptionElement, subscription,
     closeButton.style.top = "0";
     closeButton.addEventListener("click", () => {
         subscriptionElement.parentElement.removeChild(subscriptionElement);
-        yukon_state.subscriptions_being_set_up = yukon_state.subscriptions_being_set_up.filter(subscription2 => subscription2 !== subscription);
-
+        if (subscription) {
+            yukon_state.subscriptions_being_set_up = yukon_state.subscriptions_being_set_up.filter(subscription2 => subscription2 !== subscription);
+        }
         // Add a header saying "This is a pending subscription, confirm it by selecting a datatype and clicking the button below"
     });
     subscriptionElement.appendChild(closeButton);

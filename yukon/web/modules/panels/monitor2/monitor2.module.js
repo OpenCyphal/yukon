@@ -227,6 +227,13 @@ function isPortSelected(portNr, yukon_state) {
         return false;
     }
 }
+export function getPortType(portNr, yukon_state) {
+    if (typeof yukon_state.monitor2portTypes !== undefined) {
+        return yukon_state.monitor2portTypes[portNr];
+    } else {
+        return undefined;
+    }
+}
 function selectPort(portNr, yukon_state) {
     // It returns true if the port was not selected before
     if (typeof yukon_state.monitor2selections !== undefined && Array.isArray(yukon_state.monitor2selections)) {
@@ -275,6 +282,24 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 let alreadyExistingPorts = ports.filter(p => p.port === port && p.type === port_type);
                 if (alreadyExistingPorts.length === 0) {
                     ports.push({ "type": port_type, "port": port, "x_offset": 0 });
+                    // Fill yukon_state.monitor2portTypes
+                    if (!yukon_state.monitor2portTypes) {
+                        yukon_state.monitor2portTypes = {};
+                    }
+                    switch (port_type) {
+                        case "pub":
+                            yukon_state.monitor2portTypes[port] = "pub";
+                            break;
+                        case "sub":
+                            yukon_state.monitor2portTypes[port] = "pub";
+                            break;
+                        case "srv":
+                            yukon_state.monitor2portTypes[port] = "srv";
+                            break;
+                        case "cln":
+                            yukon_state.monitor2portTypes[port] = "srv";
+                            break;
+                    }
                 }
             }
         }
