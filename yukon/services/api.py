@@ -520,6 +520,7 @@ class Api:
         tolerance = 0.1
 
         def subscribe_task() -> None:
+            nonlocal was_subscription_success, message
             try:
                 specifiers_object = json.loads(specifiers)
                 synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
@@ -568,6 +569,7 @@ class Api:
                     synchronized_message_store.messages.append(synchronized_message_group)
 
                 synchronizer.receive_in_background(message_receiver)
+                was_subscription_success = True
                 result_ready_event.set()
 
             except Exception as e:
