@@ -166,7 +166,7 @@ class GodState:
                         "description": "This will take some more time, the node will be restarted after it gets its node-id.",
                     },
                     "Automatic",
-                    {"value": "Manual", "description": "Haven't implemented this yet "},
+                    {"value": "Manual", "description": "Switch to this to turn off Node allocation"},
                 ],
                 "chosen_value": ReactiveValue("Manual"),
                 "name": "Node allocation",
