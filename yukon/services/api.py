@@ -601,10 +601,11 @@ class Api:
     def unsubscribe_synchronized(self, specifiers: str) -> Response:
         try:
             specifiers_object = json.loads(specifiers)
-            synchronizer = self.state.cyphal.synchronizers_by_specifier.get(
-                SynchronizedSubjectsSpecifier(specifiers_object)
-            )
+            sync_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
+            synchronizer = self.state.cyphal.synchronizers_by_specifier.get(sync_specifier)
             synchronizer.close()
+            del self.state.cyphal.synchronizers_by_specifier[sync_specifier]
+            del self.state.cyphal.synchronized_message_stores[sync_specifier]
             return jsonify({"success": True, "specifiers": specifiers})
         except:
             tb = traceback.format_exc()

@@ -22,7 +22,6 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
     }
     const lastMessageObject = current_messages[current_messages.length - 1];
     if (!lastMessageObject) {
-        pLatestMessage.innerHTML = "No messages received yet";
         return;
     }
     const yaml_text = await yukon_state.zubax_api.json_to_yaml(JSON.stringify(lastMessageObject));
@@ -56,7 +55,6 @@ async function fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, l
     }
     const json_object = result[result.length - 1];
     if (!json_object) {
-        pLatestMessage.innerHTML = "No messages received yet";
         return;
     }
     const json_text = JSON.stringify(json_object);
@@ -230,6 +228,7 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     pLatestMessage.innerText = "Yet to receive messages...";
     subscriptionElement.appendChild(pLatestMessage);
     subscriptionsDiv.appendChild(subscriptionElement);
+    let fetchIntervalId = { value: null };
     // Add a button for unsubscribing
     const unsubscribeButton = document.createElement("button");
     unsubscribeButton.innerText = "Unsubscribe";
@@ -240,6 +239,7 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
             yukon_state.sync_subscription_specifiers.specifiers = yukon_state.sync_subscription_specifiers.specifiers.filter((specifier_) => { return specifier_ !== specifiersString; });
             // Make sure that something was actually removed
             console.assert(specifiers_length === yukon_state.sync_subscription_specifiers.specifiers.length + 1);
+            clearInterval(fetchIntervalId.value);
             await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
         } else {
             console.error("Failed to unsubscribe: " + response.error);
@@ -260,7 +260,7 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
         yukon_state.subscriptions[specifiersString] = [];
     }
     subscriptionElement.appendChild(unsubscribeButton);
-    let fetchIntervalId = { value: null };
+
     let lastCurrentMessagesLength = { value: 0 };
     fetchIntervalId.value = setInterval(() => fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, lastCurrentMessagesLength, settings, yukon_state), 300);
 }
