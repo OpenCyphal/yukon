@@ -453,12 +453,10 @@ class Api:
             self.state.queues.reread_register_names.put(RereadRegisterNamesRequest(node_id_as_int))
 
     def announce_running_in_electron(self) -> None:
-        self.state.gui.is_running_in_electron = True
         self.state.gui.is_running_in_browser = False
         self.state.gui.is_target_client_known = True
 
     def announce_running_in_browser(self) -> None:
-        self.state.gui.is_running_in_electron = False
         self.state.gui.is_running_in_browser = True
         self.state.gui.is_target_client_known = True
 
@@ -522,6 +520,7 @@ class Api:
         tolerance = 0.1
 
         def subscribe_task() -> None:
+            nonlocal was_subscription_success, message
             try:
                 specifiers_object = json.loads(specifiers)
                 synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
@@ -570,6 +569,8 @@ class Api:
                     synchronized_message_store.messages.append(synchronized_message_group)
 
                 synchronizer.receive_in_background(message_receiver)
+                was_subscription_success = True
+                result_ready_event.set()
 
             except Exception as e:
                 print("Exception in subscribe_synchronized: " + str(e))
@@ -602,10 +603,11 @@ class Api:
     def unsubscribe_synchronized(self, specifiers: str) -> Response:
         try:
             specifiers_object = json.loads(specifiers)
-            synchronizer = self.state.cyphal.synchronizers_by_specifier.get(
-                SynchronizedSubjectsSpecifier(specifiers_object)
-            )
+            sync_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
+            synchronizer = self.state.cyphal.synchronizers_by_specifier.get(sync_specifier)
             synchronizer.close()
+            del self.state.cyphal.synchronizers_by_specifier[sync_specifier]
+            del self.state.cyphal.synchronized_message_stores[sync_specifier]
             return jsonify({"success": True, "specifiers": specifiers})
         except:
             tb = traceback.format_exc()

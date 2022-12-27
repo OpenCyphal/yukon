@@ -81,6 +81,12 @@ the repository. It doesn't matter which order that paths are placed in.
 5. Make changes if needed
 6. Merge the pull request
 
+When trying to make sense of the codebase, start from the yukon/services/api.py module. This handles all the requests that the frontend of Yukon makes 
+to the backend and all the other services that the backend calls from there. The cyphal_workers subpackage in services contains a bunch of workers that
+are used by the backend to delegate work to the thread that the Cyphal node is running on. This at least used to be the way it was handled, new code
+is encouraged to just call self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(subscribe_task) (see reference in code) to schedule a task
+on the same thread that the Cyphal node is running on.
+
 # Code style
 
 - Use black for formatting

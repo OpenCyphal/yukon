@@ -15,14 +15,14 @@ import {
     unselectAll,
     make_select_column,
     moreThanOneSelectedConstraint,
-    oneSelectedConstraint
+    oneSelectedConstraint,
 } from "./panels/registers.selection.module.js";
 import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./panels/registers.module.js";
 import { rereadNode, rereadPairs } from "./panels/registers.data.module.js";
 import { downloadIcon, copyIcon, pasteIcon } from "./icons.module.js";
 import { copyObject } from "./utilities.module.js";
 import { copyTextToClipboard } from "./copy.module.js";
-
+import { getPortType } from "./panels/monitor2/monitor2.module.js";
 export function make_context_menus(yukon_state) {
     const addLocalMessage = yukon_state.addLocalMessage;
     const importFromSelectedConfigurationMenuElement = {
@@ -476,13 +476,34 @@ export function make_context_menus(yukon_state) {
                     adjust: async (contextMenuContext, element, button) => {
                         const portsSelected = yukon_state.monitor2selections;
                         const portsSelectedNr = portsSelected.length;
+                        const portsSelectedAndAllowed = [];
                         // TODO: Find which of the numbers correspond to publishers (don't want to subscribe to services)
+                        for (const portNr of portsSelected) {
+                            const portType = getPortType(portNr, yukon_state);
+                            if (portType === "pub") {
+                                portsSelectedAndAllowed.push(portNr);
+                            } else {
+                                console.log("Not subscribing to port " + portNr + " because it's not a publisher");
+                                console.log("portType: " + portType);
+                            }
+                        }
                         if (portsSelectedNr > 1) {
-                            button.innerHTML = "Subscribe to " + portsSelected.join(", ") + " synchronously";
+                            button.innerHTML = "Subscribe to " + portsSelectedAndAllowed.join(", ") + " synchronously";
                         }
                     },
                     click: async (e, elementOpenedOn) => {
-                        yukon_state.subscriptions_being_set_up.push({ subject_ids: yukon_state.monitor2selections.slice() });
+                        const portsSelectedAndAllowed = [];
+                        // TODO: Find which of the numbers correspond to publishers (don't want to subscribe to services)
+                        for (const portNr of yukon_state.monitor2selections) {
+                            const portType = getPortType(portNr, yukon_state);
+                            if (portType === "pub") {
+                                portsSelectedAndAllowed.push(portNr);
+                            } else {
+                                console.log("Not subscribing to port " + portNr + " because it's not a publisher");
+                                console.log("portType: " + portType);
+                            }
+                        }
+                        yukon_state.subscriptions_being_set_up.push({ subject_ids: portsSelectedAndAllowed.slice() });
                     }
                 }
             },
@@ -492,13 +513,34 @@ export function make_context_menus(yukon_state) {
                     adjust: async (contextMenuContext, element, button) => {
                         const portsSelected = yukon_state.monitor2selections;
                         const portsSelectedNr = portsSelected.length;
+                        const portsSelectedAndAllowed = [];
                         // TODO: Find which of the numbers correspond to publishers (don't want to subscribe to services)
+                        for (const portNr of portsSelected) {
+                            const portType = getPortType(portNr, yukon_state);
+                            if (portType === "pub") {
+                                portsSelectedAndAllowed.push(portNr);
+                            } else {
+                                console.log("Not subscribing to port " + portNr + " because it's not a publisher");
+                                console.log("portType: " + portType);
+                            }
+                        }
                         if (portsSelectedNr > 1) {
-                            button.innerHTML = "Subscribe to " + portsSelected.join(", ") + " separately";
+                            button.innerHTML = "Subscribe to " + portsSelectedAndAllowed.join(", ") + " separately";
                         }
                     },
                     click: async (e, elementOpenedOn) => {
+                        const portsSelectedAndAllowed = [];
+                        // TODO: Find which of the numbers correspond to publishers (don't want to subscribe to services)
                         for (const portNr of yukon_state.monitor2selections) {
+                            const portType = getPortType(portNr, yukon_state);
+                            if (portType === "pub") {
+                                portsSelectedAndAllowed.push(portNr);
+                            } else {
+                                console.log("Not subscribing to port " + portNr + " because it's not a publisher");
+                                console.log("portType: " + portType);
+                            }
+                        }
+                        for (const portNr of portsSelectedAndAllowed) {
                             yukon_state.subscriptions_being_set_up.push({ subject_id: portNr });
                         }
                     }
