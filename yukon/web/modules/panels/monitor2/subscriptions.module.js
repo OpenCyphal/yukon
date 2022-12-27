@@ -54,7 +54,19 @@ async function fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, l
     } else {
         lastCurrentMessagesLength.value = current_messages.length + messages.length;
     }
-    pLatestMessage.innerText = JSON.stringify(result[result.length - 1]);
+    const yaml_text = await yukon_state.zubax_api.json_to_yaml(JSON.stringify(result[result.length - 1]));
+    if (yaml_text.includes("\n")) {
+        pLatestMessage.innerHTML = "";
+        const lines_split = yaml_text.split("\n");
+        for (const line of lines_split) {
+            const p = document.createElement("p");
+            p.style.whiteSpace = "pre-wrap";
+            p.innerHTML = line;
+            pLatestMessage.appendChild(p);
+        }
+    } else {
+        pLatestMessage.innerHTML = yaml_text;
+    }
 }
 function fillExistingDivs(existing_divs, existing_specifiers, subscriptionsDiv, yukon_state) {
     for (const child of subscriptionsDiv.children) {
