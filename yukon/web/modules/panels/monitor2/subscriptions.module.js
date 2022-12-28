@@ -30,8 +30,12 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
         pLatestMessage.innerHTML = "";
         const lines_split = yaml_text.split("\n");
         for (const line of lines_split) {
+            if (line.trim() === "") {
+                continue;
+            }
             const p = document.createElement("p");
             p.style.whiteSpace = "pre-wrap";
+            p.style.marginBottom = "0";
             p.innerHTML = line;
             pLatestMessage.appendChild(p);
         }
@@ -63,8 +67,12 @@ async function fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, l
         pLatestMessage.innerHTML = "";
         const lines_split = yaml_text.split("\n");
         for (const line of lines_split) {
+            if (line.trim() === "") {
+                continue;
+            }
             const p = document.createElement("p");
             p.style.whiteSpace = "pre-wrap";
+            p.style.marginBottom = "0";
             p.innerHTML = line;
             pLatestMessage.appendChild(p);
         }
@@ -161,6 +169,7 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     subscriptionElement.classList.add("subscription");
     subscriptionElement.setAttribute("data-specifier", specifier);
     const pLatestMessage = document.createElement("p");
+    pLatestMessage.style.marginBottom = "0";
     pLatestMessage.innerText = "Yet to receive messages...";
     subscriptionElement.appendChild(pLatestMessage);
 
@@ -247,6 +256,7 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     header2.innerText = specifiersString;
     subscriptionElement.appendChild(header2);
     const pLatestMessage = document.createElement("p");
+    pLatestMessage.style.marginBottom = "0";
     pLatestMessage.innerText = "Yet to receive messages...";
     subscriptionElement.appendChild(pLatestMessage);
     subscriptionsDiv.appendChild(subscriptionElement);
