@@ -29,7 +29,7 @@ def launch_yes_no_dialog(text, timeout=5000):
     "Some text to display in the popup and a timeout in milliseconds"
     root = tk.Tk()
     d = MyDialog(root, text)
-    d.title("Yukon, Close others?")
+    d.title("Yukon: Close others?")
     root.attributes("-alpha", 0.0)
     root.wm_state("iconic")
     # Make the dialog box appear in the taskbar
@@ -38,7 +38,7 @@ def launch_yes_no_dialog(text, timeout=5000):
     root.title("Yukon - Don't touch")
     if not sys.platform.lower().startswith("win"):
         root.withdraw()
-    root.after(timeout, d.yes)
+    root.after(timeout, d.no)
     root.wait_window(d)
     root.destroy()
     return d.answer
