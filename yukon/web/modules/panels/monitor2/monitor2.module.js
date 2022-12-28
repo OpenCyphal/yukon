@@ -402,6 +402,38 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         }
         node.appendChild(valueDiv);
     }
+    // Add an empty label in a variable called feedbackMessage
+    const feedbackMessage = document.createElement("div");
+    feedbackMessage.classList.add("feedback_message");
+    feedbackMessage.style.display = "none";
+    node.appendChild(feedbackMessage);
+    const neededButtons = [{ "name": "Restart", "command": "65535" }, { "name": "Save persistent states", "command": "65530" }, { "name": "Emergency stop", "command": "65531" }];
+    for (const button of neededButtons) {
+        const btnButton = document.createElement("button");
+        btnButton.classList.add("btn_button");
+        btnButton.innerHTML = button.name;
+        btnButton.onclick = async () => {
+            const result = await yukon_state.zubax_apij.send_command(avatar.node_id, button.command, "");
+            if (!result.success) {
+                feedbackMessage.classList.remove("success");
+                feedbackMessage.style.display = "block";
+                if (result.message) {
+                    feedbackMessage.innerHTML = result.message;
+                } else {
+                    feedbackMessage.innerHTML = "";
+                }
+            } else {
+                feedbackMessage.classList.add("success");
+                feedbackMessage.style.display = "block";
+                if (result.message) {
+                    feedbackMessage.innerHTML = result.message;
+                } else {
+                    feedbackMessage.innerHTML = "";
+                }
+            }
+        };
+        node.appendChild(btnButton);
+    }
     return node;
 }
 function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, settings, yukon_state) {
