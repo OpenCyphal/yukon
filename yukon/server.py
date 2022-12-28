@@ -6,9 +6,18 @@ import typing
 
 from inspect import signature
 import sys
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, request
 from flask.blueprints import T_after_request
 from werkzeug.serving import WSGIRequestHandler
+import yaml
+
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader  # type: ignore
+from yukon.domain.subject_specifier import SubjectSpecifier
+from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
+from yukon.services._dumper import Dumper
 
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.domain.god_state import GodState
@@ -70,3 +79,29 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
             logger.error("Arguments used calling the API %s", json.dumps(_object["arguments"]))
             logger.critical(tb)
             return jsonify({"error": tb})
+
+    @server.route("/api/get_latest_subscription_message", methods=["GET"])
+    def get_latest_subscription_message() -> typing.Any:
+        if not request.args.get("message_specifier"):
+            return jsonify({"error": "Please provide a message_specifier query parameter"})
+        specifier1 = SubjectSpecifier.from_string(request.args.get("message_specifier"))
+        message_store = state.queues.subscribed_messages[specifier1]
+        serializable_object = message_store.messages[message_store.counter - 1]
+        if not request.args.get("as_yaml"):
+            return jsonify(serializable_object)
+        else:
+            text_response = Dumper().dumps(serializable_object)
+            return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
+
+    @server.route("/api/get_all_subscription_messages", methods=["GET"])
+    def get_all_subscription_messages() -> typing.Any:
+        if not request.args.get("message_specifier"):
+            return jsonify({"error": "Please provide a message_specifier query parameter"})
+        specifier1 = SubjectSpecifier.from_string(request.args.get("message_specifier"))
+        message_store = state.queues.subscribed_messages[specifier1]
+        serializable_object = message_store.messages
+        if not request.args.get("as_yaml"):
+            return jsonify(serializable_object)
+        else:
+            text_response = Dumper().dumps(serializable_object)
+            return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")

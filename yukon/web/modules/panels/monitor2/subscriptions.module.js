@@ -179,6 +179,28 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     divLogToConsole.appendChild(labelLogToConsole);
     subscriptionElement.appendChild(divLogToConsole);
 
+    // Add a button for opening logs
+    const openLogsButton = document.createElement("button");
+    openLogsButton.innerText = "Open logs, when open CTRL+R to reload";
+    const openLogsHandler = async () => {
+        // Open a new tab at http://localhost:5000/api/get_all_subscription_messages?message_specifier=subject_id:datatype
+        const url = "http://localhost:5000/api/get_all_subscription_messages?message_specifier=" + specifier;
+        window.open(url, '_blank');
+    };
+    openLogsButton.addEventListener("click", openLogsHandler);
+    subscriptionElement.appendChild(openLogsButton);
+
+    // Add a button for opening logs
+    const openLatestMessage = document.createElement("button");
+    openLatestMessage.innerText = "Open latest message, when open CTRL+R to reload";
+    const openLatestHandler = async () => {
+        // Open a new tab at http://localhost:5000/api/get_all_subscription_messages?message_specifier=subject_id:datatype
+        const url = "http://localhost:5000/api/get_latest_subscription_message?message_specifier=" + specifier;
+        window.open(url, '_blank');
+    };
+    openLatestMessage.addEventListener("click", openLatestHandler);
+    subscriptionElement.appendChild(openLatestMessage);
+
     // Add a button for unsubscribing
     const unsubscribeButton = document.createElement("button");
     unsubscribeButton.innerText = "Unsubscribe";
