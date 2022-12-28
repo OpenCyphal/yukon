@@ -1,8 +1,6 @@
-import signal
 import socket
 import threading
 import time
-import tkinter.messagebox
 import webbrowser
 import typing
 from typing import Optional, Any
@@ -230,6 +228,29 @@ def find_yukon_processes() -> typing.List[psutil.Process]:
     return yukon_processes
 
 
+def handle_headless_yukon(state: GodState) -> None:
+    if (
+        state.gui.is_headless
+        and os.environ.get("YUKON_UDP_IFACE")
+        and os.environ.get("YUKON_NODE_ID")
+        and os.environ.get("YUKON_UDP_MTU")
+    ):
+        interface: Interface = Interface()
+        interface.is_udp = True
+        interface.udp_iface = os.environ.get("YUKON_UDP_IFACE")
+        interface.udp_mtu = int(os.environ.get("YUKON_UDP_MTU"))  # type: ignore
+        atr: AttachTransportRequest = AttachTransportRequest(
+            interface, int(os.environ.get("YUKON_NODE_ID"))  # type: ignore
+        )
+        state.queues.attach_transport.put(atr)
+        required_queue_timeout: Optional[int] = 4
+        if os.environ.get("IS_DEBUG"):
+            required_queue_timeout = None
+        response: AttachTransportResponse = state.queues.attach_transport_response.get(timeout=required_queue_timeout)
+        if not response.is_success:
+            raise Exception("Failed to attach transport", response.message)
+
+
 def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     loading_settings_into_yukon(state)
     set_logging_levels()
@@ -267,7 +288,8 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         else:
             start_electron_thread = threading.Thread(target=run_electron, args=[state], daemon=True)
             start_electron_thread.start()
-            # Make a thread that will check if state.is_target_client_known is True and state.is_running_in_browser is False after 10 seconds
+            # Make a thread that will check if state.is_target_client_known is True
+            # and state.is_running_in_browser is False after 10 seconds
             # If it isn't then try opening a web browser
             def check_if_electron_is_running() -> None:
                 time.sleep(10)
@@ -277,26 +299,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
             thread = threading.Thread(target=check_if_electron_is_running, daemon=True)
     else:
         os.environ.setdefault("IS_DEBUG", "1")
-    if (
-        state.gui.is_headless
-        and os.environ.get("YUKON_UDP_IFACE")
-        and os.environ.get("YUKON_NODE_ID")
-        and os.environ.get("YUKON_UDP_MTU")
-    ):
-        interface: Interface = Interface()
-        interface.is_udp = True
-        interface.udp_iface = os.environ.get("YUKON_UDP_IFACE")
-        interface.udp_mtu = int(os.environ.get("YUKON_UDP_MTU"))  # type: ignore
-        atr: AttachTransportRequest = AttachTransportRequest(
-            interface, int(os.environ.get("YUKON_NODE_ID"))  # type: ignore
-        )
-        state.queues.attach_transport.put(atr)
-        required_queue_timeout: Optional[int] = 4
-        if os.environ.get("IS_DEBUG"):
-            required_queue_timeout = None
-        response: AttachTransportResponse = state.queues.attach_transport_response.get(timeout=required_queue_timeout)
-        if not response.is_success:
-            raise Exception("Failed to attach transport", response.message)
+    handle_headless_yukon(state)
     while True:
         sleep(1)
         time_since_last_poll = monotonic() - state.gui.last_poll_received

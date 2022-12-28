@@ -9,14 +9,8 @@ import sys
 from flask import Flask, Response, jsonify, request
 from flask.blueprints import T_after_request
 from werkzeug.serving import WSGIRequestHandler
-import yaml
 
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader  # type: ignore
 from yukon.domain.subject_specifier import SubjectSpecifier
-from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
 from yukon.services._dumper import Dumper
 
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
@@ -89,9 +83,9 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
         serializable_object = message_store.messages[message_store.counter - 1]
         if not request.args.get("as_yaml"):
             return jsonify(serializable_object)
-        else:
-            text_response = Dumper().dumps(serializable_object)
-            return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
+
+        text_response = Dumper().dumps(serializable_object)
+        return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
 
     @server.route("/api/get_all_subscription_messages", methods=["GET"])
     def get_all_subscription_messages() -> typing.Any:
@@ -102,6 +96,6 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
         serializable_object = message_store.messages
         if not request.args.get("as_yaml"):
             return jsonify(serializable_object)
-        else:
-            text_response = Dumper().dumps(serializable_object)
-            return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
+
+        text_response = Dumper().dumps(serializable_object)
+        return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
