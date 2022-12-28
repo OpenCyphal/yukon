@@ -1,6 +1,8 @@
+import signal
 import socket
 import threading
 import time
+import tkinter.messagebox
 import webbrowser
 import typing
 from typing import Optional, Any
@@ -16,6 +18,7 @@ import mimetypes
 
 import psutil
 import sentry_sdk
+from yukon.custom_tk_dialog import launch_yes_no_dialog
 
 from yukon.services.settings_handler import loading_settings_into_yukon
 from yukon.services.cyphal_worker.cyphal_worker import cyphal_worker
@@ -333,9 +336,18 @@ async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arg
     found_yukons = find_yukon_processes()
     for proc in found_yukons:
         logger.info("Found Yukon process: %r", proc)
-    if len(found_yukons) > 1:  # There are some subprocesses actually too and these are counted here I am afraid
+    if len(found_yukons) > 0:  # There are some subprocesses actually too and these are counted here I am afraid
         logger.warning("Yukon is already running.")
         logger.warning("This might be unintentional.")
+
+        if launch_yes_no_dialog("Would you like to close " + str(len(found_yukons)) + " other Yukon instances?"):
+            logger.warning("Closing other Yukon instances.")
+            for proc in found_yukons:
+                id_of_parent_process = proc.ppid()
+                parent = psutil.Process(id_of_parent_process)
+                for child in parent.children(recursive=True):  # or parent.children() for recursive=False
+                    child.kill()
+
     else:
         logger.info("No other Yukon is not running.")
     asyncio.get_event_loop().slow_callback_duration = 35
