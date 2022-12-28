@@ -140,7 +140,7 @@ export function initTransports(container, yukon_state) {
 
         switch (currentSelectedTransportType[1]) {
             case transports.CAN.MANUAL:
-                h1TransportType.innerHTML = "A connection string";
+                h1TransportType.innerHTML = "Connection string";
                 divSelectTransport.style.display = "none";
                 pythoncanlink.style.display = "block";
                 break;
