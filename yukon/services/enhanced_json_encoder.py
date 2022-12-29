@@ -12,6 +12,8 @@ import uavcan
 from yukon.domain.subscriptions.message_carrier import MessageCarrier
 from yukon.domain.reactive_proxy_objects import ReactiveValue
 from yukon.domain.subscriptions.synchronized_message_carrier import SynchronizedMessageCarrier
+from yukon.domain.subscriptions.synchronized_message_group import SynchronizedMessageGroup
+from yukon.domain.subscriptions.synchronized_message_store import SynchronizedMessageStore
 
 from yukon.services.value_utils import explode_value
 from yukon.domain.transport.attach_transport_response import AttachTransportResponse
@@ -49,10 +51,16 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                     "_meta_": metadata,
                 }
             }
+        if isinstance(o, SynchronizedMessageStore):
+            return o.messages
+        if isinstance(o, SynchronizedMessageGroup):
+            return o.carriers
         if isinstance(o, SynchronizedMessageCarrier):
-            metadata = o.metadata
-            metadata["counter"] = o.counter
-            metadata["subject_id"] = o.subject_id
+            metadata = None
+            if o.metadata:
+                metadata = o.metadata
+                metadata["counter"] = o.counter
+                metadata["subject_id"] = o.subject_id
             return {
                 o.subject_id: {
                     "message": o.message,
