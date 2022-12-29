@@ -12,7 +12,7 @@ import pycyphal
 from dronecan.node import Node
 import dronecan.app
 import yukon.services.FileServer
-from yukon.domain.proxy_objects import ReactiveValue
+from yukon.domain.reactive_proxy_objects import ReactiveValue
 from yukon.domain.dronecan_traffic_queues import DroneCanTrafficQueues
 from yukon.domain.subscriptions.synchronized_subjects_specifier import SynchronizedSubjectsSpecifier
 from yukon.domain.subscriptions.synchronized_message_store import SynchronizedMessageStore
@@ -188,7 +188,7 @@ class GodState:
                 "Node width": ReactiveValue(250),
                 "Distance per horizontal connection": ReactiveValue(20),
                 "Show name above datatype": ReactiveValue(False),
-                "Highlight colors": ["red", "blue", "green", "yellow", "orange", "purple", "brown"],
+                "Highlight colors": ["red", "green", "yellow", "orange", "purple", "brown", "aquamarine", "deeppink"],
             },
         }
         self.callbacks: typing.Any = {
