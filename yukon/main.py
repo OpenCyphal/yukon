@@ -1,3 +1,4 @@
+import signal
 import socket
 import threading
 import time
@@ -78,6 +79,7 @@ def run_electron(state: GodState) -> None:
                         if "electron: symbol lookup error" in line1:
                             electron_logger.error("There was an error while trying to run the electron app")
                             exit_code = 1
+                            p.kill()
                             break
                         electron_logger.info(line1)
 
@@ -90,6 +92,7 @@ def run_electron(state: GodState) -> None:
                         if "electron: symbol lookup error" in line2:
                             electron_logger.error("There was an error while trying to run the electron app")
                             exit_code = 1
+                            p.kill()
                             break
 
             stdout_thread = threading.Thread(target=receive_stdout, daemon=True)
@@ -176,9 +179,13 @@ def open_webbrowser(state: GodState) -> None:
             if browser_not_opened_counter > 10:
                 logger.error("The browser wasn't opened, exiting")
                 state.gui.gui_running = False
-                sys.exit(1)
+                # Send a sigterm signal
+                os.kill(os.getpid(), signal.SIGTERM)
         sleep(2)
-    print("Good to go, Yukon is now open in a browser.")
+    if state.gui.gui_running:
+        print("Good to go, Yukon is now open in a browser.")
+    else:
+        print("Open webbrowser thread is closed.")
 
 
 def run_server(state: GodState) -> None:
