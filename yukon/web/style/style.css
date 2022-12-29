@@ -211,6 +211,7 @@ body {
 
 #toolbar button {
     border: 1px solid #000;
+    height: 1.7em;
     border-radius: 0.25em;
     background-color: rgb(135, 135, 135);
     color: #fff;
@@ -224,7 +225,6 @@ body {
     margin-right: 2px;
     padding-bottom: 4px;
     border: 1px solid #cccccc;
-    border-bottom: none
 }
 
 #toolbar button:hover {
