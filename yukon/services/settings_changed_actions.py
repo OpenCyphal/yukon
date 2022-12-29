@@ -16,6 +16,28 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+def set_udp_server_handlers(state: "yukon.domain.god_state.GodState") -> None:
+    setting = state.settings.get("UDP subscription output")
+    if not setting:
+        logger.error("No setting for UDP subscription output")
+        return
+    is_setting_enabled = setting.get("Enabled")
+
+    def _udp_setting_change(should_be_running: bool):
+        if state.cyphal.udp_server:
+            if not should_be_running:
+                logger.info("UDP server is now " + "disabled")
+                state.cyphal.udp_server.close()
+                state.cyphal.udp_server = None
+        else:
+            if should_be_running:
+                logger.info("UDP server is now " + "enabled")
+                state.cyphal.udp_server = yukon.services.udp_server.UdpServer(state.cyphal.local_node)
+                state.cyphal.udp_server.start()
+
+    is_setting_enabled.connect(_udp_setting_change)
+
+
 def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
     s1 = state.settings.get("DroneCAN firmware substitution")
     if s1:

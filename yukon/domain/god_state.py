@@ -190,6 +190,11 @@ class GodState:
                 "Show name above datatype": ReactiveValue(False),
                 "Highlight colors": ["red", "green", "yellow", "orange", "purple", "brown", "aquamarine", "deeppink"],
             },
+            "UDP subscription output": {
+                "Enabled": ReactiveValue(False),
+                "IP address": ReactiveValue("127.0.0.1"),
+                "Port": ReactiveValue(9870),
+            },
         }
         self.callbacks: typing.Any = {
             "yukon_node_created": [],

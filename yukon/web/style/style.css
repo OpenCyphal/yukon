@@ -2,8 +2,7 @@
     box-sizing: border-box;
 }
 
-#messages-list {
-}
+#messages-list {}
 
 #messages-list textarea {
     display: block;
@@ -136,7 +135,7 @@ textarea#textOut {
     color: #fff !important;
 }
 
-.white-text ~ * {
+.white-text~* {
     color: #fff !important;
 }
 
@@ -190,7 +189,7 @@ body {
     height: calc(100% - 0.2em);
 }
 
-#toolbar.shown ~ #layout {
+#toolbar.shown~#layout {
     height: calc(100% - 2.1em);
 }
 
@@ -382,4 +381,8 @@ button#btnShowHideToolbar:active {
 
 #btnRefreshConfigurationFromDisk {
     display: none;
+}
+
+#settings-div .input-group {
+    align-items: baseline;
 }
