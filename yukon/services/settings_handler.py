@@ -13,7 +13,7 @@ from collections.abc import MutableSequence
 from ruamel import yaml
 from ruamel.yaml.scanner import ScannerError
 
-from yukon.domain.proxy_objects import ReactiveValue
+from yukon.domain.reactive_proxy_objects import ReactiveValue
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.services.flash_dronecan_firmware_with_cyphal_firmware import run_dronecan_firmware_updater
 from yukon.services.settings_changed_actions import set_handlers_for_configuration_changes

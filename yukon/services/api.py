@@ -33,7 +33,7 @@ from yukon.domain.subscriptions.synchronized_subjects_specifier import Synchroni
 
 
 from yukon.domain.transport.detach_transport_request import DetachTransportRequest
-from yukon.domain.proxy_objects import ReactiveValue
+from yukon.domain.reactive_proxy_objects import ReactiveValue
 from yukon.services.dtype_loader import load_dtype
 from yukon.services.settings_handler import (
     save_settings,
