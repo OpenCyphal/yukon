@@ -427,8 +427,10 @@ export function make_context_menus(yukon_state) {
                             console.log("portType: " + portType);
                         }
                     }
-                    if (portsSelectedNr > 1) {
+                    if (portsSelectedAndAllowed.length > 1) {
                         button.innerHTML = "Subscribe to " + portsSelectedAndAllowed.join(", ") + " synchronously";
+                    } else {
+                        element.parentElement.removeChild(element);
                     }
                 },
                 click: async (e, elementOpenedOn) => {
@@ -464,8 +466,10 @@ export function make_context_menus(yukon_state) {
                             console.log("portType: " + portType);
                         }
                     }
-                    if (portsSelectedNr > 1) {
+                    if (portsSelectedAndAllowed.length > 1) {
                         button.innerHTML = "Subscribe to " + portsSelectedAndAllowed.join(", ") + " separately";
+                    } else {
+                        element.parentElement.removeChild(element);
                     }
                 },
                 click: async (e, elementOpenedOn) => {
@@ -480,6 +484,7 @@ export function make_context_menus(yukon_state) {
                             console.log("portType: " + portType);
                         }
                     }
+
                     for (const portNr of portsSelectedAndAllowed) {
                         yukon_state.subscriptions_being_set_up.push({ subject_id: portNr });
                     }

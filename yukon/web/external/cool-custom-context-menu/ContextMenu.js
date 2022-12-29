@@ -118,6 +118,10 @@ class ContextMenu {
                 if (this.executeOnOpen) {
                     this.executeOnOpen.forEach((func) => func());
                 }
+                // If there are no elements remaining after the adjust function runs, don't show the menu
+                if (this.renderedMenu.children.length === 0) {
+                    return;
+                }
                 this.isOpened = true;
 
                 const { clientX, clientY } = e;
