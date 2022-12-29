@@ -38,7 +38,7 @@ async def do_attach_transport_work(state: GodState, atr: AttachTransportRequest)
             new_transport.close()
             try:
                 state.cyphal.pseudo_transport.detach_inferior(new_transport)
-            except pycyphal.transport.TransportError:
+            except (pycyphal.transport.TransportError, ValueError):
                 _logger.debug("Transport already detached", exc_info=True)
             raise
         state.cyphal.inferior_transports_by_interface_hashes[str(hash(atr.requested_interface))] = new_transport
