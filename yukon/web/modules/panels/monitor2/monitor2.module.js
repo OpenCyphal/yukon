@@ -30,10 +30,10 @@ function comparePorts(a, b) {
     if (aPortOrder > bPortOrder) {
         return 1;
     }
-    if (a.port < b.port) {
+    if (parseInt(a.port) < parseInt(b.port)) {
         return 1;
     }
-    if (a.port > b.port) {
+    if (parseInt(a.port) > parseInt(b.port)) {
         return -1;
     }
     return 0;
