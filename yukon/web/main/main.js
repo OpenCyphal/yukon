@@ -9,7 +9,7 @@ import {
     loadConfigurationFromOpenDialog,
     return_all_selected_registers_as_yaml
 } from '../modules/yaml.configurations.module.js';
-import { create_registers_table, update_tables } from '../modules/panels/registers.module.js';
+import { setUpRegistersComponent } from '../modules/panels/registers.module.js';
 import {
     get_all_selected_pairs,
     unselectAll,
@@ -58,30 +58,6 @@ yukon_state.port = urlParams.get('port');
 
         setInterval(display_avatars, 3000);
         update_directed_graph(yukon_state);
-    }
-
-
-    async function setUpRegistersComponent(immediateCreateTable) {
-        if (immediateCreateTable) {
-            update_tables(true);
-        }
-        setInterval(async () => {
-            update_tables();
-        }, 893);
-        let timer = null;
-        const iRegistersFilter = document.getElementById('iRegistersFilter');
-        iRegistersFilter.addEventListener("input", function () {
-            if (timer) {
-                clearTimeout(timer);
-            }
-            timer = setTimeout(function () {
-                create_registers_table(iRegistersFilter.value, yukon_state)
-            }, 500);
-        });
-        const btnImportRegistersConfig = document.getElementById('btnImportRegistersConfig');
-        btnImportRegistersConfig.addEventListener('click', async function (click_event) {
-            await loadConfigurationFromOpenDialog(false, yukon_state, click_event)
-        });
     }
 
     yukon_state.addLocalMessage = function (message, severity) {
@@ -178,7 +154,7 @@ yukon_state.port = urlParams.get('port');
                     registerComponentAction("../registers.panel.html", "registersComponent", container, async () => {
                         const containerElement = container.getElement()[0];
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
-                        await setUpRegistersComponent.bind(outsideContext)(true);
+                        await setUpRegistersComponent.bind(outsideContext)(container, true, yukon_state);
                     });
                 });
                 myLayout.registerComponent('statusComponent', function (container, componentState) {

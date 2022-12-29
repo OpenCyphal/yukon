@@ -1,5 +1,5 @@
-import {updateRegistersTableColors, showCellValue} from "./registers.module.js";
-import {rereadPairs} from "./registers.data.module.js";
+import { updateRegistersTableColors, showCellValue } from "./registers.module.js";
+import { rereadPairs } from "./registers.data.module.js";
 
 // A pair is a pair of nodeid and register name
 export function get_all_selected_pairs(options, yukon_state) {
@@ -69,7 +69,7 @@ export function getAllEntireColumnsThatAreSelected(yukon_state) {
 
 export function make_select_column(node_id, is_mouse_over, yukon_state) {
     return function (event) {
-        if (yukon_state.is_cursor_snapping_column || yukon_state.is_cursor_dragging_column) {
+        if (yukon_state.is_cursor_snapping_column || yukon_state.is_cursor_dragging_column || yukon_state.grabbing_in_registers_view) {
             return;
         }
         if (is_mouse_over) {
@@ -202,6 +202,9 @@ export function make_select_row(register_name, is_mouse_over, yukon_state) {
         if (!event.buttons == 1 || event.buttons == 2) {
             return;
         }
+        if (yukon_state.grabbing_in_registers_view) {
+            return;
+        }
         // }
         // I want to make sure that the user is not selecting text, that's not when we activate this.
         // if (window.getSelection().toString() !== "") {
@@ -214,7 +217,7 @@ export function make_select_row(register_name, is_mouse_over, yukon_state) {
 
 export function make_select_cell(avatar, register_name, is_mouse_over, yukon_state) {
     let selectCell = function () {
-        if (yukon_state.is_cursor_snapping_column || yukon_state.is_cursor_dragging_column) {
+        if (yukon_state.is_cursor_snapping_column || yukon_state.is_cursor_dragging_column || yukon_state.grabbing_in_registers_view) {
             return;
         }
         if (!yukon_state.selections.selected_registers[[avatar.node_id, register_name]]) {
@@ -230,7 +233,7 @@ export function make_select_cell(avatar, register_name, is_mouse_over, yukon_sta
                     yukon_state.selections.selected_registers[[cell.node_id, cell.register_name]] = true;
                 }
             }
-            yukon_state.selections.last_cell_selected = {"node_id": avatar.node_id, "register_name": register_name};
+            yukon_state.selections.last_cell_selected = { "node_id": avatar.node_id, "register_name": register_name };
         } else {
             yukon_state.selections.selected_registers[[avatar.node_id, register_name]] = false;
         }
@@ -304,7 +307,7 @@ function getAllCellsInBetween(start_cell, end_cell, yukon_state) {
                 if (table_cell.offsetLeft > start_table_cell.offsetLeft && table_cell.offsetLeft < end_table_cell.offsetLeft ||
                     table_cell.offsetLeft < start_table_cell.offsetLeft && table_cell.offsetLeft > end_table_cell.offsetLeft) {
                     // Add it to the list
-                    all_cells.push({"node_id": current_avatar.node_id, "register_name": register_name});
+                    all_cells.push({ "node_id": current_avatar.node_id, "register_name": register_name });
                 }
             }
         }
@@ -328,7 +331,7 @@ function getAllCellsInBetween(start_cell, end_cell, yukon_state) {
                 if (table_cell.offsetTop > start_table_cell.offsetTop && table_cell.offsetTop < end_table_cell.offsetTop ||
                     table_cell.offsetTop < start_table_cell.offsetTop && table_cell.offsetTop > end_table_cell.offsetTop) {
                     // Add it to the list
-                    all_cells.push({"node_id": current_avatar.node_id, "register_name": register_name});
+                    all_cells.push({ "node_id": current_avatar.node_id, "register_name": register_name });
                 }
 
             }

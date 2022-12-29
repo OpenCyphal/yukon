@@ -1,9 +1,75 @@
-import {areThereAnyNewOrMissingHashes, updateLastHashes} from '../hash_checks.module.js';
-import {applyConfiguration} from '../yaml.configurations.module.js';
-import {make_select_column, make_select_row, make_select_cell} from './registers.selection.module.js';
-import {update_register_value} from './registers.data.module.js';
-import {getDictionaryValueFieldName} from '../utilities.module.js';
-import {createGenericModal} from '../modal.module.js';
+import { areThereAnyNewOrMissingHashes, updateLastHashes } from '../hash_checks.module.js';
+import { applyConfiguration } from '../yaml.configurations.module.js';
+import { make_select_column, make_select_row, make_select_cell } from './registers.selection.module.js';
+import { update_register_value } from './registers.data.module.js';
+import { getDictionaryValueFieldName } from '../utilities.module.js';
+import { createGenericModal } from '../modal.module.js';
+
+export async function setUpRegistersComponent(container, immediateCreateTable, yukon_state) {
+    const containerElement = container.getElement()[0];
+    if (immediateCreateTable) {
+        update_tables(true);
+    }
+    setInterval(async () => {
+        update_tables();
+    }, 893);
+    let timer = null;
+    const iRegistersFilter = document.getElementById('iRegistersFilter');
+    iRegistersFilter.addEventListener("input", function () {
+        if (timer) {
+            clearTimeout(timer);
+        }
+        timer = setTimeout(function () {
+            create_registers_table(iRegistersFilter.value, yukon_state)
+        }, 500);
+    });
+    const btnImportRegistersConfig = document.getElementById('btnImportRegistersConfig');
+    btnImportRegistersConfig.addEventListener('click', async function (click_event) {
+        await loadConfigurationFromOpenDialog(false, yukon_state, click_event)
+    });
+    let posObject = { top: 0, left: 0, x: 0, y: 0 };
+    const mouseDownHandler = function (e) {
+        if (e.which !== 2) {
+            return;
+        }
+        yukon_state.grabbing_in_registers_view = true;
+        e.preventDefault();
+        containerElement.style.userSelect = 'none';
+        containerElement.style.cursor = 'grabbing';
+        posObject = {
+            // The current scroll
+            left: containerElement.scrollLeft,
+            top: containerElement.scrollTop,
+            // Get the current mouse position
+            x: e.clientX,
+            y: e.clientY,
+        };
+
+        document.addEventListener('mousemove', mouseMoveHandler);
+        document.addEventListener('mouseup', mouseUpHandler);
+    };
+    const mouseMoveHandler = function (e) {
+        // How far the mouse has been moved
+        const dx = e.clientX - posObject.x;
+        const dy = e.clientY - posObject.y;
+
+        // Scroll the element
+        containerElement.scrollTop = posObject.top - dy;
+        containerElement.scrollLeft = posObject.left - dx;
+    };
+    const mouseUpHandler = function (e) {
+        if (e.which !== 2) {
+            return;
+        }
+        e.preventDefault();
+        yukon_state.grabbing_in_registers_view = false;
+        containerElement.style.cursor = 'default';
+        containerElement.style.removeProperty('user-select');
+        document.removeEventListener('mousemove', mouseMoveHandler);
+        document.removeEventListener('mouseup', mouseUpHandler);
+    };
+    document.addEventListener('mousedown', mouseDownHandler);
+}
 
 export function add_node_id_headers(table_header_row, yukon_state) {
     const avatars_copy = Array.from(yukon_state.current_avatars)
