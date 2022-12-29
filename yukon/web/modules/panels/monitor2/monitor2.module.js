@@ -360,8 +360,18 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 } else {
                     currentLinkDsdlDatatype = fixed_datatype_full || "There is no info about this link";
                 }
-
-                addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, settings, yukon_state);
+                let isLast = false;
+                // If this is the last iteration of the loop, set a variable to true
+                const last_avatar_port = avatar.ports[port_type][avatar.ports[port_type].length - 1];
+                const lastPortType = portOrder[portOrder.length - 1];
+                if (port === last_avatar_port) {
+                    // If this port type is also the last
+                    if (port_type === "srv") {
+                        isLast = true;
+                        console.log("It is the last.");
+                    }
+                }
+                addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state);
                 avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
             }
         }
@@ -411,6 +421,9 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     for (const button of neededButtons) {
         const btnButton = document.createElement("button");
         btnButton.classList.add("btn_button");
+        btnButton.classList.add("btn");
+        btnButton.classList.add("btn-primary");
+        btnButton.classList.add("btn-sm");
         btnButton.innerHTML = button.name;
         btnButton.onclick = async () => {
             const result = await yukon_state.zubax_apij.send_command(avatar.node_id, button.command, "");
@@ -436,7 +449,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     }
     return node;
 }
-function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, settings, yukon_state) {
+function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state) {
     let horizontal_line = null;
     let arrowhead = null;
     horizontal_line = document.createElement("div");
@@ -512,7 +525,13 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     // align it 50px to the left from the left side of the horizontal line
     port_number_label.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 50 + "px");
     port_number_label.style.width = "45px";
-    port_number_label.style.height = settings.DistancePerHorizontalConnection + "px";
+    port_number_label.style.paddingTop = "2px";
+    port_number_label.style.paddingRight = "2px";
+    if (!isLast) {
+        port_number_label.style.height = settings.DistancePerHorizontalConnection + "px";
+    } else {
+        port_number_label.style.height = "calc(fit-content + 2px)";
+    }
     port_number_label.style.position = "absolute";
     port_number_label.innerHTML = matchingPort.port;
     port_number_label.style.zIndex = "4";

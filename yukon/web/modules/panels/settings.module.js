@@ -8,15 +8,21 @@ export async function setUpSettingsComponent(container, yukon_state) {
         // Make an input element to store the path in settings["value"], and a button to open the file dialog
         const pathDiv = document.createElement("div");
         pathDiv.classList.add("path-div");
+        pathDiv.classList.add("input-group");
         const pathInput = document.createElement("input");
         pathInput.classList.add("path-input");
+        pathInput.classList.add("form-control");
         pathInput.value = settings["value"];
+        pathInput.type = "text";
         pathInput.addEventListener("input", function () {
             settings["value"] = pathInput.value;
         });
-        pathInput.style.width = "calc(100% - 74px)";
+        pathInput.style.width = "calc(100% - 148px)";
         const pathButton = document.createElement("button");
         pathButton.classList.add("path-button");
+        pathButton.classList.add("btn");
+        pathButton.classList.add("btn-danger");
+        pathButton.classList.add("btn-sm");
         pathButton.innerText = "Browse";
         pathButton.addEventListener("click", async function () {
             let path = "";
@@ -40,6 +46,9 @@ export async function setUpSettingsComponent(container, yukon_state) {
         // Add a button for removing
         const removeButton = document.createElement("button");
         removeButton.classList.add("remove-button");
+        removeButton.classList.add("btn");
+        removeButton.classList.add("btn-danger");
+        removeButton.classList.add("btn-sm");
         removeButton.innerText = "Remove";
         removeButton.addEventListener("click", function () {
             // Delete the settings object
@@ -146,12 +155,20 @@ export async function setUpSettingsComponent(container, yukon_state) {
                     input.type = "text";
                     input.value = value;
                     input.placeholder = "Enter new key";
+                    input.style.setProperty("width", "calc(100% - 70px)", "important");
                     cardHeaderDiv.appendChild(input);
                 } else {
                     const cardHeaderH5 = document.createElement("span");
                     cardHeaderH5.classList.add("mb-0");
                     cardHeaderH5.innerText = key;
-                    cardHeaderH5.style.float = "left";
+                    // Align the text center vertically
+                    cardHeaderH5.style.display = "inline-block";
+                    cardHeaderH5.style.verticalAlign = "middle";
+                    cardHeaderH5.style.lineHeight = "normal";
+                    // Align things in cardHeaderDiv center vertically
+                    cardHeaderDiv.style.display = "flex";
+                    cardHeaderDiv.style.alignItems = "center";
+                    cardHeaderDiv.style.justifyContent = "space-between";
                     cardHeaderDiv.appendChild(cardHeaderH5);
                 }
                 if (typeof value === "object" && value["__type__"] === "radio") {
@@ -181,10 +198,9 @@ export async function setUpSettingsComponent(container, yukon_state) {
                 createSettingsDiv(value, cardBodyDiv, settings, realDictionaryKey);
             } else {
                 const formGroupDiv = document.createElement("div");
-                formGroupDiv.classList.add("form-check");
                 formGroupDiv.classList.add("mb-3");
                 const label = document.createElement("label");
-                label.classList.add("form-check-label");
+
                 label.setAttribute("for", key);
                 if (key === "__editable__") {
                     const input = document.createElement("input");
@@ -217,7 +233,9 @@ export async function setUpSettingsComponent(container, yukon_state) {
 
                 if (typeof value === 'boolean') {
                     const checkbox = document.createElement("input");
+                    formGroupDiv.classList.add("form-check");
                     checkbox.classList.add("form-check-input");
+                    label.classList.add("form-check-label");
                     checkbox.type = "checkbox";
                     checkbox.id = key;
                     checkbox.checked = value;
@@ -226,11 +244,14 @@ export async function setUpSettingsComponent(container, yukon_state) {
                     });
                     formGroupDiv.appendChild(checkbox);
                 } else {
+                    formGroupDiv.classList.add("input-group");
                     if (typeof value === 'number') {
                         const input = document.createElement("input");
                         input.type = "number";
+                        input.style.display = "inline";
                         input.classList.add("form-control");
                         input.value = value;
+                        input.style.width = "calc(100% - 70px)"
                         input.addEventListener("change", async function () {
                             settings[key] = parseFloat(input.value);
                         });
@@ -239,6 +260,8 @@ export async function setUpSettingsComponent(container, yukon_state) {
                     } else {
                         const input = document.createElement("input");
                         input.type = "text";
+                        input.style.display = "inline";
+                        input.style.width = "calc(100% - 70px)"
                         input.classList.add("form-control");
                         input.value = value;
                         input.addEventListener("change", async function () {
@@ -255,6 +278,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                     btnRemove.classList.add("btn");
                     btnRemove.classList.add("btn-danger");
                     btnRemove.classList.add("btn-sm");
+                    btnRemove.style.display = "inline";
                     btnRemove.innerHTML = "Remove";
                     btnRemove.addEventListener("click", async function () {
                         settings.splice(key, 1);

@@ -209,10 +209,6 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     };
     openLatestMessage.addEventListener("click", openLatestHandler);
     subscriptionElement.appendChild(openLatestMessage);
-
-    // Add a button for unsubscribing
-    const unsubscribeButton = document.createElement("button");
-    unsubscribeButton.innerText = "Unsubscribe";
     const unsubscribeHandler = async () => {
         const response = await yukon_state.zubax_apij.unsubscribe(specifier);
         if (response.success) {
@@ -222,7 +218,12 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
             console.error("Failed to unsubscribe: " + response.error);
         }
     };
-    unsubscribeButton.addEventListener("click", unsubscribeHandler);
+
+    // // Add a button for unsubscribing
+    // const unsubscribeButton = document.createElement("button");
+    // unsubscribeButton.innerText = "Unsubscribe";
+    // unsubscribeButton.addEventListener("click", unsubscribeHandler);
+    // subscriptionElement.appendChild(unsubscribeButton);
 
     subscriptionElement.style.position = "relative";
 
@@ -241,7 +242,6 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     let fetchIntervalId = { value: null };
     let lastCurrentMessagesLength = { value: 0 };
     fetchIntervalId.value = setInterval(() => fetch(specifier, pLatestMessage, inputLogToConsole, fetchIntervalId, lastCurrentMessagesLength, yukon_state), 300);
-    subscriptionElement.appendChild(unsubscribeButton);
     subscriptionElementsToBePlaced.push([subscriptionElement, specifier]);
     subscriptionsDiv.appendChild(subscriptionElement);
 }
@@ -261,9 +261,6 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     subscriptionElement.appendChild(pLatestMessage);
     subscriptionsDiv.appendChild(subscriptionElement);
     let fetchIntervalId = { value: null };
-    // Add a button for unsubscribing
-    const unsubscribeButton = document.createElement("button");
-    unsubscribeButton.innerText = "Unsubscribe";
     const unsubscribeHandler = async () => {
         const response = await yukon_state.zubax_apij.unsubscribe_synchronized(specifiersString);
         if (response.success) {
@@ -277,7 +274,11 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
             console.error("Failed to unsubscribe: " + response.error);
         }
     };
-    unsubscribeButton.addEventListener("click", unsubscribeHandler);
+    // Add a button for unsubscribing
+    // const unsubscribeButton = document.createElement("button");
+    // unsubscribeButton.innerText = "Unsubscribe";
+    // unsubscribeButton.addEventListener("click", unsubscribeHandler);
+    // subscriptionElement.appendChild(unsubscribeButton);
     subscriptionElement.style.position = "relative";
 
     const closeButton = document.createElement("button");
@@ -291,7 +292,6 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     if (!yukon_state.subscriptions[specifiersString]) {
         yukon_state.subscriptions[specifiersString] = [];
     }
-    subscriptionElement.appendChild(unsubscribeButton);
 
     let lastCurrentMessagesLength = { value: 0 };
     fetchIntervalId.value = setInterval(() => fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, lastCurrentMessagesLength, settings, yukon_state), 300);
