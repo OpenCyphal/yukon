@@ -1,5 +1,5 @@
-from yukon.domain.detach_transport_request import DetachTransportRequest
-from yukon.domain.detach_transport_response import DetachTransportResponse
+from yukon.domain.transport.detach_transport_request import DetachTransportRequest
+from yukon.domain.transport.detach_transport_response import DetachTransportResponse
 from yukon.domain.god_state import GodState
 
 

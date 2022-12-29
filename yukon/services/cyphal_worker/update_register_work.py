@@ -5,9 +5,9 @@ from datetime import datetime
 from typing import Optional
 
 import uavcan
-from yukon.domain.update_register_request import UpdateRegisterRequest
-from yukon.domain.update_register_log_item import UpdateRegisterLogItem
-from yukon.domain.update_register_response import UpdateRegisterResponse
+from yukon.domain.registers.update_register_request import UpdateRegisterRequest
+from yukon.domain.registers.update_register_log_item import UpdateRegisterLogItem
+from yukon.domain.registers.update_register_response import UpdateRegisterResponse
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.services.messages_publisher import add_local_message
 from yukon.services.value_utils import explode_value

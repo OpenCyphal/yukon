@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
+from yukon.domain.registers.reread_register_names_request import RereadRegisterNamesRequest
 from yukon.services.snoop_registers import get_register_names
 from yukon.domain.god_state import GodState
 

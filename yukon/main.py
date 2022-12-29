@@ -23,8 +23,8 @@ from yukon.services.settings_handler import loading_settings_into_yukon
 from yukon.services.cyphal_worker.cyphal_worker import cyphal_worker
 
 from yukon.domain.interface import Interface
-from yukon.domain.attach_transport_request import AttachTransportRequest
-from yukon.domain.attach_transport_response import AttachTransportResponse
+from yukon.domain.transport.attach_transport_request import AttachTransportRequest
+from yukon.domain.transport.attach_transport_response import AttachTransportResponse
 from yukon.domain.god_state import GodState
 from yukon.services.messages_publisher import MessagesPublisher
 from yukon.services.terminate_handler import make_terminate_handler
@@ -323,7 +323,6 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         if not state.gui.gui_running:
             break
     exit_handler(None, None)
-    state.gui.gui_running = False
 
 
 def get_stop_after_value() -> Optional[str]:
@@ -343,6 +342,8 @@ async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arg
     from yukon.version import __version__
 
     print("Version of Yukon: " + __version__)
+    if is_headless:
+        print("Running in headless mode")
     found_yukons = find_yukon_processes()
     for proc in found_yukons:
         logger.info("Found Yukon process: %r", proc)

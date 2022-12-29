@@ -9,8 +9,8 @@ import pycyphal
 from pycyphal.application import make_transport
 
 from yukon.services.CentralizedAllocator import CentralizedAllocator
-from yukon.domain.attach_transport_request import AttachTransportRequest
-from yukon.domain.attach_transport_response import AttachTransportResponse
+from yukon.domain.transport.attach_transport_request import AttachTransportRequest
+from yukon.domain.transport.attach_transport_response import AttachTransportResponse
 from yukon.services.cyphal_worker.forward_dronecan_work import make_handler_for_transmit
 from yukon.services.faulty_transport import FaultyTransport
 from yukon.domain.god_state import GodState

@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 import pycyphal
 
-from yukon.domain.synchronized_message_group import SynchronizedMessageGroup
+from yukon.domain.subscriptions.synchronized_message_group import SynchronizedMessageGroup
 
 
 @dataclass

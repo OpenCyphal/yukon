@@ -1,7 +1,7 @@
 from typing import Optional
 from dataclasses import dataclass
 
-from yukon.domain.update_register_response import UpdateRegisterResponse
+from yukon.domain.registers.update_register_response import UpdateRegisterResponse
 
 
 @dataclass

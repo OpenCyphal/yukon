@@ -14,30 +14,30 @@ import dronecan.app
 import yukon.services.FileServer
 from yukon.domain.proxy_objects import ReactiveValue
 from yukon.domain.dronecan_traffic_queues import DroneCanTrafficQueues
-from yukon.domain.synchronized_subjects_specifier import SynchronizedSubjectsSpecifier
-from yukon.domain.synchronized_message_store import SynchronizedMessageStore
+from yukon.domain.subscriptions.synchronized_subjects_specifier import SynchronizedSubjectsSpecifier
+from yukon.domain.subscriptions.synchronized_message_store import SynchronizedMessageStore
 
 from yukon.services.FileServer import FileServer
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.messages_publisher import MessagesPublisher
-from yukon.domain.messages_store import MessagesStore
+from yukon.domain.subscriptions.messages_store import MessagesStore
 from yukon.domain.subject_specifier import SubjectSpecifier
-from yukon.domain.subscribe_response import SubscribeResponse
-from yukon.domain.subscribe_request import SubscribeRequest
-from yukon.domain.update_register_log_item import UpdateRegisterLogItem
-from yukon.domain.reread_registers_request import RereadRegistersRequest
-from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
+from yukon.domain.subscriptions.subscribe_response import SubscribeResponse
+from yukon.domain.subscriptions.subscribe_request import SubscribeRequest
+from yukon.domain.registers.update_register_log_item import UpdateRegisterLogItem
+from yukon.domain.registers.reread_registers_request import RereadRegistersRequest
+from yukon.domain.registers.apply_configuration_request import ApplyConfigurationRequest
 from yukon.domain.message import Message
 from yukon.domain.allocation_request import AllocationRequest
 from yukon.domain.HWID import HWID
 from yukon.domain.avatar import Avatar
 from yukon.domain.interface import Interface
 from yukon.domain.node_state import NodeState
-from yukon.domain.update_register_response import UpdateRegisterResponse
+from yukon.domain.registers.update_register_response import UpdateRegisterResponse
 from yukon.services.faulty_transport import FaultyTransport
 from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.command_send_response import CommandSendResponse
-from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
+from yukon.domain.registers.reread_register_names_request import RereadRegisterNamesRequest
 
 logger = logging.getLogger(__name__)
 

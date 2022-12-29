@@ -1,8 +1,8 @@
 import traceback
 
-from yukon.domain.unsubscribe_request import UnsubscribeRequest
-from yukon.domain.unsubscribe_response import UnsubscribeResponse
-from yukon.domain.subscribe_response import SubscribeResponse
+from yukon.domain.subscriptions.unsubscribe_request import UnsubscribeRequest
+from yukon.domain.subscriptions.unsubscribe_response import UnsubscribeResponse
+from yukon.domain.subscriptions.subscribe_response import SubscribeResponse
 from yukon.services.messages_publisher import add_local_message
 from yukon.domain.god_state import GodState
 

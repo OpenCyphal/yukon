@@ -4,11 +4,11 @@ import traceback
 import typing
 import pycyphal.dsdl
 
-from yukon.domain.subscribe_request import SubscribeRequest
+from yukon.domain.subscriptions.subscribe_request import SubscribeRequest
 from yukon.services.settings_handler import add_all_dsdl_paths_to_pythonpath
-from yukon.domain.message_carrier import MessageCarrier
-from yukon.domain.messages_store import MessagesStore
-from yukon.domain.subscribe_response import SubscribeResponse
+from yukon.domain.subscriptions.message_carrier import MessageCarrier
+from yukon.domain.subscriptions.messages_store import MessagesStore
+from yukon.domain.subscriptions.subscribe_response import SubscribeResponse
 from yukon.services.messages_publisher import add_local_message
 from yukon.services.dtype_loader import load_dtype
 from yukon.domain.god_state import GodState

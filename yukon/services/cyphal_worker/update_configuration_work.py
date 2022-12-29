@@ -4,8 +4,8 @@ import logging
 import traceback
 from uuid import uuid4
 
-from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
-from yukon.domain.update_register_request import UpdateRegisterRequest
+from yukon.domain.registers.apply_configuration_request import ApplyConfigurationRequest
+from yukon.domain.registers.update_register_request import UpdateRegisterRequest
 from yukon.services.api import is_configuration_simplified, add_register_update_log_item
 from yukon.services.messages_publisher import add_local_message
 from yukon.services.value_utils import unexplode_value

@@ -9,15 +9,15 @@ from uuid import UUID
 import pycyphal
 
 import uavcan
-from yukon.domain.message_carrier import MessageCarrier
+from yukon.domain.subscriptions.message_carrier import MessageCarrier
 from yukon.domain.proxy_objects import ReactiveValue
-from yukon.domain.synchronized_message_carrier import SynchronizedMessageCarrier
+from yukon.domain.subscriptions.synchronized_message_carrier import SynchronizedMessageCarrier
 
 from yukon.services.value_utils import explode_value
-from yukon.domain.attach_transport_response import AttachTransportResponse
-from yukon.domain.update_register_log_item import UpdateRegisterLogItem
+from yukon.domain.transport.attach_transport_response import AttachTransportResponse
+from yukon.domain.registers.update_register_log_item import UpdateRegisterLogItem
 from yukon.domain.interface import Interface
-from yukon.domain.detach_transport_response import DetachTransportResponse
+from yukon.domain.transport.detach_transport_response import DetachTransportResponse
 
 INFINITY = float("inf")
 

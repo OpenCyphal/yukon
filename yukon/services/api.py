@@ -26,13 +26,13 @@ from pycyphal.presentation.subscription_synchronizer.monotonic_clustering import
 
 import pycyphal.dsdl
 
-from yukon.domain.synchronized_message_carrier import SynchronizedMessageCarrier
-from yukon.domain.synchronized_message_store import SynchronizedMessageStore
-from yukon.domain.synchronized_message_group import SynchronizedMessageGroup
-from yukon.domain.synchronized_subjects_specifier import SynchronizedSubjectsSpecifier
+from yukon.domain.subscriptions.synchronized_message_carrier import SynchronizedMessageCarrier
+from yukon.domain.subscriptions.synchronized_message_store import SynchronizedMessageStore
+from yukon.domain.subscriptions.synchronized_message_group import SynchronizedMessageGroup
+from yukon.domain.subscriptions.synchronized_subjects_specifier import SynchronizedSubjectsSpecifier
 
 
-from yukon.domain.detach_transport_request import DetachTransportRequest
+from yukon.domain.transport.detach_transport_request import DetachTransportRequest
 from yukon.domain.proxy_objects import ReactiveValue
 from yukon.services.dtype_loader import load_dtype
 from yukon.services.settings_handler import (
@@ -43,25 +43,25 @@ from yukon.services.settings_handler import (
     recursive_reactivize_settings,
     modify_settings_values_from_a_new_copy,
 )
-from yukon.domain.unsubscribe_request import UnsubscribeRequest
+from yukon.domain.subscriptions.unsubscribe_request import UnsubscribeRequest
 from yukon.services.utils import clamp, get_datatypes_from_packages_directory_path, tolerance_from_key_delta
-from yukon.domain.subject_specifier_dto import SubjectSpecifierDto
+from yukon.domain.subscriptions.subject_specifier_dto import SubjectSpecifierDto
 from yukon.domain.subject_specifier import SubjectSpecifier
-from yukon.domain.subscribe_request import SubscribeRequest
-from yukon.domain.reread_registers_request import RereadRegistersRequest
-from yukon.domain.update_register_log_item import UpdateRegisterLogItem
-from yukon.domain.apply_configuration_request import ApplyConfigurationRequest
+from yukon.domain.subscriptions.subscribe_request import SubscribeRequest
+from yukon.domain.registers.reread_registers_request import RereadRegistersRequest
+from yukon.domain.registers.update_register_log_item import UpdateRegisterLogItem
+from yukon.domain.registers.apply_configuration_request import ApplyConfigurationRequest
 from yukon.services.get_ports import get_socketcan_ports, get_slcan_ports
 from yukon.services._dumper import Dumper
-from yukon.domain.attach_transport_request import AttachTransportRequest
+from yukon.domain.transport.attach_transport_request import AttachTransportRequest
 from yukon.domain.interface import Interface
-from yukon.domain.update_register_request import UpdateRegisterRequest
+from yukon.domain.registers.update_register_request import UpdateRegisterRequest
 from yukon.domain.avatar import Avatar
 from yukon.services.value_utils import unexplode_value, explode_value
 from yukon.domain.god_state import GodState
 from yukon.services.messages_publisher import add_local_message
 from yukon.domain.command_send_request import CommandSendRequest
-from yukon.domain.reread_register_names_request import RereadRegisterNamesRequest
+from yukon.domain.registers.reread_register_names_request import RereadRegisterNamesRequest
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
 logger = logging.getLogger(__name__)
