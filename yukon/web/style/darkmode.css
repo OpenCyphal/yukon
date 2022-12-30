@@ -111,7 +111,8 @@
         color: #ffffff
     }
 
-    .btn {
+    .btn,
+    h2 {
         background: #353535;
         color: #ffffff
     }
@@ -159,13 +160,20 @@
         color: #ffffff
     }
 
-    tbody > tr:hover,
-    tbody > tr:hover .no-value {
+    tbody>tr:hover,
+    tbody>tr:hover .no-value {
         background-color: #353535;
     }
 
-    input[type="text"], input[type="number"], .input-group, .input-group-text, select {
+    input[type="text"],
+    input[type="number"],
+    .input-group-text,
+    select {
         background: #353535 !important;
+        color: #ffffff !important;
+    }
+
+    .input-group {
         color: #ffffff !important;
     }
 
@@ -235,5 +243,27 @@
 
     .form-check {
         background-color: #353535;
+    }
+
+    .my-modal-content {
+        background-color: #353535;
+    }
+
+    .my-modal-content span,
+    p,
+    div {
+        color: #ffffff;
+    }
+
+    .pair-div:hover {
+        background-color: #ccc;
+    }
+
+    .pair-div.incompatible:hover {
+        background-color: rgb(198, 146, 146);
+    }
+
+    .pair-div:hover span {
+        color: #000;
     }
 }

@@ -2,8 +2,7 @@
     box-sizing: border-box;
 }
 
-#messages-list {
-}
+#messages-list {}
 
 #messages-list textarea {
     display: block;
@@ -136,7 +135,7 @@ textarea#textOut {
     color: #fff !important;
 }
 
-.white-text ~ * {
+.white-text~* {
     color: #fff !important;
 }
 
@@ -190,7 +189,7 @@ body {
     height: calc(100% - 0.2em);
 }
 
-#toolbar.shown ~ #layout {
+#toolbar.shown~#layout {
     height: calc(100% - 2.1em);
 }
 
@@ -212,6 +211,7 @@ body {
 
 #toolbar button {
     border: 1px solid #000;
+    height: 1.7em;
     border-radius: 0.25em;
     background-color: rgb(135, 135, 135);
     color: #fff;
@@ -225,7 +225,6 @@ body {
     margin-right: 2px;
     padding-bottom: 4px;
     border: 1px solid #cccccc;
-    border-bottom: none
 }
 
 #toolbar button:hover {
@@ -382,4 +381,34 @@ button#btnShowHideToolbar:active {
 
 #btnRefreshConfigurationFromDisk {
     display: none;
+}
+
+#settings-div .input-group {
+    align-items: baseline;
+}
+
+#configChoice {
+    margin-top: 6px;
+    margin-bottom: 0px;
+}
+
+.my-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}
+
+.my-modal-content {
+    margin-top: 10vh;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%;
+    background-color: white;
 }

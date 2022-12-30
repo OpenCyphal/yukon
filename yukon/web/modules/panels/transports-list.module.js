@@ -88,7 +88,7 @@ export function setUpTransportsListComponent(yukon_state) {
                 copy_button.classList.add("btn");
                 copy_button.classList.add("btn-primary");
                 copy_button.innerText = "Copy interface for Yakut";
-                copy_button.addEventListener('click', function() {
+                copy_button.addEventListener('click', function () {
                     let text = "";
                     text += "export UAVCAN__CAN__IFACE=" + _interface.iface + "\n";
                     text += "export UAVCAN__CAN__MTU=" + _interface.mtu + "\n";
@@ -102,6 +102,7 @@ export function setUpTransportsListComponent(yukon_state) {
             // Add a button to remove the interface
             const remove_button = document.createElement('button');
             remove_button.classList.add("btn");
+            remove_button.classList.add("btn-sm");
             remove_button.classList.add('btn-danger');
             remove_button.innerHTML = "Remove";
             remove_button.addEventListener('click', async () => {

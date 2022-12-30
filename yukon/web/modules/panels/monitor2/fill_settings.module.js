@@ -23,6 +23,8 @@ export function fillSettings(settings, yukon_state) {
     settings.LinkLabelHighlightColor = "black";
     settings.LinkLabelHighlightTextColor = "white";
     settings.ServicePortLabelBgColor = "lightblue";
+    settings.ServiceColor = "lightblue";
+    settings.ServiceForegroundColor = "black";
     settings.ServicePortLabelColor = "black";
     // Add random shades of orange to the list
     settings.HighlightColorsRaw = yukon_state.all_settings["Monitor view"]["Highlight colors"];

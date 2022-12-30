@@ -208,8 +208,8 @@ def run_server(state: GodState) -> None:
 
 
 def set_logging_levels() -> None:
-    logging.getLogger("pycyphal").setLevel(logging.INFO)
-    logging.getLogger("can").setLevel(logging.INFO)
+    logging.getLogger("pycyphal").setLevel(logging.WARNING)
+    logging.getLogger("can").setLevel(logging.WARNING)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
     logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
     logging.getLogger("pycyphal.transport.can.media.pythoncan._pythoncan").setLevel(logging.CRITICAL)

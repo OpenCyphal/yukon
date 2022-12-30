@@ -18,12 +18,13 @@ async function drawPublishers() {
 
 }
 
-const portOrder = ["pub", "sub", "srv", "cli"]
+const portOrder = { "pub": 0, "sub": 0, "srv": 1, "cli": 1 }
+const portOrder2 = ["pub", "sub", "srv", "cli"]
 
 function comparePorts(a, b) {
     // Compare ports by type and port number (port) for sorting
-    const aPortOrder = portOrder.indexOf(a.type);
-    const bPortOrder = portOrder.indexOf(b.type);
+    const aPortOrder = portOrder[a.type];
+    const bPortOrder = portOrder[b.type];
     if (aPortOrder < bPortOrder) {
         return -1;
     }
@@ -334,47 +335,55 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         node.style.height = avatar_height + "px";
         node.style.top = y_counter.value + "px";
         let avatar_y_counter = { value: settings["AvatarConnectionPadding"] };
-        for (const port_type of portOrder) {
-            if (!avatar.ports[port_type]) { continue; }
-            for (const port of avatar.ports[port_type]) {
-                const matchingPort = ports.find(p => p.port === port && p.type === port_type);
-                if (matchingPort === undefined || (matchingPort && matchingPort.x_offset === 0)) {
-                    continue;
+        let avatar_ports_all_in_one = [];
+        for (const portType of portOrder2) {
+            if (avatar.ports[portType]) {
+                for (const port of avatar.ports[portType]) {
+                    avatar_ports_all_in_one.push({ "port": port, "type": portType });
                 }
-                // Getting info about more links than necessary for later highlighting purposes
-                const relatedLinks = getRelatedLinks(port, yukon_state);
-                const currentLinkObject = relatedLinks.find(link => link.port === port && link.type === matchingPort.type);
-                let toggledOn = { value: false };
-                let currentLinkDsdlDatatype = null;
-                let fixed_datatype_short = null;
-                let fixed_datatype_full = null;
-                if (datatypes_response["fixed_id_messages"][port] !== undefined) {
-                    fixed_datatype_short = datatypes_response["fixed_id_messages"][port]["short_name"];
-                    fixed_datatype_full = datatypes_response["fixed_id_messages"][port]["full_name"];
-                }
-                if (currentLinkObject !== undefined) {
-                    currentLinkDsdlDatatype = currentLinkObject.datatype || "";
-                    if (currentLinkObject.name && !settings.ShowLinkNameOnSeparateLine) {
-                        currentLinkDsdlDatatype = currentLinkObject.name + ":" + currentLinkDsdlDatatype;
-                    }
-                } else {
-                    currentLinkDsdlDatatype = fixed_datatype_full || "There is no info about this link";
-                }
-                let isLast = false;
-                // If this is the last iteration of the loop, set a variable to true
-                const last_avatar_port = avatar.ports[port_type][avatar.ports[port_type].length - 1];
-                const lastPortType = portOrder[portOrder.length - 1];
-                if (port === last_avatar_port) {
-                    // If this port type is also the last
-                    if (port_type === "srv") {
-                        isLast = true;
-                        console.log("It is the last.");
-                    }
-                }
-                addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state);
-                avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
             }
         }
+        avatar_ports_all_in_one.sort(comparePorts)
+        for (const port of avatar_ports_all_in_one) {
+            const matchingPort = ports.find(p => p.port === port.port && p.type === port.type);
+            if (matchingPort === undefined || (matchingPort && matchingPort.x_offset === 0)) {
+                continue;
+            }
+            // Getting info about more links than necessary for later highlighting purposes
+            const relatedLinks = getRelatedLinks(port.port, yukon_state);
+            const currentLinkObject = relatedLinks.find(link => link.port === port.port && link.type === matchingPort.type);
+            let toggledOn = { value: false };
+            let currentLinkDsdlDatatype = null;
+            let fixed_datatype_short = null;
+            let fixed_datatype_full = null;
+            if (datatypes_response["fixed_id_messages"][port.port] !== undefined) {
+                fixed_datatype_short = datatypes_response["fixed_id_messages"][port.port]["short_name"];
+                fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["full_name"];
+            }
+            if (currentLinkObject !== undefined) {
+                currentLinkDsdlDatatype = currentLinkObject.datatype || "";
+                if (currentLinkObject.name && !settings.ShowLinkNameOnSeparateLine) {
+                    currentLinkDsdlDatatype = currentLinkObject.name + ":" + currentLinkDsdlDatatype;
+                }
+            } else {
+                currentLinkDsdlDatatype = fixed_datatype_full || "There is no info about this link";
+            }
+            let isLast = false;
+            // If this is the last iteration of the loop, set a variable to true
+            const last_avatar_port = avatar.ports[port.type][avatar.ports[port.type].length - 1];
+            const lastPortType = portOrder2[portOrder2.length - 1];
+            if (port.port === last_avatar_port) {
+                // If this port type is also the last
+                if (port.type === "srv") {
+                    isLast = true;
+                    console.log("It is the last.");
+                }
+            }
+            addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state);
+            avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
+        }
+
+
         y_counter.value += avatar_height + settings["DistanceBetweenNodes"];
     }
     addVerticalLines(monitor2Div, ports, y_counter, containerElement, settings, yukon_state);
@@ -417,7 +426,11 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     feedbackMessage.classList.add("feedback_message");
     feedbackMessage.style.display = "none";
     node.appendChild(feedbackMessage);
-    const neededButtons = [{ "name": "Restart", "command": "65535" }, { "name": "Save persistent states", "command": "65530" }, { "name": "Emergency stop", "command": "65531" }];
+    // Make an input-group for the buttons
+    const inputGroup = document.createElement("div");
+    inputGroup.classList.add("input-group");
+    inputGroup.style.setProperty("backgroundColor", "transparent", "important");
+    const neededButtons = [{ "name": "Restart", "command": "65535", "title": "Restart device" }, { "name": "Save", "command": "65530", "title": "Save persistent states" }, { "name": "Estop", "command": "65531", "title": "Emergency stop" }];
     for (const button of neededButtons) {
         const btnButton = document.createElement("button");
         btnButton.classList.add("btn_button");
@@ -425,6 +438,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         btnButton.classList.add("btn-primary");
         btnButton.classList.add("btn-sm");
         btnButton.innerHTML = button.name;
+        btnButton.title = button.title;
         btnButton.onclick = async () => {
             const result = await yukon_state.zubax_apij.send_command(avatar.node_id, button.command, "");
             if (!result.success) {
@@ -445,8 +459,9 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
                 }
             }
         };
-        node.appendChild(btnButton);
+        inputGroup.appendChild(btnButton);
     }
+    node.appendChild(inputGroup);
     return node;
 }
 function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state) {
@@ -630,6 +645,11 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
         let port_label = document.createElement("label");
         port_label.classList.add("port_label");
         port_label.style.position = "absolute";
+        const isPortService = portOrder[port.type] == 1;
+        if (isPortService) {
+            port_label.style.backgroundColor = settings["ServiceColor"];
+            port_label.style.setProperty("color", settings["ServiceForegroundColor"], "important");
+        }
 
         function update_port_label_position() {
             if (port_label) {
