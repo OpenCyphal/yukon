@@ -148,7 +148,7 @@ def open_webbrowser(state: GodState) -> None:
     browser_not_opened_counter = 0
     while not state.gui.is_running_in_browser and state.gui.gui_running:
         if not tried_webbrowser_open:
-            webbrowser_open_wrapper(f"http://localhost:{state.gui.server_port}/main/main.html")
+            webbrowser_open_wrapper(f"http://127.0.0.1:{state.gui.server_port}/main/main.html")
             tried_webbrowser_open = True
 
         # Use a shell to launch chrome and firefox on url f"http://localhost:{state.gui.server_port}/main/main.html"
@@ -159,21 +159,21 @@ def open_webbrowser(state: GodState) -> None:
         if tried_webbrowser_open and not tried_xdg_open_or_similar:
             if sys.platform == "linux":
                 logger.info("Using xdg-open to open the browser")
-                subprocess.call(["xdg-open", f"http://localhost:{state.gui.server_port}/main/main.html"])
+                subprocess.call(["xdg-open", f"http://127.0.0.1:{state.gui.server_port}/main/main.html"])
                 tried_xdg_open_or_similar = True
             elif sys.platform == "darwin":
                 logger.info("Using open to open the browser")
-                subprocess.call(["open", f"http://localhost:{state.gui.server_port}/main/main.html"])
+                subprocess.call(["open", f"http://127.0.0.1:{state.gui.server_port}/main/main.html"])
                 tried_xdg_open_or_similar = True
             elif sys.platform == "win32":
                 logger.info("Using start to open the browser")
-                subprocess.call(["start", f"http://localhost:{state.gui.server_port}/main/main.html"])
+                subprocess.call(["start", f"http://127.0.0.1:{state.gui.server_port}/main/main.html"])
                 tried_xdg_open_or_similar = True
 
         if tried_webbrowser_open and tried_xdg_open_or_similar:
             logger.warning(
                 "The browser wasn't opened, please open it manually at URL %s",
-                f"http://localhost:{state.gui.server_port}/main/main.html",
+                f"http://127.0.0.1:{state.gui.server_port}/main/main.html?port={state.gui.server_port}",
             )
             browser_not_opened_counter += 1
             if browser_not_opened_counter > 10:

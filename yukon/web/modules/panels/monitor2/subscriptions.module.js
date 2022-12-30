@@ -193,7 +193,7 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     openLogsButton.innerText = "Open logs, when open CTRL+R to reload";
     const openLogsHandler = async () => {
         // Open a new tab at http://localhost:5000/api/get_all_subscription_messages?message_specifier=subject_id:datatype
-        const url = "http://localhost:5000/api/get_all_subscription_messages?message_specifier=" + specifier;
+        const url = "http://127.0.0.1:5000/api/get_all_subscription_messages?message_specifier=" + specifier;
         window.open(url, '_blank');
     };
     openLogsButton.addEventListener("click", openLogsHandler);
@@ -204,7 +204,7 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     openLatestMessage.innerText = "Open latest message, when open CTRL+R to reload";
     const openLatestHandler = async () => {
         // Open a new tab at http://localhost:5000/api/get_all_subscription_messages?message_specifier=subject_id:datatype
-        const url = "http://localhost:5000/api/get_latest_subscription_message?message_specifier=" + specifier;
+        const url = "http://127.0.0.1:5000/api/get_latest_subscription_message?message_specifier=" + specifier;
         window.open(url, '_blank');
     };
     openLatestMessage.addEventListener("click", openLatestHandler);
