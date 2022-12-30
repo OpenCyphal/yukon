@@ -828,7 +828,7 @@ export function editSelectedCellValues(pairs, yukon_state) {
     modal_content.appendChild(modal_submit);
     // For each pair in pairs, add the datatype to a string variable called type_string
 
-    let modal_type = document.createElement("p");
+    let modal_type = document.createElement("div");
     const datatypes_string = Array.from(datatypes).join(", ");
     modal_type.innerHTML = "The value you are entering has to be castable to these types: " + datatypes_string + "<br>It also has to be of size: " + array_size;
     modal_content.appendChild(modal_type);
