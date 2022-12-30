@@ -30,7 +30,7 @@ def set_udp_server_handlers(state: "yukon.domain.god_state.GodState") -> None:
     )
     state.udp_server = UDPConnectionServer(connection_object)
 
-    def _udp_setting_change(should_be_running: bool):
+    def _udp_setting_change(should_be_running: bool) -> None:
         if state.udp_server.is_running:
             if not should_be_running:
                 logger.info("UDP server is now " + "disabled")
