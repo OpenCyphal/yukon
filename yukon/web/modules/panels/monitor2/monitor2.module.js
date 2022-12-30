@@ -645,6 +645,11 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
         let port_label = document.createElement("label");
         port_label.classList.add("port_label");
         port_label.style.position = "absolute";
+        const isPortService = portOrder[port.type] == 1;
+        if (isPortService) {
+            port_label.style.backgroundColor = settings["ServiceColor"];
+            port_label.style.setProperty("color", settings["ServiceForegroundColor"], "important");
+        }
 
         function update_port_label_position() {
             if (port_label) {
