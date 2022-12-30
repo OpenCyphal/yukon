@@ -4,6 +4,9 @@ import { make_select_column, make_select_row, make_select_cell } from './registe
 import { update_register_value } from './registers.data.module.js';
 import { getDictionaryValueFieldName } from '../utilities.module.js';
 import { createGenericModal } from '../modal.module.js';
+import {
+    loadConfigurationFromOpenDialog
+} from '../yaml.configurations.module.js';
 
 export async function setUpRegistersComponent(container, immediateCreateTable, yukon_state) {
     const containerElement = container.getElement()[0];
