@@ -159,13 +159,20 @@
         color: #ffffff
     }
 
-    tbody > tr:hover,
-    tbody > tr:hover .no-value {
+    tbody>tr:hover,
+    tbody>tr:hover .no-value {
         background-color: #353535;
     }
 
-    input[type="text"], input[type="number"], .input-group, .input-group-text, select {
+    input[type="text"],
+    input[type="number"],
+    .input-group-text,
+    select {
         background: #353535 !important;
+        color: #ffffff !important;
+    }
+
+    .input-group {
         color: #ffffff !important;
     }
 
