@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 import traceback
@@ -5,6 +6,7 @@ import typing
 import pycyphal.dsdl
 
 from yukon.domain.subscriptions.subscribe_request import SubscribeRequest
+from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.services.settings_handler import add_all_dsdl_paths_to_pythonpath
 from yukon.domain.subscriptions.message_carrier import MessageCarrier
 from yukon.domain.subscriptions.messages_store import MessagesStore
@@ -38,6 +40,9 @@ async def do_subscribe_requests_work(state: GodState, subscribe_request: Subscri
                     messages_store.counter,
                     subscribe_request.specifier.subject_id,
                 )
+                if messages_store.enable_udp_output and state.udp_server.is_running:
+                    json_message = json.dumps(pycyphal.dsdl.to_builtin(msg), cls=EnhancedJSONEncoder)
+                    state.udp_server.send(json_message)
                 messages_store.counter += 1
                 messages_store.messages.append(message_carrier)
             # add_local_message(state, repr(msg), 20, subscribe_request.specifier.subject_id)

@@ -487,6 +487,12 @@ class Api:
             raise Exception("Failed to receive a response for subscribing.")
         return jsonify(response)
 
+    def enable_udp_output_from(self, specifier: str) -> None:
+        """Get the message store for the specifier and enable UDP output for it."""
+        messages_store = self.state.queues.subscribed_messages.get(specifier)
+        if messages_store:
+            messages_store.enable_udp_output = True
+
     def unsubscribe(self, specifier: str) -> Response:
         self.state.queues.god_queue.put_nowait(UnsubscribeRequest(SubjectSpecifier.from_string(specifier)))
         try:

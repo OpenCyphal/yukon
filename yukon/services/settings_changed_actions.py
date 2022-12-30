@@ -19,27 +19,26 @@ logger.setLevel(logging.DEBUG)
 
 
 def set_udp_server_handlers(state: "yukon.domain.god_state.GodState") -> None:
-
-    connection_object = UDPConnection(
-        ip=state.settings.get("UDP subscription output").get("IP address").get("Value"),
-        port=state.settings.get("UDP subscription output").get("Port").get("Value"),
-    )
-    state.udp_server = UDPConnectionServer(connection_object)
     setting = state.settings.get("UDP subscription output")
     if not setting:
         logger.error("No setting for UDP subscription output")
         return
-    setting_enabled = setting.get("Enabled")
+    setting_enabled = setting["Enabled"]
+    connection_object = UDPConnection(
+        ip=state.settings["UDP subscription output"]["IP address"].value,
+        port=state.settings["UDP subscription output"]["Port"].value,
+    )
+    state.udp_server = UDPConnectionServer(connection_object)
 
     def _udp_setting_change(should_be_running: bool):
-        if state.cyphal.udp_server.is_running:
+        if state.udp_server.is_running:
             if not should_be_running:
                 logger.info("UDP server is now " + "disabled")
-                state.cyphal.udp_server.close()
+                state.udp_server.close()
         else:
             if should_be_running:
                 logger.info("UDP server is now " + "enabled")
-                state.cyphal.udp_server.start()
+                state.udp_server.start()
 
     setting_enabled.connect(_udp_setting_change)
 
@@ -215,3 +214,4 @@ def set_handlers_for_configuration_changes(state: "yukon.domain.god_state.GodSta
     set_dronecan_handlers(state)
     set_file_server_handler(state)
     set_allocator_handler(state)
+    set_udp_server_handlers(state)

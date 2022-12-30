@@ -21,11 +21,11 @@ class UDPConnectionServer:
 
     def start(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.socket.bind((self.connection.ip, self.connection.port))
+        # self.socket.bind((self.connection.ip, self.connection.port))
 
         # Create a new thread with a while loop that send any string from the json_strings_queue to the socket
         def _send_json_strings():
-            while self.socket.writable():
+            while not self.socket._closed:
                 self.is_running = True
                 if self.pause:
                     time.sleep(0.1)
@@ -39,9 +39,15 @@ class UDPConnectionServer:
         self.send_thread = threading.Thread(target=_send_json_strings, daemon=True)
         self.send_thread.start()
 
+    def send(self, json_string) -> None:
+        self.json_strings_queue.put(json_string)
+
     def stop(self):
         # Clear the queue and add a stop object
         with self.json_strings_queue.mutex:
             self.json_strings_queue.queue.clear()
         self.json_strings_queue.put(_stop_object())
         self.socket.close()
+
+    def close(self):
+        self.stop()
