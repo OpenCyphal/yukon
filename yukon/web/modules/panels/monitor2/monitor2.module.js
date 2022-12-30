@@ -417,7 +417,11 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     feedbackMessage.classList.add("feedback_message");
     feedbackMessage.style.display = "none";
     node.appendChild(feedbackMessage);
-    const neededButtons = [{ "name": "Restart", "command": "65535" }, { "name": "Save persistent states", "command": "65530" }, { "name": "Emergency stop", "command": "65531" }];
+    // Make an input-group for the buttons
+    const inputGroup = document.createElement("div");
+    inputGroup.classList.add("input-group");
+    inputGroup.style.backgroundColor = "transparent";
+    const neededButtons = [{ "name": "Restart", "command": "65535", "title": "Restart device" }, { "name": "Save", "command": "65530", "title": "Save persistent states" }, { "name": "Estop", "command": "65531", "title": "Emergency stop" }];
     for (const button of neededButtons) {
         const btnButton = document.createElement("button");
         btnButton.classList.add("btn_button");
@@ -425,6 +429,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         btnButton.classList.add("btn-primary");
         btnButton.classList.add("btn-sm");
         btnButton.innerHTML = button.name;
+        btnButton.title = button.title;
         btnButton.onclick = async () => {
             const result = await yukon_state.zubax_apij.send_command(avatar.node_id, button.command, "");
             if (!result.success) {
@@ -445,8 +450,9 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
                 }
             }
         };
-        node.appendChild(btnButton);
+        inputGroup.appendChild(btnButton);
     }
+    node.appendChild(inputGroup);
     return node;
 }
 function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state) {

@@ -386,3 +386,8 @@ button#btnShowHideToolbar:active {
 #settings-div .input-group {
     align-items: baseline;
 }
+
+#configChoice {
+    margin-top: 6px;
+    margin-bottom: 0px;
+}
