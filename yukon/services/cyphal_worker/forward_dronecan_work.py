@@ -22,9 +22,7 @@ def make_handler_for_transmit(state: GodState) -> typing.Callable[[pycyphal.tran
             logger.debug("Not forwarding a message %r", can_capture)
             return
         logger.debug("Receiving a message %r", can_capture)
-        can_frame = dronecan.driver.CANFrame(
-            can_capture.frame.identifier, can_capture.frame.data, True, canfd=False
-        )
+        can_frame = dronecan.driver.CANFrame(can_capture.frame.identifier, can_capture.frame.data, True, canfd=False)
         state.dronecan_traffic_queues.input_queue.put_nowait(can_frame)
 
     return handle_transmit_message_to_dronecan
