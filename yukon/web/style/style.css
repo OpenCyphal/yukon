@@ -412,3 +412,7 @@ button#btnShowHideToolbar:active {
     width: 80%;
     background-color: white;
 }
+.popup {
+    background-color: #ccc;
+    color: black;
+}
