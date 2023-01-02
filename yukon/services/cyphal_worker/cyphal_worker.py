@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import threading
+import traceback
 
 import typing
 
@@ -67,9 +68,14 @@ def cyphal_worker(state: GodState) -> None:
             state.cyphal_worker_asyncio_loop = asyncio.get_running_loop()
 
             async def forward_dronecan_loop() -> None:
-                while True:
-                    await do_forward_dronecan_work(state)
-                    await asyncio.sleep(0.1)
+                try:
+                    while True:
+                        await do_forward_dronecan_work(state)
+                        await asyncio.sleep(0.1)
+                except Exception as e:
+                    logger.exception(e)
+                    tb = traceback.format_exc()
+                    logger.error(tb)
 
             task = asyncio.create_task(forward_dronecan_loop())
 

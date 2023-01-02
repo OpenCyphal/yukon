@@ -43,14 +43,13 @@ class GoodDriver(AbstractDriver):
         self.state.dronecan_traffic_queues.output_queue.put_nowait(frame)
 
     def receive(self, timeout: typing.Optional[float] = None) -> typing.Optional[CANFrame]:
-        while not self.state.dronecan_traffic_queues.input_queue.empty():
-            try:
-                received_frame = self.state.dronecan_traffic_queues.input_queue.get(timeout=timeout or math.inf)
-                logger.debug("Received CAN frame: %r", received_frame)
-                return received_frame
-            except queue.Empty:
-                return None
-        return None
+        try:
+            logger.debug("The timeout is %r", timeout)
+            received_frame = self.state.dronecan_traffic_queues.input_queue.get(timeout=timeout or math.inf)
+            logger.debug("Received CAN frame: %r", received_frame)
+            return received_frame
+        except queue.Empty:
+            return None
 
 
 def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:

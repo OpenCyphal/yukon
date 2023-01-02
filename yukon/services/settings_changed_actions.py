@@ -45,25 +45,26 @@ def set_udp_server_handlers(state: "yukon.domain.god_state.GodState") -> None:
 
 def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
     s1 = state.settings.get("DroneCAN firmware substitution")
+
+    def _handle_setting_change(should_be_running: bool) -> None:
+        logger.info("The setting for DroneCAN firmware substitution is now " + str(should_be_running))
+        if state.dronecan.is_running:
+            if not should_be_running:
+                logger.info("DroneCAN firmware substitution is now " + "disabled")
+                state.dronecan.is_running = False
+                state.dronecan.thread.join()
+                state.dronecan.file_server = None
+                state.dronecan.thread = None
+                state.dronecan.node_monitor = None
+                state.dronecan.driver = None
+                state.dronecan.allocator = None
+        elif not state.dronecan.is_running:
+            if should_be_running:
+                state.queues.god_queue.put_nowait(RequestRunDronecanFirmwareUpdater())
+
     if s1:
         s2 = s1.get("Enabled")
-
-        def _handle_setting_change(should_be_running: bool) -> None:
-            logger.info("The setting for DroneCAN firmware substitution is now " + str(should_be_running))
-            if state.dronecan.is_running:
-                if not should_be_running:
-                    logger.info("DroneCAN firmware substitution is now " + "disabled")
-                    state.dronecan.is_running = False
-                    state.dronecan.thread.join()
-                    state.dronecan.file_server = None
-                    state.dronecan.thread = None
-                    state.dronecan.node_monitor = None
-                    state.dronecan.driver = None
-                    state.dronecan.allocator = None
-            elif not state.dronecan.is_running:
-                if should_be_running:
-                    state.queues.god_queue.put_nowait(RequestRunDronecanFirmwareUpdater())
-
+        _handle_setting_change(s2.value)
         s2.connect(_handle_setting_change)
 
 
