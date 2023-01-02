@@ -423,3 +423,8 @@ div:has(> #registers_table, >#register-update-log) {
 .container:has(> #settings-div) {
     padding-bottom: 0.5em;
 }
+
+.popup {
+    background-color: #ccc;
+    color: black;
+}

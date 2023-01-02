@@ -675,7 +675,6 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
                 potentialPopup.style.position = "absolute";
                 potentialPopup.style.top = port_label.getBoundingClientRect().height + "px";
                 potentialPopup.style.left = "0px";
-                potentialPopup.style.backgroundColor = "white";
                 potentialPopup.style.border = "1px solid black";
                 potentialPopup.style.borderRadius = "5px";
                 potentialPopup.style.padding = "5px";
@@ -690,7 +689,6 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
                 potentialPopup.style.fontSize = "12px";
                 potentialPopup.style.fontFamily = "monospace";
                 potentialPopup.style.fontWeight = "bold";
-                potentialPopup.style.color = "black";
                 potentialPopup.style.boxShadow = "0 0 10px 0 rgba(0,0,0,0.5)";
                 potentialPopup.style.whiteSpace = "pre-wrap";
                 for (const datatype of datatypes) {
