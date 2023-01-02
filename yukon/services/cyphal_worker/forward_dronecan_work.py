@@ -12,7 +12,7 @@ from yukon.domain.god_state import GodState
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 
 def make_handler_for_transmit(state: GodState) -> typing.Callable[[pycyphal.transport.can.CANCapture], None]:
@@ -52,7 +52,9 @@ async def do_forward_dronecan_work(state: GodState) -> None:
             envelopes_to_send.append(Envelope(dataframe, loopback=False))
         # Get the current monotonic time in this event loop, add one second to it
         # and send the envelopes
+        async def send_these_frames():
+            for inferior in redundant_transport.inferiors:
+                if isinstance(inferior, CANTransport):
+                    await inferior.spoof_frames(envelopes_to_send, asyncio.get_running_loop().time() + 1)
 
-        for inferior in redundant_transport.inferiors:
-            if isinstance(inferior, CANTransport):
-                await inferior.spoof_frames(envelopes_to_send, asyncio.get_running_loop().time() + 1)
+        state.cyphal_worker_asyncio_loop.call_soon_threadsafe(send_these_frames)
