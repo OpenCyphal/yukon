@@ -39,8 +39,11 @@ class GoodDriver(AbstractDriver):
         canfd: bool = False,
     ) -> None:
         frame = CANFrame(message_id, message, extended, canfd=canfd)
-        logger.debug("Sending CAN frame: %r", frame)
-        self.state.dronecan_traffic_queues.output_queue.put_nowait(frame)
+        if len(self.state.cyphal.local_node.presentation.transport.inferiors) > 0:
+            logger.debug("Sending CAN frame: %r", frame)
+            self.state.dronecan_traffic_queues.output_queue.put_nowait(frame)
+        else:
+            logger.debug("Not sending CAN frame %r", frame)
 
     def receive(self, timeout: typing.Optional[float] = None) -> typing.Optional[CANFrame]:
         try:
@@ -82,7 +85,7 @@ def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
         state.dronecan.is_running = True
         # The allocator and the node monitor will be running in the background, requiring no additional attention
         # When they are no longer needed, they should be finalized by calling close():
-        while True:
+        while state.gui.gui_running:
             try:
                 state.dronecan.node.spin()  # Spin forever or until an exception is thrown
             except UAVCANException as ex:

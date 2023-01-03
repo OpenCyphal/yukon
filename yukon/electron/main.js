@@ -33,6 +33,10 @@ function createWindow() {
         }
         menu.popup();
     });
+    win.webContents.setWindowOpenHandler((details) => {
+        console.log("New window open!")
+        return { action: 'allow' }
+    })
     return win;
 }
 

@@ -21,9 +21,6 @@ class ContextMenu {
         this.menuItems.forEach((data, index) => {
             const element = this.createElementMarkup(data);
             this.dataOfMenuElements.set(element, data);
-            if (!data.shouldBeDisplayed) {
-                data.shouldBeDisplayed = () => true;
-            }
             element.firstChild.setAttribute(
                 "style",
                 `animation-delay: ${index * 0.01}s`
@@ -48,11 +45,19 @@ class ContextMenu {
         if (data.events && data.events.length !== 0) {
             Object.entries(data.events).forEach((event) => {
                 const [key, value] = event;
-                if (key === "adjust") {
-                    if (contextMenuThis.executeOnOpen) {
-                        contextMenuThis.executeOnOpen.push(function () { value(contextMenuThis, element, button); });
+                if (key === "prepare") {
+                    const function_for_appending = function () { value(contextMenuThis, data); }
+                    if (contextMenuThis.executeBeforeRender) {
+                        contextMenuThis.executeBeforeRender.push(function_for_appending);
                     } else {
-                        contextMenuThis.executeOnOpen = [function () { value(contextMenuThis, element, button); }];
+                        contextMenuThis.executeBeforeRender = [function_for_appending];
+                    }
+                } else if (key === "adjust") {
+                    const function_for_appending = function () { value(contextMenuThis, element, button, data); };
+                    if (contextMenuThis.executeAfterRender) {
+                        contextMenuThis.executeAfterRender.push(function_for_appending);
+                    } else {
+                        contextMenuThis.executeAfterRender = [function_for_appending];
                     }
                 } else {
                     function wrapper(e) {
@@ -76,9 +81,10 @@ class ContextMenu {
         menuContainer.setAttribute("data-theme", this.mode);
 
         this.menuElementsArray.forEach((item) => {
-            if (this.dataOfMenuElements.get(item).shouldBeDisplayed()) {
-                if (this.dataOfMenuElements.get(item).nameChangeNeeded) {
-                    this.dataOfMenuElements.get(item).nameChangeNeeded();
+            const dataOfItem = this.dataOfMenuElements.get(item);
+            if (dataOfItem.shouldBeDisplayed() || !dataOfItem.shouldBeDisplayed) {
+                if (dataOfItem.nameChangeNeeded) {
+                    dataOfItem.nameChangeNeeded();
                 }
                 menuContainer.appendChild(item)
             }
@@ -112,12 +118,17 @@ class ContextMenu {
             if (doesTargetMatchCriteria) {
                 this.closeMenu(this.renderedMenu)
                 e.preventDefault();
+                if (this.executeBeforeRender) {
+                    this.executeBeforeRender.forEach((func) => func());
+                }
                 this.renderedMenu = this.renderMenu();
+                if (this.executeAfterRender) {
+                    this.executeAfterRender.forEach((func) => func());
+                }
 
                 this.elementOpenedOn = e.target;
-                if (this.executeOnOpen) {
-                    this.executeOnOpen.forEach((func) => func());
-                }
+                
+                
                 // If there are no elements remaining after the adjust function runs, don't show the menu
                 if (this.renderedMenu.children.length === 0) {
                     return;

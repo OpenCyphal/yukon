@@ -16,7 +16,7 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
     }
     for (const message of messages) {
         if (inputLogToConsole.checked) {
-            yukon_state.zubax_apij.add_local_message(JSON.stringify(message.message), 20)
+            yukon_state.zubax_apij.add_local_message(JSON.stringify(message), 20)
         }
         current_messages.push(message);
     }
@@ -190,10 +190,11 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
 
     // Add a button for opening logs
     const openLogsButton = document.createElement("button");
+    openLogsButton.classList.add("btn", "btn-secondary", "btn-sm")
     openLogsButton.innerText = "Open logs, when open CTRL+R to reload";
     const openLogsHandler = async () => {
         // Open a new tab at http://localhost:5000/api/get_all_subscription_messages?message_specifier=subject_id:datatype
-        const url = "http://127.0.0.1:5000/api/get_all_subscription_messages?message_specifier=" + specifier;
+        const url = `http://127.0.0.1:${yukon_state.port}/api/get_all_subscription_messages?message_specifier=${specifier}`;
         window.open(url, '_blank');
     };
     openLogsButton.addEventListener("click", openLogsHandler);
@@ -201,10 +202,11 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
 
     // Add a button for opening logs
     const openLatestMessage = document.createElement("button");
+    openLatestMessage.classList.add("btn", "btn-secondary", "btn-sm")
     openLatestMessage.innerText = "Open latest message, when open CTRL+R to reload";
     const openLatestHandler = async () => {
         // Open a new tab at http://localhost:5000/api/get_all_subscription_messages?message_specifier=subject_id:datatype
-        const url = "http://127.0.0.1:5000/api/get_latest_subscription_message?message_specifier=" + specifier;
+        const url = `http://127.0.0.1:${yukon_state.port}/api/get_latest_subscription_message?message_specifier=${specifier}`;
         window.open(url, '_blank');
     };
     openLatestMessage.addEventListener("click", openLatestHandler);
@@ -228,6 +230,7 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     subscriptionElement.style.position = "relative";
 
     const closeButton = document.createElement("button");
+    closeButton.classList.add("btn", "btn-sm", "btn-danger")
     closeButton.innerText = "X";
     closeButton.style.borderWidth = "1";
     closeButton.style.position = "absolute";
@@ -282,6 +285,7 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     subscriptionElement.style.position = "relative";
 
     const closeButton = document.createElement("button");
+    closeButton.classList.add("btn", "btn-sm", "btn-danger")
     closeButton.innerText = "X";
     closeButton.style.borderWidth = "1";
     closeButton.style.position = "absolute";
@@ -502,6 +506,7 @@ function createSubscriptionElementCloseButton(subscriptionElement, subscription,
     // Add a close button to the subscriptionElement, align it 0.5 em from the right and 0.5 em from the top
     // When clicked it should remove the subscriptionElement from the DOM and remove the subscription specifier from the yukon_state.subscriptions_being_set_up
     const closeButton = document.createElement("button");
+    closeButton.classList.add("btn", "btn-sm", "btn-danger")
     closeButton.innerText = "X";
     closeButton.style.borderWidth = "1";
     closeButton.style.position = "absolute";
