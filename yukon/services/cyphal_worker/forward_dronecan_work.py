@@ -33,6 +33,7 @@ def make_handler_for_transmit(state: GodState) -> typing.Callable[[pycyphal.tran
 
     return handle_transmit_message_to_dronecan
 
+
 async def do_forward_dronecan_work(state: GodState) -> None:
     logger.debug("There are CAN frames to forward to dronecan")
     frames_to_send: typing.List[Envelope] = []
@@ -43,11 +44,11 @@ async def do_forward_dronecan_work(state: GodState) -> None:
         logger.warning("Not a dronecan frame")
         return
     # This is a pycyphal construct
-    frame_format: FrameFormat = FrameFormat.EXTENDED if first_frame.extended else FrameFormat.BASE
+    frame_format1: FrameFormat = FrameFormat.EXTENDED if first_frame.extended else FrameFormat.BASE
     # This is a pycyphal construct
-    dataframe: DataFrame = DataFrame(frame_format, first_frame.id, first_frame.data)
+    dataframe1: DataFrame = DataFrame(frame_format1, first_frame.id, first_frame.data)
     # This is a pycyphal construct
-    frames_to_send.append(dataframe)
+    frames_to_send.append(dataframe1)
     while state.gui.gui_running:
         if max_work_counter > 5000 or state.dronecan_traffic_queues.output_queue.empty():
             break
@@ -67,10 +68,11 @@ async def do_forward_dronecan_work(state: GodState) -> None:
             break
     # Get the current monotonic time in this event loop, add one second to it
     # and send the envelopes
-    async def send_these_frames():
+    async def send_these_frames() -> None:
         for inferior in redundant_transport.inferiors:
             if isinstance(inferior, CANTransport):
                 await inferior.spoof_frames(frames_to_send, asyncio.get_running_loop().time() + 1)
+
     logger.debug(len(frames_to_send))
     if len(frames_to_send) > 0:
         state.cyphal_worker_asyncio_loop.create_task(send_these_frames())

@@ -72,9 +72,7 @@ def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
         def node_update(event: "dronecan.app.node_monitor.NodeMonitor.UpdateEvent") -> None:
             if event.event_id == event.EVENT_ID_NEW:
                 req = uavcan.protocol.file.BeginFirmwareUpdate.Request()
-                the_path = state.settings["DroneCAN firmware substitution"][
-                    "Substitute firmware path"
-                ]["value"].value
+                the_path = state.settings["DroneCAN firmware substitution"]["Substitute firmware path"]["value"].value
                 req.image_file_remote_path.path = the_path
                 logging.debug("Sending %r to %r", req, event.entry.node_id)
                 print("A node will need an update")
