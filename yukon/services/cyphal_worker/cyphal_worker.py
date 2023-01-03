@@ -40,7 +40,7 @@ from yukon.services.flash_dronecan_firmware_with_cyphal_firmware import run_dron
 from yukon.services.snoop_registers import make_tracers_trackers
 
 logger = logging.getLogger(__name__)
-logger.setLevel("NOTSET")
+# logger.setLevel("NOTSET")
 
 
 def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -> None:
@@ -52,7 +52,7 @@ def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -
     allocation_data_sub.receive_in_background(receive_allocate_request)
 
 
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 
 def cyphal_worker(state: GodState) -> None:
@@ -69,13 +69,12 @@ def cyphal_worker(state: GodState) -> None:
 
             async def forward_dronecan_loop() -> None:
                 try:
-                    while True:
+                    while state.gui.gui_running:
                         await do_forward_dronecan_work(state)
-                        await asyncio.sleep(0.1)
                 except Exception as e:
-                    logger.exception(e)
                     tb = traceback.format_exc()
                     logger.error(tb)
+                logger.warn("Dronecan forwarding done")
 
             task = asyncio.create_task(forward_dronecan_loop())
 
