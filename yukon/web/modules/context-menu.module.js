@@ -406,7 +406,6 @@ export function make_context_menus(yukon_state) {
                 },
             }
         ],
-
     })
     cy_context_menu.init();
     const subscriber_menu_items = [

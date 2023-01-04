@@ -63,6 +63,18 @@ def run_electron(state: GodState) -> None:
     try:
         # Keeping reading the stdout and stderr, look for the string electron: symbol lookup error
         os.environ["YUKON_SERVER_PORT"] = str(state.gui.server_port)
+
+        def check_if_electron_replied():
+            nonlocal exit_code
+            time.sleep(7)
+            if state.gui.is_target_client_known:
+                return
+            else:
+                exit_code = 1
+
+        check_thread = threading.Thread(target=check_if_electron_replied, daemon=True)
+        check_thread.start()
+
         with subprocess.Popen(
             [exe_path, Path(root_path) / "yukon/electron/main.js"],
             stdout=subprocess.PIPE,
@@ -73,7 +85,7 @@ def run_electron(state: GodState) -> None:
 
             def receive_stdout() -> None:
                 nonlocal exit_code
-                while p.poll() is None and p.stdout:
+                while p.poll() is None and p.stdout and exit_code == 0:
                     line1 = p.stdout.readline()
                     if line1 and line1.strip() != "":
                         if "electron: symbol lookup error" in line1:
@@ -85,7 +97,7 @@ def run_electron(state: GodState) -> None:
 
             def receive_stderr() -> None:
                 nonlocal exit_code
-                while p.poll() is None and p.stderr:
+                while p.poll() is None and p.stderr and exit_code == 0:
                     line2 = p.stderr.readline()
                     if line2:
                         electron_logger.error(line2)
