@@ -4,6 +4,23 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
     const full_specifiers = [specifier + ":" + yukon_state.subscriptions[specifier].length];
     const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
     const messages = result[Object.keys(result)[0]]
+    if(!messages) {
+        if(!yukon_state.missed_messages) {
+            yukon_state.missed_messages = {};
+        }
+        if(yukon_state.missed_messages[specifier]) {
+            yukon_state.missed_messages[specifier]++;
+        } else {
+            yukon_state.missed_messages[specifier] = 1;
+        }
+        if(yukon_state.missed_messages[specifier] > 10) {
+            clearInterval(fetchIntervalId.value);
+            if(typeof pLatestMessage !== undefined && pLatestMessage.parentElement) {
+                pLatestMessage.innerText = "This subscription has been terminated by the server";
+            }
+        }
+        return;
+    }
     if (lastCurrentMessagesLength.value === current_messages.length + messages.length) {
         return;
     } else {

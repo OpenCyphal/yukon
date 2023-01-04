@@ -91,6 +91,7 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
             tb = traceback.format_exc()
             logger.critical(tb)
             return str(tb)
+
     @server.route("/api/get_all_subscription_messages", methods=["GET"])
     def get_all_subscription_messages() -> typing.Any:
         try:

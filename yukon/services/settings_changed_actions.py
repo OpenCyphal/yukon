@@ -44,8 +44,6 @@ def set_udp_server_handlers(state: "yukon.domain.god_state.GodState") -> None:
 
 
 def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
-    s1 = state.settings.get("DroneCAN firmware substitution")
-
     def _handle_setting_change(should_be_running: bool) -> None:
         logger.info("The setting for DroneCAN firmware substitution is now " + str(should_be_running))
         if state.dronecan.is_running:
@@ -62,10 +60,8 @@ def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
             if should_be_running:
                 state.queues.god_queue.put_nowait(RequestRunDronecanFirmwareUpdater())
 
-    if s1:
-        s2 = s1.get("Enabled")
-        _handle_setting_change(s2.value)
-        s2.connect(_handle_setting_change)
+    _handle_setting_change(state.dronecan.firmware_update_enabled)
+    state.dronecan.firmware_update_enabled.connect(_handle_setting_change)
 
 
 def set_file_server_handler(state: "yukon.domain.god_state.GodState") -> None:

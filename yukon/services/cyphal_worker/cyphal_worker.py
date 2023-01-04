@@ -107,7 +107,7 @@ def cyphal_worker(state: GodState) -> None:
                     await do_unsubscribe_requests_work(state, queue_element)
                 elif isinstance(queue_element, RequestRunDronecanFirmwareUpdater):
                     logger.debug("A request to run the DroneCAN firmware updater was received.")
-                    fpath = state.settings["DroneCAN firmware substitution"]["Substitute firmware path"]["value"].value
+                    fpath = state.dronecan.firmware_update_path.value
                     is_dronecan_firmware_path_available = fpath != ""
                     if is_dronecan_firmware_path_available:
                         state.dronecan.thread = threading.Thread(

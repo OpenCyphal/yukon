@@ -139,6 +139,9 @@ class DroneCanState:
     driver: Optional["yukon.services.flash_dronecan_firmware_with_cyphal_firmware.GoodDriver"] = field(
         default_factory=none_factory
     )
+    all_entries: Dict[int, Any] = field(default_factory=dict)
+    firmware_update_enabled: ReactiveValue = ReactiveValue(False)
+    firmware_update_path: ReactiveValue = ReactiveValue("")
     is_running: bool = False
     thread: Optional[threading.Thread] = field(default_factory=none_factory)
     node: Optional["dronecan.node.Node"] = field(default_factory=none_factory)
@@ -174,10 +177,6 @@ class GodState:
             "Firmware updates": {
                 "Enabled": ReactiveValue(False),
                 "File path": {"__type__": "dirpath", "value": ReactiveValue("")},
-            },
-            "DroneCAN firmware substitution": {
-                "Enabled": ReactiveValue(False),
-                "Substitute firmware path": {"__type__": "filepath", "value": ReactiveValue("")},
             },
             "Monitor view": {
                 "Show link name on another line": ReactiveValue(False),

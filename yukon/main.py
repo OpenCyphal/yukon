@@ -48,6 +48,7 @@ if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
 else:
     root_path = str(Path(os.path.dirname(os.path.abspath(__file__))).parent)
 
+
 def run_electron(state: GodState) -> None:
     # Make the thread sleep for 1 second waiting for the server to start
     while not state.gui.is_port_decided:
@@ -62,7 +63,7 @@ def run_electron(state: GodState) -> None:
         # Keeping reading the stdout and stderr, look for the string electron: symbol lookup error
         os.environ["YUKON_SERVER_PORT"] = str(state.gui.server_port)
 
-        def check_if_electron_replied():
+        def check_if_electron_replied() -> None:
             nonlocal exit_code
             time.sleep(7)
             if state.gui.is_target_client_known:

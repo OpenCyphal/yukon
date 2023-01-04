@@ -674,5 +674,12 @@ class Api:
     def load_settings(self) -> None:
         loading_settings_into_yukon(self.state)
 
-    def set_dronecan_enabled(self, enabled: bool) -> None:
-        self.state.dronecan_enabled = enabled
+    def set_dronecan_fw_substitution_enabled(self, enabled: bool) -> None:
+        self.state.dronecan.firmware_update_enabled.value = enabled
+
+    def set_dronecan_fw_substitution_path(self, path: str) -> None:
+        self.state.dronecan.firmware_update_path.value = path
+
+    def get_dronecan_node_entries(self) -> Response:
+        return jsonify(self.state.dronecan.all_entries)
+

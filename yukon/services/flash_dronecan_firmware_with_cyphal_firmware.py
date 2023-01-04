@@ -4,6 +4,7 @@ import math
 import os
 import queue
 import sys
+import threading
 import time
 from pathlib import Path
 import logging
@@ -66,6 +67,14 @@ def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
         # Add the current directory to the paths list
         state.dronecan.file_server = FileServer(state.dronecan.node, ["/"])  # This is secure!
         state.dronecan.node_monitor = NodeMonitor(state.dronecan.node)
+        def update_entries():
+            state.dronecan.all_entries = state.dronecan.node_monitor.find_all(lambda: True)
+        def update_entries_loop():
+            while state.gui.gui_running:
+                update_entries()
+                time.sleep(1)
+        update_entries_thread = threading.Thread(target=update_entries_loop, daemon=True)
+        state.dronecan.update_entries_thread.start()
         # It is NOT necessary to specify the database storage.
         # If it is not specified, the allocation table will be kept in memory, thus it will not be persistent.
         state.dronecan.allocator = CentralizedServer(
@@ -75,7 +84,7 @@ def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
         def node_update(event: "dronecan.app.node_monitor.NodeMonitor.UpdateEvent") -> None:
             if event.event_id == event.EVENT_ID_NEW:
                 req = uavcan.protocol.file.BeginFirmwareUpdate.Request()
-                the_path = state.settings["DroneCAN firmware substitution"]["Substitute firmware path"]["value"].value
+                the_path = state.dronecan.firmware_update_path.value
                 req.image_file_remote_path.path = the_path
                 logging.debug("Sending %r to %r", req, event.entry.node_id)
                 print("A node will need an update")
