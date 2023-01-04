@@ -46,18 +46,18 @@ class ContextMenu {
             Object.entries(data.events).forEach((event) => {
                 const [key, value] = event;
                 if (key === "prepare") {
-                    const function_for_appending = function () { value(contextMenuThis, data); }
+                    const function2 = function () { value(contextMenuThis, data); }
                     if (contextMenuThis.executeBeforeRender) {
-                        contextMenuThis.executeBeforeRender.push(function_for_appending);
+                        contextMenuThis.executeBeforeRender.push(function2);
                     } else {
-                        contextMenuThis.executeBeforeRender = [function_for_appending];
+                        contextMenuThis.executeBeforeRender = [function2];
                     }
                 } else if (key === "adjust") {
-                    const function_for_appending = function () { value(contextMenuThis, element, button, data); };
+                    const function1 = function () { value(contextMenuThis, element, button, data); };
                     if (contextMenuThis.executeAfterRender) {
-                        contextMenuThis.executeAfterRender.push(function_for_appending);
+                        contextMenuThis.executeAfterRender.push(function1);
                     } else {
-                        contextMenuThis.executeAfterRender = [function_for_appending];
+                        contextMenuThis.executeAfterRender = [function1];
                     }
                 } else {
                     function wrapper(e) {
@@ -116,6 +116,7 @@ class ContextMenu {
             const targetObject = e.target;
             const doesTargetMatchCriteria = targetObject.matches(this.target);
             if (doesTargetMatchCriteria) {
+                // Close the previous Menu (no more than one context menu can be open at a time)
                 this.closeMenu(this.renderedMenu)
                 e.preventDefault();
                 if (this.executeBeforeRender) {
