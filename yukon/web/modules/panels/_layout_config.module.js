@@ -87,6 +87,12 @@ export const layout_config = {
                                     componentName: "registerUpdateLogComponent",
                                     isClosable: true,
                                     title: "Register logs",
+                                },
+                                {
+                                    type: "component",
+                                    componentName: "dronecanComponent",
+                                    isClosable: true,
+                                    title: "Dronecan",
                                 }
                             ]
                         },

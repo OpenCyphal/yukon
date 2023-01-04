@@ -673,3 +673,6 @@ class Api:
 
     def load_settings(self) -> None:
         loading_settings_into_yukon(self.state)
+
+    def set_dronecan_enabled(self, enabled: bool) -> None:
+        self.state.dronecan_enabled = enabled

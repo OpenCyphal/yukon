@@ -161,6 +161,8 @@ def open_webbrowser(state: GodState) -> None:
         if not tried_webbrowser_open:
             webbrowser_open_wrapper(needed_url, state)
             tried_webbrowser_open = True
+            time.sleep(2)
+            break
 
         # Use a shell to launch chrome and firefox on url f"http://localhost:{state.gui.server_port}/main/main.html"
         # If the user is on linux, then use xdg-open
@@ -180,7 +182,10 @@ def open_webbrowser(state: GodState) -> None:
                 logger.info("Using start to open the browser")
                 subprocess.call(["start", needed_url])
                 tried_xdg_open_or_similar = True
-
+        time.sleep(2)
+        if state.gui.is_target_client_known:
+            print("Good to go, Yukon is now open in a browser.")
+            return
         if tried_webbrowser_open and tried_xdg_open_or_similar:
             logger.warning(
                 "The browser wasn't opened, please open it manually at URL %s",
