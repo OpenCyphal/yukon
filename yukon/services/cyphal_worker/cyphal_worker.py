@@ -112,7 +112,7 @@ def cyphal_worker(state: GodState) -> None:
                     is_dronecan_firmware_path_available = fpath != ""
                     if is_dronecan_firmware_path_available:
                         state.dronecan.thread = threading.Thread(
-                            target=run_dronecan_firmware_updater, args=(state, fpath)
+                            target=run_dronecan_firmware_updater, args=(state, fpath), daemon=True
                         )
                         state.dronecan.thread.start()
                         logger.info("DroneCAN firmware substitution is now " + "enabled")
