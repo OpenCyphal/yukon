@@ -415,8 +415,8 @@ export function make_context_menus(yukon_state) {
             events: {
                 adjust: async (contextMenuContext, element, button, data) => {
                     const portsSelected = yukon_state.monitor2selections;
-                    if(!portsSelected) {
-                        data.shouldBeDisplayed = () => false;
+                    if (!portsSelected) {
+                        element.parentElement.removeChild(element);
                         return;
                     }
                     const portsSelectedAndAllowed = [];
@@ -433,7 +433,7 @@ export function make_context_menus(yukon_state) {
                     if (portsSelectedAndAllowed.length > 1) {
                         button.innerHTML = "Subscribe to " + portsSelectedAndAllowed.join(", ") + " synchronously";
                     } else {
-                        data.shouldBeDisplayed = () => false;
+                        element.parentElement.removeChild(element);
                         return;
                     }
                 },
@@ -458,8 +458,8 @@ export function make_context_menus(yukon_state) {
             events: {
                 adjust: async (contextMenuContext, element, button, data) => {
                     const portsSelected = yukon_state.monitor2selections;
-                    if(!portsSelected) {
-                        data.shouldBeDisplayed = () => false;
+                    if (!portsSelected) {
+                        element.parentElement.removeChild(element);
                         return;
                     }
                     const portsSelectedAndAllowed = [];
@@ -476,7 +476,7 @@ export function make_context_menus(yukon_state) {
                     if (portsSelectedAndAllowed.length > 1) {
                         button.innerHTML = "Subscribe to " + portsSelectedAndAllowed.join(", ") + " separately";
                     } else {
-                        data.shouldBeDisplayed = () => false;
+                        element.parentElement.removeChild(element);
                         return;
                     }
                 },

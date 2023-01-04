@@ -45,14 +45,7 @@ class ContextMenu {
         if (data.events && data.events.length !== 0) {
             Object.entries(data.events).forEach((event) => {
                 const [key, value] = event;
-                if (key === "prepare") {
-                    const function2 = function () { value(contextMenuThis, data); }
-                    if (contextMenuThis.executeBeforeRender) {
-                        contextMenuThis.executeBeforeRender.push(function2);
-                    } else {
-                        contextMenuThis.executeBeforeRender = [function2];
-                    }
-                } else if (key === "adjust") {
+                if (key === "adjust") {
                     const function1 = function () { value(contextMenuThis, element, button, data); };
                     if (contextMenuThis.executeAfterRender) {
                         contextMenuThis.executeAfterRender.push(function1);
@@ -82,7 +75,7 @@ class ContextMenu {
 
         this.menuElementsArray.forEach((item) => {
             const dataOfItem = this.dataOfMenuElements.get(item);
-            if (dataOfItem.shouldBeDisplayed() || !dataOfItem.shouldBeDisplayed) {
+            if (!dataOfItem.shouldBeDisplayed || dataOfItem.shouldBeDisplayed()) {
                 if (dataOfItem.nameChangeNeeded) {
                     dataOfItem.nameChangeNeeded();
                 }
@@ -96,8 +89,12 @@ class ContextMenu {
     closeMenu(menu) {
         if (this.isOpened) {
             this.isOpened = false;
-            // Remove the html element menu
-            document.body.removeChild(menu);
+            try {
+                // Remove the html element menu
+                document.body.removeChild(menu);
+            } catch {
+                // If the menu is already removed, do nothing
+            }
         }
     }
 
@@ -118,18 +115,22 @@ class ContextMenu {
             if (doesTargetMatchCriteria) {
                 // Close the previous Menu (no more than one context menu can be open at a time)
                 this.closeMenu(this.renderedMenu)
+                this.elementOpenedOn = e.target;
+                // Prevent the system default context menu from appearing
                 e.preventDefault();
+                // Run a function of the user's choice (on any context menu items) before the menu is rendered
+                // The function has access to the data that will be used to construct the menu item and will modify it
                 if (this.executeBeforeRender) {
                     this.executeBeforeRender.forEach((func) => func());
                 }
                 this.renderedMenu = this.renderMenu();
+                // Run a function of the user's choice (on any context menu items) after the menu is rendered
+                // The function will access the menu item's html element and the data that was used to construct it
+                // A common usecase is to delete the menuitem if it shouldn't be shown
                 if (this.executeAfterRender) {
                     this.executeAfterRender.forEach((func) => func());
                 }
 
-                this.elementOpenedOn = e.target;
-                
-                
                 // If there are no elements remaining after the adjust function runs, don't show the menu
                 if (this.renderedMenu.children.length === 0) {
                     return;
@@ -149,13 +150,10 @@ class ContextMenu {
                         : clientX;
 
                 setTimeout(() => {
-                    this.renderedMenu.setAttribute(
-                        "style",
-                        `--width: ${this.renderedMenu.scrollWidth}px;
-            --height: ${this.renderedMenu.scrollHeight}px;
-            --top: ${positionY}px;
-            --left: ${positionX}px;`
-                    );
+                    this.renderedMenu.style.setProperty("--width", `${this.renderedMenu.scrollWidth}px`);
+                    this.renderedMenu.style.setProperty("--height", `${this.renderedMenu.scrollHeight}px`);
+                    this.renderedMenu.style.setProperty("--top", `${positionY}px`);
+                    this.renderedMenu.style.setProperty("--left", `${positionX}px`);
                 }, 100);
             } else {
                 // The original browser context menu is not shown
