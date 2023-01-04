@@ -14,6 +14,8 @@ import yaml
 from uuid import uuid4
 from time import time
 
+from yukon.services.utils import quit_application
+
 try:
     from yaml import CLoader as Loader
 except ImportError:
@@ -461,8 +463,7 @@ class Api:
         self.state.gui.is_target_client_known = True
 
     def close_yukon(self) -> None:
-        self.state.gui.gui_running = False
-        self.state.queues.god_queue.put_nowait("Exiting")  # This could be anything
+        quit_application(self.state)
 
     def yaml_to_yaml(self, yaml_in: str) -> Response:
         text_response = Dumper().dumps(yaml.load(yaml_in, Loader))

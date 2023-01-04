@@ -32,6 +32,7 @@ from yukon.services.api import Api, SendingApi
 from yukon.services.get_electron_path import get_electron_path
 from yukon.sentry_setup import setup_sentry
 from yukon.server import server, make_landing_and_bridge
+from yukon.services.utils import quit_application
 
 mimetypes.add_type("text/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
@@ -41,13 +42,11 @@ setup_sentry(sentry_sdk)
 paths = sys.path
 
 logger = logging.getLogger()
-logger.setLevel("INFO")
 
 if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
     root_path = sys._MEIPASS  # type: ignore # pylint: disable=protected-access
 else:
     root_path = str(Path(os.path.dirname(os.path.abspath(__file__))).parent)
-
 
 def run_electron(state: GodState) -> None:
     # Make the thread sleep for 1 second waiting for the server to start
@@ -56,7 +55,6 @@ def run_electron(state: GodState) -> None:
 
     exe_path = get_electron_path()
     electron_logger = logger.getChild("electronJS")
-    electron_logger.setLevel("DEBUG")
     # electron_logger.addHandler(state.messages_publisher)
     exit_code = 0
     # Use subprocess to run the exe
@@ -128,7 +126,7 @@ def run_electron(state: GodState) -> None:
         open_webbrowser(state)
 
 
-def webbrowser_open_wrapper(url: str) -> bool:
+def webbrowser_open_wrapper(url: str, state: GodState) -> bool:
     """This one has a timeout"""
     # if the webbrowser.open function doesn't return in 1 second then return false
     # run the webbrowser.open function in a thread and return its return value if it returns in 1 second
@@ -144,11 +142,11 @@ def webbrowser_open_wrapper(url: str) -> bool:
     t.start()
     start_time = monotonic()
     while t.is_alive():
-        if monotonic() - start_time > 1:
+        if monotonic() - start_time > 3:
             return False
         sleep(0.1)
         logger.info("Timeout function is sleeping")
-    return did_open_webbrowser
+    return did_open_webbrowser or state.gui.is_target_client_known
 
 
 def open_webbrowser(state: GodState) -> None:
@@ -158,9 +156,10 @@ def open_webbrowser(state: GodState) -> None:
     tried_webbrowser_open = False
     tried_xdg_open_or_similar = False
     browser_not_opened_counter = 0
+    needed_url = f"http://127.0.0.1:{state.gui.server_port}/main/main.html?port={state.gui.server_port}"
     while not state.gui.is_running_in_browser and state.gui.gui_running:
         if not tried_webbrowser_open:
-            webbrowser_open_wrapper(f"http://127.0.0.1:{state.gui.server_port}/main/main.html")
+            webbrowser_open_wrapper(needed_url, state)
             tried_webbrowser_open = True
 
         # Use a shell to launch chrome and firefox on url f"http://localhost:{state.gui.server_port}/main/main.html"
@@ -171,26 +170,26 @@ def open_webbrowser(state: GodState) -> None:
         if tried_webbrowser_open and not tried_xdg_open_or_similar:
             if sys.platform == "linux":
                 logger.info("Using xdg-open to open the browser")
-                subprocess.call(["xdg-open", f"http://127.0.0.1:{state.gui.server_port}/main/main.html"])
+                subprocess.call(["xdg-open", needed_url])
                 tried_xdg_open_or_similar = True
             elif sys.platform == "darwin":
                 logger.info("Using open to open the browser")
-                subprocess.call(["open", f"http://127.0.0.1:{state.gui.server_port}/main/main.html"])
+                subprocess.call(["open", needed_url])
                 tried_xdg_open_or_similar = True
             elif sys.platform == "win32":
                 logger.info("Using start to open the browser")
-                subprocess.call(["start", f"http://127.0.0.1:{state.gui.server_port}/main/main.html"])
+                subprocess.call(["start", needed_url])
                 tried_xdg_open_or_similar = True
 
         if tried_webbrowser_open and tried_xdg_open_or_similar:
             logger.warning(
                 "The browser wasn't opened, please open it manually at URL %s",
-                f"http://127.0.0.1:{state.gui.server_port}/main/main.html?port={state.gui.server_port}",
+                needed_url,
             )
             browser_not_opened_counter += 1
             if browser_not_opened_counter > 10:
                 logger.error("The browser wasn't opened, exiting")
-                state.gui.gui_running = False
+                quit_application(state)
                 # Send a sigterm signal
                 os.kill(os.getpid(), signal.SIGTERM)
         sleep(2)
@@ -331,8 +330,8 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
             and not state.gui.is_headless
             and is_running_in_browser
         ):
-            logging.debug("No poll received in 3 seconds, shutting down")
-            state.gui.gui_running = False
+            logging.info("No poll received in 3 seconds, shutting down")
+            quit_application(state)
         if not state.gui.gui_running:
             break
     exit_handler(None, None)
