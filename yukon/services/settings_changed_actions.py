@@ -6,12 +6,11 @@ import traceback
 import uavcan
 
 import yukon
-from yukon.domain.request_run_dronecan_firmware_updater import RequestRunDronecanFirmwareUpdater
+from yukon.domain.request_run_dronecan import RequestRunDronecan
 from yukon.domain.start_fileserver_request import StartFileServerRequest
 from yukon.domain.udp_connection import UDPConnection
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.FileServer import FileServer
-from yukon.services.flash_dronecan_firmware_with_cyphal_firmware import run_dronecan_firmware_updater
 from yukon.services.udp_server import UDPConnectionServer
 
 logger = logging.getLogger(__name__)
@@ -45,10 +44,9 @@ def set_udp_server_handlers(state: "yukon.domain.god_state.GodState") -> None:
 
 def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
     def _handle_setting_change(should_be_running: bool) -> None:
-        logger.info("The setting for DroneCAN firmware substitution is now " + str(should_be_running))
         if state.dronecan.is_running:
             if not should_be_running:
-                logger.info("DroneCAN firmware substitution is now " + "disabled")
+                logger.info("DroneCAN is now disabled")
                 state.dronecan.is_running = False
                 state.dronecan.thread.join()
                 state.dronecan.file_server = None
@@ -58,10 +56,10 @@ def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
                 state.dronecan.allocator = None
         elif not state.dronecan.is_running:
             if should_be_running:
-                state.queues.god_queue.put_nowait(RequestRunDronecanFirmwareUpdater())
+                state.queues.god_queue.put_nowait(RequestRunDronecan())
 
-    _handle_setting_change(state.dronecan.firmware_update_enabled)
-    state.dronecan.firmware_update_enabled.connect(_handle_setting_change)
+    _handle_setting_change(state.dronecan.enabled.value)
+    state.dronecan.enabled.connect(_handle_setting_change)
 
 
 def set_file_server_handler(state: "yukon.domain.god_state.GodState") -> None:

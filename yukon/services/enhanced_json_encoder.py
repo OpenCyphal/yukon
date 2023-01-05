@@ -21,6 +21,8 @@ from yukon.domain.registers.update_register_log_item import UpdateRegisterLogIte
 from yukon.domain.interface import Interface
 from yukon.domain.transport.detach_transport_response import DetachTransportResponse
 
+from dronecan.app.node_monitor import NodeMonitor
+
 INFINITY = float("inf")
 
 _logger = logging.getLogger(__name__)
@@ -50,6 +52,37 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                     "message": o.message,
                     "_meta_": metadata,
                 }
+            }
+        if isinstance(o, NodeMonitor.Entry):
+            hardware_version = {
+                "major": o.info.hardware_version.major,
+                "minor": o.info.hardware_version.minor,
+                "unique_id": o.info.hardware_version.unique_id.to_bytes().hex(),
+            }
+            software_version = {
+                "major": o.info.software_version.major,
+                "minor": o.info.software_version.minor,
+                "optional_field_flags": o.info.software_version.optional_field_flags,
+                "vcs_commit": o.info.software_version.vcs_commit,
+                "image_crc": o.info.software_version.image_crc,
+            }
+            # Convert the number array to a str (ASCII), from o.info.name
+            name = "".join(chr(i) for i in o.info.name.to_bytes())
+            uptime_seconds = o.info.status.uptime_sec
+            health = o.info.status.health
+            mode = o.info.status.mode
+            sub_mode = o.info.status.sub_mode
+            vendor_specific_status_code = o.info.status.vendor_specific_status_code
+            return {
+                "node_id": o.node_id,
+                "name": name,
+                "uptime_seconds": uptime_seconds,
+                "health": health,
+                "mode": mode,
+                "sub_mode": sub_mode,
+                "vendor_specific_status_code": vendor_specific_status_code,
+                "hardware_version": hardware_version,
+                "software_version": software_version,
             }
         if isinstance(o, SynchronizedMessageStore):
             return o.messages

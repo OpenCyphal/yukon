@@ -18,7 +18,7 @@ from yukon.domain.god_state import GodState
 
 from dronecan import make_node, UAVCANException, make_driver
 from dronecan.app.dynamic_node_id import CentralizedServer
-from dronecan.app.file_server import FileServer
+from yukon.services.dronecan.file_server import SimpleFileServer
 from dronecan.app.node_monitor import NodeMonitor
 from dronecan import uavcan
 
@@ -56,7 +56,7 @@ class GoodDriver(AbstractDriver):
             return None
 
 
-def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
+def run_dronecan(state: GodState) -> None:
     logger.debug("Starting DroneCAN firmware updater")
     state.dronecan.allocator = None
     state.dronecan.node_monitor = None
@@ -67,14 +67,17 @@ def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
         # Add the current directory to the paths list
         state.dronecan.file_server = FileServer(state.dronecan.node, ["/"])  # This is secure!
         state.dronecan.node_monitor = NodeMonitor(state.dronecan.node)
+
         def update_entries():
-            state.dronecan.all_entries = state.dronecan.node_monitor.find_all(lambda: True)
+            state.dronecan.all_entries = state.dronecan.node_monitor.find_all(lambda x: True)
+
         def update_entries_loop():
             while state.gui.gui_running:
                 update_entries()
                 time.sleep(1)
+
         update_entries_thread = threading.Thread(target=update_entries_loop, daemon=True)
-        state.dronecan.update_entries_thread.start()
+        update_entries_thread.start()
         # It is NOT necessary to specify the database storage.
         # If it is not specified, the allocation table will be kept in memory, thus it will not be persistent.
         state.dronecan.allocator = CentralizedServer(
@@ -82,7 +85,11 @@ def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
         )
 
         def node_update(event: "dronecan.app.node_monitor.NodeMonitor.UpdateEvent") -> None:
-            if event.event_id == event.EVENT_ID_NEW:
+            if (
+                event.event_id == event.EVENT_ID_NEW
+                and state.dronecan.firmware_update_enabled.value
+                and len(state.dronecan.firmware_update_path.value) > 1
+            ):
                 req = uavcan.protocol.file.BeginFirmwareUpdate.Request()
                 the_path = state.dronecan.firmware_update_path.value
                 req.image_file_remote_path.path = the_path
@@ -100,6 +107,7 @@ def run_dronecan_firmware_updater(state: GodState, file_name: str) -> None:
             except UAVCANException as ex:
                 if "Toggle bit value" not in str(ex):
                     print("Node error:", ex)
+        state.dronecan.is_running = False
     except Exception as ex:
         logger.debug("DroneCAN firmware updater failed: %r", ex)
         if state.dronecan.allocator:

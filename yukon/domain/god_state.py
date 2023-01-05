@@ -140,6 +140,7 @@ class DroneCanState:
         default_factory=none_factory
     )
     all_entries: Dict[int, Any] = field(default_factory=dict)
+    enabled: ReactiveValue = ReactiveValue(False)
     firmware_update_enabled: ReactiveValue = ReactiveValue(False)
     firmware_update_path: ReactiveValue = ReactiveValue("")
     is_running: bool = False

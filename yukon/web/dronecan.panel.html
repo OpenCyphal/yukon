@@ -1,12 +1,20 @@
 <div id="dronecan-panel" class="container mt-2">
+    <h3>Legacy 💩</h3>
     <div class="form-check">
-    <input class="form-check-input" type="checkbox" value="" id="cbDronecanEnabled">
-    <label class="form-check-label" for="cbDronecanEnabled">
-        Dronecan firmware updates
-    </label>
+        <input class="form-check-input" type="checkbox" value="" id="cbDronecanEnabled">
+        <label class="form-check-label" for="cbDronecanEnabled">
+            Dronecan status and node
+        </label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="" id="cbDronecanEnabled">
+        <label class="form-check-label" for="cbDronecanFWUpdateEnabled">
+            Dronecan firmware updates (also needs above checked)
+        </label>
     </div>
     <div class="input-group">
-        <input type="text" class="form-control" id="txtFirmwarePath" placeholder="Dronecan firmware path" aria-label="Dronecan firmware path">
+        <input type="text" class="form-control" id="txtFirmwarePath" placeholder="Dronecan firmware path"
+            aria-label="Dronecan firmware path">
         <button class="btn btn-outline-secondary" id="btnSetFirmwarePath" type="button">Set</button>
         <button class="btn btn-outline-secondary" id="btnBrowse">Browse</button>
     </div>
