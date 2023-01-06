@@ -682,6 +682,6 @@ class Api:
 
     def set_dronecan_enabled(self, enabled: bool) -> None:
         self.state.dronecan.enabled.value = enabled
-    
+
     def get_dronecan_node_entries(self) -> Response:
         return jsonify(list(self.state.dronecan.all_entries))

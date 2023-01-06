@@ -18,7 +18,7 @@ from yukon.domain.god_state import GodState
 
 from dronecan import make_node, UAVCANException, make_driver
 from dronecan.app.dynamic_node_id import CentralizedServer
-from yukon.services.dronecan.file_server import SimpleFileServer
+from yukon.services.mydronecan.file_server import SimpleFileServer
 from dronecan.app.node_monitor import NodeMonitor
 from dronecan import uavcan
 
@@ -79,9 +79,7 @@ def run_dronecan(state: GodState) -> None:
         update_entries_thread.start()
         # It is NOT necessary to specify the database storage.
         # If it is not specified, the allocation table will be kept in memory, thus it will not be persistent.
-        state.dronecan.allocator = CentralizedServer(
-            state.dronecan.node, state.dronecan.node_monitor
-        )
+        state.dronecan.allocator = CentralizedServer(state.dronecan.node, state.dronecan.node_monitor)
 
         def node_update(event: "dronecan.app.node_monitor.NodeMonitor.UpdateEvent") -> None:
             if (
@@ -90,8 +88,7 @@ def run_dronecan(state: GodState) -> None:
                 and len(state.dronecan.firmware_update_path.value) > 1
             ):
                 req = uavcan.protocol.file.BeginFirmwareUpdate.Request()
-                the_path = state.dronecan.firmware_update_path.value
-                req.image_file_remote_path.path = the_path
+                req.image_file_remote_path.path = "a"
                 logging.debug("Sending %r to %r", req, event.entry.node_id)
                 print("A node will need an update")
                 state.dronecan.node.request(req, event.entry.node_id, lambda e: None)
@@ -108,7 +105,7 @@ def run_dronecan(state: GodState) -> None:
                     print("Node error:", ex)
         state.dronecan.is_running = False
     except Exception as ex:
-        logger.debug("DroneCAN firmware updater failed: %r", ex)
+        logger.debug("DroneCAN node start failed: %r", ex)
         if state.dronecan.allocator:
             state.dronecan.allocator.close()
         if state.dronecan.node_monitor:

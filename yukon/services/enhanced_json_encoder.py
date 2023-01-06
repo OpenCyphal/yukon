@@ -54,25 +54,41 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                 }
             }
         if isinstance(o, NodeMonitor.Entry):
-            hardware_version = {
-                "major": o.info.hardware_version.major,
-                "minor": o.info.hardware_version.minor,
-                "unique_id": o.info.hardware_version.unique_id.to_bytes().hex(),
-            }
-            software_version = {
-                "major": o.info.software_version.major,
-                "minor": o.info.software_version.minor,
-                "optional_field_flags": o.info.software_version.optional_field_flags,
-                "vcs_commit": o.info.software_version.vcs_commit,
-                "image_crc": o.info.software_version.image_crc,
-            }
-            # Convert the number array to a str (ASCII), from o.info.name
-            name = "".join(chr(i) for i in o.info.name.to_bytes())
-            uptime_seconds = o.info.status.uptime_sec
-            health = o.info.status.health
-            mode = o.info.status.mode
-            sub_mode = o.info.status.sub_mode
-            vendor_specific_status_code = o.info.status.vendor_specific_status_code
+            if o.info is None or o.info.hardware_version is None:
+                hardware_version = None
+            else:
+                hardware_version = {
+                    "major": o.info.hardware_version.major,
+                    "minor": o.info.hardware_version.minor,
+                    "unique_id": o.info.hardware_version.unique_id.to_bytes().hex(),
+                }
+            if o.info is None or o.info.software_version is None:
+                software_version = None
+            else:
+                software_version = {
+                    "major": o.info.software_version.major,
+                    "minor": o.info.software_version.minor,
+                    "optional_field_flags": o.info.software_version.optional_field_flags,
+                    "vcs_commit": o.info.software_version.vcs_commit,
+                    "image_crc": o.info.software_version.image_crc,
+                }
+            if not o.info or not o.info.name:
+                name = None
+            else:
+                # Convert the number array to a str (ASCII), from o.info.name
+                name = "".join(chr(i) for i in o.info.name.to_bytes())
+            if not o.info or not o.info.status:
+                uptime_seconds = None
+                health = None
+                mode = None
+                sub_mode = None
+                vendor_specific_status_code = None
+            else:
+                uptime_seconds = o.info.status.uptime_sec
+                health = o.info.status.health
+                mode = o.info.status.mode
+                sub_mode = o.info.status.sub_mode
+                vendor_specific_status_code = o.info.status.vendor_specific_status_code
             return {
                 "node_id": o.node_id,
                 "name": name,

@@ -21,10 +21,10 @@ logger = getLogger(__name__)
 
 # noinspection PyBroadException
 class SimpleFileServer(object):
-    def __init__(self, node):
+    def __init__(self, node, _file_path):
         if node.is_anonymous:
             raise dronecan.UAVCANException("File server cannot be launched on an anonymous node")
-        self.file_path = None
+        self.file_path = _file_path
         self._handles = []
         self.is_enabled = False
 
@@ -49,7 +49,7 @@ class SimpleFileServer(object):
             )
         )
         try:
-            with open(self._resolve_path(e.request.path), "rb") as f:
+            with open(self.file_path, "rb") as f:
                 data = f.read()
                 resp = uavcan.protocol.file.GetInfo.Response()
                 resp.error.value = resp.error.OK

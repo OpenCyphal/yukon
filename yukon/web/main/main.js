@@ -29,7 +29,6 @@ import { setUpRegisterUpdateLogComponent } from "../modules/panels/register_upda
 import { setUpSubscriptionsComponent } from "../modules/panels/subscriptions.module.js"
 import { layout_config } from "../modules/panels/_layout_config.module.js"
 import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
-import { setUpMotorControlComponent } from "../modules/panels/motor_control.module.js"
 import { setUpMonitor2Component } from "../modules/panels/monitor2/monitor2.module.js"
 import { setUpDronecanComponent } from '../modules/panels/dronecan.module.js';
 
@@ -220,13 +219,6 @@ yukon_state.port = urlParams.get('port');
                         yukon_state.settingsComponent = container;
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         await setUpSettingsComponent.bind(outsideContext)(container, yukon_state);
-                    });
-                });
-                myLayout.registerComponent("motorControlComponent", function (container, componentState) {
-                    registerComponentAction("../motor-control.panel.html", "motorControlComponent", container, () => {
-                        const containerElement = container.getElement()[0];
-                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpMotorControlComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 myLayout.registerComponent("monitor2Component", function (container, componentState) {

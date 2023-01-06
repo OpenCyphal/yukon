@@ -99,13 +99,6 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         if isinstance(obj.value, uavcan.primitive.Empty_1):
             return
         register_name = self.access_requests_names_by_transfer_id[transfer_id]
-        # if register_name == "uavcan.node.unique_id":
-        #     unstructured_value = obj.value.unstructured
-        #     array = bytearray(unstructured_value.value)
-        #     # Convert to hex string
-        #     hex_string = array.hex(":")
-        #     self.register_values[register_name] = hex_string
-        #     return
         assert register_name is not None
         if register_name is None:
             logger.error("No register name for transfer ID %d", transfer_id)

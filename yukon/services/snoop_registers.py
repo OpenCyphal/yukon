@@ -104,7 +104,7 @@ def make_handler_for_node_detected(
         elif previous_entry is not None and next_entry is None:
             logger.info(f"Node with id {node_id} disappeared.")
             state.avatar.disappeared_nodes[node_id] = True
-            del state.avatar.avatars_by_node_id[node_id]
+            # del state.avatar.avatars_by_node_id[node_id]
         is_new_or_updated_entry = next_entry is not None
         if is_new_or_updated_entry:
             current_avatar = state.avatar.avatars_by_node_id[node_id]

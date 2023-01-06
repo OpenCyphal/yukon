@@ -11,6 +11,7 @@ from yukon.domain.start_fileserver_request import StartFileServerRequest
 from yukon.domain.udp_connection import UDPConnection
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.FileServer import FileServer
+from yukon.services.mydronecan.file_server import SimpleFileServer
 from yukon.services.udp_server import UDPConnectionServer
 
 logger = logging.getLogger(__name__)
@@ -57,7 +58,7 @@ def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
                 logger.info("DroneCAN node is not yet ready, postponing fileserver start")
                 return
             logger.info("DroneCAN fileserver is now enabled")
-            state.dronecan.fileserver = FileServer(state.dronecan.node, state.dronecan.firmware_update_path.value)
+            state.dronecan.fileserver = SimpleFileServer(state.dronecan.node, state.dronecan.firmware_update_path.value)
             state.dronecan.fileserver.start()
 
     def _handle_dronecan_fileserver_path_change(new_value: str) -> None:
@@ -71,7 +72,7 @@ def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
                 logger.info("DroneCAN is now disabled")
                 state.dronecan.is_running = False
                 state.dronecan.thread.join()
-                state.dronecan.file_server = None
+                state.dronecan.fileserver = None
                 state.dronecan.thread = None
                 state.dronecan.node_monitor = None
                 state.dronecan.driver = None

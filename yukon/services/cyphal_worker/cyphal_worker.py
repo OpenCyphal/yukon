@@ -36,7 +36,7 @@ from yukon.services.cyphal_worker.attach_transport_work import do_attach_transpo
 from yukon.services.cyphal_worker.update_configuration_work import do_apply_configuration_work
 from yukon.services.cyphal_worker.update_register_work import do_update_register_work
 from yukon.domain.god_state import GodState
-from yukon.services.dronecan.dronecan_stuff import run_dronecan
+from yukon.services.mydronecan.dronecan_stuff import run_dronecan
 from yukon.services.snoop_registers import make_tracers_trackers
 
 logger = logging.getLogger(__name__)
@@ -107,7 +107,7 @@ def cyphal_worker(state: GodState) -> None:
                     await do_unsubscribe_requests_work(state, queue_element)
                 elif isinstance(queue_element, RequestRunDronecan):
                     logger.debug("A request to run the DroneCAN firmware updater was received.")
-                    state.dronecan.thread = threading.Thread(target=run_dronecan, args=(state), daemon=True)
+                    state.dronecan.thread = threading.Thread(target=run_dronecan, args=(state,), daemon=True)
                     state.dronecan.thread.start()
                     logger.info("DroneCAN firmware substitution is now " + "enabled")
         except Exception as e:
