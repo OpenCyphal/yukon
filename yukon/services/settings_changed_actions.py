@@ -43,7 +43,29 @@ def set_udp_server_handlers(state: "yukon.domain.god_state.GodState") -> None:
 
 
 def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
-    def _handle_setting_change(should_be_running: bool) -> None:
+    def _handle_dronecan_fileserver_enabled_change(should_be_running: bool) -> None:
+        if state.dronecan.fileserver and should_be_running:
+            logger.info("DroneCAN fileserver is already running")
+            return
+        if state.dronecan.fileserver and not should_be_running:
+            logger.info("DroneCAN fileserver is now disabled")
+            state.dronecan.fileserver.stop()
+            state.dronecan.fileserver = None
+            return
+        if not state.dronecan.fileserver and should_be_running:
+            if not state.dronecan.node:
+                logger.info("DroneCAN node is not yet ready, postponing fileserver start")
+                return
+            logger.info("DroneCAN fileserver is now enabled")
+            state.dronecan.fileserver = FileServer(state.dronecan.node, state.dronecan.firmware_update_path.value)
+            state.dronecan.fileserver.start()
+
+    def _handle_dronecan_fileserver_path_change(new_value: str) -> None:
+        if state.dronecan.fileserver:
+            logger.info("DroneCAN fileserver path changed to " + new_value)
+            state.dronecan.fileserver.file_path = new_value
+
+    def _handle_dronecan_enabled_change(should_be_running: bool) -> None:
         if state.dronecan.is_running:
             if not should_be_running:
                 logger.info("DroneCAN is now disabled")
@@ -58,8 +80,11 @@ def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
             if should_be_running:
                 state.queues.god_queue.put_nowait(RequestRunDronecan())
 
-    _handle_setting_change(state.dronecan.enabled.value)
-    state.dronecan.enabled.connect(_handle_setting_change)
+    _handle_dronecan_enabled_change(state.dronecan.enabled.value)
+    _handle_dronecan_fileserver_enabled_change(state.dronecan.firmware_update_enabled.value)
+    state.dronecan.enabled.connect(_handle_dronecan_enabled_change)
+    state.dronecan.firmware_update_enabled.connect(_handle_dronecan_fileserver_enabled_change)
+    state.dronecan.firmware_update_path.connect(_handle_dronecan_fileserver_path_change)
 
 
 def set_file_server_handler(state: "yukon.domain.god_state.GodState") -> None:

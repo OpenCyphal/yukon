@@ -65,7 +65,6 @@ def run_dronecan(state: GodState) -> None:
         state.dronecan.node = Node(state.dronecan.driver, node_id=123)
         logger.debug("Node %r created", state.dronecan.node)
         # Add the current directory to the paths list
-        state.dronecan.file_server = FileServer(state.dronecan.node, ["/"])  # This is secure!
         state.dronecan.node_monitor = NodeMonitor(state.dronecan.node)
 
         def update_entries():
@@ -81,7 +80,7 @@ def run_dronecan(state: GodState) -> None:
         # It is NOT necessary to specify the database storage.
         # If it is not specified, the allocation table will be kept in memory, thus it will not be persistent.
         state.dronecan.allocator = CentralizedServer(
-            state.dronecan.node, state.dronecan.node_monitor, database_storage=Path(os.getcwd()) / "allocation.db"
+            state.dronecan.node, state.dronecan.node_monitor
         )
 
         def node_update(event: "dronecan.app.node_monitor.NodeMonitor.UpdateEvent") -> None:

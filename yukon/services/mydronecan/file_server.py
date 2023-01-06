@@ -5,7 +5,7 @@
 #
 # Author: Ben Dyer <ben_dyer@mac.com>
 #         Pavel Kirienko <pavel.kirienko@zubax.com>
-#
+#         Silver Valdvee <silver.valdvee@zubax.com>
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 import os
@@ -26,19 +26,23 @@ class SimpleFileServer(object):
             raise dronecan.UAVCANException("File server cannot be launched on an anonymous node")
         self.file_path = None
         self._handles = []
+        self.is_enabled = False
 
         def add_handler(datatype, callback):
             self._handles.append(node.add_handler(datatype, callback))
 
         add_handler(uavcan.protocol.file.GetInfo, self._get_info)
         add_handler(uavcan.protocol.file.Read, self._read)
-        # TODO: support all file services
 
-    def close(self):
-        for x in self._handles:
-            x.remove()
+    def start(self):
+        self.is_enabled = True
+
+    def stop(self):
+        self.is_enabled = False
 
     def _get_info(self, e):
+        if not self.is_enabled:
+            return
         logger.debug(
             "[#{0:03d}:uavcan.protocol.file.GetInfo] {1!r}".format(
                 e.transfer.source_node_id, e.request.path.path.decode()
@@ -60,6 +64,8 @@ class SimpleFileServer(object):
         return resp
 
     def _read(self, e):
+        if not self.is_enabled:
+            return
         logger.debug(
             "[#{0:03d}:uavcan.protocol.file.Read] {1!r} @ offset {2:d}".format(
                 e.transfer.source_node_id, e.request.path.path.decode(), e.request.offset
