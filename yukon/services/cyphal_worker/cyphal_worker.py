@@ -37,7 +37,7 @@ from yukon.services.cyphal_worker.update_configuration_work import do_apply_conf
 from yukon.services.cyphal_worker.update_register_work import do_update_register_work
 from yukon.domain.god_state import GodState
 from yukon.services.mydronecan.dronecan_stuff import run_dronecan
-from yukon.services.snoop_registers import make_tracers_trackers
+from yukon.services.avatar_handler import make_tracers_trackers
 
 logger = logging.getLogger(__name__)
 # logger.setLevel("NOTSET")
