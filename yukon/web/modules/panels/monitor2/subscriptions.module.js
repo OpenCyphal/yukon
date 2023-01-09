@@ -4,18 +4,18 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
     const full_specifiers = [specifier + ":" + yukon_state.subscriptions[specifier].length];
     const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
     const messages = result[Object.keys(result)[0]]
-    if(!messages) {
-        if(!yukon_state.missed_messages) {
+    if (!messages) {
+        if (!yukon_state.missed_messages) {
             yukon_state.missed_messages = {};
         }
-        if(yukon_state.missed_messages[specifier]) {
+        if (yukon_state.missed_messages[specifier]) {
             yukon_state.missed_messages[specifier]++;
         } else {
             yukon_state.missed_messages[specifier] = 1;
         }
-        if(yukon_state.missed_messages[specifier] > 10) {
+        if (yukon_state.missed_messages[specifier] > 10) {
             clearInterval(fetchIntervalId.value);
-            if(typeof pLatestMessage !== undefined && pLatestMessage.parentElement) {
+            if (typeof pLatestMessage !== undefined && pLatestMessage.parentElement) {
                 pLatestMessage.innerText = "This subscription has been terminated by the server";
             }
         }
@@ -205,6 +205,28 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     divLogToConsole.appendChild(labelLogToConsole);
     subscriptionElement.appendChild(divLogToConsole);
 
+    // Add an input number field for capacity of the stored messages
+    // Also a label before it
+    const divCapacity = document.createElement('div');
+    divCapacity.classList.add('form-group');
+    const labelCapacity = document.createElement('label');
+    labelCapacity.htmlFor = "inputCapacity" + subject_id + ":" + datatype;
+    labelCapacity.innerHTML = "Saved messages capacity";
+    divCapacity.appendChild(labelCapacity);
+    const inputCapacity = document.createElement('input');
+    inputCapacity.classList.add('form-control');
+    inputCapacity.type = 'number';
+    inputCapacity.id = "inputCapacity" + subject_id + ":" + datatype;
+    inputCapacity.value = settings.DefaultMessageCapacity;
+    divCapacity.appendChild(inputCapacity);
+    subscriptionElement.appendChild(divCapacity);
+    setTimeout(async () => await yukon_state.zubax_apij.set_message_store_capacity(subject_id + ":" + datatype, inputCapacity.value), 1000);
+    inputCapacity.addEventListener('change',
+        async () =>
+            await yukon_state.zubax_apij.set_message_store_capacity(subject_id + ":" + datatype, inputCapacity.value)
+    );
+
+
     // Add a button for opening logs
     const openLogsButton = document.createElement("button");
     openLogsButton.classList.add("btn", "btn-secondary", "btn-sm")
@@ -300,6 +322,27 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     // unsubscribeButton.addEventListener("click", unsubscribeHandler);
     // subscriptionElement.appendChild(unsubscribeButton);
     subscriptionElement.style.position = "relative";
+
+    // Add an input number field for capacity of the stored messages
+    // Also a label before it
+    const divCapacity = document.createElement('div');
+    divCapacity.classList.add('form-group');
+    const labelCapacity = document.createElement('label');
+    labelCapacity.htmlFor = "inputCapacity" + specifiersString;
+    labelCapacity.innerHTML = "Saved messages capacity";
+    divCapacity.appendChild(labelCapacity);
+    const inputCapacity = document.createElement('input');
+    inputCapacity.classList.add('form-control');
+    inputCapacity.type = 'number';
+    inputCapacity.id = "inputCapacity" + specifiersString;
+    inputCapacity.value = settings.DefaultMessageCapacity;
+    divCapacity.appendChild(inputCapacity);
+    subscriptionElement.appendChild(divCapacity);
+    setTimeout(async () => await yukon_state.zubax_apij.set_sync_store_capacity(specifiersString, inputCapacity.value), 1000);
+    inputCapacity.addEventListener('change',
+        async () =>
+            await yukon_state.zubax_apij.set_sync_store_capacity(specifiersString, inputCapacity.value)
+    );
 
     const closeButton = document.createElement("button");
     closeButton.classList.add("btn", "btn-sm", "btn-danger")

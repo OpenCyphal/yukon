@@ -515,10 +515,22 @@ class Api:
         for specifier, messages_store in self.state.queues.subscribed_messages.items():
             for dto in dtos:
                 if dto.does_equal_specifier(specifier):
-                    mapping[str(dto)] = messages_store.messages[dto.counter :]
+                    mapping[str(dto)] = messages_store.messages[dto.counter - messages_store.start_index :]
                     break
         # This jsonify is why I made sure to set up the JSON encoder for dsdl
         return jsonify(mapping)
+
+    def set_message_store_capacity(self, specifier: str, capacity: int) -> None:
+        messages_store = self.state.queues.subscribed_messages.get(SubjectSpecifier.from_string(specifier))
+        if messages_store:
+            messages_store.capacity = int(capacity)
+
+    def set_sync_store_capacity(self, specifiers: str, capacity: int) -> None:
+        specifiers_object = json.loads(specifiers)
+        synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
+        messages_store = self.state.cyphal.synchronized_message_stores[synchronized_subjects_specifier]
+        if messages_store:
+            messages_store.capacity = int(capacity)
 
     def subscribe_synchronized(self, specifiers: str) -> Response:
         result_ready_event = threading.Event()
@@ -541,10 +553,11 @@ class Api:
                     subscribers.append(new_subscriber)
                 synchronizer = MonotonicClusteringSynchronizer(subscribers, get_local_reception_timestamp, tolerance)
                 self.state.cyphal.synchronizers_by_specifier[synchronized_subjects_specifier] = synchronizer
-                synchronized_message_store = SynchronizedMessageStore()
+                synchronized_message_store = SynchronizedMessageStore(specifiers)
                 self.state.cyphal.synchronized_message_stores[
                     synchronized_subjects_specifier
                 ] = synchronized_message_store
+                synchronized_message_store.specifiers = specifiers
                 counter = 0
                 prev_key: typing.Any = None
 
@@ -574,6 +587,9 @@ class Api:
                         counter += 1
                         synchronized_message_group.carriers.append(synchronized_message_carrier)
                     synchronized_message_store.messages.append(synchronized_message_group)
+                    if synchronized_message_store.counter >= synchronized_message_store.capacity:
+                        synchronized_message_store.messages.pop(0)
+                        synchronized_message_store.start_index += 1
 
                 synchronizer.receive_in_background(message_receiver)
                 was_subscription_success = True
@@ -628,7 +644,7 @@ class Api:
         synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
             SynchronizedSubjectsSpecifier(specifier_objects)
         )
-        return jsonify(synchronized_messages_store.messages[counter:])
+        return jsonify(synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :])
 
     def get_current_available_subscription_specifiers(self) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""

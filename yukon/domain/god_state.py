@@ -189,6 +189,7 @@ class GodState:
                 "Distance per horizontal connection": ReactiveValue(20),
                 "Show name above datatype": ReactiveValue(False),
                 "Highlight colors": ["red", "green", "yellow", "orange", "purple", "brown", "aquamarine", "deeppink"],
+                "Default saved subscription messages capacity": ReactiveValue(50),
             },
             "UDP subscription output": {
                 "Enabled": ReactiveValue(False),
