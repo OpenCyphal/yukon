@@ -98,16 +98,20 @@ def make_handler_for_node_detected(
             logger.debug("A getinfo response was received")
         if previous_entry is None and next_entry is not None:
             logger.info(f"Node with id {node_id} became visible.")
-            if not state.avatar.avatars_by_node_id.get(node_id):
+            existing_avatar = state.avatar.avatars_by_node_id.get(node_id)
+            if not existing_avatar:
                 logger.debug("Creating new avatar")
                 new_avatar = Avatar(iface, node_id=node_id, info=next_entry.info)
                 state.avatar.avatars_by_node_id[node_id] = new_avatar
+            else:
+                existing_avatar.disappeared = False
+                existing_avatar.disappeared_since = 0
             state.avatar.disappeared_nodes[node_id] = False
         elif previous_entry is not None and next_entry is None:
             logger.info(f"Node with id {node_id} disappeared.")
             state.avatar.avatars_by_node_id[node_id].disappeared = True
             # Add the time of disappearance to the avatar
-            state.avatar.avatars_by_node_id[node_id].disappeared_time = time.monotonic()
+            state.avatar.avatars_by_node_id[node_id].disappeared_since = time.monotonic()
             state.avatar.disappeared_nodes[node_id] = True
             # del state.avatar.avatars_by_node_id[node_id]
         is_new_or_updated_entry = next_entry is not None

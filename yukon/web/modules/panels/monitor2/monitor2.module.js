@@ -323,7 +323,9 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             "Software Version": avatar.versions.software_version,
             "Hardware Version": avatar.versions.hardware_version,
             "Uptime": secondsToColonSeparatedString(avatar.last_heartbeat.uptime),
-            "Node ID": avatar.node_id
+            "Node ID": avatar.node_id,
+            "Disappeared": avatar.disappeared,
+            "Disappeared since": avatar.disappeared_since,
         };
         const node = createElementForNode(avatar, "", monitor2Div, fieldsObject, get_up_to_date_avatar, yukon_state);
         nodesToBePositioned.push([node, avatar]);
@@ -393,6 +395,9 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     console.assert(avatar !== undefined);
     let node = document.createElement("div");
     node.classList.add("node");
+    if (avatar.disappeared) {
+        node.classList.add("disappeared");
+    }
     node.style.left = settings.NodeXOffset + "px";
     // Delay the setting of height until its contents are loaded
     node.style.setProperty("border-sizing", "border-box");

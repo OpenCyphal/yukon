@@ -31,6 +31,11 @@
     min-height: fit-content !important;
 }
 
+#monitor2>.node.disappeared {
+    background-color: #FFE45E;
+    color: #FF6392;
+}
+
 #monitor2 .line {
     position: absolute;
     background-color: black;
@@ -98,7 +103,6 @@
     max-width: 100%;
 }
 
-
 @media (prefers-color-scheme: dark) {
     #monitor2 .node {
         background-color: darkblue;
@@ -118,5 +122,9 @@
         background-color: antiquewhite;
         color: antiquewhite;
         text-wrap: none;
+    }
+
+    #monitor2>.node.disappeared {
+        background-color: #524400;
     }
 }

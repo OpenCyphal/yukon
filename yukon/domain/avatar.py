@@ -41,6 +41,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self.access_requests_names_by_transfer_id: typing.Dict[int, str] = {}
         self._last_register_request_name = ""
         self._num_info_requests = 0
+        self.disappeared = False
+        self.disappeared_since = 0
 
         self._ts_activity = -math.inf
         self._ts_heartbeat = -math.inf
@@ -278,6 +280,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             "registers_values": self.register_values,
             "registers_exploded_values": self.register_exploded_values,
             "registers_hash": hash(json.dumps(self.register_exploded_values, sort_keys=True)),
+            "disappeared": self.disappeared,
+            "disappeared_since": self.disappeared_since,
         }
         json_object["monitor_view_hash"] = (
             hash(frozenset(self._ports.pub))
@@ -285,6 +289,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(frozenset(self._ports.cln))
             ^ hash(frozenset(self._ports.srv))
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
+            ^ hash(self.disappeared)
+            ^ hash(self.disappeared_since)
         )
         json_object["monitor2_hash"] = json_object["monitor_view_hash"]
         return json_object
