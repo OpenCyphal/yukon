@@ -406,16 +406,18 @@ export function make_context_menus(yukon_state) {
                 },
             }
         ],
-
     })
     cy_context_menu.init();
     const subscriber_menu_items = [
         {
             content: "Add synchronized subscriber",
             events: {
-                adjust: async (contextMenuContext, element, button) => {
+                adjust: async (contextMenuContext, element, button, data) => {
                     const portsSelected = yukon_state.monitor2selections;
-                    const portsSelectedNr = portsSelected.length;
+                    if (!portsSelected) {
+                        element.parentElement.removeChild(element);
+                        return;
+                    }
                     const portsSelectedAndAllowed = [];
                     // TODO: Find which of the numbers correspond to publishers (don't want to subscribe to services)
                     for (const portNr of portsSelected) {
@@ -431,6 +433,7 @@ export function make_context_menus(yukon_state) {
                         button.innerHTML = "Subscribe to " + portsSelectedAndAllowed.join(", ") + " synchronously";
                     } else {
                         element.parentElement.removeChild(element);
+                        return;
                     }
                 },
                 click: async (e, elementOpenedOn) => {
@@ -452,9 +455,12 @@ export function make_context_menus(yukon_state) {
         {
             content: "Add separate subscribers",
             events: {
-                adjust: async (contextMenuContext, element, button) => {
+                adjust: async (contextMenuContext, element, button, data) => {
                     const portsSelected = yukon_state.monitor2selections;
-                    const portsSelectedNr = portsSelected.length;
+                    if (!portsSelected) {
+                        element.parentElement.removeChild(element);
+                        return;
+                    }
                     const portsSelectedAndAllowed = [];
                     // TODO: Find which of the numbers correspond to publishers (don't want to subscribe to services)
                     for (const portNr of portsSelected) {
@@ -470,6 +476,7 @@ export function make_context_menus(yukon_state) {
                         button.innerHTML = "Subscribe to " + portsSelectedAndAllowed.join(", ") + " separately";
                     } else {
                         element.parentElement.removeChild(element);
+                        return;
                     }
                 },
                 click: async (e, elementOpenedOn) => {

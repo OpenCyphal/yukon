@@ -4,6 +4,23 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
     const full_specifiers = [specifier + ":" + yukon_state.subscriptions[specifier].length];
     const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
     const messages = result[Object.keys(result)[0]]
+    if (!messages) {
+        if (!yukon_state.missed_messages) {
+            yukon_state.missed_messages = {};
+        }
+        if (yukon_state.missed_messages[specifier]) {
+            yukon_state.missed_messages[specifier]++;
+        } else {
+            yukon_state.missed_messages[specifier] = 1;
+        }
+        if (yukon_state.missed_messages[specifier] > 10) {
+            clearInterval(fetchIntervalId.value);
+            if (typeof pLatestMessage !== undefined && pLatestMessage.parentElement) {
+                pLatestMessage.innerText = "This subscription has been terminated by the server";
+            }
+        }
+        return;
+    }
     if (lastCurrentMessagesLength.value === current_messages.length + messages.length) {
         return;
     } else {
@@ -16,7 +33,7 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
     }
     for (const message of messages) {
         if (inputLogToConsole.checked) {
-            yukon_state.zubax_apij.add_local_message(JSON.stringify(message.message), 20)
+            yukon_state.zubax_apij.add_local_message(JSON.stringify(message), 20)
         }
         current_messages.push(message);
     }
@@ -188,12 +205,58 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     divLogToConsole.appendChild(labelLogToConsole);
     subscriptionElement.appendChild(divLogToConsole);
 
+    const divStreamToPlotJuggler = document.createElement('div');
+    divStreamToPlotJuggler.classList.add('form-check');
+    const streamToPlotJuggler = document.createElement('input');
+    streamToPlotJuggler.classList.add('form-check-input');
+    streamToPlotJuggler.classList.add('checkbox');
+    streamToPlotJuggler.type = 'checkbox';
+    streamToPlotJuggler.id = "streamToPlotJuggler" + subject_id + ":" + datatype;
+    divStreamToPlotJuggler.appendChild(streamToPlotJuggler);
+    const labelStreamToPlotJuggler = document.createElement('label');
+    labelStreamToPlotJuggler.classList.add('form-check-label');
+    labelStreamToPlotJuggler.htmlFor = streamToPlotJuggler.id;
+    labelStreamToPlotJuggler.innerHTML = "Stream to PlotJuggler";
+    divStreamToPlotJuggler.appendChild(labelStreamToPlotJuggler);
+    subscriptionElement.appendChild(divStreamToPlotJuggler);
+
+    streamToPlotJuggler.addEventListener('change', async (event) => {
+        if (event.target.checked) {
+            await yukon_state.zubax_apij.enable_udp_output_from(specifier);
+        } else {
+            await yukon_state.zubax_apij.disable_udp_output_from(specifier);
+        }
+    });
+
+    // Add an input number field for capacity of the stored messages
+    // Also a label before it
+    const divCapacity = document.createElement('div');
+    divCapacity.classList.add('form-group');
+    const labelCapacity = document.createElement('label');
+    labelCapacity.htmlFor = "inputCapacity" + subject_id + ":" + datatype;
+    labelCapacity.innerHTML = "Saved messages capacity";
+    divCapacity.appendChild(labelCapacity);
+    const inputCapacity = document.createElement('input');
+    inputCapacity.classList.add('form-control');
+    inputCapacity.type = 'number';
+    inputCapacity.id = "inputCapacity" + subject_id + ":" + datatype;
+    inputCapacity.value = settings.DefaultMessageCapacity;
+    divCapacity.appendChild(inputCapacity);
+    subscriptionElement.appendChild(divCapacity);
+    setTimeout(async () => await yukon_state.zubax_apij.set_message_store_capacity(subject_id + ":" + datatype, inputCapacity.value), 1000);
+    inputCapacity.addEventListener('change',
+        async () =>
+            await yukon_state.zubax_apij.set_message_store_capacity(subject_id + ":" + datatype, inputCapacity.value)
+    );
+
+
     // Add a button for opening logs
     const openLogsButton = document.createElement("button");
+    openLogsButton.classList.add("btn", "btn-secondary", "btn-sm")
     openLogsButton.innerText = "Open logs, when open CTRL+R to reload";
     const openLogsHandler = async () => {
         // Open a new tab at http://localhost:5000/api/get_all_subscription_messages?message_specifier=subject_id:datatype
-        const url = "http://127.0.0.1:5000/api/get_all_subscription_messages?message_specifier=" + specifier;
+        const url = `http://127.0.0.1:${yukon_state.port}/api/get_all_subscription_messages?message_specifier=${specifier}`;
         window.open(url, '_blank');
     };
     openLogsButton.addEventListener("click", openLogsHandler);
@@ -201,10 +264,11 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
 
     // Add a button for opening logs
     const openLatestMessage = document.createElement("button");
+    openLatestMessage.classList.add("btn", "btn-secondary", "btn-sm")
     openLatestMessage.innerText = "Open latest message, when open CTRL+R to reload";
     const openLatestHandler = async () => {
         // Open a new tab at http://localhost:5000/api/get_all_subscription_messages?message_specifier=subject_id:datatype
-        const url = "http://127.0.0.1:5000/api/get_latest_subscription_message?message_specifier=" + specifier;
+        const url = `http://127.0.0.1:${yukon_state.port}/api/get_latest_subscription_message?message_specifier=${specifier}`;
         window.open(url, '_blank');
     };
     openLatestMessage.addEventListener("click", openLatestHandler);
@@ -228,6 +292,7 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     subscriptionElement.style.position = "relative";
 
     const closeButton = document.createElement("button");
+    closeButton.classList.add("btn", "btn-sm", "btn-danger")
     closeButton.innerText = "X";
     closeButton.style.borderWidth = "1";
     closeButton.style.position = "absolute";
@@ -281,7 +346,29 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     // subscriptionElement.appendChild(unsubscribeButton);
     subscriptionElement.style.position = "relative";
 
+    // Add an input number field for capacity of the stored messages
+    // Also a label before it
+    const divCapacity = document.createElement('div');
+    divCapacity.classList.add('form-group');
+    const labelCapacity = document.createElement('label');
+    labelCapacity.htmlFor = "inputCapacity" + specifiersString;
+    labelCapacity.innerHTML = "Saved messages capacity";
+    divCapacity.appendChild(labelCapacity);
+    const inputCapacity = document.createElement('input');
+    inputCapacity.classList.add('form-control');
+    inputCapacity.type = 'number';
+    inputCapacity.id = "inputCapacity" + specifiersString;
+    inputCapacity.value = settings.DefaultMessageCapacity;
+    divCapacity.appendChild(inputCapacity);
+    subscriptionElement.appendChild(divCapacity);
+    setTimeout(async () => await yukon_state.zubax_apij.set_sync_store_capacity(specifiersString, inputCapacity.value), 1000);
+    inputCapacity.addEventListener('change',
+        async () =>
+            await yukon_state.zubax_apij.set_sync_store_capacity(specifiersString, inputCapacity.value)
+    );
+
     const closeButton = document.createElement("button");
+    closeButton.classList.add("btn", "btn-sm", "btn-danger")
     closeButton.innerText = "X";
     closeButton.style.borderWidth = "1";
     closeButton.style.position = "absolute";
@@ -502,6 +589,7 @@ function createSubscriptionElementCloseButton(subscriptionElement, subscription,
     // Add a close button to the subscriptionElement, align it 0.5 em from the right and 0.5 em from the top
     // When clicked it should remove the subscriptionElement from the DOM and remove the subscription specifier from the yukon_state.subscriptions_being_set_up
     const closeButton = document.createElement("button");
+    closeButton.classList.add("btn", "btn-sm", "btn-danger")
     closeButton.innerText = "X";
     closeButton.style.borderWidth = "1";
     closeButton.style.position = "absolute";

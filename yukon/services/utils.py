@@ -10,7 +10,16 @@ from typing import TypeVar
 
 import pycyphal
 
+import yukon
+
 logger = logging.getLogger(__name__)
+
+
+def quit_application(state: "yukon.domain.god_state.GodState") -> None:
+    state.gui.gui_running = False
+    state.dronecan_traffic_queues.input_queue.put_nowait(None)
+    state.dronecan_traffic_queues.output_queue.put_nowait(None)
+    state.queues.god_queue.put_nowait(None)
 
 
 def add_path_to_sys_path(path: str) -> None:

@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import threading
+import traceback
 
 import typing
 
@@ -14,7 +15,7 @@ from pycyphal.transport.udp import UDPCapture
 import uavcan
 import uavcan.pnp
 import yukon.domain.god_state
-from yukon.domain.request_run_dronecan_firmware_updater import RequestRunDronecanFirmwareUpdater
+from yukon.domain.request_run_dronecan import RequestRunDronecan
 from yukon.domain.start_fileserver_request import StartFileServerRequest
 from yukon.services.FileServer import FileServer
 from yukon.domain.transport.detach_transport_request import DetachTransportRequest
@@ -35,11 +36,11 @@ from yukon.services.cyphal_worker.attach_transport_work import do_attach_transpo
 from yukon.services.cyphal_worker.update_configuration_work import do_apply_configuration_work
 from yukon.services.cyphal_worker.update_register_work import do_update_register_work
 from yukon.domain.god_state import GodState
-from yukon.services.flash_dronecan_firmware_with_cyphal_firmware import run_dronecan_firmware_updater
-from yukon.services.snoop_registers import make_tracers_trackers
+from yukon.services.mydronecan.dronecan_stuff import run_dronecan
+from yukon.services.avatar_handler import make_tracers_trackers
 
 logger = logging.getLogger(__name__)
-logger.setLevel("NOTSET")
+# logger.setLevel("NOTSET")
 
 
 def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -> None:
@@ -51,14 +52,13 @@ def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -
     allocation_data_sub.receive_in_background(receive_allocate_request)
 
 
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 
 def cyphal_worker(state: GodState) -> None:
     async def _internal_method() -> None:
         try:
             my_registry = make_registry()
-            my_registry["uavcan.node.id"] = 1
             state.cyphal.local_node = make_node(
                 NodeInfo(name="org.opencyphal.yukon"), my_registry, reconfigurable_transport=True
             )
@@ -67,9 +67,13 @@ def cyphal_worker(state: GodState) -> None:
             state.cyphal_worker_asyncio_loop = asyncio.get_running_loop()
 
             async def forward_dronecan_loop() -> None:
-                while True:
-                    await do_forward_dronecan_work(state)
-                    await asyncio.sleep(0.1)
+                try:
+                    while state.gui.gui_running:
+                        await do_forward_dronecan_work(state)
+                except Exception as e:
+                    tb = traceback.format_exc()
+                    logger.error(tb)
+                logger.warn("Dronecan forwarding done")
 
             task = asyncio.create_task(forward_dronecan_loop())
 
@@ -101,19 +105,11 @@ def cyphal_worker(state: GodState) -> None:
                     await do_subscribe_requests_work(state, queue_element)
                 elif isinstance(queue_element, UnsubscribeRequest):
                     await do_unsubscribe_requests_work(state, queue_element)
-                elif isinstance(queue_element, RequestRunDronecanFirmwareUpdater):
+                elif isinstance(queue_element, RequestRunDronecan):
                     logger.debug("A request to run the DroneCAN firmware updater was received.")
-                    fpath = state.settings["DroneCAN firmware substitution"]["Substitute firmware path"]["value"].value
-                    is_dronecan_firmware_path_available = fpath != ""
-                    if is_dronecan_firmware_path_available:
-                        state.dronecan.thread = threading.Thread(
-                            target=run_dronecan_firmware_updater, args=(state, fpath)
-                        )
-                        state.dronecan.thread.start()
-                        logger.info("DroneCAN firmware substitution is now " + "enabled")
-                    else:
-                        logger.error("DroneCAN firmware path is not set")
-                        continue
+                    state.dronecan.thread = threading.Thread(target=run_dronecan, args=(state,), daemon=True)
+                    state.dronecan.thread.start()
+                    logger.info("DroneCAN firmware substitution is now " + "enabled")
         except Exception as e:
             logger.exception(e)
             raise e

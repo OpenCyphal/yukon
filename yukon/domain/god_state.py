@@ -64,7 +64,6 @@ class QueuesState:
     attach_transport_response: Queue[str] = field(default_factory=Queue)
     update_registers_response: Dict[UUID, UpdateRegisterResponse] = field(default_factory=dict)
     subscribe_requests_responses: Queue[SubscribeResponse] = field(default_factory=Queue)
-    subscribed_messages: typing.Dict[SubjectSpecifier, MessagesStore] = field(default_factory=dict)
     unsubscribe_requests_responses: Queue[str] = field(default_factory=Queue)
     reread_register_names: Queue[RereadRegisterNamesRequest] = field(default_factory=Queue)
     detach_transport_response: Queue[str] = field(default_factory=Queue)
@@ -120,6 +119,7 @@ class CyphalState:
     synchronizers_by_specifier: Dict[
         SynchronizedSubjectsSpecifier, "pycyphal.presentation.subscription_synchronizer.Synchronizer"
     ] = field(default_factory=dict)
+    message_stores_by_specifier: typing.Dict[SubjectSpecifier, MessagesStore] = field(default_factory=dict)
     centralized_allocator: Optional[CentralizedAllocator] = field(default_factory=none_factory)
     file_server: Optional[yukon.services.FileServer.FileServer] = field(default_factory=none_factory)
 
@@ -139,10 +139,14 @@ class DroneCanState:
     driver: Optional["yukon.services.flash_dronecan_firmware_with_cyphal_firmware.GoodDriver"] = field(
         default_factory=none_factory
     )
+    all_entries: Dict[int, Any] = field(default_factory=dict)
+    enabled: ReactiveValue = ReactiveValue(False)
+    firmware_update_enabled: ReactiveValue = ReactiveValue(False)
+    firmware_update_path: ReactiveValue = ReactiveValue("")
     is_running: bool = False
     thread: Optional[threading.Thread] = field(default_factory=none_factory)
     node: Optional["dronecan.node.Node"] = field(default_factory=none_factory)
-    file_server: Optional["dronecan.app.file_server.FileServer"] = field(default_factory=none_factory)
+    fileserver: Optional["yukon.services.mydronecan.file_server.SimpleFileServer"] = field(default_factory=none_factory)
     node_monitor: Optional["dronecan.app.node_monitor.NodeMonitor"] = field(default_factory=none_factory)
     allocator: Optional["dronecan.app.dynamic_node_id.CentralizedServer"] = field(default_factory=none_factory)
 
@@ -175,10 +179,6 @@ class GodState:
                 "Enabled": ReactiveValue(False),
                 "File path": {"__type__": "dirpath", "value": ReactiveValue("")},
             },
-            "DroneCAN firmware substitution": {
-                "Enabled": ReactiveValue(False),
-                "Substitute firmware path": {"__type__": "filepath", "value": ReactiveValue("")},
-            },
             "Monitor view": {
                 "Show link name on another line": ReactiveValue(False),
                 "Link info width": ReactiveValue(300),
@@ -189,6 +189,7 @@ class GodState:
                 "Distance per horizontal connection": ReactiveValue(20),
                 "Show name above datatype": ReactiveValue(False),
                 "Highlight colors": ["red", "green", "yellow", "orange", "purple", "brown", "aquamarine", "deeppink"],
+                "Default saved subscription messages capacity": ReactiveValue(50),
             },
             "UDP subscription output": {
                 "Enabled": ReactiveValue(False),

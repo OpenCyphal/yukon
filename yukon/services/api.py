@@ -13,6 +13,9 @@ import traceback
 import yaml
 from uuid import uuid4
 from time import time
+from yukon.custom_tk_dialog import launch_yes_no_dialog
+
+from yukon.services.utils import quit_application
 
 try:
     from yaml import CLoader as Loader
@@ -440,6 +443,13 @@ class Api:
 
     def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
         send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)
+        if int(command) == 65533:
+            if not launch_yes_no_dialog(
+                f"Are you sure you want to update node {node_id} firmware to {text_argument}?",
+                "Confirm firmware update",
+                20000,
+            ):
+                return jsonify({"success": False, "message": "User cancelled."})
         self.state.queues.god_queue.put_nowait(send_command_request)
         try:
             response = self.state.queues.command_response.get(timeout=5)
@@ -461,8 +471,7 @@ class Api:
         self.state.gui.is_target_client_known = True
 
     def close_yukon(self) -> None:
-        self.state.gui.gui_running = False
-        self.state.queues.god_queue.put_nowait("Exiting")  # This could be anything
+        quit_application(self.state)
 
     def yaml_to_yaml(self, yaml_in: str) -> Response:
         text_response = Dumper().dumps(yaml.load(yaml_in, Loader))
@@ -489,9 +498,15 @@ class Api:
 
     def enable_udp_output_from(self, specifier: str) -> None:
         """Get the message store for the specifier and enable UDP output for it."""
-        messages_store = self.state.queues.subscribed_messages.get(specifier)
+        messages_store = self.state.cyphal.message_stores_by_specifier.get(SubjectSpecifier.from_string(specifier))
         if messages_store:
             messages_store.enable_udp_output = True
+
+    def disable_udp_output_from(self, specifier: str) -> None:
+        """Get the message store for the specifier and enable UDP output for it."""
+        messages_store = self.state.cyphal.message_stores_by_specifier.get(SubjectSpecifier.from_string(specifier))
+        if messages_store:
+            messages_store.enable_udp_output = False
 
     def unsubscribe(self, specifier: str) -> Response:
         self.state.queues.god_queue.put_nowait(UnsubscribeRequest(SubjectSpecifier.from_string(specifier)))
@@ -511,13 +526,25 @@ class Api:
         specifiers_object = json.loads(specifiers)
         dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
         mapping = {}
-        for specifier, messages_store in self.state.queues.subscribed_messages.items():
+        for specifier, messages_store in self.state.cyphal.message_stores_by_specifier.items():
             for dto in dtos:
                 if dto.does_equal_specifier(specifier):
-                    mapping[str(dto)] = messages_store.messages[dto.counter :]
+                    mapping[str(dto)] = messages_store.messages[dto.counter - messages_store.start_index :]
                     break
         # This jsonify is why I made sure to set up the JSON encoder for dsdl
         return jsonify(mapping)
+
+    def set_message_store_capacity(self, specifier: str, capacity: int) -> None:
+        messages_store = self.state.cyphal.message_stores_by_specifier.get(SubjectSpecifier.from_string(specifier))
+        if messages_store:
+            messages_store.capacity = int(capacity)
+
+    def set_sync_store_capacity(self, specifiers: str, capacity: int) -> None:
+        specifiers_object = json.loads(specifiers)
+        synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
+        messages_store = self.state.cyphal.synchronized_message_stores[synchronized_subjects_specifier]
+        if messages_store:
+            messages_store.capacity = int(capacity)
 
     def subscribe_synchronized(self, specifiers: str) -> Response:
         result_ready_event = threading.Event()
@@ -540,10 +567,11 @@ class Api:
                     subscribers.append(new_subscriber)
                 synchronizer = MonotonicClusteringSynchronizer(subscribers, get_local_reception_timestamp, tolerance)
                 self.state.cyphal.synchronizers_by_specifier[synchronized_subjects_specifier] = synchronizer
-                synchronized_message_store = SynchronizedMessageStore()
+                synchronized_message_store = SynchronizedMessageStore(specifiers)
                 self.state.cyphal.synchronized_message_stores[
                     synchronized_subjects_specifier
                 ] = synchronized_message_store
+                synchronized_message_store.specifiers = specifiers
                 counter = 0
                 prev_key: typing.Any = None
 
@@ -573,6 +601,9 @@ class Api:
                         counter += 1
                         synchronized_message_group.carriers.append(synchronized_message_carrier)
                     synchronized_message_store.messages.append(synchronized_message_group)
+                    if synchronized_message_store.counter >= synchronized_message_store.capacity:
+                        synchronized_message_store.messages.pop(0)
+                        synchronized_message_store.start_index += 1
 
                 synchronizer.receive_in_background(message_receiver)
                 was_subscription_success = True
@@ -627,12 +658,12 @@ class Api:
         synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
             SynchronizedSubjectsSpecifier(specifier_objects)
         )
-        return jsonify(synchronized_messages_store.messages[counter:])
+        return jsonify(synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :])
 
     def get_current_available_subscription_specifiers(self) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
         specifiers = []
-        for specifier, messages_store in self.state.queues.subscribed_messages.items():
+        for specifier, messages_store in self.state.cyphal.message_stores_by_specifier.items():
             specifiers.append(str(specifier))
         specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
         return jsonify(specifiers_return_value)
@@ -672,3 +703,15 @@ class Api:
 
     def load_settings(self) -> None:
         loading_settings_into_yukon(self.state)
+
+    def set_dronecan_fw_substitution_enabled(self, enabled: bool) -> None:
+        self.state.dronecan.firmware_update_enabled.value = enabled
+
+    def set_dronecan_fw_substitution_path(self, path: str) -> None:
+        self.state.dronecan.firmware_update_path.value = path
+
+    def set_dronecan_enabled(self, enabled: bool) -> None:
+        self.state.dronecan.enabled.value = enabled
+
+    def get_dronecan_node_entries(self) -> Response:
+        return jsonify(list(self.state.dronecan.all_entries))

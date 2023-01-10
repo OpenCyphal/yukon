@@ -112,10 +112,6 @@ textarea#textOut {
                                     supported by Chrome, Edge, Opera and Firefox */
 }
 
-.registers-tab div {
-    margin: 0.5em;
-}
-
 .block-display {
     display: flex;
     flex-direction: column;

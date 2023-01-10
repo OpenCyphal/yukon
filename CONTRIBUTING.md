@@ -40,6 +40,8 @@
 
       python build_exe.py
 
+* On GNU/Linux: For ElectronJS Don't forget to run `chmod +x .electron/electron` to give the electron executable run permissions
+
 * On every OS: Build the DSDL namespace for demos
 
 This step will create demos that you can run and use to test Yukon if you have no Cyphal capable devices available

@@ -29,8 +29,8 @@ import { setUpRegisterUpdateLogComponent } from "../modules/panels/register_upda
 import { setUpSubscriptionsComponent } from "../modules/panels/subscriptions.module.js"
 import { layout_config } from "../modules/panels/_layout_config.module.js"
 import { setUpSettingsComponent } from "../modules/panels/settings.module.js"
-import { setUpMotorControlComponent } from "../modules/panels/motor_control.module.js"
 import { setUpMonitor2Component } from "../modules/panels/monitor2/monitor2.module.js"
+import { setUpDronecanComponent } from '../modules/panels/dronecan.module.js';
 
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
@@ -221,18 +221,18 @@ yukon_state.port = urlParams.get('port');
                         await setUpSettingsComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
-                myLayout.registerComponent("motorControlComponent", function (container, componentState) {
-                    registerComponentAction("../motor-control.panel.html", "motorControlComponent", container, () => {
-                        const containerElement = container.getElement()[0];
-                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
-                        setUpMotorControlComponent.bind(outsideContext)(container, yukon_state);
-                    });
-                });
                 myLayout.registerComponent("monitor2Component", function (container, componentState) {
                     registerComponentAction("../monitor2.panel.html", "monitor2Component", container, async () => {
                         const containerElement = container.getElement()[0];
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         await setUpMonitor2Component.bind(outsideContext)(container, yukon_state);
+                    });
+                });
+                myLayout.registerComponent("dronecanComponent", function (container, componentState) {
+                    registerComponentAction("../dronecan.panel.html", "dronecanComponent", container, async () => {
+                        const containerElement = container.getElement()[0];
+                        yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
+                        await setUpDronecanComponent.bind(outsideContext)(container, yukon_state);
                     });
                 });
                 const useSVG = true;

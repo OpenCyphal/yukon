@@ -202,7 +202,7 @@ export function make_select_row(register_name, is_mouse_over, yukon_state) {
         if (!event.buttons == 1 || event.buttons == 2) {
             return;
         }
-        if (yukon_state.grabbing_in_registers_view) {
+        if (yukon_state.grabbing_in_registers_view || event.buttons == 4) {
             return;
         }
         // }
