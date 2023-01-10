@@ -15,7 +15,7 @@ It is designed to run on GNU/Linux, Windows, and macOS.
 
 ## Features
 
-<p align="center"><img src="/docs/screenshot1.svg" width="100%"></p>
-<p align="center"><img src="/docs/screenshot2.svg" width="100%"></p>
-<p align="center"><img src="/docs/screenshot3.svg" width="100%"></p>
-<p align="center"><img src="/docs/screenshot4.svg" width="100%"></p>
+<p align="center"><img src="/docs/screenshot1.png" width="100%"></p>
+<p align="center"><img src="/docs/screenshot2.png" width="100%"></p>
+<p align="center"><img src="/docs/screenshot3.png" width="100%"></p>
+<p align="center"><img src="/docs/screenshot4.png" width="100%"></p>

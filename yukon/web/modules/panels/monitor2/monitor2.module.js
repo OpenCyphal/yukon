@@ -323,7 +323,9 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             "Software Version": avatar.versions.software_version,
             "Hardware Version": avatar.versions.hardware_version,
             "Uptime": secondsToColonSeparatedString(avatar.last_heartbeat.uptime),
-            "Node ID": avatar.node_id
+            "Node ID": avatar.node_id,
+            "Disappeared": avatar.disappeared,
+            "Disappeared since": avatar.disappeared_since,
         };
         const node = createElementForNode(avatar, "", monitor2Div, fieldsObject, get_up_to_date_avatar, yukon_state);
         nodesToBePositioned.push([node, avatar]);
@@ -393,6 +395,9 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     console.assert(avatar !== undefined);
     let node = document.createElement("div");
     node.classList.add("node");
+    if (avatar.disappeared) {
+        node.classList.add("disappeared");
+    }
     node.style.left = settings.NodeXOffset + "px";
     // Delay the setting of height until its contents are loaded
     node.style.setProperty("border-sizing", "border-box");
@@ -430,6 +435,44 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     const inputGroup = document.createElement("div");
     inputGroup.classList.add("input-group");
     inputGroup.style.setProperty("backgroundColor", "transparent", "important");
+    const doCommandFeedbackResult = (result) => {
+        // Tween feedbackMessage.style.backgroundColor from sepia to green
+        const starting_color_rgb = [255, 255, 255];
+        const increments_to_take = 144;
+        const ending_color_rgb = [0, 255, 0];
+        let increment_counter = 0;
+        let tweenFunction = null;
+        tweenFunction = () => {
+            let new_color = [];
+            for (let i = 0; i < 3; i++) {
+                new_color.push(starting_color_rgb[i] + (ending_color_rgb[i] - starting_color_rgb[i]) * increment_counter / increments_to_take);
+            }
+            console.log(new_color)
+            feedbackMessage.style.backgroundColor = `rgb(${new_color[0]}, ${new_color[1]}, ${new_color[2]})`;
+            if (increment_counter < increments_to_take) {
+                increment_counter++;
+                window.requestAnimationFrame(tweenFunction);
+            }
+        };
+        window.requestAnimationFrame(tweenFunction);
+        if (!result.success) {
+            feedbackMessage.classList.remove("success");
+            feedbackMessage.style.display = "block";
+            if (result.message) {
+                feedbackMessage.innerHTML = result.message;
+            } else {
+                feedbackMessage.innerHTML = "";
+            }
+        } else {
+            feedbackMessage.classList.add("success");
+            feedbackMessage.style.display = "block";
+            if (result.message) {
+                feedbackMessage.innerHTML = result.message;
+            } else {
+                feedbackMessage.innerHTML = "";
+            }
+        }
+    }
     const neededButtons = [{ "name": "Restart", "command": "65535", "title": "Restart device" }, { "name": "Save", "command": "65530", "title": "Save persistent states" }, { "name": "Estop", "command": "65531", "title": "Emergency stop" }];
     for (const button of neededButtons) {
         const btnButton = document.createElement("button");
@@ -441,27 +484,51 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         btnButton.title = button.title;
         btnButton.onclick = async () => {
             const result = await yukon_state.zubax_apij.send_command(avatar.node_id, button.command, "");
-            if (!result.success) {
-                feedbackMessage.classList.remove("success");
-                feedbackMessage.style.display = "block";
-                if (result.message) {
-                    feedbackMessage.innerHTML = result.message;
-                } else {
-                    feedbackMessage.innerHTML = "";
-                }
-            } else {
-                feedbackMessage.classList.add("success");
-                feedbackMessage.style.display = "block";
-                if (result.message) {
-                    feedbackMessage.innerHTML = result.message;
-                } else {
-                    feedbackMessage.innerHTML = "";
-                }
-            }
+            doCommandFeedbackResult(result);
         };
         inputGroup.appendChild(btnButton);
     }
     node.appendChild(inputGroup);
+    // Add a button for firmware update
+    const btnFirmwareUpdate = document.createElement("button");
+    btnFirmwareUpdate.classList.add("btn_button", "btn", "btn-secondary", "btn-sm");
+    btnFirmwareUpdate.innerHTML = "Choose firmware";
+    btnFirmwareUpdate.addEventListener("click", async function () {
+        let path = "";
+        path = await window.electronAPI.openPath({
+            properties: ["openFile"],
+        });
+        if (path) {
+            const result = await yukon_state.zubax_apij.send_command(avatar.node_id, 65533, path);
+            doCommandFeedbackResult(result);
+        }
+    });
+    node.appendChild(btnFirmwareUpdate);
+    node.addEventListener("click", function () {
+        let queue = []
+        for (const element of yukon_state.myLayout.root.contentItems) {
+            queue.push(element);
+        }
+        while (true) {
+            const currentElement = queue.shift();
+            if (currentElement) {
+                if (currentElement.isStack && currentElement.getActiveContentItem().config.hasOwnProperty("componentName")) {
+                    if (currentElement.getActiveContentItem().config.componentName === "commandsComponent") {
+                        const commandsComponentOuterElement = currentElement.getActiveContentItem().element[0];
+                        const nodeIdInput = commandsComponentOuterElement.querySelector("#iNodeId");
+                        nodeIdInput.value = avatar.node_id;
+                    }
+                } else {
+                    for (const contentItem of currentElement.contentItems) {
+                        queue.push(contentItem)
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+    });
+
     return node;
 }
 function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state) {
@@ -567,13 +634,12 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     arrowhead = document.createElement("div");
     arrowhead.classList.add("arrowhead");
     arrowhead.style.position = "absolute";
-    arrowhead.style.top = y_counter.value + avatar_y_counter.value - 4 + settings.HorizontalLineWidth / 2 + "px";
-    arrowhead.style.left = matchingPort.x_offset - 12 + "px";
+    arrowhead.style.left = matchingPort.x_offset - 15 + "px";
     arrowhead.style.width = "0px";
     arrowhead.style.height = "0px";
-    arrowhead.style.borderLeft = "9px solid transparent";
-    arrowhead.style.borderRight = "9px solid transparent";
-    arrowhead.style.borderTop = "9px solid pink";
+    arrowhead.style.setProperty("border-left-width", "9px");
+    arrowhead.style.setProperty("border-right-width", "9px");
+    arrowhead.style.setProperty("border-top-width", "9px");
     monitor2Div.appendChild(arrowhead);
     linesByPortAndPortType.push({ "element": horizontal_line, "port": matchingPort.port, "type": matchingPort.type, "toggledOn": toggledOn });
     linesByPortAndPortType.push({ "element": arrowhead, "port": matchingPort.port, "type": matchingPort.type, "toggledOn": toggledOn });
@@ -608,12 +674,14 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     }, 1000);
 
     const right_end_of_edge = matchingPort.x_offset;
-    const left_end_of_edge = settings["NodeXOffset"] + settings["NodeWidth"] - 3 + "px"
+    const left_end_of_edge = settings["NodeXOffset"] + settings["NodeWidth"] - 7 + "px"
     if (matchingPort.type === "pub" || matchingPort.type === "cln") {
         // Arrowhead for the line
         arrowhead.style.transform = "rotate(270deg)";
-        arrowhead.style.left = right_end_of_edge - 10 + "px";
+        arrowhead.style.left = right_end_of_edge - 12 + "px";
+        arrowhead.style.top = y_counter.value + avatar_y_counter.value - 4 + settings.HorizontalLineWidth / 2 + "px";
     } else if (matchingPort.type === "sub" || matchingPort.type === "srv") {
+        arrowhead.style.top = y_counter.value + avatar_y_counter.value - 4 + settings.HorizontalLineWidth / 2 + "px";
         arrowhead.style.transform = "rotate(90deg)";
         arrowhead.style.left = left_end_of_edge;
         // Make a circle and position it at right_end_of_edge

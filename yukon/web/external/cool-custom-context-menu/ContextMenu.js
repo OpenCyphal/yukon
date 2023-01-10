@@ -21,9 +21,6 @@ class ContextMenu {
         this.menuItems.forEach((data, index) => {
             const element = this.createElementMarkup(data);
             this.dataOfMenuElements.set(element, data);
-            if (!data.shouldBeDisplayed) {
-                data.shouldBeDisplayed = () => true;
-            }
             element.firstChild.setAttribute(
                 "style",
                 `animation-delay: ${index * 0.01}s`
@@ -49,10 +46,11 @@ class ContextMenu {
             Object.entries(data.events).forEach((event) => {
                 const [key, value] = event;
                 if (key === "adjust") {
-                    if (contextMenuThis.executeOnOpen) {
-                        contextMenuThis.executeOnOpen.push(function () { value(contextMenuThis, element, button); });
+                    const function1 = function () { value(contextMenuThis, element, button, data); };
+                    if (contextMenuThis.executeAfterRender) {
+                        contextMenuThis.executeAfterRender.push(function1);
                     } else {
-                        contextMenuThis.executeOnOpen = [function () { value(contextMenuThis, element, button); }];
+                        contextMenuThis.executeAfterRender = [function1];
                     }
                 } else {
                     function wrapper(e) {
@@ -76,9 +74,10 @@ class ContextMenu {
         menuContainer.setAttribute("data-theme", this.mode);
 
         this.menuElementsArray.forEach((item) => {
-            if (this.dataOfMenuElements.get(item).shouldBeDisplayed()) {
-                if (this.dataOfMenuElements.get(item).nameChangeNeeded) {
-                    this.dataOfMenuElements.get(item).nameChangeNeeded();
+            const dataOfItem = this.dataOfMenuElements.get(item);
+            if (!dataOfItem.shouldBeDisplayed || dataOfItem.shouldBeDisplayed()) {
+                if (dataOfItem.nameChangeNeeded) {
+                    dataOfItem.nameChangeNeeded();
                 }
                 menuContainer.appendChild(item)
             }
@@ -90,8 +89,12 @@ class ContextMenu {
     closeMenu(menu) {
         if (this.isOpened) {
             this.isOpened = false;
-            // Remove the html element menu
-            document.body.removeChild(menu);
+            try {
+                // Remove the html element menu
+                document.body.removeChild(menu);
+            } catch {
+                // If the menu is already removed, do nothing
+            }
         }
     }
 
@@ -110,14 +113,24 @@ class ContextMenu {
             const targetObject = e.target;
             const doesTargetMatchCriteria = targetObject.matches(this.target);
             if (doesTargetMatchCriteria) {
+                // Close the previous Menu (no more than one context menu can be open at a time)
                 this.closeMenu(this.renderedMenu)
-                e.preventDefault();
-                this.renderedMenu = this.renderMenu();
-
                 this.elementOpenedOn = e.target;
-                if (this.executeOnOpen) {
-                    this.executeOnOpen.forEach((func) => func());
+                // Prevent the system default context menu from appearing
+                e.preventDefault();
+                // Run a function of the user's choice (on any context menu items) before the menu is rendered
+                // The function has access to the data that will be used to construct the menu item and will modify it
+                if (this.executeBeforeRender) {
+                    this.executeBeforeRender.forEach((func) => func());
                 }
+                this.renderedMenu = this.renderMenu();
+                // Run a function of the user's choice (on any context menu items) after the menu is rendered
+                // The function will access the menu item's html element and the data that was used to construct it
+                // A common usecase is to delete the menuitem if it shouldn't be shown
+                if (this.executeAfterRender) {
+                    this.executeAfterRender.forEach((func) => func());
+                }
+
                 // If there are no elements remaining after the adjust function runs, don't show the menu
                 if (this.renderedMenu.children.length === 0) {
                     return;
@@ -137,13 +150,10 @@ class ContextMenu {
                         : clientX;
 
                 setTimeout(() => {
-                    this.renderedMenu.setAttribute(
-                        "style",
-                        `--width: ${this.renderedMenu.scrollWidth}px;
-            --height: ${this.renderedMenu.scrollHeight}px;
-            --top: ${positionY}px;
-            --left: ${positionX}px;`
-                    );
+                    this.renderedMenu.style.setProperty("--width", `${this.renderedMenu.scrollWidth}px`);
+                    this.renderedMenu.style.setProperty("--height", `${this.renderedMenu.scrollHeight}px`);
+                    this.renderedMenu.style.setProperty("--top", `${positionY}px`);
+                    this.renderedMenu.style.setProperty("--left", `${positionX}px`);
                 }, 100);
             } else {
                 // The original browser context menu is not shown

@@ -76,26 +76,36 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
 
     @server.route("/api/get_latest_subscription_message", methods=["GET"])
     def get_latest_subscription_message() -> typing.Any:
-        if not request.args.get("message_specifier"):
-            return jsonify({"error": "Please provide a message_specifier query parameter"})
-        specifier1 = SubjectSpecifier.from_string(request.args.get("message_specifier"))
-        message_store = state.queues.subscribed_messages[specifier1]
-        serializable_object = message_store.messages[message_store.counter - 1]
-        if not request.args.get("as_yaml"):
-            return jsonify(serializable_object)
+        try:
+            if not request.args.get("message_specifier"):
+                return jsonify({"error": "Please provide a message_specifier query parameter"})
+            specifier1 = SubjectSpecifier.from_string(request.args.get("message_specifier"))
+            message_store = state.cyphal.message_stores_by_specifier[specifier1]
+            serializable_object = message_store.messages[message_store.counter - 1]
+            if not request.args.get("as_yaml"):
+                return jsonify(serializable_object)
 
-        text_response = Dumper().dumps(serializable_object)
-        return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
+            text_response = Dumper().dumps(serializable_object)
+            return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
+        except:
+            tb = traceback.format_exc()
+            logger.critical(tb)
+            return str(tb)
 
     @server.route("/api/get_all_subscription_messages", methods=["GET"])
     def get_all_subscription_messages() -> typing.Any:
-        if not request.args.get("message_specifier"):
-            return jsonify({"error": "Please provide a message_specifier query parameter"})
-        specifier1 = SubjectSpecifier.from_string(request.args.get("message_specifier"))
-        message_store = state.queues.subscribed_messages[specifier1]
-        serializable_object = message_store.messages
-        if not request.args.get("as_yaml"):
-            return jsonify(serializable_object)
+        try:
+            if not request.args.get("message_specifier"):
+                return jsonify({"error": "Please provide a message_specifier query parameter"})
+            specifier1 = SubjectSpecifier.from_string(request.args.get("message_specifier"))
+            message_store = state.cyphal.message_stores_by_specifier[specifier1]
+            serializable_object = message_store.messages
+            if not request.args.get("as_yaml"):
+                return jsonify(serializable_object)
 
-        text_response = Dumper().dumps(serializable_object)
-        return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
+            text_response = Dumper().dumps(serializable_object)
+            return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
+        except:
+            tb = traceback.format_exc()
+            logger.critical(tb)
+            return str(tb)

@@ -15,7 +15,6 @@ from ruamel.yaml.scanner import ScannerError
 
 from yukon.domain.reactive_proxy_objects import ReactiveValue
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
-from yukon.services.flash_dronecan_firmware_with_cyphal_firmware import run_dronecan_firmware_updater
 from yukon.services.settings_changed_actions import set_handlers_for_configuration_changes
 from yukon.services.utils import process_dsdl_path, add_path_to_sys_path
 from yukon.domain.god_state import GodState

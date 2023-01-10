@@ -16,12 +16,6 @@ export const layout_config = {
                                             type: 'component',
                                             componentName: 'monitor2Component',
                                             isClosable: true,
-                                            title: 'Monitor2',
-                                        },
-                                        {
-                                            type: 'component',
-                                            componentName: 'monitorComponent',
-                                            isClosable: true,
                                             title: 'Monitor',
                                         },
                                         {
@@ -87,6 +81,12 @@ export const layout_config = {
                                     componentName: "registerUpdateLogComponent",
                                     isClosable: true,
                                     title: "Register logs",
+                                },
+                                {
+                                    type: "component",
+                                    componentName: "dronecanComponent",
+                                    isClosable: true,
+                                    title: "Dronecan",
                                 }
                             ]
                         },
@@ -95,6 +95,7 @@ export const layout_config = {
                             componentName: "transportsListComponent",
                             isClosable: true,
                             title: "Transports list",
+                            height: 30,
                         },
                     ]
                 }

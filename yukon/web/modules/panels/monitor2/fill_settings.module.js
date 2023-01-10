@@ -44,4 +44,5 @@ export function fillSettings(settings, yukon_state) {
     for (const color of settings.HighlightColorsRaw) {
         settings.HighlightColors.push({ color: color, taken: false });
     }
+    settings.DefaultMessageCapacity = yukon_state.all_settings["Monitor view"]["Default saved subscription messages capacity"];
 }

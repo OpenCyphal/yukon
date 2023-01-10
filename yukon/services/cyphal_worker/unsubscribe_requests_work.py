@@ -15,7 +15,7 @@ async def do_unsubscribe_requests_work(state: GodState, unsubscribe_request: Uns
             if subscribe_request.specifier == unsubscribe_request.specifier:
                 state.cyphal.subscribers_by_subscribe_request[subscribe_request].close()
                 del state.cyphal.subscribers_by_subscribe_request[subscribe_request]
-                del state.queues.subscribed_messages[subscribe_request.specifier]
+                del state.cyphal.message_stores_by_specifier[subscribe_request.specifier]
                 unsubscribe_response = SubscribeResponse(
                     unsubscribe_request.specifier.subject_id, unsubscribe_request.specifier.datatype, True, ""
                 )
