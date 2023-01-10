@@ -29,8 +29,8 @@ _logger = logging.getLogger(__name__)
 
 class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, o: typing.Any) -> typing.Any:
-        if "save_settings" in [x[3] for x in inspect.stack()]:
-            _logger.debug("Coming from save_settings")
+        # if "save_settings" in [x[3] for x in inspect.stack()]:
+        #     _logger.debug("Coming from save_settings")
         _logger.debug("Serializing %r: %r", type(o), o)
         if isinstance(o, ReactiveValue):
             if isinstance(o.value, ReactiveValue):
