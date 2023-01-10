@@ -130,12 +130,12 @@ def equals_list(list1: list, list2: list) -> bool:
 def modify_settings_values_from_a_new_copy(
     current_settings: typing.Union[dict, list], new_settings: typing.Union[dict, list]
 ) -> None:
-    is_start_of_recursion = False
-    if "modify_settings_values_from_a_new_copy" in [x[3] for x in inspect.stack()[1:]]:
-        logger.debug("Recursive call")
-    else:
-        logger.debug("——————Modifying settings——————")
-        is_start_of_recursion = True
+    # is_start_of_recursion = False
+    # if "modify_settings_values_from_a_new_copy" in [x[3] for x in inspect.stack()[1:]]:
+    #     logger.debug("Recursive call")
+    # else:
+    #     logger.debug("——————Modifying settings——————")
+    #     is_start_of_recursion = True
     if isinstance(current_settings, dict):
         for key, value in current_settings.items():
             if isinstance(value, (list, dict)):
@@ -217,18 +217,18 @@ def modify_settings_values_from_a_new_copy(
                 else:
                     current_settings.append(value)
                     recursive_reactivize_settings(value)
-    if is_start_of_recursion:
-        logger.debug("——————Done modifying settings——————")
+    # if is_start_of_recursion:
+    #     logger.debug("——————Done modifying settings——————")
 
 
 def recursive_reactivize_settings(current_settings: typing.Union[dict, list]) -> None:
     # See if the call stack contains recursive_reactivize_settings, current stack element is not counted
-    is_start_of_recursion = False
-    if "recursive_reactivize_settings" in [x[3] for x in inspect.stack()[1:]]:
-        logger.debug("Recursive call")
-    else:
-        logger.debug("——————Reactivizing settings——————")
-        is_start_of_recursion = True
+    # is_start_of_recursion = False
+    # if "recursive_reactivize_settings" in [x[3] for x in inspect.stack()[1:]]:
+    #     logger.debug("Recursive call")
+    # else:
+    #     logger.debug("——————Reactivizing settings——————")
+    #     is_start_of_recursion = True
     if isinstance(current_settings, dict):
         logger.debug("Entering dict %r for reactivization", current_settings)
         for key, value in current_settings.items():
@@ -247,8 +247,8 @@ def recursive_reactivize_settings(current_settings: typing.Union[dict, list]) ->
                 logger.debug("Reactivizing %r", value)
                 current_settings[index] = ReactiveValue(value)
                 logger.debug("Reactivized %r", current_settings[index])
-    if is_start_of_recursion:
-        logger.debug("——————Done reactivizing settings——————")
+    # if is_start_of_recursion:
+    #     logger.debug("——————Done reactivizing settings——————")
 
 
 def loading_settings_into_yukon(state: GodState) -> None:
