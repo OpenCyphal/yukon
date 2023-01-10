@@ -64,7 +64,6 @@ class QueuesState:
     attach_transport_response: Queue[str] = field(default_factory=Queue)
     update_registers_response: Dict[UUID, UpdateRegisterResponse] = field(default_factory=dict)
     subscribe_requests_responses: Queue[SubscribeResponse] = field(default_factory=Queue)
-    subscribed_messages: typing.Dict[SubjectSpecifier, MessagesStore] = field(default_factory=dict)
     unsubscribe_requests_responses: Queue[str] = field(default_factory=Queue)
     reread_register_names: Queue[RereadRegisterNamesRequest] = field(default_factory=Queue)
     detach_transport_response: Queue[str] = field(default_factory=Queue)
@@ -120,6 +119,7 @@ class CyphalState:
     synchronizers_by_specifier: Dict[
         SynchronizedSubjectsSpecifier, "pycyphal.presentation.subscription_synchronizer.Synchronizer"
     ] = field(default_factory=dict)
+    message_stores_by_specifier: typing.Dict[SubjectSpecifier, MessagesStore] = field(default_factory=dict)
     centralized_allocator: Optional[CentralizedAllocator] = field(default_factory=none_factory)
     file_server: Optional[yukon.services.FileServer.FileServer] = field(default_factory=none_factory)
 

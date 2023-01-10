@@ -103,6 +103,15 @@
     max-width: 100%;
 }
 
+#monitor2>.arrowhead {
+    border-left-color: transparent;
+    border-right-color: transparent;
+    border-top-color: black;
+    border-left-style: solid;
+    border-right-style: solid;
+    border-top-style: solid;
+}
+
 @media (prefers-color-scheme: dark) {
     #monitor2 .node {
         background-color: darkblue;
@@ -126,5 +135,9 @@
 
     #monitor2>.node.disappeared {
         background-color: #524400;
+    }
+
+    #monitor2>.arrowhead {
+        border-top-color: antiquewhite;
     }
 }

@@ -80,7 +80,7 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
             if not request.args.get("message_specifier"):
                 return jsonify({"error": "Please provide a message_specifier query parameter"})
             specifier1 = SubjectSpecifier.from_string(request.args.get("message_specifier"))
-            message_store = state.queues.subscribed_messages[specifier1]
+            message_store = state.cyphal.message_stores_by_specifier[specifier1]
             serializable_object = message_store.messages[message_store.counter - 1]
             if not request.args.get("as_yaml"):
                 return jsonify(serializable_object)
@@ -98,7 +98,7 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
             if not request.args.get("message_specifier"):
                 return jsonify({"error": "Please provide a message_specifier query parameter"})
             specifier1 = SubjectSpecifier.from_string(request.args.get("message_specifier"))
-            message_store = state.queues.subscribed_messages[specifier1]
+            message_store = state.cyphal.message_stores_by_specifier[specifier1]
             serializable_object = message_store.messages
             if not request.args.get("as_yaml"):
                 return jsonify(serializable_object)

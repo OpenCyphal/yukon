@@ -504,6 +504,31 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         }
     });
     node.appendChild(btnFirmwareUpdate);
+    node.addEventListener("click", function () {
+        let queue = []
+        for (const element of yukon_state.myLayout.root.contentItems) {
+            queue.push(element);
+        }
+        while (true) {
+            const currentElement = queue.shift();
+            if (currentElement) {
+                if (currentElement.isStack && currentElement.getActiveContentItem().config.hasOwnProperty("componentName")) {
+                    if (currentElement.getActiveContentItem().config.componentName === "commandsComponent") {
+                        const commandsComponentOuterElement = currentElement.getActiveContentItem().element[0];
+                        const nodeIdInput = commandsComponentOuterElement.querySelector("#iNodeId");
+                        nodeIdInput.value = avatar.node_id;
+                    }
+                } else {
+                    for (const contentItem of currentElement.contentItems) {
+                        queue.push(contentItem)
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+    });
+
     return node;
 }
 function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state) {
@@ -609,13 +634,12 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     arrowhead = document.createElement("div");
     arrowhead.classList.add("arrowhead");
     arrowhead.style.position = "absolute";
-    arrowhead.style.top = y_counter.value + avatar_y_counter.value - 4 + settings.HorizontalLineWidth / 2 + "px";
-    arrowhead.style.left = matchingPort.x_offset - 12 + "px";
+    arrowhead.style.left = matchingPort.x_offset - 15 + "px";
     arrowhead.style.width = "0px";
     arrowhead.style.height = "0px";
-    arrowhead.style.borderLeft = "9px solid transparent";
-    arrowhead.style.borderRight = "9px solid transparent";
-    arrowhead.style.borderTop = "9px solid pink";
+    arrowhead.style.setProperty("border-left-width", "9px");
+    arrowhead.style.setProperty("border-right-width", "9px");
+    arrowhead.style.setProperty("border-top-width", "9px");
     monitor2Div.appendChild(arrowhead);
     linesByPortAndPortType.push({ "element": horizontal_line, "port": matchingPort.port, "type": matchingPort.type, "toggledOn": toggledOn });
     linesByPortAndPortType.push({ "element": arrowhead, "port": matchingPort.port, "type": matchingPort.type, "toggledOn": toggledOn });
@@ -650,12 +674,14 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     }, 1000);
 
     const right_end_of_edge = matchingPort.x_offset;
-    const left_end_of_edge = settings["NodeXOffset"] + settings["NodeWidth"] - 3 + "px"
+    const left_end_of_edge = settings["NodeXOffset"] + settings["NodeWidth"] - 7 + "px"
     if (matchingPort.type === "pub" || matchingPort.type === "cln") {
         // Arrowhead for the line
         arrowhead.style.transform = "rotate(270deg)";
-        arrowhead.style.left = right_end_of_edge - 10 + "px";
+        arrowhead.style.left = right_end_of_edge - 12 + "px";
+        arrowhead.style.top = y_counter.value + avatar_y_counter.value - 4 + settings.HorizontalLineWidth / 2 + "px";
     } else if (matchingPort.type === "sub" || matchingPort.type === "srv") {
+        arrowhead.style.top = y_counter.value + avatar_y_counter.value - 4 + settings.HorizontalLineWidth / 2 + "px";
         arrowhead.style.transform = "rotate(90deg)";
         arrowhead.style.left = left_end_of_edge;
         // Make a circle and position it at right_end_of_edge

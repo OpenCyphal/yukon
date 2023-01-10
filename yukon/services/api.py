@@ -498,9 +498,15 @@ class Api:
 
     def enable_udp_output_from(self, specifier: str) -> None:
         """Get the message store for the specifier and enable UDP output for it."""
-        messages_store = self.state.queues.subscribed_messages.get(specifier)
+        messages_store = self.state.cyphal.message_stores_by_specifier.get(SubjectSpecifier.from_string(specifier))
         if messages_store:
             messages_store.enable_udp_output = True
+
+    def disable_udp_output_from(self, specifier: str) -> None:
+        """Get the message store for the specifier and enable UDP output for it."""
+        messages_store = self.state.cyphal.message_stores_by_specifier.get(SubjectSpecifier.from_string(specifier))
+        if messages_store:
+            messages_store.enable_udp_output = False
 
     def unsubscribe(self, specifier: str) -> Response:
         self.state.queues.god_queue.put_nowait(UnsubscribeRequest(SubjectSpecifier.from_string(specifier)))
@@ -520,7 +526,7 @@ class Api:
         specifiers_object = json.loads(specifiers)
         dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
         mapping = {}
-        for specifier, messages_store in self.state.queues.subscribed_messages.items():
+        for specifier, messages_store in self.state.cyphal.message_stores_by_specifier.items():
             for dto in dtos:
                 if dto.does_equal_specifier(specifier):
                     mapping[str(dto)] = messages_store.messages[dto.counter - messages_store.start_index :]
@@ -529,7 +535,7 @@ class Api:
         return jsonify(mapping)
 
     def set_message_store_capacity(self, specifier: str, capacity: int) -> None:
-        messages_store = self.state.queues.subscribed_messages.get(SubjectSpecifier.from_string(specifier))
+        messages_store = self.state.cyphal.message_stores_by_specifier.get(SubjectSpecifier.from_string(specifier))
         if messages_store:
             messages_store.capacity = int(capacity)
 
@@ -657,7 +663,7 @@ class Api:
     def get_current_available_subscription_specifiers(self) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
         specifiers = []
-        for specifier, messages_store in self.state.queues.subscribed_messages.items():
+        for specifier, messages_store in self.state.cyphal.message_stores_by_specifier.items():
             specifiers.append(str(specifier))
         specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
         return jsonify(specifiers_return_value)

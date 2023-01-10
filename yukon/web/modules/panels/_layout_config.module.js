@@ -95,6 +95,7 @@ export const layout_config = {
                             componentName: "transportsListComponent",
                             isClosable: true,
                             title: "Transports list",
+                            height: 30,
                         },
                     ]
                 }

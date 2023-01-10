@@ -38,7 +38,7 @@ export function setPortStateAsUnhiglighted(portNr, yukon_state) {
 }
 export function highlightElement(element, color, settings, yukon_state) {
     if (element.classList.contains("arrowhead")) {
-        element.style.setProperty("border-top", "7px solid " + color);
+        element.style.setProperty("border-top-color", color);
     } else if (element.classList.contains("horizontal_line_label") && element.tagName === "LABEL") {
         element.style.setProperty("background-color", settings.LinkLabelHighlightColor);
         element.style.setProperty("color", settings.LinkLabelHighlightTextColor);
@@ -64,7 +64,7 @@ export function removeHighlightsFromObjects(objects, settings, yukon_state) {
 }
 export function removeHighlightFromElement(element, settings, yukon_state) {
     if (element.classList.contains("arrowhead")) {
-        element.style.setProperty("border-top", "7px solid pink");
+        element.style.removeProperty("border-top-color");
     } else if (element.classList.contains("horizontal_line_label") && element.tagName === "LABEL") {
         element.style.setProperty("background-color", settings.LinkLabelColor);
         element.style.setProperty("color", settings.LinkLabelTextColor);

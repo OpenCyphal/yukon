@@ -33,7 +33,7 @@ def launch_yes_no_dialog(text: str, title: str, timeout: int = 5000) -> bool:
     root.attributes("-alpha", 0.0)
     root.wm_state("iconic")
     # Make the dialog box appear in the taskbar
-    root.wm_attributes("-topmost", 1)
+    d.wm_attributes("-topmost", 1)
     # The dialog box should be focused
 
     # The title should be Yukon
@@ -42,6 +42,8 @@ def launch_yes_no_dialog(text: str, title: str, timeout: int = 5000) -> bool:
         root.withdraw()
     root.after(timeout, d.no)
     d.focus_force()
+    root.lift()
+    d.lift()
     root.wait_window(d)
     root.destroy()
     return d.answer

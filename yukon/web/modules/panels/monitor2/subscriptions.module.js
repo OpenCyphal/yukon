@@ -205,6 +205,29 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     divLogToConsole.appendChild(labelLogToConsole);
     subscriptionElement.appendChild(divLogToConsole);
 
+    const divStreamToPlotJuggler = document.createElement('div');
+    divStreamToPlotJuggler.classList.add('form-check');
+    const streamToPlotJuggler = document.createElement('input');
+    streamToPlotJuggler.classList.add('form-check-input');
+    streamToPlotJuggler.classList.add('checkbox');
+    streamToPlotJuggler.type = 'checkbox';
+    streamToPlotJuggler.id = "streamToPlotJuggler" + subject_id + ":" + datatype;
+    divStreamToPlotJuggler.appendChild(streamToPlotJuggler);
+    const labelStreamToPlotJuggler = document.createElement('label');
+    labelStreamToPlotJuggler.classList.add('form-check-label');
+    labelStreamToPlotJuggler.htmlFor = streamToPlotJuggler.id;
+    labelStreamToPlotJuggler.innerHTML = "Stream to PlotJuggler";
+    divStreamToPlotJuggler.appendChild(labelStreamToPlotJuggler);
+    subscriptionElement.appendChild(divStreamToPlotJuggler);
+
+    streamToPlotJuggler.addEventListener('change', async (event) => {
+        if (event.target.checked) {
+            await yukon_state.zubax_apij.enable_udp_output_from(specifier);
+        } else {
+            await yukon_state.zubax_apij.disable_udp_output_from(specifier);
+        }
+    });
+
     // Add an input number field for capacity of the stored messages
     // Also a label before it
     const divCapacity = document.createElement('div');
