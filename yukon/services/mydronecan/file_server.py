@@ -11,6 +11,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 import os
 from collections import defaultdict
 from logging import getLogger
+import typing
 import dronecan
 from dronecan import uavcan
 import errno
@@ -21,26 +22,26 @@ logger = getLogger(__name__)
 
 # noinspection PyBroadException
 class SimpleFileServer(object):
-    def __init__(self, node, _file_path):
+    def __init__(self, node: dronecan.node.Node, _file_path: str) -> None:
         if node.is_anonymous:
             raise dronecan.UAVCANException("File server cannot be launched on an anonymous node")
         self.file_path = _file_path
-        self._handles = []
+        self._handles: typing.Any = []
         self.is_enabled = False
 
-        def add_handler(datatype, callback):
+        def add_handler(datatype: typing.Any, callback: typing.Any) -> None:
             self._handles.append(node.add_handler(datatype, callback))
 
         add_handler(uavcan.protocol.file.GetInfo, self._get_info)
         add_handler(uavcan.protocol.file.Read, self._read)
 
-    def start(self):
+    def start(self) -> None:
         self.is_enabled = True
 
-    def stop(self):
+    def stop(self) -> None:
         self.is_enabled = False
 
-    def _get_info(self, e):
+    def _get_info(self, e: uavcan.protocol.file.GetInfo) -> uavcan.protocol.file.GetInfo.Response:
         if not self.is_enabled:
             return
         logger.debug(
@@ -63,7 +64,7 @@ class SimpleFileServer(object):
 
         return resp
 
-    def _read(self, e):
+    def _read(self, e: uavcan.protocol.file.Read) -> uavcan.protocol.file.Read.Response:
         if not self.is_enabled:
             return
         logger.debug(

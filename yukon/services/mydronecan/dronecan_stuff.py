@@ -67,10 +67,10 @@ def run_dronecan(state: GodState) -> None:
         # Add the current directory to the paths list
         state.dronecan.node_monitor = NodeMonitor(state.dronecan.node)
 
-        def update_entries():
+        def update_entries() -> None:
             state.dronecan.all_entries = state.dronecan.node_monitor.find_all(lambda x: True)
 
-        def update_entries_loop():
+        def update_entries_loop() -> None:
             while state.gui.gui_running:
                 update_entries()
                 time.sleep(1)
