@@ -21,6 +21,21 @@ async def do_send_command_work(state: GodState, send_command_request: CommandSen
                 message = "Node ID must be positive!"
                 stop_retry = True
                 raise Exception("Node ID must be positive")
+            if send_command_request.command_id == 65533:
+                # For firmware update requests, I want to make sure that the url is correctly sent
+                # If an absolute path is sent but the file server is configured for some specific folder
+                # which it always is, then the file server will not be able to find the file
+                # So I want to make sure that the url is relative
+                # Find the matching part between state.cyphal.file_server.roots[0] and the url
+                url = send_command_request.text_argument
+                real_url = url.replace(str(state.cyphal.file_server.roots[0]), "")
+                # Make sure real_url doesn't start with a slash
+                if real_url.startswith("/"):
+                    real_url = real_url[1:]
+                if real_url.startswith("\\"):
+                    real_url = real_url[1:]
+                send_command_request.text_argument = real_url
+
             if len(state.cyphal.already_used_transport_interfaces.keys()) == 0:
                 message = "No transports attached!"
                 stop_retry = True
