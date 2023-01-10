@@ -16,12 +16,6 @@ export const layout_config = {
                                             type: 'component',
                                             componentName: 'monitor2Component',
                                             isClosable: true,
-                                            title: 'Monitor2',
-                                        },
-                                        {
-                                            type: 'component',
-                                            componentName: 'monitorComponent',
-                                            isClosable: true,
                                             title: 'Monitor',
                                         },
                                         {

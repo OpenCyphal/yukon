@@ -369,7 +369,9 @@ async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arg
         logger.warning("Yukon is already running.")
         logger.warning("This might be unintentional.")
 
-        if launch_yes_no_dialog("Would you like to close " + str(len(found_yukons)) + " other Yukon instances?"):
+        if launch_yes_no_dialog(
+            "Would you like to close " + str(len(found_yukons)) + " other Yukon instances?", "Yukon: Close others?"
+        ):
             logger.warning("Closing other Yukon instances.")
             for proc in found_yukons:
                 id_of_parent_process = proc.ppid()

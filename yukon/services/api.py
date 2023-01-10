@@ -13,6 +13,7 @@ import traceback
 import yaml
 from uuid import uuid4
 from time import time
+from yukon.custom_tk_dialog import launch_yes_no_dialog
 
 from yukon.services.utils import quit_application
 
@@ -442,6 +443,13 @@ class Api:
 
     def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
         send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)
+        if int(command) == 65533:
+            if not launch_yes_no_dialog(
+                f"Are you sure you want to update node {node_id} firmware to {text_argument}?",
+                "Confirm firmware update",
+                20000,
+            ):
+                return jsonify({"success": False, "message": "User cancelled."})
         self.state.queues.god_queue.put_nowait(send_command_request)
         try:
             response = self.state.queues.command_response.get(timeout=5)
