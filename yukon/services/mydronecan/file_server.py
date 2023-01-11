@@ -10,15 +10,15 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
 import os
 from collections import defaultdict
-from logging import getLogger
+import logging
 import typing
 import dronecan
 from dronecan import uavcan
 import errno
 
 
-logger = getLogger(__name__)
-
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # noinspection PyBroadException
 class SimpleFileServer(object):

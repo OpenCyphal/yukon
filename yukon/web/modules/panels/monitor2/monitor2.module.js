@@ -460,6 +460,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
             feedbackMessage.style.display = "block";
             if (result.message) {
                 feedbackMessage.innerHTML = result.message;
+                yukon_state.addLocalMessage(result.message);
             } else {
                 feedbackMessage.innerHTML = "";
             }
@@ -468,6 +469,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
             feedbackMessage.style.display = "block";
             if (result.message) {
                 feedbackMessage.innerHTML = result.message;
+                yukon_state.addLocalMessage(result.message);
             } else {
                 feedbackMessage.innerHTML = "";
             }

@@ -2,6 +2,7 @@ function createTable(inputArray) {
     let table = document.createElement("table");
 
     let tableHeader = [
+        "Actions",
         "Node ID",
         "Name",
         "Health",
@@ -47,6 +48,13 @@ function createTable(inputArray) {
             currentInput.vendor_specific_status_code,
         ];
         let row = table.insertRow();
+        let cell1 = row.insertCell();
+        let btn = document.createElement("button");
+        btn.innerHTML = "Firmware Update";
+        btn.addEventListener("click", async function () {
+            await yukon_state.zubax_apij.dronecan_node_fw_update(currentInput.node_id);
+        });
+        cell1.appendChild(btn);
         for (let j = 0; j < tableFields.length; j++) {
             let cell = row.insertCell();
             let text = document.createTextNode(tableFields[j]);
