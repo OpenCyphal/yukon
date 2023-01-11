@@ -39,7 +39,29 @@ function createWindow() {
     })
     return win;
 }
-
+const isMac = process.platform === 'darwin'
+const menuTemplate = [
+    {
+        label: 'File',
+        submenu: [
+            isMac ? { role: 'close' } : { role: 'quit' }
+        ]
+    },
+    {
+        label: 'View',
+        submenu: [
+            { role: 'reload' },
+            { role: 'forceReload' },
+            { role: 'toggleDevTools' },
+            { type: 'separator' },
+            { role: 'resetZoom' },
+            { role: 'zoomIn' },
+            { role: 'zoomOut' },
+            { type: 'separator' },
+            { role: 'togglefullscreen' }
+        ]
+    },
+]
 app.whenReady().then(() => {
     // Send a GET request to http://locahost:5000/api/announce_running_in_electron
     // to announce that the app is running in electron
@@ -48,34 +70,17 @@ app.whenReady().then(() => {
     ipcMain.handle('dialog:openPath', handlePathOpen);
     ipcMain.handle('dialog:saveFile', handleFileSave);
 
-    const isMac = process.platform === 'darwin'
-
 
     const window = createWindow();
-    const template = [
-        {
-            label: 'File',
-            submenu: [
-                isMac ? { role: 'close' } : { role: 'quit' }
-            ]
-        },
-        {
-            label: 'View',
-            submenu: [
-                { role: 'reload' },
-                { role: 'forceReload' },
-                { role: 'toggleDevTools' },
-                { type: 'separator' },
-                { role: 'resetZoom' },
-                { role: 'zoomIn' },
-                { role: 'zoomOut' },
-                { type: 'separator' },
-                { role: 'togglefullscreen' }
-            ]
-        },
-    ]
+    console.log("Setting up IPC handlers")
 
-    const menu = Menu.buildFromTemplate(template)
+
+
+    const menu = Menu.buildFromTemplate(menuTemplate)
+    ipcMain.handle('panels:addRecovery', function (_, panelName) {
+        console.log("Received request to add recoverable panel: " + panelName)
+        addRecoverablePanel(window, panelName, menu);
+    }, window);
     Menu.setApplicationMenu(menu)
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
@@ -91,6 +96,15 @@ app.on('window-all-closed', () => {
         app.quit();
     }
 })
+
+async function addRecoverablePanel(panelName, window, menu) {
+    menu.append(new MenuItem({
+        label: 'Panels',
+        submenu: [
+            { label: panelName, click: async function () { await window.webContents.send('panels:recover', panelName) } }
+        ]
+    }));
+}
 
 async function handleFileSave(_, content) {
     const { canceled, filePath } = await dialog.showSaveDialog();

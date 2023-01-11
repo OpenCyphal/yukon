@@ -72,7 +72,7 @@ export async function setUpMonitor2Component(container, yukon_state) {
             }
             yukon_state.sync_subscription_specifiers_previous_hash = yukon_state.sync_subscription_specifiers_hash;
         } else {
-            console.warn("Subscriptions offset is not set");
+            // console.warn("Subscriptions offset is not set");
         }
 
     }, 1500);
@@ -378,7 +378,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 // If this port type is also the last
                 if (port.type === "srv") {
                     isLast = true;
-                    console.log("It is the last.");
+                    // console.log("It is the last.");
                 }
             }
             addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state);

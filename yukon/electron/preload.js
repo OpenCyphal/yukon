@@ -1,4 +1,4 @@
-const {contextBridge, ipcRenderer} = require('electron')
+const { contextBridge, ipcRenderer } = require('electron')
 window.addEventListener('DOMContentLoaded', () => {
     const replaceText = (selector, text) => {
         const element = document.getElementById(selector)
@@ -13,5 +13,6 @@ window.addEventListener('DOMContentLoaded', () => {
 contextBridge.exposeInMainWorld('electronAPI', {
     openPath: (properties) => ipcRenderer.invoke('dialog:openPath', properties),
     saveFile: (content) => ipcRenderer.invoke('dialog:saveFile', content),
+    addRecoverablePanel: (callback) => ipcRenderer.invoke('panels:addRecovery', callback),
     onOpenSettings: (callback) => ipcRenderer.on('openSettings', callback)
 })

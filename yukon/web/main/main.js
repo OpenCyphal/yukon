@@ -148,6 +148,9 @@ window.console = new Proxy(old_console, {
         const outsideContext = this;
 
         function addRestoreButton(buttonText, buttonComponentName) {
+            if (window.electronAPI) {
+                window.electronAPI.addRecoverablePanel(buttonComponentName);
+            }
             const toolbar = document.querySelector("#toolbar");
             const btnRestore = document.createElement("button");
             btnRestore.classList.add("restore-btn");
@@ -388,6 +391,9 @@ window.console = new Proxy(old_console, {
             initalizeLayout();
         });
         const btnShowHideToolbar = document.getElementById('btnShowHideToolbar');
+        if (isRunningInElectron(yukon_state)) {
+            btnShowHideToolbar.style.display = "none";
+        }
         btnShowHideToolbar.addEventListener('click', function () {
             const toolbar = document.getElementById('toolbar');
             const compStyles = window.getComputedStyle(toolbar);

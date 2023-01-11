@@ -55,8 +55,9 @@ def run_electron(state: GodState) -> None:
         sleep(1)
 
     exe_path = get_electron_path()
-    electron_logger = logger.getChild("electronJS")
-    # electron_logger.addHandler(state.messages_publisher)
+    electron_logger = logging.getLogger("electronJS")
+    electron_logger.setLevel(logging.INFO)
+    electron_logger.addHandler(state.messages_publisher)
     exit_code = 0
     # Use subprocess to run the exe
     try:
@@ -75,7 +76,7 @@ def run_electron(state: GodState) -> None:
         check_thread.start()
 
         with subprocess.Popen(
-            [exe_path, Path(root_path) / "yukon/electron/main.js"],
+            [exe_path, "--trace-warnings", Path(root_path) / "yukon/electron/main.js"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
