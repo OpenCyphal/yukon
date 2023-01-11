@@ -36,6 +36,29 @@ const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 yukon_state.port = urlParams.get('port');
 
+var old_console = window.console;
+// New console should be a proxy to the old one, but with additional functionality
+window.console = new Proxy(old_console, {
+    get: function (target, propKey, receiver) {
+        var orig_method = target[propKey];
+        return function (...args) {
+            var result = orig_method.apply(this, args);
+            if (propKey === "error") {
+                yukon_state.addLocalMessage(args[0], 40);
+                return result;
+            } else if (propKey === "warn") {
+                yukon_state.addLocalMessage(args[0], 30);
+                return result;
+            } else if (propKey === "info") {
+                yukon_state.addLocalMessage(args[0], 20);
+                return result;
+            } else if (propKey === "log") {
+                yukon_state.addLocalMessage(args[0], 10);
+                return result;
+            }
+        };
+    }
+});
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
@@ -63,6 +86,11 @@ yukon_state.port = urlParams.get('port');
     yukon_state.addLocalMessage = function (message, severity) {
         zubax_api.add_local_message(message, severity);
     }
+    window.addEventListener("error", function (error, url, line) {
+        consoler.log("There was an actual error!")
+        yukon_state.addLocalMessage("Error: " + error + " at " + url + ":" + line, "error");
+        return true;
+    });
     const addLocalMessage = yukon_state.addLocalMessage;
 
     async function doStuffWhenReady() {

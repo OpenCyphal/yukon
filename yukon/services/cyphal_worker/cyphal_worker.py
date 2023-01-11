@@ -73,7 +73,7 @@ def cyphal_worker(state: GodState) -> None:
                 except Exception as e:
                     tb = traceback.format_exc()
                     logger.error(tb)
-                logger.warn("Dronecan forwarding done")
+                logger.warn("DroneCAN forwarding done")
 
             task = asyncio.create_task(forward_dronecan_loop())
 
