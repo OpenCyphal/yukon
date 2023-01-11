@@ -718,7 +718,8 @@ class Api:
     def get_dronecan_node_entries(self) -> Response:
         return jsonify(list(self.state.dronecan.all_entries))
 
-    def dronecan_node_fw_update(self, node_id) -> None:
+    def dronecan_node_fw_update(self, node_id: int, path: str) -> None:
+        self.state.dronecan.firmware_update_path.value = path
         req = dronecan.uavcan.protocol.file.BeginFirmwareUpdate.Request()
         req.image_file_remote_path.path = "a"
         logging.debug("Sending %r to %r", req, node_id)

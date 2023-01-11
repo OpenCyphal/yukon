@@ -140,8 +140,8 @@ class DroneCanState:
         default_factory=none_factory
     )
     all_entries: Dict[int, "yukon.services.mydronecan.node_monitor.NodeMonitor.Entry"] = field(default_factory=dict)
-    enabled: ReactiveValue = ReactiveValue(False)
-    firmware_update_enabled: ReactiveValue = ReactiveValue(False)
+    enabled: ReactiveValue = ReactiveValue(True)
+    firmware_update_enabled: ReactiveValue = ReactiveValue(True)
     firmware_update_path: ReactiveValue = ReactiveValue("")
     is_running: bool = False
     thread: Optional[threading.Thread] = field(default_factory=none_factory)

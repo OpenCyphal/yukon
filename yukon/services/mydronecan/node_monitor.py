@@ -34,7 +34,7 @@ class NodeMonitor(object):
         def discovered(self):
             return self.info is not None or self._remaining_retries <= 0
 
-        def _update_from_status(self, e):
+        def _update_from_status(self, e: uavcan.protocol.NodeStatus):
             self.monotonic_timestamp = e.transfer.ts_monotonic
             self.node_id = e.transfer.source_node_id
             if self.status and e.message.uptime_sec < self.status.uptime_sec:

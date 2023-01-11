@@ -1,3 +1,5 @@
+
+import { doCommandFeedbackResult } from "../utilities.module.js";
 function createTable(inputArray) {
     let table = document.createElement("table");
 
@@ -51,9 +53,19 @@ function createTable(inputArray) {
         let cell1 = row.insertCell();
         let btn = document.createElement("button");
         btn.innerHTML = "Firmware Update";
+        btn.classList.add("btn_button", "btn", "btn-secondary", "btn-sm");
         btn.addEventListener("click", async function () {
-            await yukon_state.zubax_apij.dronecan_node_fw_update(currentInput.node_id);
+            // Add a button for firmware update
+            let path = "";
+            path = await window.electronAPI.openPath({
+                properties: ["openFile"],
+            });
+            if (path) {
+                const result = await yukon_state.zubax_apij.dronecan_node_fw_update(currentInput.node_id, path);
+                doCommandFeedbackResult(result);
+            }
         });
+
         cell1.appendChild(btn);
         for (let j = 0; j < tableFields.length; j++) {
             let cell = row.insertCell();
@@ -69,6 +81,8 @@ export async function setUpDronecanComponent(container, yukon_state) {
     const dronecanPanel = containerElement.querySelector("#dronecan-panel");
     const cbDronecanEnabled = containerElement.querySelector('#cbDronecanEnabled');
     const cbDronecanFWUpdateEnabled = containerElement.querySelector('#cbDronecanFWUpdateEnabled');
+    cbDronecanEnabled.parentElement.style.display = "none";
+    cbDronecanFWUpdateEnabled.parentElement.style.display = "none";
     cbDronecanFWUpdateEnabled.addEventListener('change', (event) => {
         yukon_state.zubax_apij.set_dronecan_fw_substitution_enabled(event.target.checked);
     });
@@ -76,6 +90,7 @@ export async function setUpDronecanComponent(container, yukon_state) {
         yukon_state.zubax_apij.set_dronecan_enabled(event.target.checked);
     });
     const txtFirmwarePath = containerElement.querySelector('#txtFirmwarePath');
+    txtFirmwarePath.parentElement.style.display = "none";
     const btnBrowse = containerElement.querySelector('#btnBrowse');
     btnBrowse.addEventListener("click", async function () {
         let path = "";

@@ -1,6 +1,6 @@
 import { areThereAnyNewOrMissingHashes, updateLastHashes } from "../../hash_checks.module.js";
 import { getRelatedLinks } from "../../meanings.module.js";
-import { waitForElm, getKnownDatatypes } from "../../utilities.module.js";
+import { waitForElm, getKnownDatatypes, doCommandFeedbackResult } from "../../utilities.module.js";
 import {
     getHoveredContainerElementAndContainerObject,
     secondsToColonSeparatedString,
@@ -435,45 +435,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     const inputGroup = document.createElement("div");
     inputGroup.classList.add("input-group");
     inputGroup.style.setProperty("backgroundColor", "transparent", "important");
-    const doCommandFeedbackResult = (result) => {
-        // Tween feedbackMessage.style.backgroundColor from sepia to green
-        const starting_color_rgb = [255, 255, 255];
-        const increments_to_take = 144;
-        const ending_color_rgb = [0, 255, 0];
-        let increment_counter = 0;
-        let tweenFunction = null;
-        tweenFunction = () => {
-            let new_color = [];
-            for (let i = 0; i < 3; i++) {
-                new_color.push(starting_color_rgb[i] + (ending_color_rgb[i] - starting_color_rgb[i]) * increment_counter / increments_to_take);
-            }
-            feedbackMessage.style.backgroundColor = `rgb(${new_color[0]}, ${new_color[1]}, ${new_color[2]})`;
-            if (increment_counter < increments_to_take) {
-                increment_counter++;
-                window.requestAnimationFrame(tweenFunction);
-            }
-        };
-        window.requestAnimationFrame(tweenFunction);
-        if (!result.success) {
-            feedbackMessage.classList.remove("success");
-            feedbackMessage.style.display = "block";
-            if (result.message) {
-                feedbackMessage.innerHTML = result.message;
-                yukon_state.addLocalMessage(result.message);
-            } else {
-                feedbackMessage.innerHTML = "";
-            }
-        } else {
-            feedbackMessage.classList.add("success");
-            feedbackMessage.style.display = "block";
-            if (result.message) {
-                feedbackMessage.innerHTML = result.message;
-                yukon_state.addLocalMessage(result.message);
-            } else {
-                feedbackMessage.innerHTML = "";
-            }
-        }
-    }
+
     const neededButtons = [{ "name": "Restart", "command": "65535", "title": "Restart device" }, { "name": "Save", "command": "65530", "title": "Save persistent states" }, { "name": "Estop", "command": "65531", "title": "Emergency stop" }];
     for (const button of neededButtons) {
         const btnButton = document.createElement("button");
@@ -501,7 +463,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         });
         if (path) {
             const result = await yukon_state.zubax_apij.send_command(avatar.node_id, 65533, path);
-            doCommandFeedbackResult(result);
+            doCommandFeedbackResult(result, feedbackMessage);
         }
     });
     node.appendChild(btnFirmwareUpdate);

@@ -66,7 +66,6 @@ def run_dronecan(state: GodState) -> None:
         logger.debug("Node %r created", state.dronecan.node)
         # Add the current directory to the paths list
         state.dronecan.node_monitor = NodeMonitor(state.dronecan.node)
-        sent_firmware_updates: typing.Dict[int, bool] = {}
 
         def update_entries() -> None:
             found_entries = list(state.dronecan.node_monitor.find_all(lambda x: True))
