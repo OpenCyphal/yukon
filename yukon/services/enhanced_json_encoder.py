@@ -21,7 +21,7 @@ from yukon.domain.registers.update_register_log_item import UpdateRegisterLogIte
 from yukon.domain.interface import Interface
 from yukon.domain.transport.detach_transport_response import DetachTransportResponse
 
-from dronecan.app.node_monitor import NodeMonitor
+from yukon.services.mydronecan.node_monitor import NodeMonitor
 
 INFINITY = float("inf")
 

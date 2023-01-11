@@ -139,7 +139,7 @@ class DroneCanState:
     driver: Optional["yukon.services.flash_dronecan_firmware_with_cyphal_firmware.GoodDriver"] = field(
         default_factory=none_factory
     )
-    all_entries: Dict[int, Any] = field(default_factory=dict)
+    all_entries: Dict[int, "yukon.services.mydronecan.node_monitor.NodeMonitor.Entry"] = field(default_factory=dict)
     enabled: ReactiveValue = ReactiveValue(False)
     firmware_update_enabled: ReactiveValue = ReactiveValue(False)
     firmware_update_path: ReactiveValue = ReactiveValue("")

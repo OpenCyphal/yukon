@@ -95,7 +95,10 @@ export async function setUpDronecanComponent(container, yukon_state) {
     setInterval(async () => {
         const entries = await yukon_state.zubax_apij.get_dronecan_node_entries()
         if (previous_table) {
-            dronecanPanel.removeChild(previous_table);
+            try {
+                dronecanPanel.removeChild(previous_table);
+            } catch (e) {
+            }
         }
         previous_table = createTable(entries);
         dronecanPanel.appendChild(previous_table);

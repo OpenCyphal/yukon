@@ -69,7 +69,8 @@ def run_dronecan(state: GodState) -> None:
         sent_firmware_updates: typing.Dict[int, bool] = {}
 
         def update_entries() -> None:
-            state.dronecan.all_entries = list(state.dronecan.node_monitor.find_all(lambda x: True))
+            found_entries = list(state.dronecan.node_monitor.find_all(lambda x: True))
+            state.dronecan.all_entries = found_entries
 
         def update_entries_loop() -> None:
             while state.gui.gui_running:

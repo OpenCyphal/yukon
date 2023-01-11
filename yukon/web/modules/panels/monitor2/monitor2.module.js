@@ -447,7 +447,6 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
             for (let i = 0; i < 3; i++) {
                 new_color.push(starting_color_rgb[i] + (ending_color_rgb[i] - starting_color_rgb[i]) * increment_counter / increments_to_take);
             }
-            console.log(new_color)
             feedbackMessage.style.backgroundColor = `rgb(${new_color[0]}, ${new_color[1]}, ${new_color[2]})`;
             if (increment_counter < increments_to_take) {
                 increment_counter++;
