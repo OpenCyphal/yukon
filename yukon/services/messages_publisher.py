@@ -85,7 +85,6 @@ class MessagesPublisher(logging.Handler):
         )
         log_message(self._state, str(new_message).strip() + os.linesep)
         self._state.queues.messages.put(new_message)
-        return False
 
 
 def add_local_message(state: "yukon.domain.god_state.GodState", text: str, severity: int, name: str = __name__) -> None:
