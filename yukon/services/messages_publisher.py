@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 
 import typing
 
@@ -48,6 +49,22 @@ def get_level_name(level_no: int) -> str:
 TIME_FORMAT = "%y-%m-%d %H:%M:%S"
 
 
+def log_message(state: "yukon.domain.god_state.GodState", new_message: str) -> None:
+    # Check if the directory .yukon exists in the home directory, if it doesn't then create it
+    if not os.path.exists(os.path.join(os.path.expanduser("~"), ".yukon")):
+        os.mkdir(os.path.join(os.path.expanduser("~"), ".yukon"))
+    # Check if state.log_file is set, if it is then write the message to the log file
+    if not state.log_file:
+        state.log_file = (
+            os.path.join(
+                os.path.expanduser("~"), ".yukon", "yukon-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+            )
+            + ".log"
+        )
+    with open(state.log_file, "a") as log_file:
+        log_file.write(new_message)
+
+
 class MessagesPublisher(logging.Handler):
     def __init__(self, state: "yukon.domain.god_state.GodState") -> None:
         super().__init__()
@@ -66,20 +83,22 @@ class MessagesPublisher(logging.Handler):
             severity_text=record.levelname,
             module=record.name,
         )
+        log_message(self._state, str(new_message).strip() + os.linesep)
         self._state.queues.messages.put(new_message)
+        return False
 
 
 def add_local_message(
     state: "yukon.domain.god_state.GodState", text: str, severity: int, *args: typing.List[typing.Any]
 ) -> None:
     state.queues.message_queue_counter += 1
-    state.queues.messages.put(
-        Message(
-            text,
-            datetime.datetime.now().strftime(TIME_FORMAT),
-            state.queues.message_queue_counter,
-            severity,
-            get_level_name(severity),
-            __name__,
-        )
+    new_message = Message(
+        text,
+        datetime.datetime.now().strftime(TIME_FORMAT),
+        state.queues.message_queue_counter,
+        severity,
+        get_level_name(severity),
+        __name__,
     )
+    state.queues.messages.put(new_message)
+    log_message(state, str(new_message).strip() + os.linesep)

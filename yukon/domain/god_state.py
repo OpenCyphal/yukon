@@ -206,3 +206,4 @@ class GodState:
         self.messages_publisher: Optional[MessagesPublisher] = field(default_factory=none_factory)
         self.cyphal_worker_asyncio_loop = None
         self.api = None
+        self.log_file = None

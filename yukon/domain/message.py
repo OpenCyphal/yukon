@@ -20,3 +20,6 @@ class Message:
     severity_number: int = 0
     severity_text: str = ""
     module: str = ""
+
+    def __str__(self) -> str:
+        return f"{self.timestamp} {self.module} {self.severity_text[0]}: {self.message}"

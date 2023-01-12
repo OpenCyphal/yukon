@@ -57,6 +57,8 @@ def run_electron(state: GodState) -> None:
     exe_path = get_electron_path()
     electron_logger = logging.getLogger("electronJS")
     electron_logger.setLevel(logging.INFO)
+    electron_logger.handlers = []
+    electron_logger.propagate = False
     electron_logger.addHandler(state.messages_publisher)
     exit_code = 0
     # Use subprocess to run the exe
