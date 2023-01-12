@@ -61,10 +61,10 @@ async def do_subscribe_requests_work(state: GodState, subscribe_request: Subscri
         state.queues.subscribe_requests_responses.put(subscribe_response)
     except Exception as e:
         tb = traceback.format_exc()
-        add_local_message(state, tb, 40)
+        add_local_message(state, tb, 40, __name__)
         subscribe_response = SubscribeResponse(
             subscribe_request.specifier.subject_id, subscribe_request.specifier.datatype, False, tb
         )
         state.queues.subscribe_requests_responses.put(subscribe_response)
     else:
-        add_local_message(state, "Subscribed to " + str(subscribe_request.specifier.subject_id), 20)
+        add_local_message(state, "Subscribed to " + str(subscribe_request.specifier.subject_id), 20, __name__)

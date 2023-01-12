@@ -29,6 +29,7 @@ async def do_apply_configuration_work(state: GodState, config: ApplyConfiguratio
                         "Register %s does not exist on node %d" % (register_name, config.node_id),
                         register_name,
                         config.node_id,
+                        __name__,
                     )
                     add_register_update_log_item(state, register_name, None, config.node_id, False)
                     continue
@@ -39,7 +40,9 @@ async def do_apply_configuration_work(state: GodState, config: ApplyConfiguratio
                     UpdateRegisterRequest(uuid4(), register_name, unexploded_value, config.node_id, time.time())
                 )
             if not at_least_one_register_was_modified:
-                add_local_message(state, "No registers were modified on node %d" % config.node_id, config.node_id)
+                add_local_message(
+                    state, "No registers were modified on node %d" % config.node_id, config.node_id, __name__
+                )
         else:
             for potential_node_id, v in data.items():
                 if potential_node_id == "__file_name":

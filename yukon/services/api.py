@@ -273,7 +273,7 @@ class Api:
         }
 
     def add_local_message(self, message: str, severity: int) -> None:
-        add_local_message(self.state, message, severity)
+        add_local_message(self.state, message, severity, "Frontend")
 
     def import_all_of_register_configuration(self) -> str:
         return import_candump_file_contents()
