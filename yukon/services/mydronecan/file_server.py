@@ -8,6 +8,7 @@
 #         Silver Valdvee <silver.valdvee@zubax.com>
 
 from __future__ import division, absolute_import, print_function, unicode_literals
+import io
 import os
 from collections import defaultdict
 import logging
@@ -33,7 +34,7 @@ class SimpleFileServer(object):
         def add_handler(datatype: typing.Any, callback: typing.Any) -> None:
             self._handles.append(node.add_handler(datatype, callback))
 
-        self.open_file_handle = None
+        self.open_file_handle: typing.Optional[io.BufferedReader] = None
         add_handler(uavcan.protocol.file.GetInfo, self._get_info)
         add_handler(uavcan.protocol.file.Read, self._read)
 

@@ -69,8 +69,7 @@ def run_electron(state: GodState) -> None:
             time.sleep(7)
             if state.gui.is_target_client_known:
                 return
-            else:
-                exit_code = 1
+            exit_code = 1
 
         check_thread = threading.Thread(target=check_if_electron_replied, daemon=True)
         check_thread.start()
