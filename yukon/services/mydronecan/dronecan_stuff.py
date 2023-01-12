@@ -81,7 +81,9 @@ def run_dronecan(state: GodState) -> None:
         # It is NOT necessary to specify the database storage.
         # If it is not specified, the allocation table will be kept in memory, thus it will not be persistent.
         state.dronecan.allocator = CentralizedServer(state.dronecan.node, state.dronecan.node_monitor)
-
+        if state.dronecan.firmware_update_enabled.value and not state.dronecan.fileserver:
+            state.dronecan.fileserver = SimpleFileServer(state.dronecan.node, state.dronecan.firmware_update_path.value)
+            state.dronecan.fileserver.start()
         # def node_update(event: "dronecan.app.node_monitor.NodeMonitor.UpdateEvent") -> None:
         #     if (
         #         event.event_id == event.EVENT_ID_NEW

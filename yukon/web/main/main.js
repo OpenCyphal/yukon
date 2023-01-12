@@ -348,9 +348,12 @@ window.console = new Proxy(old_console, {
                         cbAutoscroll.id = "cbAutoscroll";
                         // Float spanAutoScroll to the left
                         spanAutoScroll.style.cssFloat = "left";
+                        spanAutoScroll.style.display = "flex";
+                        spanAutoScroll.style.justifyContent = "center";
                         const labelAutoscroll = document.createElement("label");
                         labelAutoscroll.htmlFor = "cbAutoscroll";
                         labelAutoscroll.innerText = "Autoscroll";
+                        labelAutoscroll.style.marginLeft = "0.15em";
                         spanAutoScroll.appendChild(cbAutoscroll);
                         spanAutoScroll.appendChild(labelAutoscroll);
                         stack.header.controlsContainer.prepend(spanAutoScroll);
@@ -367,7 +370,7 @@ window.console = new Proxy(old_console, {
                         }
                         if (spanAutoScroll) {
                             if (doesRequireAutoScroll) {
-                                spanAutoScroll.style.display = "inline-block";
+                                spanAutoScroll.style.display = "flex";
                             } else {
                                 spanAutoScroll.style.display = "none";
                             }

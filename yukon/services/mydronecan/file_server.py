@@ -39,9 +39,11 @@ class SimpleFileServer(object):
         add_handler(uavcan.protocol.file.Read, self._read)
 
     def start(self) -> None:
+        logger.debug("Starting file server")
         self.is_enabled = True
 
     def stop(self) -> None:
+        logger.debug("Stopping file server")
         self.is_enabled = False
 
     def _get_info(self, e: uavcan.protocol.file.GetInfo) -> uavcan.protocol.file.GetInfo.Response:

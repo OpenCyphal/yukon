@@ -7,7 +7,7 @@
 #         Pavel Kirienko <pavel.kirienko@zubax.com>
 #
 
-from __future__ import division, absolute_import, print_function, unicode_literals
+from __future__ import annotations
 import time
 from logging import getLogger
 import typing

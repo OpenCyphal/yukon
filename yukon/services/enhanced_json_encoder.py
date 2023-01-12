@@ -89,12 +89,36 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                 mode = o.info.status.mode
                 sub_mode = o.info.status.sub_mode
                 vendor_specific_status_code = o.info.status.vendor_specific_status_code
+            health_text = "No info"
+            if health:
+                if health == 0:
+                    health_text = "OK"
+                elif health == 1:
+                    health_text = "WARNING"
+                elif health == 2:
+                    health_text = "ERROR"
+                elif health == 3:
+                    health_text = "CRITICAL"
+            mode_text = "No info"
+            if mode:
+                if mode == 0:
+                    mode_text = "OPERATIONAL"
+                elif mode == 1:
+                    mode_text = "INITIALIZATION"
+                elif mode == 2:
+                    mode_text = "MAINTENANCE"
+                elif mode == 3:
+                    mode_text = "SOFTWARE_UPDATE"
+                elif mode == 7:
+                    mode_text = "OFFLINE"
             return {
                 "node_id": o.node_id,
                 "name": name,
                 "uptime_seconds": uptime_seconds,
                 "health": health,
+                "health_text": health_text,
                 "mode": mode,
+                "mode_text": mode_text,
                 "sub_mode": sub_mode,
                 "vendor_specific_status_code": vendor_specific_status_code,
                 "hardware_version": hardware_version,
