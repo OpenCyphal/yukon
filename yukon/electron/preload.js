@@ -13,6 +13,8 @@ window.addEventListener('DOMContentLoaded', () => {
 contextBridge.exposeInMainWorld('electronAPI', {
     openPath: (properties) => ipcRenderer.invoke('dialog:openPath', properties),
     saveFile: (content) => ipcRenderer.invoke('dialog:saveFile', content),
-    addRecoverablePanel: (callback) => ipcRenderer.invoke('panels:addRecovery', callback),
-    onOpenSettings: (callback) => ipcRenderer.on('openSettings', callback)
+    addRecoverablePanel: (panelName, panelText) => ipcRenderer.invoke('panels:addRecovery', panelName, panelText),
+    removeRecoverButton: (panelText) => ipcRenderer.invoke('panels:removeRecovery', panelText),
+    onOpenSettings: (callback) => ipcRenderer.on('openSettings', callback),
+    onRecoverPanel: (panelName) => ipcRenderer.on('panels:recover', panelName)
 })

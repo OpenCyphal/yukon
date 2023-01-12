@@ -69,18 +69,17 @@ app.whenReady().then(() => {
     });
     ipcMain.handle('dialog:openPath', handlePathOpen);
     ipcMain.handle('dialog:saveFile', handleFileSave);
-
-
     const window = createWindow();
     console.log("Setting up IPC handlers")
-
-
-
     const menu = Menu.buildFromTemplate(menuTemplate)
-    ipcMain.handle('panels:addRecovery', function (_, panelName) {
-        console.log("Received request to add recoverable panel: " + panelName)
-        addRecoverablePanel(window, panelName, menu);
+    ipcMain.handle('panels:addRecovery', function (_, panelName, panelText) {
+        console.log("Adding recoverable panel: " + panelName + " " + panelText)
+        addRecoverablePanel(panelName, panelText, window, menu);
     }, window);
+    ipcMain.handle('panels:removeRecovery', function (_, panelText) {
+        console.log("Removing recoverable panel: " + panelText)
+        removeRecoverButton(panelText);
+    });
     Menu.setApplicationMenu(menu)
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
@@ -96,14 +95,34 @@ app.on('window-all-closed', () => {
         app.quit();
     }
 })
-
-async function addRecoverablePanel(panelName, window, menu) {
-    menu.append(new MenuItem({
-        label: 'Panels',
-        submenu: [
-            { label: panelName, click: async function () { await window.webContents.send('panels:recover', panelName) } }
-        ]
-    }));
+function addRecoverablePanel(panelName, panelText, window, menu) {
+    const newItem = {
+        label: panelText,
+        enabled: true,
+        async click() { await window.webContents.send('panels:recover', panelName) }
+    }
+    if (!menuTemplate.find(x => x.label === 'Panels')) {
+        menuTemplate.push(
+            {
+                label: 'Panels',
+                submenu: [
+                    newItem
+                ]
+            }
+        );
+        const new_menu = Menu.buildFromTemplate(menuTemplate)
+        Menu.setApplicationMenu(new_menu);
+    } else {
+        menuTemplate.find(x => x.label === 'Panels').submenu.push(newItem);
+        const new_menu = Menu.buildFromTemplate(menuTemplate)
+        Menu.setApplicationMenu(new_menu);
+    }
+}
+function removeRecoverButton(panelText) {
+    const panelsMenuTemplate = menuTemplate.find(x => x.label === 'Panels');
+    panelsMenuTemplate.submenu = panelsMenuTemplate.submenu.filter(x => x.label !== panelText);
+    const new_menu = Menu.buildFromTemplate(menuTemplate)
+    Menu.setApplicationMenu(new_menu);
 }
 
 async function handleFileSave(_, content) {

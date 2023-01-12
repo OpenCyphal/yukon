@@ -149,16 +149,26 @@ window.console = new Proxy(old_console, {
 
         function addRestoreButton(buttonText, buttonComponentName) {
             if (window.electronAPI) {
-                window.electronAPI.addRecoverablePanel(buttonComponentName);
+                window.electronAPI.addRecoverablePanel(buttonComponentName, buttonText);
             }
             const toolbar = document.querySelector("#toolbar");
             const btnRestore = document.createElement("button");
             btnRestore.classList.add("restore-btn");
             btnRestore.innerHTML = buttonText;
-            btnRestore.addEventListener('click', function () {
-                addComponentToLayout(buttonComponentName, buttonText);
-                btnRestore.parentElement.removeChild(btnRestore);
-            });
+            if (window.electronAPI) {
+                window.electronAPI.onRecoverPanel(function (_, panelName) {
+                    if (panelName === buttonComponentName) {
+                        addComponentToLayout(buttonComponentName, buttonText);
+                        btnRestore.parentElement.removeChild(btnRestore);
+                        window.electronAPI.removeRecoverButton(buttonText);
+                    }
+                });
+            } else {
+                btnRestore.addEventListener('click', function () {
+                    addComponentToLayout(buttonComponentName, buttonText);
+                    btnRestore.parentElement.removeChild(btnRestore);
+                });
+            }
             toolbar.appendChild(btnRestore);
         }
 
