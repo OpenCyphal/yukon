@@ -372,14 +372,8 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             }
             let isLast = false;
             // If this is the last iteration of the loop, set a variable to true
-            const last_avatar_port = avatar.ports[port.type][avatar.ports[port.type].length - 1];
-            const lastPortType = portOrder2[portOrder2.length - 1];
-            if (port.port === last_avatar_port) {
-                // If this port type is also the last
-                if (port.type === "srv") {
-                    isLast = true;
-                    // console.log("It is the last.");
-                }
+            if (port === avatar_ports_all_in_one[avatar_ports_all_in_one.length - 1]) {
+                isLast = true;
             }
             addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state);
             avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
