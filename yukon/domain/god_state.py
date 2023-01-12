@@ -139,9 +139,9 @@ class DroneCanState:
     driver: Optional["yukon.services.flash_dronecan_firmware_with_cyphal_firmware.GoodDriver"] = field(
         default_factory=none_factory
     )
-    all_entries: Dict[int, Any] = field(default_factory=dict)
-    enabled: ReactiveValue = ReactiveValue(False)
-    firmware_update_enabled: ReactiveValue = ReactiveValue(False)
+    all_entries: Dict[int, "yukon.services.mydronecan.node_monitor.NodeMonitor.Entry"] = field(default_factory=dict)
+    enabled: ReactiveValue = ReactiveValue(True)
+    firmware_update_enabled: ReactiveValue = ReactiveValue(True)
     firmware_update_path: ReactiveValue = ReactiveValue("")
     is_running: bool = False
     thread: Optional[threading.Thread] = field(default_factory=none_factory)
@@ -206,3 +206,4 @@ class GodState:
         self.messages_publisher: Optional[MessagesPublisher] = field(default_factory=none_factory)
         self.cyphal_worker_asyncio_loop = None
         self.api = None
+        self.log_file = None

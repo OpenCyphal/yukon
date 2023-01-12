@@ -86,7 +86,7 @@ export const layout_config = {
                                     type: "component",
                                     componentName: "dronecanComponent",
                                     isClosable: true,
-                                    title: "Dronecan",
+                                    title: "DroneCAN",
                                 }
                             ]
                         },

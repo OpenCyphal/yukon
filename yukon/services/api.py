@@ -29,6 +29,8 @@ from pycyphal.presentation.subscription_synchronizer.monotonic_clustering import
 
 import pycyphal.dsdl
 
+import dronecan
+
 from yukon.domain.subscriptions.synchronized_message_carrier import SynchronizedMessageCarrier
 from yukon.domain.subscriptions.synchronized_message_store import SynchronizedMessageStore
 from yukon.domain.subscriptions.synchronized_message_group import SynchronizedMessageGroup
@@ -271,7 +273,7 @@ class Api:
         }
 
     def add_local_message(self, message: str, severity: int) -> None:
-        add_local_message(self.state, message, severity)
+        add_local_message(self.state, message, severity, "Frontend")
 
     def import_all_of_register_configuration(self) -> str:
         return import_candump_file_contents()
@@ -715,3 +717,10 @@ class Api:
 
     def get_dronecan_node_entries(self) -> Response:
         return jsonify(list(self.state.dronecan.all_entries))
+
+    def dronecan_node_fw_update(self, node_id: int, path: str) -> None:
+        self.state.dronecan.firmware_update_path.value = path
+        req = dronecan.uavcan.protocol.file.BeginFirmwareUpdate.Request()
+        req.image_file_remote_path.path = "a"
+        logging.debug("Sending %r to %r", req, node_id)
+        self.state.dronecan.node.request(req, node_id, lambda e: None)

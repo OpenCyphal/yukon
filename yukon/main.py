@@ -55,8 +55,11 @@ def run_electron(state: GodState) -> None:
         sleep(1)
 
     exe_path = get_electron_path()
-    electron_logger = logger.getChild("electronJS")
-    # electron_logger.addHandler(state.messages_publisher)
+    electron_logger = logging.getLogger("electronJS")
+    electron_logger.setLevel(logging.INFO)
+    electron_logger.handlers = []
+    electron_logger.propagate = False
+    electron_logger.addHandler(state.messages_publisher)
     exit_code = 0
     # Use subprocess to run the exe
     try:
@@ -68,14 +71,13 @@ def run_electron(state: GodState) -> None:
             time.sleep(7)
             if state.gui.is_target_client_known:
                 return
-            else:
-                exit_code = 1
+            exit_code = 1
 
         check_thread = threading.Thread(target=check_if_electron_replied, daemon=True)
         check_thread.start()
 
         with subprocess.Popen(
-            [exe_path, Path(root_path) / "yukon/electron/main.js"],
+            [exe_path, "--trace-warnings", Path(root_path) / "yukon/electron/main.js"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
@@ -158,6 +160,7 @@ def open_webbrowser(state: GodState) -> None:
     tried_xdg_open_or_similar = False
     browser_not_opened_counter = 0
     needed_url = f"http://127.0.0.1:{state.gui.server_port}/main/main.html?port={state.gui.server_port}"
+    logger.info("The url is %s, we will try to open it for you.", needed_url)
     while not state.gui.is_running_in_browser and state.gui.gui_running:
         if not tried_webbrowser_open:
             webbrowser_open_wrapper(needed_url, state)
@@ -200,7 +203,7 @@ def open_webbrowser(state: GodState) -> None:
                 os.kill(os.getpid(), signal.SIGTERM)
         sleep(2)
     if state.gui.gui_running:
-        print("Good to go, Yukon is now open in a browser.")
+        logger.info("We believe the browser has opened, Yukon should now be open in a browser.")
     else:
         print("Open webbrowser thread is closed.")
 

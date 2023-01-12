@@ -19,7 +19,7 @@ from yukon.domain.god_state import GodState
 from dronecan import make_node, UAVCANException, make_driver
 from dronecan.app.dynamic_node_id import CentralizedServer
 from yukon.services.mydronecan.file_server import SimpleFileServer
-from dronecan.app.node_monitor import NodeMonitor
+from yukon.services.mydronecan.node_monitor import NodeMonitor
 from dronecan import uavcan
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,8 @@ def run_dronecan(state: GodState) -> None:
         state.dronecan.node_monitor = NodeMonitor(state.dronecan.node)
 
         def update_entries() -> None:
-            state.dronecan.all_entries = state.dronecan.node_monitor.find_all(lambda x: True)
+            found_entries = list(state.dronecan.node_monitor.find_all(lambda x: True))
+            state.dronecan.all_entries = found_entries
 
         def update_entries_loop() -> None:
             while state.gui.gui_running:
@@ -80,24 +81,26 @@ def run_dronecan(state: GodState) -> None:
         # It is NOT necessary to specify the database storage.
         # If it is not specified, the allocation table will be kept in memory, thus it will not be persistent.
         state.dronecan.allocator = CentralizedServer(state.dronecan.node, state.dronecan.node_monitor)
+        if state.dronecan.firmware_update_enabled.value and not state.dronecan.fileserver:
+            state.dronecan.fileserver = SimpleFileServer(state.dronecan.node, state.dronecan.firmware_update_path.value)
+            state.dronecan.fileserver.start()
+        # def node_update(event: "dronecan.app.node_monitor.NodeMonitor.UpdateEvent") -> None:
+        #     if (
+        #         event.event_id == event.EVENT_ID_NEW
+        #         and state.dronecan.firmware_update_enabled.value
+        #         and len(state.dronecan.firmware_update_path.value) > 1
+        #     ):
+        #         req = uavcan.protocol.file.BeginFirmwareUpdate.Request()
+        #         req.image_file_remote_path.path = "a"
+        #         logging.debug("Sending %r to %r", req, event.entry.node_id)
+        #         print("A node will need an update")
+        #         state.dronecan.node.request(req, event.entry.node_id, lambda e: None)
 
-        def node_update(event: "dronecan.app.node_monitor.NodeMonitor.UpdateEvent") -> None:
-            if (
-                event.event_id == event.EVENT_ID_NEW
-                and state.dronecan.firmware_update_enabled.value
-                and len(state.dronecan.firmware_update_path.value) > 1
-            ):
-                req = uavcan.protocol.file.BeginFirmwareUpdate.Request()
-                req.image_file_remote_path.path = "a"
-                logging.debug("Sending %r to %r", req, event.entry.node_id)
-                print("A node will need an update")
-                state.dronecan.node.request(req, event.entry.node_id, lambda e: None)
-
-        state.dronecan.node_monitor.add_update_handler(node_update)
+        # state.dronecan.node_monitor.add_update_handler(node_update)
         state.dronecan.is_running = True
         # The allocator and the node monitor will be running in the background, requiring no additional attention
         # When they are no longer needed, they should be finalized by calling close():
-        while state.gui.gui_running:
+        while state.gui.gui_running and state.dronecan.is_running:
             try:
                 state.dronecan.node.spin()  # Spin forever or until an exception is thrown
             except UAVCANException as ex:

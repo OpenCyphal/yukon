@@ -39,7 +39,29 @@ function createWindow() {
     })
     return win;
 }
-
+const isMac = process.platform === 'darwin'
+const menuTemplate = [
+    {
+        label: 'File',
+        submenu: [
+            isMac ? { role: 'close' } : { role: 'quit' }
+        ]
+    },
+    {
+        label: 'View',
+        submenu: [
+            { role: 'reload' },
+            { role: 'forceReload' },
+            { role: 'toggleDevTools' },
+            { type: 'separator' },
+            { role: 'resetZoom' },
+            { role: 'zoomIn' },
+            { role: 'zoomOut' },
+            { type: 'separator' },
+            { role: 'togglefullscreen' }
+        ]
+    },
+]
 app.whenReady().then(() => {
     // Send a GET request to http://locahost:5000/api/announce_running_in_electron
     // to announce that the app is running in electron
@@ -47,35 +69,17 @@ app.whenReady().then(() => {
     });
     ipcMain.handle('dialog:openPath', handlePathOpen);
     ipcMain.handle('dialog:saveFile', handleFileSave);
-
-    const isMac = process.platform === 'darwin'
-
-
     const window = createWindow();
-    const template = [
-        {
-            label: 'File',
-            submenu: [
-                isMac ? { role: 'close' } : { role: 'quit' }
-            ]
-        },
-        {
-            label: 'View',
-            submenu: [
-                { role: 'reload' },
-                { role: 'forceReload' },
-                { role: 'toggleDevTools' },
-                { type: 'separator' },
-                { role: 'resetZoom' },
-                { role: 'zoomIn' },
-                { role: 'zoomOut' },
-                { type: 'separator' },
-                { role: 'togglefullscreen' }
-            ]
-        },
-    ]
-
-    const menu = Menu.buildFromTemplate(template)
+    console.log("Setting up IPC handlers")
+    const menu = Menu.buildFromTemplate(menuTemplate)
+    ipcMain.handle('panels:addRecovery', function (_, panelName, panelText) {
+        console.log("Adding recoverable panel: " + panelName + " " + panelText)
+        addRecoverablePanel(panelName, panelText, window, menu);
+    }, window);
+    ipcMain.handle('panels:removeRecovery', function (_, panelText) {
+        console.log("Removing recoverable panel: " + panelText)
+        removeRecoverButton(panelText);
+    });
     Menu.setApplicationMenu(menu)
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
@@ -91,6 +95,35 @@ app.on('window-all-closed', () => {
         app.quit();
     }
 })
+function addRecoverablePanel(panelName, panelText, window, menu) {
+    const newItem = {
+        label: panelText,
+        enabled: true,
+        async click() { await window.webContents.send('panels:recover', panelName) }
+    }
+    if (!menuTemplate.find(x => x.label === 'Panels')) {
+        menuTemplate.push(
+            {
+                label: 'Panels',
+                submenu: [
+                    newItem
+                ]
+            }
+        );
+        const new_menu = Menu.buildFromTemplate(menuTemplate)
+        Menu.setApplicationMenu(new_menu);
+    } else {
+        menuTemplate.find(x => x.label === 'Panels').submenu.push(newItem);
+        const new_menu = Menu.buildFromTemplate(menuTemplate)
+        Menu.setApplicationMenu(new_menu);
+    }
+}
+function removeRecoverButton(panelText) {
+    const panelsMenuTemplate = menuTemplate.find(x => x.label === 'Panels');
+    panelsMenuTemplate.submenu = panelsMenuTemplate.submenu.filter(x => x.label !== panelText);
+    const new_menu = Menu.buildFromTemplate(menuTemplate)
+    Menu.setApplicationMenu(new_menu);
+}
 
 async function handleFileSave(_, content) {
     const { canceled, filePath } = await dialog.showSaveDialog();

@@ -36,6 +36,29 @@ const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 yukon_state.port = urlParams.get('port');
 
+var old_console = window.console;
+// New console should be a proxy to the old one, but with additional functionality
+window.console = new Proxy(old_console, {
+    get: function (target, propKey, receiver) {
+        var orig_method = target[propKey];
+        return function (...args) {
+            var result = orig_method.apply(this, args);
+            if (propKey === "error") {
+                yukon_state.addLocalMessage(args[0], 40);
+                return result;
+            } else if (propKey === "warn") {
+                yukon_state.addLocalMessage(args[0], 30);
+                return result;
+            } else if (propKey === "info") {
+                yukon_state.addLocalMessage(args[0], 20);
+                return result;
+            } else if (propKey === "log") {
+                yukon_state.addLocalMessage(args[0], 10);
+                return result;
+            }
+        };
+    }
+});
 
 (async function () {
     yukon_state.zubax_api = zubax_api;
@@ -63,6 +86,11 @@ yukon_state.port = urlParams.get('port');
     yukon_state.addLocalMessage = function (message, severity) {
         zubax_api.add_local_message(message, severity);
     }
+    window.addEventListener("error", function (error, url, line) {
+        consoler.log("There was an actual error!")
+        yukon_state.addLocalMessage("Error: " + error + " at " + url + ":" + line, "error");
+        return true;
+    });
     const addLocalMessage = yukon_state.addLocalMessage;
 
     async function doStuffWhenReady() {
@@ -120,14 +148,27 @@ yukon_state.port = urlParams.get('port');
         const outsideContext = this;
 
         function addRestoreButton(buttonText, buttonComponentName) {
+            if (window.electronAPI) {
+                window.electronAPI.addRecoverablePanel(buttonComponentName, buttonText);
+            }
             const toolbar = document.querySelector("#toolbar");
             const btnRestore = document.createElement("button");
             btnRestore.classList.add("restore-btn");
             btnRestore.innerHTML = buttonText;
-            btnRestore.addEventListener('click', function () {
-                addComponentToLayout(buttonComponentName, buttonText);
-                btnRestore.parentElement.removeChild(btnRestore);
-            });
+            if (window.electronAPI) {
+                window.electronAPI.onRecoverPanel(function (_, panelName) {
+                    if (panelName === buttonComponentName) {
+                        addComponentToLayout(buttonComponentName, buttonText);
+                        btnRestore.parentElement.removeChild(btnRestore);
+                        window.electronAPI.removeRecoverButton(buttonText);
+                    }
+                });
+            } else {
+                btnRestore.addEventListener('click', function () {
+                    addComponentToLayout(buttonComponentName, buttonText);
+                    btnRestore.parentElement.removeChild(btnRestore);
+                });
+            }
             toolbar.appendChild(btnRestore);
         }
 
@@ -307,9 +348,12 @@ yukon_state.port = urlParams.get('port');
                         cbAutoscroll.id = "cbAutoscroll";
                         // Float spanAutoScroll to the left
                         spanAutoScroll.style.cssFloat = "left";
+                        spanAutoScroll.style.display = "flex";
+                        spanAutoScroll.style.justifyContent = "center";
                         const labelAutoscroll = document.createElement("label");
                         labelAutoscroll.htmlFor = "cbAutoscroll";
                         labelAutoscroll.innerText = "Autoscroll";
+                        labelAutoscroll.style.marginLeft = "0.15em";
                         spanAutoScroll.appendChild(cbAutoscroll);
                         spanAutoScroll.appendChild(labelAutoscroll);
                         stack.header.controlsContainer.prepend(spanAutoScroll);
@@ -326,7 +370,7 @@ yukon_state.port = urlParams.get('port');
                         }
                         if (spanAutoScroll) {
                             if (doesRequireAutoScroll) {
-                                spanAutoScroll.style.display = "inline-block";
+                                spanAutoScroll.style.display = "flex";
                             } else {
                                 spanAutoScroll.style.display = "none";
                             }
@@ -360,6 +404,9 @@ yukon_state.port = urlParams.get('port');
             initalizeLayout();
         });
         const btnShowHideToolbar = document.getElementById('btnShowHideToolbar');
+        if (isRunningInElectron(yukon_state)) {
+            btnShowHideToolbar.style.display = "none";
+        }
         btnShowHideToolbar.addEventListener('click', function () {
             const toolbar = document.getElementById('toolbar');
             const compStyles = window.getComputedStyle(toolbar);

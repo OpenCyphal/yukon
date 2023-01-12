@@ -58,7 +58,7 @@ def assemble_response_and_log_item(
     state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
     message_severity = 20 if success else 40
     if message:
-        add_local_message(state, message, message_severity, register_update.register_name)
+        add_local_message(state, message, message_severity, register_update.register_name, __name__)
 
 
 async def do_update_register_work(state: GodState, register_update: UpdateRegisterRequest) -> None:

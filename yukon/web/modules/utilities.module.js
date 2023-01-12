@@ -197,3 +197,54 @@ export function getHoveredContainerElementAndContainerObject(yukon_state) {
     }
     return [currentElement, containerObject];
 }
+
+export function doCommandFeedbackResult(result, feedbackMessageElement) {
+    if (!feedbackMessageElement) {
+        feedbackMessageElement = {
+            style: {
+            },
+            innerHTML: "",
+            classList: {
+                add: () => { },
+                remove: () => { }
+            }
+        }
+    }
+    // Tween feedbackMessage.style.backgroundColor from sepia to green
+    const starting_color_rgb = [255, 255, 255];
+    const increments_to_take = 144;
+    const ending_color_rgb = [0, 255, 0];
+    let increment_counter = 0;
+    let tweenFunction = null;
+    tweenFunction = () => {
+        let new_color = [];
+        for (let i = 0; i < 3; i++) {
+            new_color.push(starting_color_rgb[i] + (ending_color_rgb[i] - starting_color_rgb[i]) * increment_counter / increments_to_take);
+        }
+        feedbackMessage.style.backgroundColor = `rgb(${new_color[0]}, ${new_color[1]}, ${new_color[2]})`;
+        if (increment_counter < increments_to_take) {
+            increment_counter++;
+            window.requestAnimationFrame(tweenFunction);
+        }
+    };
+    window.requestAnimationFrame(tweenFunction);
+    if (!result.success) {
+        feedbackMessageElement.classList.remove("success");
+        feedbackMessageElement.style.display = "block";
+        if (result.message) {
+            feedbackMessageElement.innerHTML = result.message;
+            yukon_state.addLocalMessage(result.message);
+        } else {
+            feedbackMessageElement.innerHTML = "";
+        }
+    } else {
+        feedbackMessageElement.classList.add("success");
+        feedbackMessageElement.style.display = "block";
+        if (result.message) {
+            feedbackMessageElement.innerHTML = result.message;
+            yukon_state.addLocalMessage(result.message);
+        } else {
+            feedbackMessageElement.innerHTML = "";
+        }
+    }
+}

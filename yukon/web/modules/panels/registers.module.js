@@ -442,7 +442,6 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
         // inputFieldReference.onmousedown = make_select_cell(avatar, register_name);
         let lastClick = null;
         table_cell.addEventListener('mousedown', function (event) {
-            console.log("Mouse down");
             // Check if the mouse button was left click
             if (event.button !== 0) {
                 return;

@@ -16,6 +16,7 @@ async def do_detach_transport_work(state: GodState, detach_request: DetachTransp
                 del state.cyphal.already_used_transport_interfaces[interface.udp_iface]
             else:
                 del state.cyphal.already_used_transport_interfaces[interface.iface]
+            state.avatar.avatars_by_node_id = {}
             state.queues.detach_transport_response.put(DetachTransportResponse(True, interface, "Detached transport"))
             state.cyphal.transports_list.remove(interface)
             break

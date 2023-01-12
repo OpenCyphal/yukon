@@ -23,10 +23,10 @@ async def do_unsubscribe_requests_work(state: GodState, unsubscribe_request: Uns
                 break
     except Exception as e:
         tb = traceback.format_exc()
-        add_local_message(state, tb, 40)
+        add_local_message(state, tb, 40, __name__)
         subscribe_response = UnsubscribeResponse(
             unsubscribe_request.specifier.subject_id, unsubscribe_request.specifier.datatype, False, tb
         )
         state.queues.unsubscribe_requests_responses.put(subscribe_response)
     else:
-        add_local_message(state, "Unsubscribed from " + str(unsubscribe_request.specifier), 20)
+        add_local_message(state, "Unsubscribed from " + str(unsubscribe_request.specifier), 20, __name__)

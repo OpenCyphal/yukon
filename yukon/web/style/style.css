@@ -409,7 +409,14 @@ button#btnShowHideToolbar:active {
     background-color: white;
 }
 
-div:has(> #registers_table, >#register-update-log) {
+/* div:has(> #registers_table, >#register-update-log) {
+    padding-top: 0.5em;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    padding-bottom: 0.5em;
+} */
+
+.cool-container {
     padding-top: 0.5em;
     padding-left: 0.5em;
     padding-right: 0.5em;
