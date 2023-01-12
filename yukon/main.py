@@ -160,6 +160,7 @@ def open_webbrowser(state: GodState) -> None:
     tried_xdg_open_or_similar = False
     browser_not_opened_counter = 0
     needed_url = f"http://127.0.0.1:{state.gui.server_port}/main/main.html?port={state.gui.server_port}"
+    logger.info("The url is %s, we will try to open it for you.", needed_url)
     while not state.gui.is_running_in_browser and state.gui.gui_running:
         if not tried_webbrowser_open:
             webbrowser_open_wrapper(needed_url, state)
@@ -202,7 +203,7 @@ def open_webbrowser(state: GodState) -> None:
                 os.kill(os.getpid(), signal.SIGTERM)
         sleep(2)
     if state.gui.gui_running:
-        print("Good to go, Yukon is now open in a browser.")
+        logger.info("We believe the browser has opened, Yukon should now be open in a browser.")
     else:
         print("Open webbrowser thread is closed.")
 
