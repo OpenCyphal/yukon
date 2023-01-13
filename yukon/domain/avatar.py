@@ -15,7 +15,7 @@ from yukon.domain.iface import Iface
 import uavcan
 from yukon.services.value_utils import explode_value
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel("ERROR")
 
 

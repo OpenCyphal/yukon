@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+import sys
 
 import typing
 
@@ -49,6 +50,10 @@ def get_level_name(level_no: int) -> str:
 TIME_FORMAT = "%y-%m-%d %H:%M:%S"
 
 
+def eprint(*args: typing.Any, **kwargs: typing.Any) -> None:
+    print(*args, file=sys.stderr, **kwargs)
+
+
 def log_message(state: "yukon.domain.god_state.GodState", new_message: str) -> None:
     # Check if the directory .yukon exists in the home directory, if it doesn't then create it
     if not os.path.exists(os.path.join(os.path.expanduser("~"), ".yukon")):
@@ -75,27 +80,33 @@ class MessagesPublisher(logging.Handler):
         if self._state.gui.message_severity:
             if record.levelno < get_level_no(self._state.gui.message_severity):
                 return
-        new_message = Message(
-            record.getMessage(),
-            datetime.datetime.fromtimestamp(record.created).strftime(TIME_FORMAT),
-            self._state.queues.message_queue_counter,
-            severity_number=record.levelno,
-            severity_text=record.levelname,
-            module=record.name,
-        )
-        log_message(self._state, str(new_message).strip() + os.linesep)
-        self._state.queues.messages.put(new_message)
+        add_message_to_messages_queue(self._state, record.getMessage(), record.levelno, record.name)
+        log_message(self._state, str(record.getMessage()).strip() + os.linesep)
 
 
-def add_local_message(state: "yukon.domain.god_state.GodState", text: str, severity: int, name: str = __name__) -> None:
+def add_message_to_messages_queue(
+    state: "yukon.domain.god_state.GodState", text: str, severity_number: int, name: str = __name__
+) -> Message:
     state.queues.message_queue_counter += 1
     new_message = Message(
         text,
         datetime.datetime.now().strftime(TIME_FORMAT),
         state.queues.message_queue_counter,
-        severity,
-        get_level_name(severity),
+        severity_number,
+        get_level_name(severity_number),
         name or "unknown",
     )
     state.queues.messages.put(new_message)
-    log_message(state, str(new_message).strip() + os.linesep)
+    return new_message
+
+
+def print_message(state: "yukon.domain.god_state.GodState", text: str, severity: int, name: str = __name__) -> None:
+    print(text, end="")
+    if severity >= 30:  # At least a warning
+        eprint(text, end="")
+
+
+def add_local_message(state: "yukon.domain.god_state.GodState", text: str, severity: int, name: str = __name__) -> None:
+    new_message = add_message_to_messages_queue(state, text, severity, name)
+    print_message(state, str(new_message) + os.linesep, severity, name)
+    log_message(state, str(new_message) + os.linesep)

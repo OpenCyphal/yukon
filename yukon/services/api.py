@@ -70,7 +70,7 @@ from yukon.domain.registers.reread_register_names_request import RereadRegisterN
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.NOTSET)
+logger.setLevel(logging.DEBUG)
 
 
 def make_sure_is_deserialized(any_conf: typing.Any) -> typing.Any:
@@ -465,6 +465,7 @@ class Api:
             self.state.queues.reread_register_names.put(RereadRegisterNamesRequest(node_id_as_int))
 
     def announce_running_in_electron(self) -> None:
+        logger.info("Announcing running in electron.")
         self.state.gui.is_running_in_browser = False
         self.state.gui.is_target_client_known = True
 
@@ -473,6 +474,12 @@ class Api:
         self.state.gui.is_target_client_known = True
 
     def close_yukon(self) -> None:
+        try:
+            import pyi_splash
+
+            pyi_splash.close()
+        except ImportError:
+            pass
         quit_application(self.state)
 
     def yaml_to_yaml(self, yaml_in: str) -> Response:

@@ -5,7 +5,7 @@ const http = require('http');
 const net = require('net');
 const fs = require('fs');
 console.log(app.getAppPath())
-let yukon_server_port = 5000;  // This is not actually hard coded here, could've set it to null
+yukon_server_port = process.env.YUKON_SERVER_PORT;
 function createWindow() {
     const win = new BrowserWindow({
         width: 800,
@@ -17,7 +17,6 @@ function createWindow() {
     })
     win.setBackgroundColor('#000')
     // Get the environment variable YUKON_SERVER_PORT
-    yukon_server_port = process.env.YUKON_SERVER_PORT;
     const url = `http://127.0.0.1:${yukon_server_port}/main/main.html?port=${yukon_server_port}`
     console.log("Yukon server port: " + process.env.YUKON_SERVER_PORT);
     console.log("Yukon server URL: " + url);
@@ -65,8 +64,9 @@ const menuTemplate = [
 app.whenReady().then(() => {
     // Send a GET request to http://locahost:5000/api/announce_running_in_electron
     // to announce that the app is running in electron
-    http.get(`http://127.0.0.1:${yukon_server_port}/api/announce_running_in_electron`, (resp) => {
+    http.get(`http://localhost:${yukon_server_port}/api/announce_running_in_electron`, (resp) => {
     });
+    console.log("Announcing that running in electron")
     ipcMain.handle('dialog:openPath', handlePathOpen);
     ipcMain.handle('dialog:saveFile', handleFileSave);
     const window = createWindow();

@@ -125,9 +125,6 @@ def set_file_server_handler(state: "yukon.domain.god_state.GodState") -> None:
     _handle_enabled_change(state.settings["Firmware updates"]["Enabled"].value)
 
 
-logger.setLevel(logging.DEBUG)
-
-
 async def send_store_presistent_states_to_node(
     state: "yukon.domain.god_state.GodState", target_node_id: int, delay: float
 ) -> None:

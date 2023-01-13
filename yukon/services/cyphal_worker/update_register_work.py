@@ -3,6 +3,7 @@ import time
 import traceback
 from datetime import datetime
 from typing import Optional
+import logging
 
 import uavcan
 from yukon.domain.registers.update_register_request import UpdateRegisterRequest
@@ -13,6 +14,8 @@ from yukon.services.messages_publisher import add_local_message
 from yukon.services.value_utils import explode_value
 from yukon.domain.no_success import NoSuccess
 from yukon.domain.god_state import GodState
+
+logger = logging.getLogger(__name__)
 
 
 class NoResponse(Exception):
@@ -56,9 +59,9 @@ def assemble_response_and_log_item(
     )
     state.cyphal.register_update_log.append(log_item)
     state.queues.update_registers_response[response_from_yukon.request_id] = response_from_yukon
-    message_severity = 20 if success else 40
+    message_severity: int = 20 if success else 40
     if message:
-        add_local_message(state, message, message_severity, register_update.register_name, __name__)
+        logger.log(message_severity, message)
 
 
 async def do_update_register_work(state: GodState, register_update: UpdateRegisterRequest) -> None:

@@ -10,7 +10,7 @@ from yukon.domain.iface import Iface
 from yukon.services.value_utils import _simplify_value, explode_value
 
 logger = logging.getLogger(__name__)
-logger.setLevel("NOTSET")
+logger.setLevel(logging.DEBUG)
 from uavcan.register import List_1
 
 

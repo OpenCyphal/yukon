@@ -1,10 +1,13 @@
 import traceback
+import logging
 
 from yukon.domain.subscriptions.unsubscribe_request import UnsubscribeRequest
 from yukon.domain.subscriptions.unsubscribe_response import UnsubscribeResponse
 from yukon.domain.subscriptions.subscribe_response import SubscribeResponse
 from yukon.services.messages_publisher import add_local_message
 from yukon.domain.god_state import GodState
+
+logger = logging.getLogger(__name__)
 
 
 async def do_unsubscribe_requests_work(state: GodState, unsubscribe_request: UnsubscribeRequest) -> None:
@@ -23,10 +26,10 @@ async def do_unsubscribe_requests_work(state: GodState, unsubscribe_request: Uns
                 break
     except Exception as e:
         tb = traceback.format_exc()
-        add_local_message(state, tb, 40, __name__)
+        logger.error(tb)
         subscribe_response = UnsubscribeResponse(
             unsubscribe_request.specifier.subject_id, unsubscribe_request.specifier.datatype, False, tb
         )
         state.queues.unsubscribe_requests_responses.put(subscribe_response)
     else:
-        add_local_message(state, "Unsubscribed from " + str(unsubscribe_request.specifier), 20, __name__)
+        logger.info("Unsubscribed from %s", str(unsubscribe_request.specifier))

@@ -36,7 +36,9 @@ name = "Yukon"
 # It adds a bit of redundant data to the resulting package, but greatly simplifies maintenance and
 # ensures that the layout used for development exactly reflects the environment used in production.
 # The added size penalty is insignificant.
-datas = [("yukon", "yukon"), (".electron", "electron")]
+datas = [("yukon", "yukon")]
+if Path(".electron").exists():
+    datas += [(".electron", "electron")]
 
 if my_os == "Linux":
     datas += [("venv/lib/python3.10/site-packages/libpcap", "libpcap")]
@@ -97,8 +99,20 @@ a = Analysis(
     cipher=None,
 )
 
+
 # noinspection PyUnresolvedReferences
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
+
+splash = Splash(
+    'docs/splash-cyphal.png',
+    binaries=a.binaries,
+    datas=a.datas,
+    text_pos=None,
+    text_size=12,
+    minify_script=True,
+    always_on_top=True,
+)
+
 
 # noinspection PyUnresolvedReferences
 exe = EXE(
@@ -107,11 +121,14 @@ exe = EXE(
     a.binaries,
     a.zipfiles,
     a.datas,
+    splash,
+    splash.binaries,
+    [],
     name=name,
     debug=False,
     strip=False,
     upx=False,
     runtime_tmpdir=None,
-    console=False,
+    console=my_os == "Linux",
     icon="icon_128_128.png",
 )
