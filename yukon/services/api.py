@@ -701,7 +701,7 @@ class Api:
         return jsonify(self.state.settings)
 
     def save_settings(self) -> None:
-        save_settings(self.state.settings, Path.home() / "yukon_settings.yaml")
+        save_settings(self.state.settings, Path.home() / "yukon_settings.yaml", self.state)
 
     def load_settings(self) -> None:
         loading_settings_into_yukon(self.state)

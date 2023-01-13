@@ -61,7 +61,7 @@ def log_message(state: "yukon.domain.god_state.GodState", new_message: str) -> N
             )
             + ".log"
         )
-    with open(state.log_file, "a") as log_file:
+    with open(state.log_file, "a", encoding="utf-8") as log_file:
         log_file.write(new_message)
 
 

@@ -45,12 +45,10 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         if isinstance(o, UUID):
             return str(o)
         if isinstance(o, MessageCarrier):
-            metadata = o.metadata
-            metadata["counter"] = o.counter
             return {
-                o.subject_id: {
-                    "message": o.message,
-                    "_meta_": metadata,
+                o.subject_id: o.message
+                | {
+                    "_meta_": o.metadata | {"counter": o.counter},
                 }
             }
         if isinstance(o, NodeMonitor.Entry):
@@ -77,20 +75,20 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             else:
                 # Convert the number array to a str (ASCII), from o.info.name
                 name = "".join(chr(i) for i in o.info.name.to_bytes())
-            if not o.info or not o.info.status:
+            if not o.status:
                 uptime_seconds = None
                 health = None
                 mode = None
                 sub_mode = None
                 vendor_specific_status_code = None
             else:
-                uptime_seconds = o.info.status.uptime_sec
-                health = o.info.status.health
-                mode = o.info.status.mode
-                sub_mode = o.info.status.sub_mode
-                vendor_specific_status_code = o.info.status.vendor_specific_status_code
-            health_text = "No info"
-            if health:
+                uptime_seconds = o.status.uptime_sec
+                health = o.status.health
+                mode = o.status.mode
+                sub_mode = o.status.sub_mode
+                vendor_specific_status_code = o.status.vendor_specific_status_code
+            health_text = "UNKNOWN"
+            if health is not None:
                 if health == 0:
                     health_text = "OK"
                 elif health == 1:
@@ -100,7 +98,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                 elif health == 3:
                     health_text = "CRITICAL"
             mode_text = "No info"
-            if mode:
+            if mode is not None:
                 if mode == 0:
                     mode_text = "OPERATIONAL"
                 elif mode == 1:

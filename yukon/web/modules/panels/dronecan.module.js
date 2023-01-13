@@ -11,7 +11,7 @@ function createTable(inputArray) {
         "Mode",
         "Uptime (sec)",
         "Hardware Version",
-        "Hardware Version Unique ID hex",
+        "Unique ID",
         "Software Version",
         "Software Version Optional Field Flags",
         "Software Version VCS Commit",
@@ -37,9 +37,8 @@ function createTable(inputArray) {
             currentInput.mode_text,
             currentInput.uptime_seconds,
             currentInput.hardware_version.major + "." + currentInput.hardware_version.minor,
-            currentInput.hardware_version.unique_id,
+            "0x" + currentInput.hardware_version.unique_id,
             currentInput.software_version.major + "." + currentInput.software_version.minor,
-            ,
             currentInput.software_version.optional_field_flags,
             currentInput.software_version.vcs_commit,
             currentInput.software_version.image_crc,
@@ -49,20 +48,24 @@ function createTable(inputArray) {
         let row = table.insertRow();
         let cell1 = row.insertCell();
         let btn = document.createElement("button");
-        btn.innerHTML = "Firmware Update";
+        btn.innerHTML = "Update Firmware";
         btn.classList.add("btn_button", "btn", "btn-secondary", "btn-sm");
-        btn.addEventListener("click", async function () {
-            // Add a button for firmware update
-            let path = "";
-            path = await window.electronAPI.openPath({
-                properties: ["openFile"],
+        if (currentInput.node_id == 126) {
+            btn.disabled = true;
+            btn.innerHTML = "Yukon's Node"
+        } else {
+            btn.addEventListener("click", async function () {
+                // Add a button for firmware update
+                let path = "";
+                path = await window.electronAPI.openPath({
+                    properties: ["openFile"],
+                });
+                if (path) {
+                    const result = await yukon_state.zubax_apij.dronecan_node_fw_update(currentInput.node_id, path);
+                    doCommandFeedbackResult(result);
+                }
             });
-            if (path) {
-                const result = await yukon_state.zubax_apij.dronecan_node_fw_update(currentInput.node_id, path);
-                doCommandFeedbackResult(result);
-            }
-        });
-
+        }
         cell1.appendChild(btn);
         for (let j = 0; j < tableFields.length; j++) {
             let cell = row.insertCell();

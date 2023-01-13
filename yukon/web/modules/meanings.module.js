@@ -35,7 +35,7 @@ export function getLinkInfo(subject_id, node_id, yukon_state) {
                 const value = avatar.registers_values[register_name];
                 if (parseInt(value) === subject_id && register_name.endsWith(".id")) {
                     const datatype = registersKeys.find((a) => a.endsWith(link_name + ".type"));
-                    infos.push({name: link_name, type: avatar.registers_values[datatype]});
+                    infos.push({ name: link_name, type: avatar.registers_values[datatype] });
                 }
             }
         }
@@ -54,7 +54,7 @@ export function getRelatedLinks(port, yukon_state) {
             if (parseInt(value) === port && register_name.endsWith(".id")) {
                 const datatype_key = registersKeys.find((a) => a.endsWith(link_name + ".type"));
                 const datatype = avatar.registers_values[datatype_key];
-                links.push({name: link_name, node_id: avatar.node_id, "port": port, type: register_name_split[1], "datatype": datatype});
+                links.push({ name: link_name, node_id: avatar.node_id, "port": port, type: register_name_split[1], "datatype": datatype });
             }
         }
     }

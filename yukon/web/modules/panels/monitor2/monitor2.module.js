@@ -44,6 +44,7 @@ export async function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0];
     yukon_state.monitor2ContainerElement = containerElement;
     const monitor2Div = await waitForElm("#monitor2", 7000, this);
+    console.log("Past monitor2Div found")
     if (monitor2Div === null) {
         console.error("monitor2Div is null");
         return;
@@ -412,8 +413,17 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         if (field === "Uptime") {
             let intervalId = null;
             intervalId = setInterval(() => {
-                valueDiv.innerHTML = secondsToColonSeparatedString(get_up_to_date_avatar().last_heartbeat.uptime);
-                if (!valueDiv.parentElement) {
+                if (get_up_to_date_avatar) {
+                    const the_updated_avatar = get_up_to_date_avatar();
+                    if (!the_updated_avatar) {
+                        clearInterval(intervalId);
+                        return;
+                    }
+                    valueDiv.innerHTML = secondsToColonSeparatedString(the_updated_avatar.last_heartbeat.uptime);
+                    if (!valueDiv || !valueDiv.parentElement) {
+                        clearInterval(intervalId);
+                    }
+                } else {
                     clearInterval(intervalId);
                 }
             }, 1000);
@@ -441,7 +451,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         btnButton.title = button.title;
         btnButton.onclick = async () => {
             const result = await yukon_state.zubax_apij.send_command(avatar.node_id, button.command, "");
-            doCommandFeedbackResult(result);
+            doCommandFeedbackResult(result, feedbackMessage);
         };
         inputGroup.appendChild(btnButton);
     }

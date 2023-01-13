@@ -291,6 +291,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
             ^ hash(self.disappeared)
             ^ hash(self.disappeared_since)
+            ^ json_object["registers_hash"]
         )
         json_object["monitor2_hash"] = json_object["monitor_view_hash"]
         return json_object

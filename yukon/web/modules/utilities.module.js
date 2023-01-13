@@ -143,22 +143,25 @@ export function waitForElm(selector, timeOutMilliSeconds, context) {
     }
     return new Promise(resolve => {
         let timeOutTimeout
-        if (timeOutMilliSeconds) {
-            let timeoutFunction = () => {
-                console.error("Timeout waiting for element: " + selector);
-                resolve(null);
-            };
-            timeoutFunction = timeoutFunction.bind(outer_context);
-            timeOutTimeout = setTimeout(timeoutFunction, timeOutMilliSeconds);
-        }
         if (document.querySelector(selector)) {
             return resolve(document.querySelector(selector));
+        } else {
+            if (timeOutMilliSeconds) {
+                let timeoutFunction = () => {
+                    console.error("Timeout waiting for element: " + selector);
+                    resolve(null);
+                };
+                timeoutFunction = timeoutFunction.bind(outer_context);
+                timeOutTimeout = setTimeout(timeoutFunction, timeOutMilliSeconds);
+            }
         }
 
         const observer = new MutationObserver(mutations => {
             if (document.querySelector(selector)) {
+                console.log("Will clear timeout if it exists")
                 if (timeOutTimeout) {
                     clearTimeout(timeOutTimeout);
+                    console.log("Clearing timeout")
                 }
                 resolve(document.querySelector(selector));
                 observer.disconnect();
@@ -211,9 +214,9 @@ export function doCommandFeedbackResult(result, feedbackMessageElement) {
         }
     }
     // Tween feedbackMessage.style.backgroundColor from sepia to green
-    const starting_color_rgb = [255, 255, 255];
+    const starting_color_rgb = [50, 50, 50];
     const increments_to_take = 144;
-    const ending_color_rgb = [0, 255, 0];
+    const ending_color_rgb = [0, 50, 0];
     let increment_counter = 0;
     let tweenFunction = null;
     tweenFunction = () => {
@@ -221,7 +224,7 @@ export function doCommandFeedbackResult(result, feedbackMessageElement) {
         for (let i = 0; i < 3; i++) {
             new_color.push(starting_color_rgb[i] + (ending_color_rgb[i] - starting_color_rgb[i]) * increment_counter / increments_to_take);
         }
-        feedbackMessage.style.backgroundColor = `rgb(${new_color[0]}, ${new_color[1]}, ${new_color[2]})`;
+        feedbackMessageElement.style.backgroundColor = `rgb(${new_color[0]}, ${new_color[1]}, ${new_color[2]})`;
         if (increment_counter < increments_to_take) {
             increment_counter++;
             window.requestAnimationFrame(tweenFunction);

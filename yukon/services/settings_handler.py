@@ -31,11 +31,24 @@ class IncorrectConfigurationException(Exception):
     pass
 
 
-def save_settings(settings_: typing.Dict, save_location: Path) -> None:
-    json_traversed_settings = json.loads(json.dumps(settings_, cls=EnhancedJSONEncoder))
-    settings_dumped_string = yaml.dump(json_traversed_settings)
-    with open(save_location, "w") as file:
-        file.write(settings_dumped_string)
+def save_settings(settings_: typing.Dict, save_location: Path, state: GodState) -> None:
+    serialized_settings = json.dumps(settings_, cls=EnhancedJSONEncoder)
+    # Compute a hash of json_traversed_settings
+    # If the hash is the same as the previous hash, don't save the settings
+    have_changed = False
+    if state.last_settings_hash is None:
+        have_changed = True
+    else:
+        new_hash = hash(serialized_settings)
+        if not new_hash == state.last_settings_hash:
+            have_changed = True
+            state.last_settings_hash = new_hash
+    if have_changed:
+        logger.info("Saving settings to {}".format(save_location))
+        json_traversed_settings = json.loads(serialized_settings)
+        settings_dumped_string = yaml.dump(json_traversed_settings)
+        with open(save_location, "w") as file:
+            file.write(settings_dumped_string)
 
 
 def load_settings(load_location: Path) -> typing.Any:
@@ -304,7 +317,10 @@ def add_all_dsdl_paths_to_pythonpath(state: GodState) -> None:
     dsdl_search_directories_setting = state.settings.get("DSDL search directories")
     if dsdl_search_directories_setting:
         for path_object in dsdl_search_directories_setting:
-            path = path_object["value"].value
+            try:
+                path = path_object["value"].value
+            except TypeError:
+                path = path_object.value
             add_path_to_sys_path(path)
         # Save the current sys.path into os.environ["PYTHONPATH"]
         separator = ";" if os.name == "nt" else ":"

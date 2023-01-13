@@ -120,7 +120,7 @@ export function add_node_id_headers(table_header_row, yukon_state) {
         table_header_cell.style.setProperty("max-width", widthFromSettings + "px", "important");
         // Add a listener to the hover event of table_header_cell
         table_header_cell.addEventListener('mouseover', function () {
-            console.log("Mouse over node id header");
+            // console.log("Mouse over node id header");
             isMouseOverLoopRunning = true;
             let myInterval = null;
             myInterval = setInterval(function () {

@@ -95,16 +95,17 @@ app.on('window-all-closed', () => {
         app.quit();
     }
 })
+const panelsText = "Open panels"
 function addRecoverablePanel(panelName, panelText, window, menu) {
     const newItem = {
         label: panelText,
         enabled: true,
         async click() { await window.webContents.send('panels:recover', panelName) }
     }
-    if (!menuTemplate.find(x => x.label === 'Panels')) {
+    if (!menuTemplate.find(x => x.label === panelsText)) {
         menuTemplate.push(
             {
-                label: 'Panels',
+                label: panelsText,
                 submenu: [
                     newItem
                 ]
@@ -113,14 +114,17 @@ function addRecoverablePanel(panelName, panelText, window, menu) {
         const new_menu = Menu.buildFromTemplate(menuTemplate)
         Menu.setApplicationMenu(new_menu);
     } else {
-        menuTemplate.find(x => x.label === 'Panels').submenu.push(newItem);
+        menuTemplate.find(x => x.label === panelsText).submenu.push(newItem);
         const new_menu = Menu.buildFromTemplate(menuTemplate)
         Menu.setApplicationMenu(new_menu);
     }
 }
 function removeRecoverButton(panelText) {
-    const panelsMenuTemplate = menuTemplate.find(x => x.label === 'Panels');
+    const panelsMenuTemplate = menuTemplate.find(x => x.label === panelsText);
     panelsMenuTemplate.submenu = panelsMenuTemplate.submenu.filter(x => x.label !== panelText);
+    if (panelsMenuTemplate.submenu.length === 0) {
+        menuTemplate.splice(menuTemplate.indexOf(panelsMenuTemplate), 1);
+    }
     const new_menu = Menu.buildFromTemplate(menuTemplate)
     Menu.setApplicationMenu(new_menu);
 }

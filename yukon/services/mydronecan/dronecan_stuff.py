@@ -62,8 +62,8 @@ def run_dronecan(state: GodState) -> None:
     state.dronecan.node_monitor = None
     try:
         state.dronecan.driver = GoodDriver(state)
-        state.dronecan.node = Node(state.dronecan.driver, node_id=123)
-        logger.debug("Node %r created", state.dronecan.node)
+        state.dronecan.node = Node(state.dronecan.driver, node_id=126)
+        logger.debug("DroneCAN node %r created", state.dronecan.node)
         # Add the current directory to the paths list
         state.dronecan.node_monitor = NodeMonitor(state.dronecan.node)
 

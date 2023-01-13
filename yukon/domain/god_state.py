@@ -147,7 +147,7 @@ class DroneCanState:
     thread: Optional[threading.Thread] = field(default_factory=none_factory)
     node: Optional["dronecan.node.Node"] = field(default_factory=none_factory)
     fileserver: Optional["yukon.services.mydronecan.file_server.SimpleFileServer"] = field(default_factory=none_factory)
-    node_monitor: Optional["dronecan.app.node_monitor.NodeMonitor"] = field(default_factory=none_factory)
+    node_monitor: Optional["yukon.services.mydronecan.node_monitor.NodeMonitor"] = field(default_factory=none_factory)
     allocator: Optional["dronecan.app.dynamic_node_id.CentralizedServer"] = field(default_factory=none_factory)
 
 

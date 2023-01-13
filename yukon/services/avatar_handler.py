@@ -43,11 +43,14 @@ def make_handler_for_node_detected(
             state.avatar.disappeared_nodes[node_id] = False
         elif previous_entry is not None and next_entry is None:
             logger.info(f"Node with id {node_id} disappeared.")
-            state.avatar.avatars_by_node_id[node_id].disappeared = True
-            # Add the time of disappearance to the avatar
-            state.avatar.avatars_by_node_id[node_id].disappeared_since = time.monotonic()
-            state.avatar.disappeared_nodes[node_id] = True
-            # del state.avatar.avatars_by_node_id[node_id]
+            try:
+                state.avatar.avatars_by_node_id[node_id].disappeared = True
+                # Add the time of disappearance to the avatar
+                state.avatar.avatars_by_node_id[node_id].disappeared_since = time.monotonic()
+                state.avatar.disappeared_nodes[node_id] = True
+                # del state.avatar.avatars_by_node_id[node_id]
+            except KeyError:
+                logger.debug(f"Node with id {node_id} was not in the avatar list, the switch in transport deleted it.")
         is_new_or_updated_entry = next_entry is not None
         if is_new_or_updated_entry:
             current_avatar = state.avatar.avatars_by_node_id[node_id]

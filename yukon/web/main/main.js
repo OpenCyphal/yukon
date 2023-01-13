@@ -67,6 +67,7 @@ window.console = new Proxy(old_console, {
     yukon_state.navigator = window.navigator;
     yukon_state.jsyaml = jsyaml;
     yukon_state.all_settings = await yukon_state.zubax_apij.get_settings();
+    let elementPreviousParents = {}; // Component name and the corresponding previous parent element
     if (!isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_browser();
     }
@@ -87,8 +88,8 @@ window.console = new Proxy(old_console, {
         zubax_api.add_local_message(message, severity);
     }
     window.addEventListener("error", function (error, url, line) {
-        consoler.log("There was an actual error!")
-        yukon_state.addLocalMessage("Error: " + error + " at " + url + ":" + line, "error");
+        console.log("There was an actual error!")
+        yukon_state.addLocalMessage("Error: " + error.message + " at " + error.filename + ":" + error.lineno, "error", 40);
         return true;
     });
     const addLocalMessage = yukon_state.addLocalMessage;
@@ -128,6 +129,16 @@ window.console = new Proxy(old_console, {
                 isClosable: true,
                 title: componentText,
             };
+            if (elementPreviousParents[componentName]) {
+                let childElementContainer = elementPreviousParents[componentName].childElementContainer;
+                let parentElement1 = elementPreviousParents[componentName].parent;
+                let isParentInElementTree = childElementContainer && childElementContainer[0] && childElementContainer[0].parentElement && childElementContainer[0].parentElement.parentElement;
+                if (parentElement1 && isParentInElementTree) {
+                    elementPreviousParents[componentName].addChild(addedComponent);
+                    return
+                }
+            }
+
             try {
                 yukon_state.myLayout.root.contentItems[0].addChild(addedComponent);
             } catch (e) {
@@ -156,17 +167,27 @@ window.console = new Proxy(old_console, {
             btnRestore.classList.add("restore-btn");
             btnRestore.innerHTML = buttonText;
             if (window.electronAPI) {
+                let ran = false;
                 window.electronAPI.onRecoverPanel(function (_, panelName) {
-                    if (panelName === buttonComponentName) {
+                    if (!ran && panelName === buttonComponentName) {
+                        ran = true;
                         addComponentToLayout(buttonComponentName, buttonText);
-                        btnRestore.parentElement.removeChild(btnRestore);
+                        try {
+                            btnRestore.parentElement.removeChild(btnRestore);
+                        } catch (e) {
+                            console.log(e);
+                        }
                         window.electronAPI.removeRecoverButton(buttonText);
                     }
                 });
             } else {
                 btnRestore.addEventListener('click', function () {
                     addComponentToLayout(buttonComponentName, buttonText);
-                    btnRestore.parentElement.removeChild(btnRestore);
+                    try {
+                        btnRestore.parentElement.removeChild(btnRestore);
+                    } catch (e) {
+                        console.log(e);
+                    }
                 });
             }
             toolbar.appendChild(btnRestore);
@@ -234,7 +255,7 @@ window.console = new Proxy(old_console, {
                     });
                 });
                 myLayout.registerComponent("commandsComponent", function (container, componentState) {
-                    registerComponentAction("../commands.panel.html", "transportsListComponent", container, () => {
+                    registerComponentAction("../commands.panel.html", "commandsComponent", container, () => {
                         const containerElement = container.getElement()[0];
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpCommandsComponent.bind(outsideContext)(container, yukon_state);
@@ -457,6 +478,7 @@ window.console = new Proxy(old_console, {
             }, 100);
             container.on("open", function () {
                 container.on("show", function () {
+                    elementPreviousParents[componentName] = container.parent.parent;
                     if (isDestroyed) {
                         setTimeout(() => {
                             actionWhenCreating();
