@@ -116,19 +116,20 @@ export async function getDatatypesForPort(portNr, yukon_state) {
     return sortedDatatypes;
 }
 
-export async function getEmptyPortsForNode(node_id, yukon_state) {
+export function getEmptyPortsForNode(node_id, yukon_state) {
     // Look for all registers that are named like "port_1.id" and "port_1.type"
     // If the id is empty, then the port is empty
     const emptyPorts = [];
-    const node = yukon_state.current_avatars.find(a => a.id === node_id);
+    const node = yukon_state.current_avatars.find(a => a.node_id === node_id);
     if (node) {
         for (const register_name in node.registers_values) {
             if (register_name.endsWith(".id")) {
                 const register_name_split = register_name.split(".");
                 const link_name = register_name_split[register_name_split.length - 2];
+                const link_type = register_name_split[register_name_split.length - 1];
                 const subject_id = node.registers_values[register_name];
-                if (subject_id === "") {
-                    emptyPorts.push(link_name);
+                if (subject_id.toString() === "65535") {
+                    emptyPorts.push({ "link_name": link_name, "link_type": link_type, "full_name": register_name });
                 }
             }
         }

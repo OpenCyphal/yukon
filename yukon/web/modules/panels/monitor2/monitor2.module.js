@@ -4,7 +4,8 @@ import { waitForElm, getKnownDatatypes, doCommandFeedbackResult } from "../../ut
 import {
     getHoveredContainerElementAndContainerObject,
     secondsToColonSeparatedString,
-    getDatatypesForPort
+    getDatatypesForPort,
+    getEmptyPortsForNode
 } from "../../utilities.module.js";
 import { fillSettings } from "./fill_settings.module.js";
 import { highlightElement, highlightElements, removeHighlightsFromObjects, removeHighlightFromElement, unhighlightAll, setPortStateAsHiglighted, setPortStateAsUnhiglighted, isPortStateHighlighted } from "./highlights.module.js";
@@ -332,7 +333,11 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         nodesToBePositioned.push([node, avatar]);
     }
     for (const [node, avatar] of nodesToBePositioned) {
-        const total_ports = avatar.ports.cln.length + avatar.ports.srv.length + avatar.ports.pub.length + avatar.ports.sub.length;
+        let total_empty_ports = getEmptyPortsForNode(avatar.node_id, yukon_state).length;
+        if (total_empty_ports > 0) {
+            total_empty_ports += 1; // Adds one length of settings["DistancePerHorizontalConnection"] for that is used there as spacing
+        }
+        const total_ports = avatar.ports.cln.length + avatar.ports.srv.length + avatar.ports.pub.length + avatar.ports.sub.length + total_empty_ports;
         console.assert(total_ports >= 0);
         const avatar_height = Math.max(total_ports * settings["DistancePerHorizontalConnection"] + settings["AvatarConnectionPadding"], node.scrollHeight);
         node.style.height = avatar_height + "px";
@@ -377,13 +382,85 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 isLast = true;
             }
             addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state);
+
             avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
         }
-
+        addEmptyPorts(node, avatar_y_counter, avatar.node_id, yukon_state);
 
         y_counter.value += avatar_height + settings["DistanceBetweenNodes"];
     }
     addVerticalLines(monitor2Div, ports, y_counter, containerElement, settings, yukon_state);
+}
+function isPortOkForAssignment(port_nr, yukon_state) {
+    return port_nr < 65535 && port_nr > 0;
+}
+function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
+    const emptyPortInfo = getEmptyPortsForNode(node_id, yukon_state); //  [{"link_name": "power", link_type: "sub", "full_name": "uavcan.sub.power.id"}, {"link_name": "dynamics" ...}]
+    // Add a label saying "Unassigned ports" if there are any
+    if (emptyPortInfo.length > 0) {
+        const label = document.createElement("div");
+        label.style.position = "absolute";
+        label.style.top = avatar_y_counter.value + settings["DistancePerHorizontalConnection"] / 2 + 7 + "px";
+        label.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 10 + "px");
+        label.style.width = "170px";
+        label.innerText = "Unassigned ports";
+        node.appendChild(label);
+    }
+    avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
+    console.log("Getting empty ports for node " + node_id);
+    console.log("emptyPortLinkNames: " + JSON.stringify(emptyPortLinkNames));
+
+    // Create a new div for each empty port, align it and style it just like port_number_label below in code
+    for (const portInfo of emptyPortInfo) {
+        const emptyPortDiv = document.createElement("div");
+        emptyPortDiv.classList.add("port_number_label");
+        emptyPortDiv.classList.add("empty_port");
+        emptyPortDiv.style.position = "absolute";
+        emptyPortDiv.style.top = avatar_y_counter.value + "px";
+        emptyPortDiv.innerText = portInfo.link_name;
+        // Align text right
+        emptyPortDiv.style.setProperty("text-align", "right");
+        // align it 50px to the left from the left side of the horizontal line
+        emptyPortDiv.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 10 + "px");
+        emptyPortDiv.style.color = "white";
+        emptyPortDiv.style.paddingRight = "4px";
+        emptyPortDiv.style.paddingTop = "8px";
+        emptyPortDiv.style.paddingBottom = "8px";
+        emptyPortDiv.style.backgroundColor = "black"
+        emptyPortDiv.style.width = "170px";
+        node.appendChild(emptyPortDiv);
+        // Also create a number input that has left set to settings["NodeXOffset"] + settings["NodeWidth"] - 190 + "px", the text input should have a placeholder of "Enter new port number"
+        // The width of the text input should be 170px
+        const number_input = document.createElement("input");
+        number_input.type = "number";
+        number_input.style.position = "absolute";
+        number_input.style.top = avatar_y_counter.value + "px";
+        number_input.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 155 + "px");
+        number_input.style.width = "130px";
+        number_input.style.height = "31px";
+        number_input.placeholder = "New subject id";
+        number_input.title = "Enter a new subject id";
+        node.appendChild(number_input);
+
+        // Add a button that says "Assign" and has a click event listener that calls assignPortToLink
+        const assign_button = document.createElement("button");
+        assign_button.classList.add("btn", "btn-sm", "btn-primary");
+        assign_button.innerText = "Assign";
+        assign_button.style.position = "absolute";
+        assign_button.style.top = avatar_y_counter.value + "px";
+        assign_button.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 264 + "px");
+        assign_button.style.width = "100px";
+
+        assign_button.addEventListener("click", function () {
+            let link_name = emptyPortLinkName;
+            let link_type = emptyPortLinkType;
+            await zubax_api.update_register_value(portInfo.full_name, number_input.value, node_id);
+        });
+
+        node.appendChild(assign_button);
+
+        avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
+    }
 }
 function createElementForNode(avatar, text, container, fieldsObject, get_up_to_date_avatar, yukon_state) {
     // Verify that the avatar is not undefined
