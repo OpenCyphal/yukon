@@ -33,9 +33,31 @@ function createWindow() {
         }
         menu.popup();
     });
+    // https://www.electronjs.org/docs/latest/api/window-open
+    // https://www.electronjs.org/docs/latest/api/browser-window
     win.webContents.setWindowOpenHandler((details) => {
-        console.log("New window open!")
-        return { action: 'allow' }
+        console.log("details: " + JSON.stringify(details))
+        let the_title = "Yukon";
+        // If get_all_subscription_messages is in details.url then, the title is "Yukon - Subscription log viewer"
+        // Extract the message_specifier=7509 from details.url and set the title to "Yukon - 7509"
+        if (details.url.includes("get_all_subscription_messages")) {
+            // Use regex to extract the one occurence of message_specifier
+            const regex = /message_specifier=(\d+)/m;
+            the_title = `${details.url.match(regex)[1]} - Subscription log viewer`;
+        } else if (details.url.includes("get_latest_subscription_message")) {
+            const regex = /message_specifier=(\d+)/m;
+            the_title = `${details.url.match(regex)[1]} - Subscription latest message (no auto refresh, press CTRL+R to refresh)`;
+        }
+        return {
+            action: 'allow',
+            overrideBrowserWindowOptions: {
+                backgroundColor: 'white',
+                icon: path.join(app.getAppPath(), "icon_128_128.png"),
+                transparent: true,
+                darkTheme: true,
+                title: the_title
+            }
+        }
     })
     return win;
 }

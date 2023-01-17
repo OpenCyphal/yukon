@@ -335,7 +335,7 @@ class Api:
             file_dto["name"] = Path(file_path).name
         return file_dto
 
-    def update_register_value(self, register_name: str, register_value: str, node_id: str) -> typing.Any:
+    def update_register_value(self, register_name: str, register_value: typing.Any, node_id: str) -> typing.Any:
         import uavcan
 
         new_value: uavcan.register.Value_1 = unexplode_value(register_value)

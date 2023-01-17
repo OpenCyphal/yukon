@@ -72,6 +72,17 @@
     cursor: pointer;
 }
 
+#monitor2 input.port_number_label::-webkit-outer-spin-button,
+.port_number_label::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox */
+#monitor2 input.port_number_label[type=number] {
+    -moz-appearance: textfield;
+}
+
 #subscriptions-inner-area {
     padding: 10px;
     padding-left: 1em;

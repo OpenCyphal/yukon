@@ -407,8 +407,6 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         node.appendChild(label);
     }
     avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
-    console.log("Getting empty ports for node " + node_id);
-    console.log("emptyPortLinkNames: " + JSON.stringify(emptyPortLinkNames));
 
     // Create a new div for each empty port, align it and style it just like port_number_label below in code
     for (const portInfo of emptyPortInfo) {
@@ -451,10 +449,8 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         assign_button.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 264 + "px");
         assign_button.style.width = "100px";
 
-        assign_button.addEventListener("click", function () {
-            let link_name = emptyPortLinkName;
-            let link_type = emptyPortLinkType;
-            await zubax_api.update_register_value(portInfo.full_name, number_input.value, node_id);
+        assign_button.addEventListener("click", async function () {
+            const response = await zubax_apij.update_register_value(portInfo.full_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
         });
 
         node.appendChild(assign_button);
@@ -645,7 +641,14 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
         link_name_label.style.top = temp_value;
     }
     // Create a label for the port number on the left side of the horizontal line
-    const port_number_label = document.createElement("label");
+    let portLabelElement = "label"
+    if (typeof currentLinkObject === "object") {
+        portLabelElement = "input"
+    }
+    const port_number_label = document.createElement(portLabelElement);
+    if (typeof currentLinkObject === "object") {
+        port_number_label.setAttribute("type", "number");
+    }
     port_number_label.classList.add("port_number_label");
     port_number_label.style.top = y_counter.value + avatar_y_counter.value - settings.HorizontalPortLabelOffsetY + "px";
     // align it 50px to the left from the left side of the horizontal line
@@ -659,7 +662,21 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
         port_number_label.style.height = "calc(fit-content + 2px)";
     }
     port_number_label.style.position = "absolute";
-    port_number_label.innerHTML = matchingPort.port;
+    if (typeof currentLinkObject === "object") {
+        port_number_label.value = currentLinkObject.port;
+        // If 2 seconds is gone past the last change, then save the value
+        let timeout = null;
+        port_number_label.addEventListener("change", (event) => {
+            if (timeout) {
+                clearTimeout(timeout);
+            }
+            timeout = setTimeout(async () => {
+                const response = await zubax_apij.update_register_value(currentLinkObject.full_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${port_number_label.value}]}}`), currentLinkObject.node_id);
+            }, 2000);
+        });
+    } else {
+        port_number_label.innerHTML = matchingPort.port;
+    }
     port_number_label.style.zIndex = "4";
     if (matchingPort.type === "srv") {
         port_number_label.style.backgroundColor = settings["ServicePortLabelBgColor"];
