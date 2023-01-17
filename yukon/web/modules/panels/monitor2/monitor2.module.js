@@ -316,6 +316,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     const avatars_copy = Array.from(yukon_state.current_avatars)
     avatars_copy.sort(compareAvatar);
     let nodesToBePositioned = [];
+    // This is the text status part
     for (const avatar of avatars_copy) {
         const node_id = avatar.node_id;
         const get_up_to_date_avatar = () => { return yukon_state.current_avatars.find(a => a.node_id === node_id); };
@@ -339,7 +340,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         }
         const total_ports = avatar.ports.cln.length + avatar.ports.srv.length + avatar.ports.pub.length + avatar.ports.sub.length + total_empty_ports;
         console.assert(total_ports >= 0);
-        const avatar_height = Math.max(total_ports * settings["DistancePerHorizontalConnection"] + settings["AvatarConnectionPadding"], node.scrollHeight);
+        let avatar_height = total_ports * settings["DistancePerHorizontalConnection"] + settings["AvatarConnectionPadding"];
         node.style.height = avatar_height + "px";
         node.style.top = y_counter.value + "px";
         let avatar_y_counter = { value: settings["AvatarConnectionPadding"] };
@@ -385,9 +386,16 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
 
             avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
         }
+        if (avatar_y_counter.value < 300) {
+            avatar_y_counter.value = 300;
+        }
+        if (avatar_height < avatar_y_counter.value) {
+            avatar_height = avatar_y_counter.value;
+        }
         addEmptyPorts(node, avatar_y_counter, avatar.node_id, yukon_state);
+        y_counter.value += avatar_y_counter.value + settings["DistanceBetweenNodes"];
 
-        y_counter.value += avatar_height + settings["DistanceBetweenNodes"];
+        node.style.height = avatar_y_counter.value + "px";
     }
     addVerticalLines(monitor2Div, ports, y_counter, containerElement, settings, yukon_state);
 }
@@ -400,13 +408,12 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
     if (emptyPortInfo.length > 0) {
         const label = document.createElement("div");
         label.style.position = "absolute";
-        label.style.top = avatar_y_counter.value + settings["DistancePerHorizontalConnection"] / 2 + 7 + "px";
+        label.style.top = avatar_y_counter.value - 15 + "px";
         label.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 10 + "px");
         label.style.width = "170px";
         label.innerText = "Unassigned ports";
         node.appendChild(label);
     }
-    avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
 
     // Create a new div for each empty port, align it and style it just like port_number_label below in code
     for (const portInfo of emptyPortInfo) {
