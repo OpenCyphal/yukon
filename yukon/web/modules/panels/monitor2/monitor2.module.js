@@ -426,7 +426,7 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         const emptyPortDiv = document.createElement("div");
         emptyPortDiv.classList.add("port_number_label");
         emptyPortDiv.classList.add("empty_port");
-        emptyPortDiv.height = designatedHeight + "px";
+        emptyPortDiv.style.height = designatedHeight + "px";
         emptyPortDiv.style.position = "absolute";
         emptyPortDiv.style.top = avatar_y_counter.value + "px";
         emptyPortDiv.innerText = portInfo.link_name;
