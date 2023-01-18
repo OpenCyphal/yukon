@@ -523,6 +523,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     const neededButtons = [{ "name": "Restart", "command": "65535", "title": "Restart device" }, { "name": "Save", "command": "65530", "title": "Save persistent states" }, { "name": "Estop", "command": "65531", "title": "Emergency stop" }];
     for (const button of neededButtons) {
         const btnButton = document.createElement("button");
+        btnButton.id = "btn" + avatar.node_id + "_" + button.name;
         btnButton.classList.add("btn_button");
         btnButton.classList.add("btn");
         btnButton.classList.add("btn-primary");
@@ -679,6 +680,20 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
             }
             timeout = setTimeout(async () => {
                 const response = await zubax_apij.update_register_value(currentLinkObject.full_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${port_number_label.value}]}}`), currentLinkObject.node_id);
+                let restartButton = document.querySelector("#btn" + currentLinkObject.node_id + "_Restart");
+                if (restartButton) {
+                    // Previous background color
+                    const previousBackgroundColor = restartButton.style.backgroundColor;
+                    // Flash it 3 times
+                    for (let i = 0; i < 3; i++) {
+                        restartButton = document.querySelector("#btn" + currentLinkObject.node_id + "_Restart");
+                        restartButton.title = "You should restart this node to apply the changes to port identifiers."
+                        restartButton.style.setProperty("background-color", "red", "important");
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        restartButton.style.setProperty("background-color", previousBackgroundColor, "important");
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
             }, 2000);
         });
     } else {
