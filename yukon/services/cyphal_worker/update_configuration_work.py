@@ -7,7 +7,6 @@ from uuid import uuid4
 from yukon.domain.registers.apply_configuration_request import ApplyConfigurationRequest
 from yukon.domain.registers.update_register_request import UpdateRegisterRequest
 from yukon.services.api import is_configuration_simplified, add_register_update_log_item
-from yukon.services.messages_publisher import add_local_message
 from yukon.services.value_utils import unexplode_value
 from yukon.domain.god_state import GodState
 
@@ -24,13 +23,7 @@ async def do_apply_configuration_work(state: GodState, config: ApplyConfiguratio
                     register_name, None
                 )
                 if prototype_string is None:
-                    add_local_message(
-                        state,
-                        "Register %s does not exist on node %d" % (register_name, config.node_id),
-                        register_name,
-                        config.node_id,
-                        __name__,
-                    )
+                    logger.log(logging.ERROR, "Register %s does not exist on node %d" % (register_name, config.node_id))
                     add_register_update_log_item(state, register_name, None, config.node_id, False)
                     continue
                 at_least_one_register_was_modified = True
@@ -40,9 +33,7 @@ async def do_apply_configuration_work(state: GodState, config: ApplyConfiguratio
                     UpdateRegisterRequest(uuid4(), register_name, unexploded_value, config.node_id, time.time())
                 )
             if not at_least_one_register_was_modified:
-                add_local_message(
-                    state, "No registers were modified on node %d" % config.node_id, config.node_id, __name__
-                )
+                logger.warning("No registers were modified on node %d", config.node_id)
         else:
             for potential_node_id, v in data.items():
                 if potential_node_id == "__file_name":

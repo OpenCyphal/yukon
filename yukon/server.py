@@ -32,7 +32,7 @@ server.json_encoder = EnhancedJSONEncoder
 WSGIRequestHandler.protocol_version = "HTTP/1.1"
 our_token = "ABC"
 logger = logging.getLogger(__name__)
-logger.setLevel("NOTSET")
+logger.setLevel(logging.DEBUG)
 
 
 @server.after_request
@@ -112,3 +112,14 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
             tb = traceback.format_exc()
             logger.critical(tb)
             return str(tb)
+
+    @server.route("/api/announce_running_in_electron", methods=["GET"])
+    def announce_running_in_electron() -> typing.Any:
+        logger.info("Announcing that we are running in electron")
+        try:
+            import pyi_splash
+
+            pyi_splash.close()
+        except ImportError:
+            pass
+        return "OK"

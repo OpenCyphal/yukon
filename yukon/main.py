@@ -17,6 +17,9 @@ import mimetypes
 
 import psutil
 import sentry_sdk
+
+from yukon.version import __version__
+
 from yukon.custom_tk_dialog import launch_yes_no_dialog
 
 from yukon.services.settings_handler import loading_settings_into_yukon
@@ -57,7 +60,6 @@ def run_electron(state: GodState) -> None:
     exe_path = get_electron_path()
     electron_logger = logging.getLogger("electronJS")
     electron_logger.setLevel(logging.INFO)
-    electron_logger.handlers = []
     electron_logger.propagate = False
     electron_logger.addHandler(state.messages_publisher)
     exit_code = 0
@@ -282,10 +284,10 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     loading_settings_into_yukon(state)
     set_logging_levels()
     state.messages_publisher = MessagesPublisher(state)
-    state.messages_publisher.setLevel(logging.NOTSET)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    state.messages_publisher.setFormatter(formatter)
-    logger.addHandler(state.messages_publisher)
+    state.messages_publisher.setLevel(logging.DEBUG)
+    logger.root.handlers = [state.messages_publisher]
+    logger.setLevel(logging.INFO)
+    logger.info("Version of Yukon: " + __version__)
     make_landing_and_bridge(state, api)
 
     cyphal_worker_thread = threading.Thread(target=cyphal_worker, args=[state])

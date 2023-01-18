@@ -40,7 +40,7 @@ from yukon.services.mydronecan.dronecan_stuff import run_dronecan
 from yukon.services.avatar_handler import make_tracers_trackers
 
 logger = logging.getLogger(__name__)
-# logger.setLevel("NOTSET")
+# logger.setLevel(logging.DEBUG)
 
 
 def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -> None:

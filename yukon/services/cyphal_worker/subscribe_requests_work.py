@@ -11,7 +11,6 @@ from yukon.services.settings_handler import add_all_dsdl_paths_to_pythonpath
 from yukon.domain.subscriptions.message_carrier import MessageCarrier
 from yukon.domain.subscriptions.messages_store import MessagesStore
 from yukon.domain.subscriptions.subscribe_response import SubscribeResponse
-from yukon.services.messages_publisher import add_local_message
 from yukon.services.dtype_loader import load_dtype
 from yukon.domain.god_state import GodState
 
@@ -51,7 +50,6 @@ async def do_subscribe_requests_work(state: GodState, subscribe_request: Subscri
                     messages_store.messages.pop(0)
                     messages_store.counter -= 1
                     messages_store.start_index += 1
-            # add_local_message(state, repr(msg), 20, subscribe_request.specifier.subject_id)
 
         new_subscriber.receive_in_background(callback)
         state.cyphal.message_stores_by_specifier[subscribe_request.specifier] = MessagesStore()
@@ -61,10 +59,10 @@ async def do_subscribe_requests_work(state: GodState, subscribe_request: Subscri
         state.queues.subscribe_requests_responses.put(subscribe_response)
     except Exception as e:
         tb = traceback.format_exc()
-        add_local_message(state, tb, 40, __name__)
+        logger.log(logging.ERROR, tb)
         subscribe_response = SubscribeResponse(
             subscribe_request.specifier.subject_id, subscribe_request.specifier.datatype, False, tb
         )
         state.queues.subscribe_requests_responses.put(subscribe_response)
     else:
-        add_local_message(state, "Subscribed to " + str(subscribe_request.specifier.subject_id), 20, __name__)
+        logger.log(logging.INFO, "Subscribed to " + str(subscribe_request.specifier.subject_id))

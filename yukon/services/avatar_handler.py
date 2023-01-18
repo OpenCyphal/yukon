@@ -15,7 +15,7 @@ from yukon.domain.iface import Iface
 from yukon.services.snoop_registers import get_register_names
 
 logger = logging.getLogger(__name__)
-logger.setLevel("NOTSET")
+logger.setLevel(logging.DEBUG)
 from uavcan.register import List_1
 
 

@@ -5,14 +5,21 @@ import logging
 import subprocess
 import shutil
 import platform
+import sys
 import requests
 
 my_os = platform.system()
 
 logger = logging.getLogger(__name__)
 
+do_download_electron = True
+# If the --no-electron flag is passed, then we don't need to download electron
+if "--no-electron" in sys.argv:
+    sys.argv.remove("--no-electron")
+    print("Skipping electron download...")
+    do_download_electron = False
 # Check if the electron directory already exists or not
-if not Path(".electron").exists():
+if do_download_electron and not Path(".electron").exists():
     # Download the folder electronbinaries from https://files.zubax.com/products/org.opencyphal.yukon/
     # and extract it to the root directory of the project
     # This makes a new folder called electronbinaries in the root directory
