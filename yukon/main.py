@@ -281,6 +281,12 @@ def handle_headless_yukon(state: GodState) -> None:
 
 
 def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
+    try:
+        from ctypes import windll
+
+        windll.shcore.SetProcessDpiAwareness(1)
+    except:
+        pass
     loading_settings_into_yukon(state)
     set_logging_levels()
     state.messages_publisher = MessagesPublisher(state)
