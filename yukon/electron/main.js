@@ -98,6 +98,27 @@ const menuTemplate = [
                         await shell.showItemInFolder(yukon_home_dir)
                     }
                 }
+            },
+            // Create a menu item that will print the version number of Yukon from ../version.py
+            {
+                label: "Yukon version",
+                click: async () => {
+                    const version_file_path = path.join(app.getAppPath(), "..", "version.py");
+                    console.log("Version file path" + version_file_path);
+                    const version_file_exists = fs.existsSync(version_file_path);
+                    if (version_file_exists) {
+                        const version_file_contents = fs.readFileSync(version_file_path, 'utf8');
+                        console.log("Version file contents: " + version_file_contents);
+                        const version_regex = /__version__ = "(\d+\.\d+\.\d+)"/m;
+                        const version = version_file_contents.match(version_regex)[1];
+                        console.log("Yukon version: " + version);
+                        dialog.showMessageBoxSync({
+                            type: "info",
+                            title: "Yukon version",
+                            message: "Yukon version: " + version
+                        });
+                    }
+                }
             }
         ]
     }
