@@ -402,6 +402,11 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
 function isPortOkForAssignment(port_nr, yukon_state) {
     return port_nr < 65535 && port_nr > 0;
 }
+const portTypeToLongTypeExplanation = {
+    "pub": "This is a publisher",
+    "sub": "This is a subscriber",
+    "srv": "This is a service"
+}
 function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
     const emptyPortInfo = getEmptyPortsForNode(node_id, yukon_state); //  [{"link_name": "power", link_type: "sub", "full_name": "uavcan.sub.power.id"}, {"link_name": "dynamics" ...}]
     // Add a label saying "Unassigned ports" if there are any
@@ -417,22 +422,39 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
 
     // Create a new div for each empty port, align it and style it just like port_number_label below in code
     for (const portInfo of emptyPortInfo) {
+        const designatedHeight = settings["DistancePerHorizontalConnection"] - 4;
         const emptyPortDiv = document.createElement("div");
         emptyPortDiv.classList.add("port_number_label");
         emptyPortDiv.classList.add("empty_port");
+        emptyPortDiv.height = designatedHeight + "px";
         emptyPortDiv.style.position = "absolute";
         emptyPortDiv.style.top = avatar_y_counter.value + "px";
         emptyPortDiv.innerText = portInfo.link_name;
+        emptyPortDiv.title = portTypeToLongTypeExplanation[portInfo.link_type] || "";
+
+        if (portInfo.link_type === "srv") {
+            emptyPortDiv.style.backgroundColor = settings["ServicePortLabelBgColor"];
+            emptyPortDiv.style.setProperty("color", settings["ServicePortLabelColor"], "important");
+        } else if (portInfo.link_type === "pub") {
+            emptyPortDiv.style.backgroundColor = settings["PublisherPortLabelBgColor"];
+            emptyPortDiv.style.setProperty("color", settings["PublisherPortLabelColor"], "important");
+        } else if (portInfo.link_type === "sub") {
+            emptyPortDiv.style.backgroundColor = settings["SubscriberPortLabelBgColor"];
+            emptyPortDiv.style.setProperty("color", settings["SubscriberPortLabelColor"], "important");
+        }
         // Align text right
         emptyPortDiv.style.setProperty("text-align", "right");
         // align it 50px to the left from the left side of the horizontal line
         emptyPortDiv.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 10 + "px");
-        emptyPortDiv.style.color = "white";
-        emptyPortDiv.style.paddingRight = "4px";
-        emptyPortDiv.style.paddingTop = "8px";
-        emptyPortDiv.style.paddingBottom = "8px";
-        emptyPortDiv.style.backgroundColor = "black"
-        emptyPortDiv.style.width = "170px";
+        // When hovered over emptyPortDiv, replace the innerText with portInfo.datatype
+        emptyPortDiv.onmouseover = function () {
+            emptyPortDiv.innerText = portInfo.datatype;
+        };
+        // When mouse leaves emptyPortDiv, replace the innerText with portInfo.link_name
+        emptyPortDiv.onmouseout = function () {
+            emptyPortDiv.innerText = portInfo.link_name;
+        };
+        emptyPortDiv.style.width = settings.LinkInfoWidth + "px";
         node.appendChild(emptyPortDiv);
         // Also create a number input that has left set to settings["NodeXOffset"] + settings["NodeWidth"] - 190 + "px", the text input should have a placeholder of "Enter new port number"
         // The width of the text input should be 170px
@@ -442,7 +464,7 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         number_input.style.top = avatar_y_counter.value + "px";
         number_input.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 155 + "px");
         number_input.style.width = "130px";
-        number_input.style.height = "31px";
+        number_input.style.height = designatedHeight + "px";;
         number_input.placeholder = "New subject id";
         number_input.title = "Enter a new subject id";
         node.appendChild(number_input);
@@ -452,12 +474,19 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         assign_button.classList.add("btn", "btn-sm", "btn-primary");
         assign_button.innerText = "Assign";
         assign_button.style.position = "absolute";
+        assign_button.style.height = designatedHeight + "px";
         assign_button.style.top = avatar_y_counter.value + "px";
         assign_button.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 264 + "px");
         assign_button.style.width = "100px";
-
+        assign_button.style.setProperty("padding-top", designatedHeight * 0.01 + "px", "important");
+        // Align text to the top
+        // assign_button.style.setProperty()
         assign_button.addEventListener("click", async function () {
             const response = await zubax_apij.update_register_value(portInfo.full_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
+            if(response.success) {
+                console.log("The port identifier for " + portInfo.full_name + " was successfully updated to " + number_input.value);
+                console.log("Usually it is the case that you should now restart the node before changes are applied.")
+            }
         });
 
         node.appendChild(assign_button);
@@ -528,6 +557,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         btnButton.classList.add("btn");
         btnButton.classList.add("btn-primary");
         btnButton.classList.add("btn-sm");
+        btnButton.style.setProperty("height", settings["DistancePerHorizontalConnection"], "important");
         btnButton.innerHTML = button.name;
         btnButton.title = button.title;
         btnButton.onclick = async () => {

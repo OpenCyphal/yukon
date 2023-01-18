@@ -126,10 +126,15 @@ export function getEmptyPortsForNode(node_id, yukon_state) {
             if (register_name.endsWith(".id")) {
                 const register_name_split = register_name.split(".");
                 const link_name = register_name_split[register_name_split.length - 2];
-                const link_type = register_name_split[register_name_split.length - 1];
+                const link_type = register_name_split[register_name_split.length - 3];
+                const probable_datatype_register_name = register_name.replace(".id", ".type");
+                let detected_datatype = null;
+                if (node.registers_values[probable_datatype_register_name]) {
+                    detected_datatype = node.registers_values[probable_datatype_register_name];
+                }
                 const subject_id = node.registers_values[register_name];
                 if (subject_id.toString() === "65535") {
-                    emptyPorts.push({ "link_name": link_name, "link_type": link_type, "full_name": register_name });
+                    emptyPorts.push({ "link_name": link_name, "link_type": link_type, "full_name": register_name, "datatype": detected_datatype });
                 }
             }
         }
