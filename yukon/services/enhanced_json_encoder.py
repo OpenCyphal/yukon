@@ -26,7 +26,6 @@ from yukon.services.mydronecan.node_monitor import NodeMonitor
 INFINITY = float("inf")
 
 _logger = logging.getLogger(__name__)
-# _logger.setLevel(logging.DEBUG)
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):

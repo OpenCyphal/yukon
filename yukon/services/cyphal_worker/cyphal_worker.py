@@ -40,7 +40,6 @@ from yukon.services.mydronecan.dronecan_stuff import run_dronecan
 from yukon.services.avatar_handler import make_tracers_trackers
 
 logger = logging.getLogger(__name__)
-# logger.setLevel(logging.DEBUG)
 
 
 def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -> None:
@@ -50,9 +49,6 @@ def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -
         pass
 
     allocation_data_sub.receive_in_background(receive_allocate_request)
-
-
-# logger.setLevel(logging.DEBUG)
 
 
 def cyphal_worker(state: GodState) -> None:

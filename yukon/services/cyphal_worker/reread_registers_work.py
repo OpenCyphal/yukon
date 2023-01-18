@@ -8,8 +8,6 @@ from yukon.services.snoop_registers import get_register_value
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
-
 
 async def do_reread_registers_work(state: GodState, request2: RereadRegistersRequest) -> None:
     logger.debug("request2 in do_reread_registers_work: %r", request2)

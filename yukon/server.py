@@ -32,7 +32,6 @@ server.json_encoder = EnhancedJSONEncoder
 WSGIRequestHandler.protocol_version = "HTTP/1.1"
 our_token = "ABC"
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 @server.after_request

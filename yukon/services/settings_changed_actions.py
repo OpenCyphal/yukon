@@ -15,7 +15,6 @@ from yukon.services.mydronecan.file_server import SimpleFileServer
 from yukon.services.udp_server import UDPConnectionServer
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 def set_udp_server_handlers(state: "yukon.domain.god_state.GodState") -> None:
@@ -187,7 +186,6 @@ def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
                             state.cyphal.centralized_allocator.start()
 
                             def allocated_hook(allocated_node_id: int) -> None:
-                                logger.setLevel(logging.DEBUG)
                                 logger.debug("Handling allocation of node %d", allocated_node_id)
                                 if new_mode == "Automatic persistent allocation":
                                     logger.debug("Now sending store persistent states to node %d", allocated_node_id)

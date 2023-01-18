@@ -23,7 +23,6 @@ from yukon.services.mydronecan.node_monitor import NodeMonitor
 from dronecan import uavcan
 
 logger = logging.getLogger(__name__)
-# logger.setLevel(logging.DEBUG)
 
 
 class GoodDriver(AbstractDriver):

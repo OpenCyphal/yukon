@@ -70,7 +70,6 @@ from yukon.domain.registers.reread_register_names_request import RereadRegisterN
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 def make_sure_is_deserialized(any_conf: typing.Any) -> typing.Any:
@@ -129,9 +128,6 @@ def unexplode_a_register(state: GodState, node_id: int, register_name: str, regi
     value = unexplode_value(register_value, prototype)
     # This is to get it back into the primitive shape and then serialize as JSON.
     return json.dumps(explode_value(value))
-
-
-logger.setLevel(logging.DEBUG)
 
 
 def unsimplify_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deserialized_conf: typing.Any) -> str:

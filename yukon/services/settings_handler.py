@@ -69,7 +69,6 @@ def load_settings(load_location: Path) -> typing.Any:
         raise IncorrectConfigurationException()
 
 
-# logger.setLevel(logging.DEBUG)
 def equals_dict(object1: dict, object2: dict) -> bool:
     """Check that all keys in object1 are in object2 and that the values are equal"""
     if not isinstance(object1, dict) or not isinstance(object2, dict):
