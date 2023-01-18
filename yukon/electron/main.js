@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, MenuItem } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, Menu, MenuItem, shell } = require('electron')
 const process = require('process');
 const path = require('path')
 const http = require('http');
@@ -83,6 +83,24 @@ const menuTemplate = [
             { role: 'togglefullscreen' }
         ]
     },
+    {
+        label: "Help",
+        // Create a menu item that will open the %HOME%/.yukon folder
+        submenu: [
+            {
+                label: "Open Yukon logs folder",
+                click: async () => {
+                    const home_dir = app.getPath('home');
+                    const yukon_home_dir = path.join(home_dir, ".yukon");
+                    const yukon_home_dir_exists = fs.existsSync(yukon_home_dir);
+                    if (yukon_home_dir_exists) {
+                        // Open the folder
+                        await shell.showItemInFolder(yukon_home_dir)
+                    }
+                }
+            }
+        ]
+    }
 ]
 app.whenReady().then(() => {
     // Send a GET request to http://locahost:5000/api/announce_running_in_electron

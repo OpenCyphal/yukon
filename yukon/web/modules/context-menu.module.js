@@ -559,7 +559,7 @@ export function make_context_menus(yukon_state) {
     });
     monitor2_vertical_line_context_menu.init();
     const monitor2_general_context_menu = new ContextMenu({
-        target: ".lm_content:has(> #monitor2)",
+        target: ".lm_content:has(>#monitor2)",
         mode: "dark",
         menuItems: [
             subscriber_menu_items[0],
