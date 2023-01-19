@@ -22,6 +22,17 @@ def quit_application(state: "yukon.domain.god_state.GodState") -> None:
     state.queues.god_queue.put_nowait(None)
 
 
+def add_path_to_cyphal_path(path: str) -> None:
+    normalized_path = Path(path).resolve()
+    if not normalized_path:
+        return
+    cyphal_path = os.environ.get("CYPHAL_PATH", None)
+    if cyphal_path:
+        normalized_cyphal_paths = [str(Path(path).resolve()) for path in cyphal_path]
+        if str(normalized_path) not in normalized_cyphal_paths:
+            os.environ["CYPHAL_PATH"] = f"{cyphal_path}{os.pathsep}{str(normalized_path)}"
+
+
 def add_path_to_sys_path(path: str) -> None:
     normalized_sys_paths = [str(Path(path).resolve()) for path in sys.path]
     normalized_path = Path(path).resolve()

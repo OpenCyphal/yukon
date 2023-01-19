@@ -98,6 +98,30 @@ const menuTemplate = [
                     }
                 }
             },
+            {
+                label: "Open Cyphal DSDL source folder",
+                click: async () => {
+                    const home_dir = app.getPath('home');
+                    const yukon_home_dir = path.join(home_dir, ".cyphal");
+                    const yukon_home_dir_exists = fs.existsSync(yukon_home_dir);
+                    if (yukon_home_dir_exists) {
+                        // Open the folder
+                        await shell.showItemInFolder(yukon_home_dir)
+                    }
+                }
+            },
+            {
+                label: "Open compiled DSDL folder",
+                click: async () => {
+                    const home_dir = app.getPath('home');
+                    const yukon_home_dir = path.join(home_dir, ".pycyphal");
+                    const yukon_home_dir_exists = fs.existsSync(yukon_home_dir);
+                    if (yukon_home_dir_exists) {
+                        // Open the folder
+                        await shell.showItemInFolder(yukon_home_dir)
+                    }
+                }
+            },
             // Create a menu item that will print the version number of Yukon from ../version.py
             {
                 label: "Yukon version",

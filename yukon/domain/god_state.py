@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 import threading
 import typing
 from dataclasses import dataclass, field
@@ -12,7 +13,7 @@ import pycyphal
 from dronecan.node import Node
 import dronecan.app
 import yukon.services.FileServer
-from yukon.domain.reactive_proxy_objects import ReactiveValue
+from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.domain.dronecan_traffic_queues import DroneCanTrafficQueues
 from yukon.domain.subscriptions.synchronized_subjects_specifier import SynchronizedSubjectsSpecifier
 from yukon.domain.subscriptions.synchronized_message_store import SynchronizedMessageStore
@@ -160,7 +161,7 @@ class GodState:
         self.avatar = AvatarState()
         self.allocation = AllocationState()
         self.settings = {
-            "DSDL search directories": [{"__type__": "dirpath", "value": ReactiveValue("")}],
+            "DSDL search directories": [{"__type__": "dirpath", "value": ReactiveValue(str(Path.home() / ".cyphal"))}],
             "UI": {"Registers": {"Column width (pixels)": 400, "Wrap cell text": False}},
             "Node allocation": {
                 "__type__": "radio",
@@ -180,14 +181,14 @@ class GodState:
                 "File path": {"__type__": "dirpath", "value": ReactiveValue("")},
             },
             "Monitor view": {
-                "Show link name on another line": ReactiveValue(False),
+                "Show link name on another line": ReactiveValue(True),
                 "Link info width": ReactiveValue(300),
                 "Vertical line width": ReactiveValue(2),
                 "Horizontal line width": ReactiveValue(2),
                 "Distance between vertical lines": ReactiveValue(60),
                 "Node width": ReactiveValue(250),
                 "Distance per horizontal connection": ReactiveValue(20),
-                "Show name above datatype": ReactiveValue(False),
+                "Show name above datatype": ReactiveValue(True),
                 "Highlight colors": ["red", "green", "yellow", "orange", "purple", "brown", "aquamarine", "deeppink"],
                 "Default saved subscription messages capacity": ReactiveValue(50),
             },

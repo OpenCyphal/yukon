@@ -483,7 +483,7 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         // assign_button.style.setProperty()
         assign_button.addEventListener("click", async function () {
             const response = await zubax_apij.update_register_value(portInfo.full_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
-            if(response.success) {
+            if (response.success) {
                 console.log("The port identifier for " + portInfo.full_name + " was successfully updated to " + number_input.value);
                 console.log("Usually it is the case that you should now restart the node before changes are applied.")
             }

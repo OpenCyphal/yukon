@@ -7,7 +7,6 @@ import pycyphal.dsdl
 
 from yukon.domain.subscriptions.subscribe_request import SubscribeRequest
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
-from yukon.services.settings_handler import add_all_dsdl_paths_to_pythonpath
 from yukon.domain.subscriptions.message_carrier import MessageCarrier
 from yukon.domain.subscriptions.messages_store import MessagesStore
 from yukon.domain.subscriptions.subscribe_response import SubscribeResponse
@@ -19,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 async def do_subscribe_requests_work(state: GodState, subscribe_request: SubscribeRequest) -> None:
     logger.debug("Current PYTHONPATH: %s", sys.path)
-    add_all_dsdl_paths_to_pythonpath(state)
     try:
         if not subscribe_request.specifier.subject_id:
             new_subscriber = state.cyphal.local_node.make_subscriber(load_dtype(subscribe_request.specifier.datatype))

@@ -10,7 +10,7 @@ import pycyphal
 
 import uavcan
 from yukon.domain.subscriptions.message_carrier import MessageCarrier
-from yukon.domain.reactive_proxy_objects import ReactiveValue
+from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.domain.subscriptions.synchronized_message_carrier import SynchronizedMessageCarrier
 from yukon.domain.subscriptions.synchronized_message_group import SynchronizedMessageGroup
 from yukon.domain.subscriptions.synchronized_message_store import SynchronizedMessageStore

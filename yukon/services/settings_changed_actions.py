@@ -226,8 +226,16 @@ def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
     state.settings["Node allocation"]["chosen_value"].connect(_handle_mode_change)
 
 
+def set_dsdl_path_change_handler(state: "yukon.domain.god_state.GodState"):
+    def _handle_dsdl_path_change() -> None:
+        logger.info("DSDL paths list is now this: " + ", ".join(state.settings["DSDL search directories"].value))
+
+    state.settings["DSDL search directories"].connect(_handle_dsdl_path_change)
+
+
 def set_handlers_for_configuration_changes(state: "yukon.domain.god_state.GodState") -> None:
     set_dronecan_handlers(state)
     set_file_server_handler(state)
     set_allocator_handler(state)
     set_udp_server_handlers(state)
+    set_dsdl_path_change_handler(state)

@@ -13,10 +13,10 @@ from collections.abc import MutableSequence
 from ruamel import yaml
 from ruamel.yaml.scanner import ScannerError
 
-from yukon.domain.reactive_proxy_objects import ReactiveValue
+from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.services.settings_changed_actions import set_handlers_for_configuration_changes
-from yukon.services.utils import process_dsdl_path, add_path_to_sys_path
+from yukon.services.utils import add_path_to_cyphal_path, process_dsdl_path, add_path_to_sys_path
 from yukon.domain.god_state import GodState
 
 try:
@@ -147,6 +147,9 @@ def modify_settings_values_from_a_new_copy(
     # else:
     #     logger.debug("——————Modifying settings——————")
     #     is_start_of_recursion = True
+    if isinstance(current_settings, ReactiveValue):
+        the_reactive_value = current_settings
+        current_settings = current_settings.value
     if isinstance(current_settings, dict):
         for key, value in current_settings.items():
             if isinstance(value, (list, dict)):
@@ -157,6 +160,14 @@ def modify_settings_values_from_a_new_copy(
                 current_settings[key].value = new_settings[key]
                 logger.debug("Modified %r", current_settings[key])
     elif isinstance(current_settings, list):
+        # Now this is risky but I am going to attempt to check if the ReactiveValue has the same hash as any the dictionary or list that in the new_settings
+        if the_reactive_value.hash == hash(new_settings):
+            logger.debug("The hashes are the same, not modifying")
+            return
+        # Now that we know there are changes, let's first log that there are changes and then let's replicate the changes in the new_settings to the current_settings
+        # While replicating, we have to make sure that all ReactiveValues that listen in to value changes remain in the current_settings
+        # It may also be possible to replace the ReactiveValue and just reconnect the listeners
+        # ReactiveValue should be querieable for whether it or its children have any listeners, if they don't then they can be replaced easily
         elements_to_remove = []
         for index, value in enumerate(current_settings):
             # Remove all ReactiveValues in current_settings that don't have a value that is in new_settings
@@ -164,16 +175,17 @@ def modify_settings_values_from_a_new_copy(
                 logger.info("Planning to remove %r", value)
                 elements_to_remove.append(value)
             # Check if the value is in new_settings, if not remove it, check using equals_dict and equals_list
-            if isinstance(value, (list, dict)) and not any(
-                [
-                    equals_dict(value, new_settings_element)
-                    if isinstance(value, dict)
-                    else equals_list(value, new_settings_element)
-                    for new_settings_element in new_settings
-                ]
-            ):
-                logger.info("Planning to remove %r", value)
-                elements_to_remove.append(value)
+
+            # if isinstance(value, (list, dict)) and not any(
+            #     [
+            #         equals_dict(value, new_settings_element)
+            #         if isinstance(value, dict)
+            #         else equals_list(value, new_settings_element)
+            #         for new_settings_element in new_settings
+            #     ]
+            # ):
+            #     logger.info("Planning to remove %r", value)
+            #     elements_to_remove.append(value)
             if isinstance(value, (list, dict)):
                 logger.debug("Entering list %r for modification", current_settings)
                 if len(current_settings) == len(
@@ -191,6 +203,7 @@ def modify_settings_values_from_a_new_copy(
         current_settings_length_before_removal = len(current_settings)
         for value in elements_to_remove:
             current_settings.remove(value)
+        # Just making sure that the length of the list is now what it should be after the removal of this number of elements
         if len(elements_to_remove) > 0:
             assert len(current_settings) == current_settings_length_before_removal - len(elements_to_remove)
         # Insert all elements from new_settings that are int, float, bool, str and that don't exist in current_settings
@@ -232,7 +245,7 @@ def modify_settings_values_from_a_new_copy(
     #     logger.debug("——————Done modifying settings——————")
 
 
-def recursive_reactivize_settings(current_settings: typing.Union[dict, list]) -> None:
+def recursive_reactivize_settings(current_settings: ReactiveValue, parent: ReactiveValue) -> None:
     # See if the call stack contains recursive_reactivize_settings, current stack element is not counted
     # is_start_of_recursion = False
     # if "recursive_reactivize_settings" in [x[3] for x in inspect.stack()[1:]]:
@@ -240,20 +253,25 @@ def recursive_reactivize_settings(current_settings: typing.Union[dict, list]) ->
     # else:
     #     logger.debug("——————Reactivizing settings——————")
     #     is_start_of_recursion = True
-    if isinstance(current_settings, dict):
-        logger.debug("Entering dict %r for reactivization", current_settings)
-        for key, value in current_settings.items():
+    if parent:
+        current_settings.parent = parent
+    if isinstance(current_settings.value, dict):
+        logger.debug("Entering dict %r for reactivization", current_settings.value)
+        for key, value in current_settings.value.items():
             if isinstance(value, (list, dict)):
-                recursive_reactivize_settings(current_settings[key])
+                current_settings.value[key] = ReactiveValue(current_settings.value[key])
+                recursive_reactivize_settings(current_settings.value[key], current_settings)
             elif isinstance(value, (int, float, bool, str)):
                 logger.debug("Reactivizing %r", value)
                 current_settings[key] = ReactiveValue(value)
+                # current_settings[key].parent
                 logger.debug("Reactivized %r", current_settings[key])
-    elif isinstance(current_settings, list):
-        logger.debug("Entering list %r for reactivization", current_settings)
-        for index, value in enumerate(current_settings):
+    elif isinstance(current_settings.value, list):
+        logger.debug("Entering list %r for reactivization", current_settings.value)
+        for index, value in enumerate(current_settings.value):
             if isinstance(value, (list, dict)):
-                recursive_reactivize_settings(current_settings[index])
+                current_settings[index] = ReactiveValue(current_settings[index])
+                recursive_reactivize_settings(current_settings[index], current_settings)
             elif isinstance(value, (int, float, bool, str)):
                 logger.debug("Reactivizing %r", value)
                 current_settings[index] = ReactiveValue(value)
@@ -311,7 +329,7 @@ def loading_settings_into_yukon(state: GodState) -> None:
         set_handlers_for_configuration_changes(state)
 
 
-def add_all_dsdl_paths_to_pythonpath(state: GodState) -> None:
+def add_all_dsdl_source_paths_to_pythonpath(state: GodState) -> None:
     """This function adds all paths in state.settings.dsdl_paths to the python path."""
     dsdl_search_directories_setting = state.settings.get("DSDL search directories")
     if dsdl_search_directories_setting:
@@ -320,7 +338,4 @@ def add_all_dsdl_paths_to_pythonpath(state: GodState) -> None:
                 path = path_object["value"].value
             except TypeError:
                 path = path_object.value
-            add_path_to_sys_path(path)
-        # Save the current sys.path into os.environ["PYTHONPATH"]
-        separator = ";" if os.name == "nt" else ":"
-        os.environ["PYTHONPATH"] = separator.join(sys.path)
+            add_path_to_cyphal_path(path)

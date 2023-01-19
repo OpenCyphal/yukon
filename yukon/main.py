@@ -389,7 +389,6 @@ async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arg
                 parent = psutil.Process(id_of_parent_process)
                 for child in parent.children(recursive=True):  # or parent.children() for recursive=False
                     child.kill()
-
     else:
         logger.info("No other Yukon is not running.")
     asyncio.get_event_loop().slow_callback_duration = 35

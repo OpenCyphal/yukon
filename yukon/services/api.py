@@ -38,14 +38,11 @@ from yukon.domain.subscriptions.synchronized_subjects_specifier import Synchroni
 
 
 from yukon.domain.transport.detach_transport_request import DetachTransportRequest
-from yukon.domain.reactive_proxy_objects import ReactiveValue
+from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.services.dtype_loader import load_dtype
 from yukon.services.settings_handler import (
     save_settings,
-    load_settings,
     loading_settings_into_yukon,
-    add_all_dsdl_paths_to_pythonpath,
-    recursive_reactivize_settings,
     modify_settings_values_from_a_new_copy,
 )
 from yukon.domain.subscriptions.unsubscribe_request import UnsubscribeRequest
@@ -491,7 +488,6 @@ class Api:
         add_register_update_log_item(self.state, register_name, register_value, node_id, bool(success))
 
     def subscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
-        add_all_dsdl_paths_to_pythonpath(self.state)
         if subject_id:
             subject_id = int(subject_id)
         self.state.queues.god_queue.put_nowait(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
@@ -683,7 +679,6 @@ class Api:
 
     def get_known_datatypes_from_dsdl(self) -> Response:
         # iterate through the paths in PYTHONPATH
-        add_all_dsdl_paths_to_pythonpath(self.state)
         dsdl_folders = []
         # If the CYPHAL_PATH environment variable is set, add the value of that to the list of dsdl_folders
         # if "CYPHAL_PATH" in os.environ:
