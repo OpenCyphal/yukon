@@ -33,6 +33,15 @@ class ReactiveValue:
         self._connections.append(connection)
         return connection
 
+    def __getitem__(self, item: typing.Any):
+        if isinstance(self._value, dict):
+            return self._value[item]
+        elif isinstance(self._value, list):
+            # Only every even index is a real value, the odd indexes are their ids
+            return self._value[item * 2]
+        else:
+            return None
+
     def bubble_react(self, reactive_value: "ReactiveValue") -> None:
         if isinstance(self._value, list):
             # Fill in the child hashes
@@ -57,6 +66,21 @@ class ReactiveValue:
         if self.parent:
             self.parent.bubble(reactive_value)
 
+    def do_self_or_children_have_listeners(self) -> bool:
+        if self._connections:
+            return True
+        if isinstance(self._value, list):
+            for value in self._value:
+                if isinstance(value, ReactiveValue):
+                    if value.do_self_or_children_have_listeners():
+                        return True
+        elif isinstance(self._value, dict):
+            for _, value in self._value.items():
+                if isinstance(value, ReactiveValue):
+                    if value.do_self_or_children_have_listeners():
+                        return True
+        return False
+
     def __contains__(self, item: typing.Any):
         # If the hash of the item is in the child hashes, then it is contained in the reactive value
         if self._child_hashes is None:
@@ -73,7 +97,7 @@ class ReactiveValue:
                     hashes.append(value.hash)
                 else:
                     hashes.append(hash(value))
-            self._hash = hash(hashes)
+            self._hash = hash(tuple(hashes))
             return self._hash
         elif isinstance(self._value, (int, float, str, bool)):
             self._hash = hash(self._value)
@@ -85,7 +109,7 @@ class ReactiveValue:
                     hashes.append(value.hash)
                 else:
                     hashes.append(hash(value))
-            self._hash = hash(hashes)
+            self._hash = hash(tuple(hashes))
             return self._hash
         return self._hash
 
@@ -99,9 +123,9 @@ class ReactiveValue:
 
     @property
     def hash(self) -> typing.Any:
-        if not self.hash:
+        if not self._hash:
             self.__hash__()
-        return self.hash
+        return self._hash
 
     @property
     def value(self) -> typing.Any:

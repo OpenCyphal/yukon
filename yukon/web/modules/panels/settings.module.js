@@ -1,3 +1,15 @@
+var lut = []; for (var i = 0; i < 256; i++) { lut[i] = (i < 16 ? '0' : '') + (i).toString(16); }
+function guid() {
+    var d0 = Math.random() * 0xffffffff | 0;
+    var d1 = Math.random() * 0xffffffff | 0;
+    var d2 = Math.random() * 0xffffffff | 0;
+    var d3 = Math.random() * 0xffffffff | 0;
+    return lut[d0 & 0xff] + lut[d0 >> 8 & 0xff] + lut[d0 >> 16 & 0xff] + lut[d0 >> 24 & 0xff] + '-' +
+        lut[d1 & 0xff] + lut[d1 >> 8 & 0xff] + '-' + lut[d1 >> 16 & 0x0f | 0x40] + lut[d1 >> 24 & 0xff] + '-' +
+        lut[d2 & 0x3f | 0x80] + lut[d2 >> 8 & 0xff] + '-' + lut[d2 >> 16 & 0xff] + lut[d2 >> 24 & 0xff] +
+        lut[d3 & 0xff] + lut[d3 >> 8 & 0xff] + lut[d3 >> 16 & 0xff] + lut[d3 >> 24 & 0xff];
+}
+
 export async function setUpSettingsComponent(container, yukon_state) {
     const containerElement = container.getElement()[0];
     let settings = yukon_state.all_settings;
@@ -116,6 +128,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
     }
 
     function createSettingsDiv(settings, parentDiv, parentSettings) {
+        let id = settings["__id__"];
         if (settings["__type__"] === "radio") {
             createRadioDiv(settings, parentDiv);
             return;
@@ -124,8 +137,23 @@ export async function setUpSettingsComponent(container, yukon_state) {
             createPathDiv(settings, parentDiv, parentSettings, null, settings["__type__"]);
             return;
         }
+        // Only the even entries of arrays are real, odd entries are just the id
+        // Make a dictionary where keys are ids and values are the values
+        let realDictionary = {};
+        if (Array.isArray(settings)) {
+            for (const [key, value] of Object.entries(settings)) {
+                if (key % 2 === 0) {
+                    realDictionary[settings[key + 1]] = value;
+                }
+            }
+        }
+
         for (const [key, value] of Object.entries(settings)) {
             let realDictionaryKey = null;
+            let innerId = null;
+            if (Array.isArray(settings)) {
+
+            }
             if (!Array.isArray(settings)) {
                 realDictionaryKey = key;
             }
@@ -140,7 +168,8 @@ export async function setUpSettingsComponent(container, yukon_state) {
                 // Add a button for adding a key/value pair to the dictionary
                 continue;
             }
-            if (typeof value === 'object') {
+            const isInnerValueDictionary = typeof value === 'object';
+            if (isInnerValueDictionary) {
                 const cardDiv = document.createElement("div");
                 cardDiv.classList.add("card");
                 cardDiv.classList.add("mb-3");
@@ -317,7 +346,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             btnAddPath.classList.add("btn-primary");
             btnAddPath.innerText = "Add path";
             btnAddPath.addEventListener("click", function () {
-                settings.push({ "__type__": "dirpath", "value": "" });
+                settings.push({ "__id__": guid(), "__type__": "dirpath", "value": "" });
                 parentDiv.innerHTML = "";
                 createSettingsDiv(settings, parentDiv, parentSettings, null);
             });
@@ -326,6 +355,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             btnAddString.classList.add("btn-primary");
             btnAddString.innerText = "Add string";
             btnAddString.addEventListener("click", function () {
+                settings.push(guid())
                 settings.push("");
                 parentDiv.innerHTML = "";
                 createSettingsDiv(settings, parentDiv, parentSettings, null);

@@ -37,10 +37,8 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             if isinstance(o.value, ReactiveValue):
                 _logger.warning("ReactiveValue contains ReactiveValue")
                 raise TypeError("ReactiveValue contains ReactiveValue")
-            if isinstance(o.value, (float, int, str, bool)):
+            if isinstance(o.value, (float, int, str, bool, list, dict)):
                 return o.value
-            else:
-                raise TypeError("ReactiveValue contains unsupported type %r", type(o.value))
         if isinstance(o, UUID):
             return str(o)
         if isinstance(o, MessageCarrier):

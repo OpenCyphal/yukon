@@ -693,7 +693,7 @@ class Api:
 
     def set_settings(self, settings: dict) -> None:
         assert isinstance(settings, dict)
-        modify_settings_values_from_a_new_copy(self.state.settings, settings)
+        # modify_settings_values_from_a_new_copy(self.state.settings, settings)
 
     def get_settings(self) -> Response:
         return jsonify(self.state.settings)
