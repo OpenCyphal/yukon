@@ -160,6 +160,10 @@ export async function setUpSettingsComponent(container, yukon_state) {
             if (typeof key === "string" && key.startsWith("__id__")) {
                 continue;
             }
+            let realDictionaryKey = null;
+            if (!Array.isArray(settings)) {
+                realDictionaryKey = key;
+            }
             // If the value is an empty dictionary, say that it is empty
             if (Object.keys(value).length === 0 && value.constructor === Object) {
                 const div = document.createElement("div");
@@ -214,8 +218,9 @@ export async function setUpSettingsComponent(container, yukon_state) {
                 btnRemove.classList.add("float-right");
                 btnRemove.innerHTML = "Remove";
                 btnRemove.addEventListener("click", async function () {
-                    yukon_state.zubax_apij.
+                    yukon_state.zubax_apij.setting_was_removed(innerId);
                     delete settings[key];
+                    delete settings[innerId]
                     parentDiv.innerHTML = "";
                     createSettingsDiv(settings, parentDiv, parentSettings, realDictionaryKey);
                 });
@@ -287,6 +292,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                         input.style.width = "calc(100% - 70px)"
                         input.addEventListener("change", async function () {
                             settings[key] = parseFloat(input.value);
+                            yukon_state.zubax_apij.setting_was_changed(innerId, input.value)
                         });
                         input.title = "Number field"
                         formGroupDiv.appendChild(input);
@@ -299,6 +305,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                         input.value = value;
                         input.addEventListener("change", async function () {
                             settings[key] = input.value;
+                            yukon_state.zubax_apij.setting_was_changed(innerId, input.value)
                         });
                         input.title = "Text field";
                         formGroupDiv.appendChild(input);
@@ -315,6 +322,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                     btnRemove.innerHTML = "Remove";
                     btnRemove.addEventListener("click", async function () {
                         settings.splice(key, 1);
+                        yukon_state.zubax_apij.setting_was_removed(innerId)
                         parentDiv.innerHTML = "";
                         createSettingsDiv(settings, parentDiv, parentSettings, realDictionaryKey);
                     });
@@ -361,6 +369,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             btnAddString.addEventListener("click", function () {
                 settings.push(guid())
                 settings.push("");
+                yukon_state.zubax_apij.array_item_was_added(innerId,)
                 parentDiv.innerHTML = "";
                 createSettingsDiv(settings, parentDiv, parentSettings, null);
             });
@@ -372,10 +381,11 @@ export async function setUpSettingsComponent(container, yukon_state) {
         }
     }
 
+    // TODO: This saving should take place when settings have been modified, not on a timer
     setInterval(async function () {
-        await yukon_state.zubax_apij.set_settings(yukon_state.all_settings);
         await yukon_state.zubax_apij.save_settings();
     }, 1000);
+
     createSettingsDiv(settings, settingsDiv, null, null)
     setInterval(function () {
         settingsDebugDiv.innerHTML = JSON.stringify(settings, null, 2);

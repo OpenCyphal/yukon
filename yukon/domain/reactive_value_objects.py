@@ -42,6 +42,15 @@ class ReactiveValue:
         else:
             return None
 
+    def get(self, item: typing.Any, default: typing.Any = None):
+        if isinstance(self._value, dict):
+            return self._value.get(item, default)
+        elif isinstance(self._value, list):
+            # Only every even index is a real value, the odd indexes are their ids
+            return self._value[item * 2]
+        else:
+            return None
+
     def get_child_by_id(self, id: str) -> "ReactiveValue":
         if isinstance(self._value, dict):
             # Find the value that contains the id

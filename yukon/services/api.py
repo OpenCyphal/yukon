@@ -694,7 +694,7 @@ class Api:
     def setting_was_removed(self, id: str) -> Response:
         removed_descendant = self.state.settings.remove_descendant_with_id(id)
         if removed_descendant is not None:
-            return jsonify({"success": True, "parent_id": parent_id, "value": value})
+            return jsonify({"success": True, "id": id, "value": removed_descendant})
         else:
             return jsonify({"success": False})
 
@@ -705,11 +705,12 @@ class Api:
             return jsonify({"success": True, "id": id, "value": value})
         return jsonify({"success": False})
 
-    def array_item_was_added(self, parent_id: str, value: str) -> Response:
+    def array_item_was_added(self, parent_id: str, value: str, own_id: str) -> Response:
         def append_value_to_parent(_value: str, parent: ReactiveValue) -> None:
             value_object = json.loads(value)
             current_reactive_value_object = ReactiveValue(value_object)
             recursive_reactivize_settings(current_reactive_value_object, parent)
+            parent.append(own_id)
             parent.append(current_reactive_value_object)
 
         found_parent = self.state.settings.get_descendant_with_id(parent_id)
@@ -717,10 +718,6 @@ class Api:
             append_value_to_parent(value, found_parent)
             return jsonify({"success": True, "parent_id": parent_id, "value": value})
         return jsonify({"success": False})
-
-    def set_settings(self, settings: dict) -> None:
-        assert isinstance(settings, dict)
-        # modify_settings_values_from_a_new_copy(self.state.settings, settings)
 
     def get_settings(self) -> Response:
         return jsonify(self.state.settings)
