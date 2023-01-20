@@ -139,29 +139,26 @@ export async function setUpSettingsComponent(container, yukon_state) {
         }
         // Only the even entries of arrays are real, odd entries are just the id
         // Make a dictionary where keys are ids and values are the values
-        let realDictionary = {};
-        if (Array.isArray(settings)) {
-            for (const [key, value] of Object.entries(settings)) {
-                if (key % 2 === 0) {
-                    realDictionary[settings[key + 1]] = value;
-                }
-            }
-        }
+
 
         for (const [key, value] of Object.entries(settings)) {
-            let realDictionaryKey = null;
             let innerId = null;
             if (Array.isArray(settings)) {
                 if (key % 2 === 0) {
                     continue;
+                } else {
+                    innerId = settings[key - 1];
+                }
+            } else if (typeof settings === "object") {
+                if (key.startsWith("__id__")) {
+                    continue;
+                } else {
+                    innerId = settings["__id__" + key]
                 }
             }
             // If key is a string and starts with __id__, then it is an id, continue
             if (typeof key === "string" && key.startsWith("__id__")) {
                 continue;
-            }
-            if (!Array.isArray(settings)) {
-                realDictionaryKey = key;
             }
             // If the value is an empty dictionary, say that it is empty
             if (Object.keys(value).length === 0 && value.constructor === Object) {

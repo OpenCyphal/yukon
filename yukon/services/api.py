@@ -691,6 +691,24 @@ class Api:
         for dsdl_folder in dsdl_folders:
             return jsonify(get_datatypes_from_packages_directory_path(dsdl_folder))
 
+    def setting_was_changed(self, id: str, value: str) -> Response:
+        for (key, _value) in self.state.settings.items():
+            if key == id:
+                _value.value = value
+                return jsonify({"success": True, "id": id, "value": value})
+            _value.get_descendant_with_id(id).value = value
+            return jsonify({"success": True, "id": id, "value": value})
+        return jsonify({"success": False})
+
+    def array_item_was_added(self, parent_id: str, value: str) -> Response:
+        for (key, _value) in self.state.settings.items():
+            if key == parent_id:
+                _value.append(value)
+                return jsonify({"success": True, "parent_id": parent_id, "value": value})
+            _value.get_descendant_with_id(parent_id).append(value)
+            return jsonify({"success": True, "parent_id": parent_id, "value": value})
+        return jsonify({"success": False})
+
     def set_settings(self, settings: dict) -> None:
         assert isinstance(settings, dict)
         # modify_settings_values_from_a_new_copy(self.state.settings, settings)
