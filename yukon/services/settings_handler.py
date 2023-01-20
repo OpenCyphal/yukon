@@ -16,7 +16,7 @@ from ruamel import yaml
 from ruamel.yaml.scanner import ScannerError
 
 from yukon.domain.reactive_value_objects import ReactiveValue
-from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
+from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder, EnhancedJSONEncoderForSavingSettings
 from yukon.services.settings_changed_actions import set_handlers_for_configuration_changes
 from yukon.services.utils import add_path_to_cyphal_path, process_dsdl_path, add_path_to_sys_path
 from yukon.domain.god_state import GodState
@@ -34,7 +34,7 @@ class IncorrectConfigurationException(Exception):
 
 
 def save_settings(settings_: typing.Dict, save_location: Path, state: GodState) -> None:
-    serialized_settings = json.dumps(settings_, cls=EnhancedJSONEncoder)
+    serialized_settings = json.dumps(settings_, cls=EnhancedJSONEncoderForSavingSettings)
     # Compute a hash of json_traversed_settings
     # If the hash is the same as the previous hash, don't save the settings
     have_changed = False
@@ -262,6 +262,7 @@ def recursive_reactivize_settings(
     #     is_start_of_recursion = True
     if parent and isinstance(current_settings, ReactiveValue):
         current_settings.parent = parent
+    the_reactive_value = None
     if isinstance(current_settings, ReactiveValue):
         the_reactive_value = current_settings
         current_settings = current_settings.value
@@ -275,7 +276,8 @@ def recursive_reactivize_settings(
             elif isinstance(value, (int, float, bool, str)):
                 logger.debug("Reactivizing %r", value)
                 current_settings[key] = ReactiveValue(value)
-                current_settings[key].parent = the_reactive_value
+                if the_reactive_value:
+                    current_settings[key].parent = the_reactive_value
                 logger.debug("Reactivized %r", current_settings[key])
         # For each key in current_settings, add a new key that is __id__ + previous key and value it uuid4()
         for key in list(current_settings.keys()):
@@ -289,7 +291,8 @@ def recursive_reactivize_settings(
             elif isinstance(value, (int, float, bool, str)):
                 logger.debug("Reactivizing %r", value)
                 current_settings[index] = ReactiveValue(value)
-                current_settings[index].parent = the_reactive_value
+                if the_reactive_value:
+                    current_settings[index].parent = the_reactive_value
                 logger.debug("Reactivized %r", current_settings[index])
     # if is_start_of_recursion:
     #     logger.debug("——————Done reactivizing settings——————")
@@ -323,7 +326,7 @@ def loading_settings_into_yukon(state: GodState) -> None:
 
         To be precise, it puts settings from the hardcoded_settings into the loaded_settings.
 
-        When the value is set to __deleted__ then it also deletes an entry from the loaded_settings dictionary. See issue #282.
+        When the hardcoded value is set to __deleted__ then it also deletes an entry from the loaded_settings dictionary. See issue #282.
 
         This doesn't work with any reactive values because it is run once before any reaction to the change of values are needed.
         """

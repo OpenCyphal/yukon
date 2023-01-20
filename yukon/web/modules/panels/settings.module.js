@@ -152,7 +152,13 @@ export async function setUpSettingsComponent(container, yukon_state) {
             let realDictionaryKey = null;
             let innerId = null;
             if (Array.isArray(settings)) {
-
+                if (key % 2 === 0) {
+                    continue;
+                }
+            }
+            // If key is a string and starts with __id__, then it is an id, continue
+            if (typeof key === "string" && key.startsWith("__id__")) {
+                continue;
             }
             if (!Array.isArray(settings)) {
                 realDictionaryKey = key;

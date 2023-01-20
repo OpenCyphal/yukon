@@ -35,6 +35,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         _logger.debug("Serializing %r: %r", type(o), o)
         if isinstance(o, ReactiveValue):
             if isinstance(o.value, ReactiveValue):
+                # Reactive values can, however, contain lists and dicts that contain ReactiveValues
                 _logger.warning("ReactiveValue contains ReactiveValue")
                 raise TypeError("ReactiveValue contains ReactiveValue")
             if isinstance(o.value, (float, int, str, bool, list, dict)):
@@ -260,3 +261,21 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         if not isinstance(chunks, (list, tuple)):
             chunks = list(chunks)
         return "".join(chunks)
+
+
+class EnhancedJSONEncoderForSavingSettings(EnhancedJSONEncoder):
+    def default(self, o: typing.Any) -> typing.Any:
+        if isinstance(o, ReactiveValue):
+            if isinstance(o.value, ReactiveValue):
+                # Reactive values can, however, contain lists and dicts that contain ReactiveValues
+                _logger.warning("ReactiveValue contains ReactiveValue")
+                raise TypeError("ReactiveValue contains ReactiveValue")
+            if isinstance(o.value, (float, int, str, bool)):
+                return o.value
+            if isinstance(o.value, list):
+                # Return a list that contains only even indexed values
+                return [x for i, x in enumerate(o.value) if i % 2 == 0]
+            if isinstance(o.value, dict):
+                # Return a dict that doesn't contain keys that start with __id__
+                return {k: v for k, v in o.value.items() if not k.startswith("__id__")}
+        return super().default(o)
