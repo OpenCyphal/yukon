@@ -249,6 +249,7 @@ def loading_settings_into_yukon(state: GodState) -> None:
 
     hardcoded_settings = state.settings
     recursive_update_settings(hardcoded_settings, loaded_settings)
+    loaded_settings = ReactiveValue(loaded_settings)
     recursive_reactivize_settings(loaded_settings)
     state.settings = loaded_settings
     set_handlers_for_configuration_changes(state)

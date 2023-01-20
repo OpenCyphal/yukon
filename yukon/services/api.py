@@ -692,21 +692,16 @@ class Api:
             return jsonify(get_datatypes_from_packages_directory_path(dsdl_folder))
 
     def setting_was_removed(self, id: str) -> Response:
-        for (key, _value) in self.state.settings.items():
-            if _value == id:
-                real_key = key[6:]
-                real_parent_value = self.state.settings[real_parent_key]
-                append_value_to_parent(value, real_parent_value)
-                return jsonify({"success": True, "parent_id": parent_id, "value": value})
-            _value.get_descendant_with_id(id).parent
+        removed_descendant = self.state.settings.remove_descendant_with_id(id)
+        if removed_descendant is not None:
             return jsonify({"success": True, "parent_id": parent_id, "value": value})
+        else:
+            return jsonify({"success": False})
 
     def setting_was_changed(self, id: str, value: str) -> Response:
-        for (key, _value) in self.state.settings.items():
-            if key == id:
-                _value.value = value
-                return jsonify({"success": True, "id": id, "value": value})
-            _value.get_descendant_with_id(id).value = value
+        found_descendant = self.state.settings.get_descendant_with_id(id)
+        if found_descendant:
+            found_descendant.value = value
             return jsonify({"success": True, "id": id, "value": value})
         return jsonify({"success": False})
 
@@ -717,13 +712,9 @@ class Api:
             recursive_reactivize_settings(current_reactive_value_object, parent)
             parent.append(current_reactive_value_object)
 
-        for (key, _value) in self.state.settings.items():
-            if _value == parent_id:
-                real_parent_key = key[6:]
-                real_parent_value = self.state.settings[real_parent_key]
-                append_value_to_parent(value, real_parent_value)
-                return jsonify({"success": True, "parent_id": parent_id, "value": value})
-            append_value_to_parent(value, _value.get_descendant_with_id(parent_id))
+        found_parent = self.state.settings.get_descendant_with_id(parent_id)
+        if found_parent:
+            append_value_to_parent(value, found_parent)
             return jsonify({"success": True, "parent_id": parent_id, "value": value})
         return jsonify({"success": False})
 
