@@ -41,9 +41,9 @@ from yukon.domain.transport.detach_transport_request import DetachTransportReque
 from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.services.dtype_loader import load_dtype
 from yukon.services.settings_handler import (
+    recursive_reactivize_settings,
     save_settings,
     loading_settings_into_yukon,
-    modify_settings_values_from_a_new_copy,
 )
 from yukon.domain.subscriptions.unsubscribe_request import UnsubscribeRequest
 from yukon.services.utils import clamp, get_datatypes_from_packages_directory_path, tolerance_from_key_delta
@@ -691,6 +691,16 @@ class Api:
         for dsdl_folder in dsdl_folders:
             return jsonify(get_datatypes_from_packages_directory_path(dsdl_folder))
 
+    def setting_was_removed(self, id: str) -> Response:
+        for (key, _value) in self.state.settings.items():
+            if _value == id:
+                real_key = key[6:]
+                real_parent_value = self.state.settings[real_parent_key]
+                append_value_to_parent(value, real_parent_value)
+                return jsonify({"success": True, "parent_id": parent_id, "value": value})
+            _value.get_descendant_with_id(id).parent
+            return jsonify({"success": True, "parent_id": parent_id, "value": value})
+
     def setting_was_changed(self, id: str, value: str) -> Response:
         for (key, _value) in self.state.settings.items():
             if key == id:
@@ -701,11 +711,19 @@ class Api:
         return jsonify({"success": False})
 
     def array_item_was_added(self, parent_id: str, value: str) -> Response:
+        def append_value_to_parent(_value: str, parent: ReactiveValue) -> None:
+            value_object = json.loads(value)
+            current_reactive_value_object = ReactiveValue(value_object)
+            recursive_reactivize_settings(current_reactive_value_object, parent)
+            parent.append(current_reactive_value_object)
+
         for (key, _value) in self.state.settings.items():
-            if key == parent_id:
-                _value.append(value)
+            if _value == parent_id:
+                real_parent_key = key[6:]
+                real_parent_value = self.state.settings[real_parent_key]
+                append_value_to_parent(value, real_parent_value)
                 return jsonify({"success": True, "parent_id": parent_id, "value": value})
-            _value.get_descendant_with_id(parent_id).append(value)
+            append_value_to_parent(value, _value.get_descendant_with_id(parent_id))
             return jsonify({"success": True, "parent_id": parent_id, "value": value})
         return jsonify({"success": False})
 

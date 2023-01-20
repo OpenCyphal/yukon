@@ -214,6 +214,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                 btnRemove.classList.add("float-right");
                 btnRemove.innerHTML = "Remove";
                 btnRemove.addEventListener("click", async function () {
+                    yukon_state.zubax_apij.
                     delete settings[key];
                     parentDiv.innerHTML = "";
                     createSettingsDiv(settings, parentDiv, parentSettings, realDictionaryKey);

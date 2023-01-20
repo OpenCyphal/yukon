@@ -81,6 +81,35 @@ class ReactiveValue:
                         return search_result2
         return None
 
+    def remove_descendant_with_id(self, id: str) -> "ReactiveValue":
+        """Remove and return the descendant that matches this id.
+
+        get_descendant_with_id is used to find the descendant.
+
+        For lists the value is removed from the list.
+
+        For dicts the value is removed from the dict.
+        """
+        descendant = self.get_descendant_with_id(id)
+        if descendant:
+            # If the parent is a list, remove the value from the list
+            if isinstance(descendant.parent._value, "list"):
+                # Find the index of the guid value
+                guid_value = descendant.parent._value.index(id)
+                # Pop the id and the value
+                descendant.parent._value.pop(guid_value)
+                descendant.parent._value.pop(guid_value - 1)
+            # If the parent is a dict, remove the value from the dict
+            elif isinstance(descendant.parent._value, "dict"):
+                # Find the key that contains the id
+                for key, value in descendant.parent._value.items():
+                    if value == id:
+                        real_key = key[6:]
+                        del descendant.parent._value[key]
+                        del descendant.parent._value[real_key]
+                        break
+        return descendant
+
     def bubble_react(self, reactive_value: "ReactiveValue") -> None:
         if isinstance(self._value, list):
             # Fill in the child hashes
