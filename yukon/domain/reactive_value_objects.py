@@ -42,6 +42,45 @@ class ReactiveValue:
         else:
             return None
 
+    def get_child_by_id(self, id: str) -> "ReactiveValue":
+        if isinstance(self._value, dict):
+            # Find the value that contains the id
+            # Make sure that the key contains __id__
+            # The part of the key that comes after __id__ is the key of the value that needs to be returned
+            for key, value in self._value.items():
+                if key.startswith("__id__"):
+                    if value == id:
+                        return self._value[key[6:]]
+        elif isinstance(self._value, list):
+            # Look through the odd indexes to find the id
+            # The next index is the value that needs to be returned
+            for i in range(1, len(self._value), 2):
+                if self._value[i] == id:
+                    return self._value[i + 1]
+        return None
+
+    def get_descendant_with_id(self, id: str) -> "ReactiveValue":
+        # Use get_child_by_id and recurse through the children
+        if isinstance(self._value, dict):
+            for _, value in self._value.items():
+                if isinstance(value, ReactiveValue):
+                    search_result = value.get_child_by_id(id)
+                    if search_result:
+                        return search_result
+                    search_result2 = value.get_descendant_with_id(id)
+                    if search_result2:
+                        return search_result2
+        elif isinstance(self._value, list):
+            for value in self._value:
+                if isinstance(value, ReactiveValue):
+                    search_result = value.get_child_by_id(id)
+                    if search_result:
+                        return search_result
+                    search_result2 = value.get_descendant_with_id(id)
+                    if search_result2:
+                        return search_result2
+        return None
+
     def bubble_react(self, reactive_value: "ReactiveValue") -> None:
         if isinstance(self._value, list):
             # Fill in the child hashes
@@ -80,38 +119,6 @@ class ReactiveValue:
                     if value.do_self_or_children_have_listeners():
                         return True
         return False
-
-    def __contains__(self, item: typing.Any):
-        # If the hash of the item is in the child hashes, then it is contained in the reactive value
-        if self._child_hashes is None:
-            return False
-        return hash(item) in self._child_hashes
-
-    def __hash__(self) -> int:
-        if isinstance(self._value, dict):
-            # Take all the hashes of the values in the dictionary, add them together and hash them
-            # Make sure to sort by keys first
-            hashes = []
-            for _, value in sorted(self._value.items()):
-                if isinstance(value, ReactiveValue):
-                    hashes.append(value.hash)
-                else:
-                    hashes.append(hash(value))
-            self._hash = hash(tuple(hashes))
-            return self._hash
-        elif isinstance(self._value, (int, float, str, bool)):
-            self._hash = hash(self._value)
-            return self._hash
-        elif isinstance(self._value, list):
-            hashes = []
-            for value in self._value:
-                if isinstance(value, ReactiveValue):
-                    hashes.append(value.hash)
-                else:
-                    hashes.append(hash(value))
-            self._hash = hash(tuple(hashes))
-            return self._hash
-        return self._hash
 
     def __eq__(self, other: typing.Any) -> bool:
         if isinstance(other, ReactiveValue):
