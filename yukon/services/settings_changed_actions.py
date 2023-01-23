@@ -1,13 +1,19 @@
 import asyncio
 import json
 import logging
+import os
+import sys
 import threading
 import traceback
 import typing
 
 import uavcan
 
+from pycyphal.dsdl import install_import_hook
+from pycyphal.dsdl._import_hook import DsdlMetaFinder
+
 import yukon
+from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.domain.request_run_dronecan import RequestRunDronecan
 from yukon.domain.start_fileserver_request import StartFileServerRequest
 from yukon.domain.udp_connection import UDPConnection
@@ -235,8 +241,22 @@ def set_dsdl_path_change_handler(state: "yukon.domain.god_state.GodState") -> No
             "DSDL paths list is now this: "
             + json.dumps(state.settings["DSDL search directories"].value, cls=EnhancedJSONEncoder)
         )
+        # Make sure that all paths in state.settings["DSDL search directories"].value are in the CYPHAL_PATH environment variable
+        # If not, add them
+        dsdl_paths = state.settings["DSDL search directories"].value
+        # This is a dirty hack to remove import hooks, this should instead be done in Pycyphal, see issue #270
+        for meta_path in sys.meta_path.copy():
+            if isinstance(meta_path, DsdlMetaFinder):
+                sys.meta_path.remove(meta_path)
+        real_dsdl_paths = []
+        for dsdl_path in dsdl_paths:
+            if isinstance(dsdl_path, ReactiveValue):
+                real_dsdl_path_str = dsdl_path["value"].value
+                real_dsdl_paths.append(real_dsdl_path_str)
+        install_import_hook(real_dsdl_paths)
 
     state.settings["DSDL search directories"].connect(_handle_dsdl_path_change)
+    _handle_dsdl_path_change(None)
 
 
 def set_handlers_for_configuration_changes(state: "yukon.domain.god_state.GodState") -> None:
