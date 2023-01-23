@@ -51,7 +51,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             if (path) {
                 pathInput.value = path;
                 settings["value"] = path;
-                yukon_state.zubax_apij.setting_was_changed(settings["__id__"], path)
+                yukon_state.zubax_apij.setting_was_changed(settings["__id__"], settings)
             }
         });
         pathDiv.style.width = "100%";
@@ -64,20 +64,23 @@ export async function setUpSettingsComponent(container, yukon_state) {
         removeButton.classList.add("btn-danger");
         removeButton.classList.add("btn-sm");
         removeButton.innerText = "Remove";
-        removeButton.addEventListener("click", function () {
+        removeButton.addEventListener("click", async function () {
             // Delete the settings object
             // If parentSettings is an array
             if (Array.isArray(parentSettings)) {
                 // Find the index of the settings object
-                const index = parentSettings.indexOf(settings);
+                const index = parentSettings.indexOf(settings["__id__"]);
                 // Remove the settings object from the array
-                parentSettings.splice(index, 1);
+                parentSettings.splice(index, 2);
+                await yukon_state.zubax_apij.setting_was_removed(settings["__id__"])
                 parentDiv.parentElement.parentElement.removeChild(parentDiv.parentElement);
                 createSettingsDiv(parentSettings, parentDiv.parentElement.parentElement, null, null);
             } else if (typeof parentSettings === "object" && key_name) {
                 // If parentSettings is an object
                 // Delete the settings object
                 delete parentSettings[key_name];
+                delete parentSettings["__id__" + key_name]
+                await yukon_state.zubax_apij.setting_was_removed(settings["__id__"])
                 parentDiv.parentElement.innerHTML = "";
                 createSettingsDiv(parentSettings, parentDiv.parentElement, null, null);
             }
@@ -88,6 +91,11 @@ export async function setUpSettingsComponent(container, yukon_state) {
 
     function createRadioDiv(settings, parentdiv) {
         for (let i = 0; i < settings["values"].length; i++) {
+            if (i == 0) {
+                continue;
+            } else if (i % 2 == 1) {
+                continue;
+            }
             let value = settings["values"][i];
             let description = "";
             if (typeof settings["values"][i] === "object") {
@@ -156,7 +164,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             let innerId = null;
             if (Array.isArray(settings)) {
                 key = parseInt(key);
-                console.log("Key: " + key + " Type of key: " + typeof key + " Value: " + value);
+                // console.log("Key: " + key + " Type of key: " + typeof key + " Value: " + value);
                 if (key === 0) {
                     continue;
                 }

@@ -89,7 +89,7 @@ window.console = new Proxy(old_console, {
     }
     window.addEventListener("error", function (error, url, line) {
         console.log("There was an actual error!")
-        yukon_state.addLocalMessage("Error: " + error.message + " at " + error.filename + ":" + error.lineno, "error", 40);
+        yukon_state.addLocalMessage("Error: " + error.message + " at " + error.filename + ":" + error.lineno, 40);
         return true;
     });
     const addLocalMessage = yukon_state.addLocalMessage;

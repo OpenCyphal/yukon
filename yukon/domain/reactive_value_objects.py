@@ -114,9 +114,7 @@ class ReactiveValue:
                 guid_index = descendant.parent._value.index(id)
                 # Pop the id and the value
                 descendant.parent._value.pop(guid_index)
-                # Because of the pop and shift of elements,
-                # the element before the guid is now -1 index of original
-                descendant.parent._value.pop(guid_index - 1)
+                descendant.parent._value.pop(guid_index)
             # If the parent is a dict, remove the value from the dict
             elif isinstance(descendant.parent._value, dict):
                 # Find the key that contains the id

@@ -711,7 +711,10 @@ class Api:
     def array_item_was_added(self, parent_id: str, value: str, own_id: str) -> Response:
         def append_value_to_parent(_value: str, parent: ReactiveValue) -> None:
             if isinstance(_value, str):
-                value_object = json.loads(value)
+                try:
+                    value_object = json.loads(value)
+                except:
+                    value_object = _value
             else:
                 value_object = _value
             current_reactive_value_object = ReactiveValue(value_object)

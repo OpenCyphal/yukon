@@ -102,7 +102,7 @@ def add_message_to_messages_queue(
 
 def print_message(state: "yukon.domain.god_state.GodState", text: str, severity: int, name: str = __name__) -> None:
     print(text, end="")
-    if severity and severity >= 30:  # At least a warning
+    if severity and int(severity) >= 30:  # At least a warning
         eprint(text, end="")
 
 

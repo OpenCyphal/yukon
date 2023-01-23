@@ -266,9 +266,25 @@ def loading_settings_into_yukon(state: GodState) -> None:
                     loaded_settings[key] = value
                 else:
                     for index, list_value in enumerate(value):
-                        if list_value not in loaded_settings[key]:
+                        does_value_exist_in_list = False
+                        for loaded_list_value in loaded_settings[key]:
+                            if isinstance(loaded_list_value, (int, float, bool, str)):
+                                if list_value == loaded_list_value:
+                                    does_value_exist_in_list = True
+                                    break
+                            if isinstance(loaded_list_value, dict):
+                                if equals_dict(list_value, loaded_list_value):
+                                    does_value_exist_in_list = True
+                                    break
+                            elif isinstance(loaded_list_value, list):
+                                if equals_list(list_value, loaded_list_value):
+                                    does_value_exist_in_list = True
+                                    break
+                        if not does_value_exist_in_list:
                             logger.debug(f"Adding value {list_value} to loaded_settings")
                             loaded_settings[key].append(list_value)
+                        else:
+                            logger.info(f"Value {list_value} already exists in loaded_settings")
             else:
                 if key not in loaded_settings:
                     logger.debug(f"Adding key {key} to loaded_settings")
