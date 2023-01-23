@@ -160,7 +160,7 @@ class GodState:
         self.dronecan = DroneCanState()
         self.avatar = AvatarState()
         self.allocation = AllocationState()
-        self.settings = {
+        self.hardcoded_initial_settings = {
             "DSDL search directories": [{"__type__": "dirpath", "value": ReactiveValue(str(Path.home() / ".cyphal"))}],
             "UI": {"Registers": {"Column width (pixels)": 400, "Wrap cell text": False}},
             "Node allocation": {
@@ -198,6 +198,7 @@ class GodState:
                 "Port": ReactiveValue(9870),
             },
         }
+        self.settings: typing.Optional[ReactiveValue] = None
         self.callbacks: typing.Any = {
             "yukon_node_created": [],
             "yukon_node_attached": [],

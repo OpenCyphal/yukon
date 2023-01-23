@@ -238,6 +238,7 @@ class Api:
 
     def __init__(self, state: GodState):
         self.state = state
+        assert self.state is state
         self.last_avatars = []
 
     def get_socketcan_ports(self) -> Response:
@@ -703,24 +704,32 @@ class Api:
         if found_descendant:
             found_descendant.value = value
             return jsonify({"success": True, "id": id, "value": value})
+        else:
+            logger.error("Could not find descendant with id " + id)
         return jsonify({"success": False})
 
     def array_item_was_added(self, parent_id: str, value: str, own_id: str) -> Response:
         def append_value_to_parent(_value: str, parent: ReactiveValue) -> None:
-            value_object = json.loads(value)
+            if isinstance(_value, str):
+                value_object = json.loads(value)
+            else:
+                value_object = _value
             current_reactive_value_object = ReactiveValue(value_object)
             recursive_reactivize_settings(current_reactive_value_object, parent)
-            parent.append(own_id)
-            parent.append(current_reactive_value_object)
+            parent.value.append(own_id)
+            parent.value.append(current_reactive_value_object)
 
         found_parent = self.state.settings.get_descendant_with_id(parent_id)
         if found_parent:
             append_value_to_parent(value, found_parent)
             return jsonify({"success": True, "parent_id": parent_id, "value": value})
+        else:
+            logger.error(f"Could not find parent with id {parent_id}")
         return jsonify({"success": False})
 
     def get_settings(self) -> Response:
-        return jsonify(self.state.settings)
+        serialized_settings = jsonify(self.state.settings)
+        return serialized_settings
 
     def save_settings(self) -> None:
         save_settings(self.state.settings, Path.home() / "yukon_settings.yaml", self.state)

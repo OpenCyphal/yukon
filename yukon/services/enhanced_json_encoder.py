@@ -274,7 +274,7 @@ class EnhancedJSONEncoderForSavingSettings(EnhancedJSONEncoder):
                 return o.value
             if isinstance(o.value, list):
                 # Return a list that contains only even indexed values
-                return [x for i, x in enumerate(o.value) if i % 2 == 0]
+                return [x for i, x in enumerate(o.value) if i % 2 == 0 and i != 0]
             if isinstance(o.value, dict):
                 # Return a dict that doesn't contain keys that start with __id__
                 return {k: v for k, v in o.value.items() if not k.startswith("__id__")}

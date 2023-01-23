@@ -25,7 +25,6 @@ class ReactiveValue:
         self._value = value
         self._connections: list[Connection] = []
         self.parent = None
-        self._hash = None
         self._child_hashes = None
 
     def connect(self, callback: typing.Any) -> Connection:
@@ -58,36 +57,44 @@ class ReactiveValue:
             # The part of the key that comes after __id__ is the key of the value that needs to be returned
             for key, value in self._value.items():
                 if key.startswith("__id__"):
-                    if value == id:
+                    if str(value) == id:
                         return self._value[key[6:]]
         elif isinstance(self._value, list):
-            # Look through the odd indexes to find the id
+            # Look through the even indexes to find the id
             # The next index is the value that needs to be returned
             for i in range(1, len(self._value), 2):
-                if self._value[i] == id:
+                if str(self._value[i]) == id:
                     return self._value[i + 1]
         return None
 
     def get_descendant_with_id(self, id: str) -> "ReactiveValue":
         # Use get_child_by_id and recurse through the children
+        def find_in_value(value: typing.Any):
+            if isinstance(value, ReactiveValue):
+                if isinstance(value.value, list):
+                    if str(value.value[0]) == id:
+                        return value
+                elif isinstance(value.value, dict):
+                    if str(value.value["__id__"]) == id:
+                        return value
+                search_result = value.get_child_by_id(id)
+                if search_result:
+                    return search_result
+                search_result2 = value.get_descendant_with_id(id)
+                if search_result2:
+                    return search_result2
+            return None
+
         if isinstance(self._value, dict):
             for _, value in self._value.items():
-                if isinstance(value, ReactiveValue):
-                    search_result = value.get_child_by_id(id)
-                    if search_result:
-                        return search_result
-                    search_result2 = value.get_descendant_with_id(id)
-                    if search_result2:
-                        return search_result2
+                return_value = find_in_value(value)
+                if return_value:
+                    return return_value
         elif isinstance(self._value, list):
             for value in self._value:
-                if isinstance(value, ReactiveValue):
-                    search_result = value.get_child_by_id(id)
-                    if search_result:
-                        return search_result
-                    search_result2 = value.get_descendant_with_id(id)
-                    if search_result2:
-                        return search_result2
+                return_value = find_in_value(value)
+                if return_value:
+                    return return_value
         return None
 
     def remove_descendant_with_id(self, id: str) -> "ReactiveValue":
@@ -104,10 +111,12 @@ class ReactiveValue:
             # If the parent is a list, remove the value from the list
             if isinstance(descendant.parent._value, "list"):
                 # Find the index of the guid value
-                guid_value = descendant.parent._value.index(id)
+                guid_index = descendant.parent._value.index(id)
                 # Pop the id and the value
-                descendant.parent._value.pop(guid_value)
-                descendant.parent._value.pop(guid_value - 1)
+                descendant.parent._value.pop(guid_index)
+                # Because of the pop and shift of elements,
+                # the element before the guid is now -1 index of original
+                descendant.parent._value.pop(guid_index - 1)
             # If the parent is a dict, remove the value from the dict
             elif isinstance(descendant.parent._value, "dict"):
                 # Find the key that contains the id
@@ -120,28 +129,10 @@ class ReactiveValue:
         return descendant
 
     def bubble_react(self, reactive_value: "ReactiveValue") -> None:
-        if isinstance(self._value, list):
-            # Fill in the child hashes
-            self._child_hashes = []
-            for value in self._value:
-                if isinstance(value, ReactiveValue):
-                    self._child_hashes.append(value.hash)
-                else:
-                    self._child_hashes.append(hash(value))
-        elif isinstance(self._value, dict):
-            # Fill in the child hashes
-            self._child_hashes = []
-            for _, value in sorted(self._value.items()):
-                if isinstance(value, ReactiveValue):
-                    self._child_hashes.append(value.hash)
-                else:
-                    self._child_hashes.append(hash(value))
-        elif isinstance(self._value, (int, float, str, bool)):
-            self._child_hashes = None
         for connection in self._connections:
             connection.send(reactive_value.value)
         if self.parent:
-            self.parent.bubble(reactive_value)
+            self.parent.bubble_react(reactive_value)
 
     def do_self_or_children_have_listeners(self) -> bool:
         if self._connections:
@@ -165,12 +156,6 @@ class ReactiveValue:
 
     def disconnect(self, connection: Connection) -> None:
         self._connections.remove(connection)
-
-    @property
-    def hash(self) -> typing.Any:
-        if not self._hash:
-            self.__hash__()
-        return self._hash
 
     @property
     def value(self) -> typing.Any:

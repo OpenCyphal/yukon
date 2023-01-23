@@ -28,6 +28,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
         pathInput.type = "text";
         pathInput.addEventListener("input", function () {
             settings["value"] = pathInput.value;
+            yukon_state.zubax_apij.setting_was_changed(settings["__id__"], pathInput.value)
         });
         pathInput.style.width = "calc(100% - 148px)";
         const pathButton = document.createElement("button");
@@ -50,6 +51,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             if (path) {
                 pathInput.value = path;
                 settings["value"] = path;
+                yukon_state.zubax_apij.setting_was_changed(settings["__id__"], path)
             }
         });
         pathDiv.style.width = "100%";
@@ -127,8 +129,14 @@ export async function setUpSettingsComponent(container, yukon_state) {
         }
     }
 
-    function createSettingsDiv(settings, parentDiv, parentSettings) {
-        let id = settings["__id__"];
+    function createSettingsDiv(settings, parentDiv, parentSettings, outerRealDictionaryKey) {
+        let id = null;
+        if (Array.isArray(settings)) {
+            id = settings[0];
+            console.log("Array id: " + id);
+        } else if (typeof settings === "object") {
+            id = settings["__id__"];
+        }
         if (settings["__type__"] === "radio") {
             createRadioDiv(settings, parentDiv);
             return;
@@ -137,14 +145,22 @@ export async function setUpSettingsComponent(container, yukon_state) {
             createPathDiv(settings, parentDiv, parentSettings, null, settings["__type__"]);
             return;
         }
-        // Only the even entries of arrays are real, odd entries are just the id
+        // The first entry in an array is always the id
+        // The next entry is the id of the first element
+        // The next entry after that is the first element
+        // Only the odd entries of arrays are real, even entries are just the id
         // Make a dictionary where keys are ids and values are the values
 
 
-        for (const [key, value] of Object.entries(settings)) {
+        for (let [key, value] of Object.entries(settings)) {
             let innerId = null;
             if (Array.isArray(settings)) {
-                if (key % 2 === 0) {
+                key = parseInt(key);
+                console.log("Key: " + key + " Type of key: " + typeof key + " Value: " + value);
+                if (key === 0) {
+                    continue;
+                }
+                if (key % 2 === 1) {
                     continue;
                 } else {
                     innerId = settings[key - 1];
@@ -321,7 +337,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                     btnRemove.style.display = "inline";
                     btnRemove.innerHTML = "Remove";
                     btnRemove.addEventListener("click", async function () {
-                        settings.splice(key, 1);
+                        settings.splice(key - 1, 2);
                         yukon_state.zubax_apij.setting_was_removed(innerId)
                         parentDiv.innerHTML = "";
                         createSettingsDiv(settings, parentDiv, parentSettings, realDictionaryKey);
@@ -358,20 +374,26 @@ export async function setUpSettingsComponent(container, yukon_state) {
             btnAddPath.classList.add("btn-primary");
             btnAddPath.innerText = "Add path";
             btnAddPath.addEventListener("click", function () {
-                settings.push({ "__id__": guid(), "__type__": "dirpath", "value": "" });
+                const _guid = guid();
+                settings.push(_guid);
+                const new_value = { "__id__": _guid, "__type__": "dirpath", "value": "" };
+                settings.push(new_value);
                 parentDiv.innerHTML = "";
                 createSettingsDiv(settings, parentDiv, parentSettings, null);
+                yukon_state.zubax_apij.array_item_was_added(id, new_value, _guid)
             });
             const btnAddString = document.createElement("button");
             btnAddString.classList.add("btn");
             btnAddString.classList.add("btn-primary");
             btnAddString.innerText = "Add string";
             btnAddString.addEventListener("click", function () {
-                settings.push(guid())
-                settings.push("");
-                yukon_state.zubax_apij.array_item_was_added(innerId,)
+                const new_guid = guid();
+                settings.push(new_guid);
+                const new_value = "";
+                settings.push(new_value);
                 parentDiv.innerHTML = "";
                 createSettingsDiv(settings, parentDiv, parentSettings, null);
+                yukon_state.zubax_apij.array_item_was_added(id, new_value, new_guid)
             });
             // btnGroupDiv.appendChild(btnAddBool);
             // btnGroupDiv.appendChild(btnAddInt);

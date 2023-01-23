@@ -141,7 +141,9 @@ def equals_list(list1: list, list2: list) -> bool:
 
 
 def recursive_reactivize_settings(
-    current_settings: ReactiveValue, parent: typing.Optional[ReactiveValue] = None
+    current_settings_1: ReactiveValue,
+    parent: typing.Optional[ReactiveValue] = None,
+    forced_id: typing.Optional[str] = None,
 ) -> None:
     # See if the call stack contains recursive_reactivize_settings, current stack element is not counted
     # is_start_of_recursion = False
@@ -150,19 +152,21 @@ def recursive_reactivize_settings(
     # else:
     #     logger.debug("——————Reactivizing settings——————")
     #     is_start_of_recursion = True
-    if parent and isinstance(current_settings, ReactiveValue):
-        current_settings.parent = parent
+    if parent and isinstance(current_settings_1, ReactiveValue):
+        current_settings_1.parent = parent
     the_reactive_value = None
-    if isinstance(current_settings, ReactiveValue):
-        the_reactive_value = current_settings
-        current_settings = current_settings.value
+    if isinstance(current_settings_1, ReactiveValue):
+        the_reactive_value = current_settings_1
+        current_settings = current_settings_1.value
+    else:
+        current_settings = current_settings_1
     if isinstance(current_settings, dict):
-        current_settings["__id__"] = uuid4()
+        current_settings["__id__"] = forced_id or str(uuid4())
         logger.debug("Entering dict %r for reactivization", current_settings)
         for key, value in current_settings.items():
             if isinstance(value, (list, dict)):
                 current_settings[key] = ReactiveValue(current_settings[key])
-                recursive_reactivize_settings(current_settings[key], current_settings)
+                recursive_reactivize_settings(current_settings[key], the_reactive_value)
             elif isinstance(value, (int, float, bool, str)):
                 logger.debug("Reactivizing %r", value)
                 current_settings[key] = ReactiveValue(value)
@@ -171,19 +175,30 @@ def recursive_reactivize_settings(
                 logger.debug("Reactivized %r", current_settings[key])
         # For each key in current_settings, add a new key that is __id__ + previous key and value it uuid4()
         for key in list(current_settings.keys()):
-            current_settings["__id__" + key] = uuid4()
+            if key != "__id__":
+                current_settings["__id__" + key] = str(uuid4())
     elif isinstance(current_settings, list):
         logger.debug("Entering list %r for reactivization", current_settings)
+        # The list itself also has a unique identifier. This is used to find and identify the list.
+        list_id = forced_id or str(uuid4())
+        new_list = [list_id]
         for index, value in enumerate(current_settings):
+            element_id = str(uuid4())
+            new_list.append(element_id)
             if isinstance(value, (list, dict)):
-                current_settings[index] = ReactiveValue(current_settings[index])
-                recursive_reactivize_settings(current_settings[index], current_settings)
+                new_element = ReactiveValue(current_settings[index])
+                recursive_reactivize_settings(new_element, the_reactive_value, element_id)
+                new_list.append(new_element)
             elif isinstance(value, (int, float, bool, str)):
                 logger.debug("Reactivizing %r", value)
-                current_settings[index] = ReactiveValue(value)
+                new_element = ReactiveValue(value)
                 if the_reactive_value:
-                    current_settings[index].parent = the_reactive_value
-                logger.debug("Reactivized %r", current_settings[index])
+                    new_element.parent = the_reactive_value
+                new_list.append(new_element)
+                logger.debug("Reactivized %r", new_element)
+        if the_reactive_value:
+            the_reactive_value.value = new_list
+
     # if is_start_of_recursion:
     #     logger.debug("——————Done reactivizing settings——————")
 
@@ -205,6 +220,9 @@ def loading_settings_into_yukon(state: GodState) -> None:
             "Settings file was corrupted. Renamed to " + str(settings_file_path) + "_old" + str(datetime.now())
         )
     if not loaded_settings:
+        state.settings = ReactiveValue(state.hardcoded_initial_settings)
+        recursive_reactivize_settings(state.settings)
+        set_handlers_for_configuration_changes(state)
         return
     # Take extra keys and values from self.state.settings and add them to loaded_settings
     # Then make self.state.settings equal to loaded_settings
@@ -242,13 +260,21 @@ def loading_settings_into_yukon(state: GodState) -> None:
                         if value not in values_in_loaded_settings:
                             logger.debug(f"Adding value {value} to loaded_settings")
                             values_in_loaded_settings.append(value)
+            elif isinstance(value, list):
+                if key not in loaded_settings:
+                    logger.debug(f"Adding key {key} (has list value) to loaded_settings")
+                    loaded_settings[key] = value
+                else:
+                    for index, list_value in enumerate(value):
+                        if list_value not in loaded_settings[key]:
+                            logger.debug(f"Adding value {list_value} to loaded_settings")
+                            loaded_settings[key].append(list_value)
             else:
                 if key not in loaded_settings:
                     logger.debug(f"Adding key {key} to loaded_settings")
                     loaded_settings[key] = value
 
-    hardcoded_settings = state.settings
-    recursive_update_settings(hardcoded_settings, loaded_settings)
+    recursive_update_settings(state.hardcoded_initial_settings, loaded_settings)
     loaded_settings = ReactiveValue(loaded_settings)
     recursive_reactivize_settings(loaded_settings)
     state.settings = loaded_settings

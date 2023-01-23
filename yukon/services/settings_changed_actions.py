@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import threading
 import traceback
@@ -11,6 +12,7 @@ from yukon.domain.start_fileserver_request import StartFileServerRequest
 from yukon.domain.udp_connection import UDPConnection
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.FileServer import FileServer
+from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.services.mydronecan.file_server import SimpleFileServer
 from yukon.services.udp_server import UDPConnectionServer
 
@@ -227,8 +229,11 @@ def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
 
 
 def set_dsdl_path_change_handler(state: "yukon.domain.god_state.GodState"):
-    def _handle_dsdl_path_change() -> None:
-        logger.info("DSDL paths list is now this: " + ", ".join(state.settings["DSDL search directories"].value))
+    def _handle_dsdl_path_change(_) -> None:
+        logger.info(
+            "DSDL paths list is now this: "
+            + json.dumps(state.settings["DSDL search directories"].value, cls=EnhancedJSONEncoder)
+        )
 
     state.settings["DSDL search directories"].connect(_handle_dsdl_path_change)
 
