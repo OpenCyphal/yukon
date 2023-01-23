@@ -32,7 +32,7 @@ class ReactiveValue:
         self._connections.append(connection)
         return connection
 
-    def __getitem__(self, item: typing.Any):
+    def __getitem__(self, item: typing.Any) -> typing.Any:
         if isinstance(self._value, dict):
             return self._value[item]
         elif isinstance(self._value, list):
@@ -41,7 +41,7 @@ class ReactiveValue:
         else:
             return None
 
-    def get(self, item: typing.Any, default: typing.Any = None):
+    def get(self, item: typing.Any, default: typing.Any = None) -> typing.Any:
         if isinstance(self._value, dict):
             return self._value.get(item, default)
         elif isinstance(self._value, list):
@@ -50,7 +50,7 @@ class ReactiveValue:
         else:
             return None
 
-    def get_child_by_id(self, id: str) -> "ReactiveValue":
+    def get_child_by_id(self, id: str) -> typing.Any:
         if isinstance(self._value, dict):
             # Find the value that contains the id
             # Make sure that the key contains __id__
@@ -67,9 +67,9 @@ class ReactiveValue:
                     return self._value[i + 1]
         return None
 
-    def get_descendant_with_id(self, id: str) -> "ReactiveValue":
+    def get_descendant_with_id(self, id: str) -> typing.Any:
         # Use get_child_by_id and recurse through the children
-        def find_in_value(value: typing.Any):
+        def find_in_value(value: typing.Any) -> typing.Any:
             if isinstance(value, ReactiveValue):
                 if isinstance(value.value, list):
                     if str(value.value[0]) == id:
@@ -97,7 +97,7 @@ class ReactiveValue:
                     return return_value
         return None
 
-    def remove_descendant_with_id(self, id: str) -> "ReactiveValue":
+    def remove_descendant_with_id(self, id: str) -> typing.Any:
         """Remove and return the descendant that matches this id.
 
         get_descendant_with_id is used to find the descendant.
@@ -109,7 +109,7 @@ class ReactiveValue:
         descendant = self.get_descendant_with_id(id)
         if descendant:
             # If the parent is a list, remove the value from the list
-            if isinstance(descendant.parent._value, "list"):
+            if isinstance(descendant.parent._value, list):
                 # Find the index of the guid value
                 guid_index = descendant.parent._value.index(id)
                 # Pop the id and the value
@@ -118,7 +118,7 @@ class ReactiveValue:
                 # the element before the guid is now -1 index of original
                 descendant.parent._value.pop(guid_index - 1)
             # If the parent is a dict, remove the value from the dict
-            elif isinstance(descendant.parent._value, "dict"):
+            elif isinstance(descendant.parent._value, dict):
                 # Find the key that contains the id
                 for key, value in descendant.parent._value.items():
                     if value == id:
@@ -148,11 +148,6 @@ class ReactiveValue:
                     if value.do_self_or_children_have_listeners():
                         return True
         return False
-
-    def __eq__(self, other: typing.Any) -> bool:
-        if isinstance(other, ReactiveValue):
-            return self.hash == other.hash
-        return self._value == other
 
     def disconnect(self, connection: Connection) -> None:
         self._connections.remove(connection)

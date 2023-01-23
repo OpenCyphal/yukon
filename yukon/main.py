@@ -293,7 +293,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     state.messages_publisher.setLevel(logging.DEBUG)
     logger.root.handlers = [state.messages_publisher]
     logger.setLevel(logging.INFO)
-    logger.info("Version of Yukon: " + __version__)
+    logger.info("Version of Yukon: %s", __version__)
     make_landing_and_bridge(state, api)
 
     cyphal_worker_thread = threading.Thread(target=cyphal_worker, args=[state])
@@ -368,8 +368,6 @@ def auto_exit_task() -> int:
 
 
 async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arguments: bool = True) -> int:
-    from yukon.version import __version__
-
     print("Version of Yukon: " + __version__)
     if is_headless:
         print("Running in headless mode")

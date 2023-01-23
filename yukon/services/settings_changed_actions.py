@@ -3,6 +3,7 @@ import json
 import logging
 import threading
 import traceback
+import typing
 
 import uavcan
 
@@ -228,8 +229,8 @@ def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
     state.settings["Node allocation"]["chosen_value"].connect(_handle_mode_change)
 
 
-def set_dsdl_path_change_handler(state: "yukon.domain.god_state.GodState"):
-    def _handle_dsdl_path_change(_) -> None:
+def set_dsdl_path_change_handler(state: "yukon.domain.god_state.GodState") -> None:
+    def _handle_dsdl_path_change(_: typing.Any) -> None:
         logger.info(
             "DSDL paths list is now this: "
             + json.dumps(state.settings["DSDL search directories"].value, cls=EnhancedJSONEncoder)
