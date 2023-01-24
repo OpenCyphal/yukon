@@ -1,4 +1,23 @@
 import { getDatatypesForPort, getKnownDatatypes } from "../../utilities.module.js";
+function createCloseButton() {
+    const closeButton = document.createElement("button");
+    closeButton.classList.add("btn", "btn-sm", "btn-danger")
+    closeButton.innerText = "x";
+    closeButton.style.borderWidth = "0";
+    closeButton.style.position = "absolute";
+    closeButton.style.right = "1px";
+    closeButton.style.display = "flex";
+    // Align text to the baseline
+    closeButton.style.alignItems = "flex-end";
+    closeButton.style.justifyContent = "center";
+    closeButton.style.top = "1px";
+    closeButton.style.marginTop = "0";
+    // Make sure the button has a 1x1 aspect ratio and a width of 14px
+    closeButton.style.width = "20px";
+    closeButton.style.height = "20px";
+    closeButton.style.padding = "0px";
+    return closeButton;
+}
 async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchIntervalId, lastCurrentMessagesLength, yukon_state) {
     const current_messages = yukon_state.subscriptions[specifier];
     const full_specifiers = [specifier + ":" + yukon_state.subscriptions[specifier].length];
@@ -291,13 +310,7 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
 
     subscriptionElement.style.position = "relative";
 
-    const closeButton = document.createElement("button");
-    closeButton.classList.add("btn", "btn-sm", "btn-danger")
-    closeButton.innerText = "X";
-    closeButton.style.borderWidth = "1";
-    closeButton.style.position = "absolute";
-    closeButton.style.right = "0.5em";
-    closeButton.style.top = "0";
+    const closeButton = createCloseButton();
     closeButton.addEventListener("click", unsubscribeHandler);
     subscriptionElement.appendChild(closeButton);
     if (!yukon_state.subscriptions[specifier]) {
@@ -310,6 +323,7 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     subscriptionElementsToBePlaced.push([subscriptionElement, specifier]);
     subscriptionsDiv.appendChild(subscriptionElement);
 }
+
 async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv, settings, yukon_state) {
     const subscriptionElement = document.createElement("div");
     subscriptionElement.classList.add("subscription");
@@ -367,13 +381,7 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
             await yukon_state.zubax_apij.set_sync_store_capacity(specifiersString, inputCapacity.value)
     );
 
-    const closeButton = document.createElement("button");
-    closeButton.classList.add("btn", "btn-sm", "btn-danger")
-    closeButton.innerText = "X";
-    closeButton.style.borderWidth = "1";
-    closeButton.style.position = "absolute";
-    closeButton.style.right = "0.5em";
-    closeButton.style.top = "0";
+    const closeButton = createCloseButton();
     closeButton.addEventListener("click", unsubscribeHandler);
     subscriptionElement.appendChild(closeButton);
     if (!yukon_state.subscriptions[specifiersString]) {
@@ -588,13 +596,7 @@ async function subscribeCallback(isSynchronous, subscriptionElement, list_of_sub
 function createSubscriptionElementCloseButton(subscriptionElement, subscription, yukon_state) {
     // Add a close button to the subscriptionElement, align it 0.5 em from the right and 0.5 em from the top
     // When clicked it should remove the subscriptionElement from the DOM and remove the subscription specifier from the yukon_state.subscriptions_being_set_up
-    const closeButton = document.createElement("button");
-    closeButton.classList.add("btn", "btn-sm", "btn-danger")
-    closeButton.innerText = "X";
-    closeButton.style.borderWidth = "1";
-    closeButton.style.position = "absolute";
-    closeButton.style.right = "0.5em";
-    closeButton.style.top = "0";
+    const closeButton = createCloseButton();
     closeButton.addEventListener("click", () => {
         subscriptionElement.parentElement.removeChild(subscriptionElement);
         if (subscription) {

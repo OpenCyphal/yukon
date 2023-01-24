@@ -231,6 +231,7 @@ def run_server(state: GodState) -> None:
 
 def set_logging_levels() -> None:
     logging.getLogger("pycyphal").setLevel(logging.WARNING)
+    logging.getLogger("pycyphal.dsdl").setLevel(logging.DEBUG)
     logging.getLogger("can").setLevel(logging.WARNING)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
     logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
