@@ -3,11 +3,13 @@
 # Author: Pavel Kirienko <pavel@opencyphal.org>
 
 from __future__ import annotations
+import os
 import re
 import sys
 from typing import Any, Type
 import logging
 import importlib
+from pycyphal.dsdl._import_hook import DsdlMetaFinder
 
 _logger = logging.getLogger(__name__)
 
@@ -35,6 +37,11 @@ def load_dtype(name: str, allow_minor_version_mismatch: bool = False) -> Type[An
         If the minor version is specified and there is no matching data type,
         repeat the search with the minor version omitted.
     """
+    _logger.info("Current CYPHAL_PATH environment variable: %s", os.environ.get("CYPHAL_PATH", "<not set>"))
+    for entry in sys.meta_path:
+        if isinstance(entry, DsdlMetaFinder):
+            _logger.debug("Found DsdlMetaFinder in sys.meta_path")
+            break
     parsed = _parse(name)
     if not parsed:
         raise FormatError(f"Data type name format not understood: {name!r}")

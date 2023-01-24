@@ -58,7 +58,6 @@ export async function setUpMessagesComponent(container, yukon_state) {
             }
         }
     });
-    console.log("Messages javascript is ready");
 
     function showAllMessages() {
         var messagesList = document.querySelector("#messages-list");

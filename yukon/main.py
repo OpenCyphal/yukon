@@ -282,7 +282,7 @@ def handle_headless_yukon(state: GodState) -> None:
 
 def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     try:
-        from ctypes import windll
+        from ctypes import windll  # type: ignore
 
         windll.shcore.SetProcessDpiAwareness(1)
     except:

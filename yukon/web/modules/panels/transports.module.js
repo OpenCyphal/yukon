@@ -15,7 +15,6 @@ export function initTransports(container, yukon_state) {
         },
     });
     var currentSelectedTransportType = [transports.CAN, transports.CAN.MANUAL];
-    console.log("zubax_api_ready in add_transport.js");
     const cbShowTransportCombobox = containerElem.querySelector('#cbShowTransportCombobox');
 
     function resetAllHashes() {

@@ -141,7 +141,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
         let id = null;
         if (Array.isArray(settings)) {
             id = settings[0];
-            console.log("Array id: " + id);
+            // console.log("Array id: " + id);
         } else if (typeof settings === "object") {
             id = settings["__id__"];
         }
