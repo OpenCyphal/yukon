@@ -547,6 +547,14 @@ export function make_context_menus(yukon_state) {
         menuItems: [
             subscriber_menu_items[0],
             subscriber_menu_items[1],
+            {
+                content: "Add a publisher",
+                events: {
+                    click: async (e, elementOpenedOn) => {
+                        yukon_state.publishers_being_set_up.push({});
+                    }
+                }
+            },
         ],
     });
     monitor2_general_context_menu.init();
