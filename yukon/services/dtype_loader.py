@@ -39,7 +39,7 @@ def load_dtype(name: str, allow_minor_version_mismatch: bool = False) -> Type[An
     """
     _logger.info("Current CYPHAL_PATH environment variable: %s", os.environ.get("CYPHAL_PATH", "<not set>"))
     for entry in sys.meta_path:
-        if isinstance(entry, DsdlMetaFinder):
+        if isinstance(entry, DsdlMetaFinder) and type(entry).__name__ == "DsdlMetaFinder":
             _logger.debug("Found DsdlMetaFinder in sys.meta_path")
             break
     parsed = _parse(name)

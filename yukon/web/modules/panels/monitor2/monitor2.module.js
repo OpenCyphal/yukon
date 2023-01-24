@@ -266,6 +266,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         }
     }
     updateLastHashes("monitor2_hash", yukon_state);
+    yukon_state.monitor2LastScrollTop = monitor2Div.parentElement.scrollTop;
     // Clear the container
     monitor2Div.innerHTML = "";
     for (const color of settings.HighlightColors) {
@@ -399,6 +400,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         node.style.height = avatar_y_counter.value + "px";
     }
     addVerticalLines(monitor2Div, ports, y_counter, containerElement, settings, yukon_state);
+    monitor2Div.parentElement.scrollTop = yukon_state.monitor2LastScrollTop;
 }
 function isPortOkForAssignment(port_nr, yukon_state) {
     return port_nr < 65535 && port_nr > 0;

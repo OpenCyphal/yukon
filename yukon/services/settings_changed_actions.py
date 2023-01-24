@@ -245,9 +245,9 @@ def set_dsdl_path_change_handler(state: "yukon.domain.god_state.GodState") -> No
         # If not, add them
         dsdl_paths = state.settings["DSDL search directories"].value
         # This is a dirty hack to remove import hooks, this should instead be done in Pycyphal, see issue #270
-        for meta_path in sys.meta_path.copy():
-            if isinstance(meta_path, DsdlMetaFinder) and type(meta_path).__name__ == "DsdlMetaFinder":
-                sys.meta_path.remove(meta_path)
+        for entry in sys.meta_path.copy():
+            if isinstance(entry, DsdlMetaFinder) and type(entry).__name__ == "DsdlMetaFinder":
+                sys.meta_path.remove(entry)
         real_dsdl_paths = []
         for dsdl_path in dsdl_paths:
             if isinstance(dsdl_path, ReactiveValue):
