@@ -280,7 +280,10 @@ def loading_settings_into_yukon(state: GodState) -> None:
                                 if equals_list(list_value, loaded_list_value):
                                     does_value_exist_in_list = True
                                     break
-                        if not does_value_exist_in_list:
+                        is_a_primitive_type = isinstance(list_value, (int, float, bool, str))
+                        # Users usually configure primitive types (textual values), we don't want to override ones they delete from lists.
+                        # If they want the default settings back then they delete the entire key of the list.
+                        if not does_value_exist_in_list and not is_a_primitive_type:
                             logger.debug(f"Adding value {list_value} to loaded_settings")
                             loaded_settings[key].append(list_value)
                         else:
