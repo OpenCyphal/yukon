@@ -49,9 +49,7 @@ to connect to your computer.
 
     yakut compile -O.compiled demos/sirius_cyber_corp
 
-* On every OS: Build a dsdl namespace for anything (like zubax_dsdl), all on one line
-
-      yakut compile -O.compiled https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip zubax_dsdl/zubax zubax_dsdl/zubax_internet
+* On every OS: Put the DSDL files that you need inside one of the lookup directories, this can be configured in settings of Yukon but it's /home/username/.cyphal by default
 
 * On every OS: How to run the application from vscode, using the buttons
 

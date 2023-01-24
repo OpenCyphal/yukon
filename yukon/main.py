@@ -37,6 +37,8 @@ from yukon.sentry_setup import setup_sentry
 from yukon.server import server, make_landing_and_bridge
 from yukon.services.utils import quit_application
 
+# mypy: warn_unused_ignores=False
+
 mimetypes.add_type("text/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
 mimetypes.add_type("text/html", ".html")
@@ -231,6 +233,7 @@ def run_server(state: GodState) -> None:
 
 def set_logging_levels() -> None:
     logging.getLogger("pycyphal").setLevel(logging.WARNING)
+    logging.getLogger("pycyphal.dsdl").setLevel(logging.DEBUG)
     logging.getLogger("can").setLevel(logging.WARNING)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
     logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
@@ -281,13 +284,19 @@ def handle_headless_yukon(state: GodState) -> None:
 
 
 def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
+    try:
+        from ctypes import windll  # type: ignore
+
+        windll.shcore.SetProcessDpiAwareness(1)
+    except:
+        pass
     loading_settings_into_yukon(state)
     set_logging_levels()
     state.messages_publisher = MessagesPublisher(state)
     state.messages_publisher.setLevel(logging.DEBUG)
     logger.root.handlers = [state.messages_publisher]
     logger.setLevel(logging.INFO)
-    logger.info("Version of Yukon: " + __version__)
+    logger.info("Version of Yukon: %s", __version__)
     make_landing_and_bridge(state, api)
 
     cyphal_worker_thread = threading.Thread(target=cyphal_worker, args=[state])
@@ -362,8 +371,6 @@ def auto_exit_task() -> int:
 
 
 async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arguments: bool = True) -> int:
-    from yukon.version import __version__
-
     print("Version of Yukon: " + __version__)
     if is_headless:
         print("Running in headless mode")
@@ -383,7 +390,6 @@ async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arg
                 parent = psutil.Process(id_of_parent_process)
                 for child in parent.children(recursive=True):  # or parent.children() for recursive=False
                     child.kill()
-
     else:
         logger.info("No other Yukon is not running.")
     asyncio.get_event_loop().slow_callback_duration = 35

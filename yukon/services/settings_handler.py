@@ -4,8 +4,10 @@ import os
 import shutil
 import sys
 import threading
+import traceback
 import typing
 import logging
+from uuid import uuid4
 from datetime import datetime
 from pathlib import Path
 from collections.abc import MutableSequence
@@ -13,10 +15,10 @@ from collections.abc import MutableSequence
 from ruamel import yaml
 from ruamel.yaml.scanner import ScannerError
 
-from yukon.domain.reactive_proxy_objects import ReactiveValue
-from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
+from yukon.domain.reactive_value_objects import ReactiveValue
+from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder, EnhancedJSONEncoderForSavingSettings
 from yukon.services.settings_changed_actions import set_handlers_for_configuration_changes
-from yukon.services.utils import process_dsdl_path, add_path_to_sys_path
+from yukon.services.utils import add_path_to_cyphal_path, process_dsdl_path, add_path_to_sys_path
 from yukon.domain.god_state import GodState
 
 try:
@@ -32,7 +34,7 @@ class IncorrectConfigurationException(Exception):
 
 
 def save_settings(settings_: typing.Dict, save_location: Path, state: GodState) -> None:
-    serialized_settings = json.dumps(settings_, cls=EnhancedJSONEncoder)
+    serialized_settings = json.dumps(settings_, cls=EnhancedJSONEncoderForSavingSettings)
     # Compute a hash of json_traversed_settings
     # If the hash is the same as the previous hash, don't save the settings
     have_changed = False
@@ -69,7 +71,6 @@ def load_settings(load_location: Path) -> typing.Any:
         raise IncorrectConfigurationException()
 
 
-# logger.setLevel(logging.DEBUG)
 def equals_dict(object1: dict, object2: dict) -> bool:
     """Check that all keys in object1 are in object2 and that the values are equal"""
     if not isinstance(object1, dict) or not isinstance(object2, dict):
@@ -139,101 +140,11 @@ def equals_list(list1: list, list2: list) -> bool:
     return True
 
 
-def modify_settings_values_from_a_new_copy(
-    current_settings: typing.Union[dict, list], new_settings: typing.Union[dict, list]
+def recursive_reactivize_settings(
+    current_settings_1: ReactiveValue,
+    parent: typing.Optional[ReactiveValue] = None,
+    forced_id: typing.Optional[str] = None,
 ) -> None:
-    # is_start_of_recursion = False
-    # if "modify_settings_values_from_a_new_copy" in [x[3] for x in inspect.stack()[1:]]:
-    #     logger.debug("Recursive call")
-    # else:
-    #     logger.debug("——————Modifying settings——————")
-    #     is_start_of_recursion = True
-    if isinstance(current_settings, dict):
-        for key, value in current_settings.items():
-            if isinstance(value, (list, dict)):
-                logger.debug("Entering dict %r for modification", current_settings)
-                modify_settings_values_from_a_new_copy(current_settings[key], new_settings[key])
-            elif isinstance(value, ReactiveValue):
-                logger.debug("Modifying %r", value)
-                current_settings[key].value = new_settings[key]
-                logger.debug("Modified %r", current_settings[key])
-    elif isinstance(current_settings, list):
-        elements_to_remove = []
-        for index, value in enumerate(current_settings):
-            # Remove all ReactiveValues in current_settings that don't have a value that is in new_settings
-            if isinstance(value, ReactiveValue) and value.value not in new_settings:
-                logger.info("Planning to remove %r", value)
-                elements_to_remove.append(value)
-            # Check if the value is in new_settings, if not remove it, check using equals_dict and equals_list
-            if isinstance(value, (list, dict)) and not any(
-                [
-                    equals_dict(value, new_settings_element)
-                    if isinstance(value, dict)
-                    else equals_list(value, new_settings_element)
-                    for new_settings_element in new_settings
-                ]
-            ):
-                logger.info("Planning to remove %r", value)
-                elements_to_remove.append(value)
-            if isinstance(value, (list, dict)):
-                logger.debug("Entering list %r for modification", current_settings)
-                if len(current_settings) == len(
-                    new_settings
-                ):  # This will break when the user is fast with modifying the settings
-                    modify_settings_values_from_a_new_copy(current_settings[index], new_settings[index])
-            # elif isinstance(value, ReactiveValue):
-            # Remove all items in the list that are ReactiveValues
-            # logger.debug("Modifying %r", current_settings[index])
-            # current_settings[index].value = new_settings[index]
-            # elements_to_remove.append(value)
-            # logger.debug("Modified %r", current_settings[index])
-        if len(elements_to_remove) > 0:
-            logger.debug("Removing %r", elements_to_remove)
-        current_settings_length_before_removal = len(current_settings)
-        for value in elements_to_remove:
-            current_settings.remove(value)
-        if len(elements_to_remove) > 0:
-            assert len(current_settings) == current_settings_length_before_removal - len(elements_to_remove)
-        # Insert all elements from new_settings that are int, float, bool, str and that don't exist in current_settings
-        for value in new_settings:
-            value_exists = False
-            for current_value in current_settings:
-                if isinstance(current_value, ReactiveValue):
-                    if isinstance(value, (int, float, bool, str)):
-                        if current_value.value == value:
-                            value_exists = True
-                            break
-                    elif isinstance(value, ReactiveValue):
-                        if current_value.value == value.value:
-                            value_exists = True
-                            break
-                if isinstance(current_value, (int, float, bool, str)):
-                    if isinstance(value, (int, float, bool, str)):
-                        if current_value == value:
-                            value_exists = True
-                            break
-                    elif isinstance(value, ReactiveValue):
-                        if current_value == value.value:
-                            value_exists = True
-                            break
-                elif isinstance(current_value, dict) and equals_dict(current_value, value):
-                    value_exists = True
-                    break
-                elif isinstance(current_value, list) and equals_list(current_value, value):
-                    value_exists = True
-                    break
-            if not value_exists:
-                logger.debug("Inserting %r", value)
-                if isinstance(value, (int, float, bool, str)):
-                    current_settings.append(ReactiveValue(value))
-                else:
-                    current_settings.append(value)
-                    recursive_reactivize_settings(value)
-    # if is_start_of_recursion:
-    #     logger.debug("——————Done modifying settings——————")
-
-
-def recursive_reactivize_settings(current_settings: typing.Union[dict, list]) -> None:
     # See if the call stack contains recursive_reactivize_settings, current stack element is not counted
     # is_start_of_recursion = False
     # if "recursive_reactivize_settings" in [x[3] for x in inspect.stack()[1:]]:
@@ -241,30 +152,61 @@ def recursive_reactivize_settings(current_settings: typing.Union[dict, list]) ->
     # else:
     #     logger.debug("——————Reactivizing settings——————")
     #     is_start_of_recursion = True
+    if parent and isinstance(current_settings_1, ReactiveValue):
+        current_settings_1.parent = parent
+    the_reactive_value = None
+    if isinstance(current_settings_1, ReactiveValue):
+        the_reactive_value = current_settings_1
+        current_settings = current_settings_1.value
+    else:
+        current_settings = current_settings_1
     if isinstance(current_settings, dict):
+        current_settings["__id__"] = forced_id or str(uuid4())
         logger.debug("Entering dict %r for reactivization", current_settings)
         for key, value in current_settings.items():
             if isinstance(value, (list, dict)):
-                recursive_reactivize_settings(current_settings[key])
+                current_settings[key] = ReactiveValue(current_settings[key])
+                recursive_reactivize_settings(current_settings[key], the_reactive_value)
             elif isinstance(value, (int, float, bool, str)):
                 logger.debug("Reactivizing %r", value)
                 current_settings[key] = ReactiveValue(value)
+                if the_reactive_value:
+                    current_settings[key].parent = the_reactive_value
                 logger.debug("Reactivized %r", current_settings[key])
+        # For each key in current_settings, add a new key that is __id__ + previous key and value it uuid4()
+        for key in list(current_settings.keys()):
+            if key != "__id__":
+                current_settings["__id__" + key] = str(uuid4())
     elif isinstance(current_settings, list):
         logger.debug("Entering list %r for reactivization", current_settings)
+        # The list itself also has a unique identifier. This is used to find and identify the list.
+        list_id = forced_id or str(uuid4())
+        new_list = [list_id]
         for index, value in enumerate(current_settings):
+            element_id = str(uuid4())
+            new_list.append(element_id)
             if isinstance(value, (list, dict)):
-                recursive_reactivize_settings(current_settings[index])
+                new_element = ReactiveValue(current_settings[index])
+                recursive_reactivize_settings(new_element, the_reactive_value, element_id)
+                new_list.append(new_element)
             elif isinstance(value, (int, float, bool, str)):
                 logger.debug("Reactivizing %r", value)
-                current_settings[index] = ReactiveValue(value)
-                logger.debug("Reactivized %r", current_settings[index])
+                new_element = ReactiveValue(value)
+                if the_reactive_value:
+                    new_element.parent = the_reactive_value
+                new_list.append(new_element)
+                logger.debug("Reactivized %r", new_element)
+        if the_reactive_value:
+            the_reactive_value.value = new_list
+
     # if is_start_of_recursion:
     #     logger.debug("——————Done reactivizing settings——————")
 
 
 def loading_settings_into_yukon(state: GodState) -> None:
-    """This function makes sure that new settings that Yukon developers add end up in the settings file.
+    """This is an initialization process for settings.
+
+    This function makes sure that new settings that Yukon developers add end up in the settings file.
 
     Overridden values from configuration do of course take effect over the default values in code."""
     settings_file_path = Path.home() / "yukon_settings.yaml"
@@ -277,51 +219,82 @@ def loading_settings_into_yukon(state: GodState) -> None:
         logger.error(
             "Settings file was corrupted. Renamed to " + str(settings_file_path) + "_old" + str(datetime.now())
         )
-    if loaded_settings:
-        # Take extra keys and values from self.state.settings and add them to loaded_settings
-        # Then make self.state.settings equal to loaded_settings
-        # Now do the same but recursively for all dictionaries in self.state.settings
-
-        def recursive_update_settings(settings: dict, loaded_settings: dict) -> None:
-            for key, value in settings.items():
-                if isinstance(value, dict):
-                    if key not in loaded_settings:
-                        logger.debug(f"Adding key {key} (has dict value) to loaded_settings")
-                        loaded_settings[key] = value
-                    else:
-                        recursive_update_settings(value, loaded_settings[key])
-                elif settings.get("__type__") == "radio":
-                    # Iterate over loaded_settings.get("values") and check if it already has every value from settings.get("values")
-                    values_in_loaded_settings = loaded_settings.get("values")
-                    values_in_settings = settings.get("values")
-                    if isinstance(values_in_loaded_settings, MutableSequence) and isinstance(
-                        values_in_settings, MutableSequence
-                    ):
-                        for value in values_in_settings:
-                            if value not in values_in_loaded_settings:
-                                logger.debug(f"Adding value {value} to loaded_settings")
-                                values_in_loaded_settings.append(value)
-                else:
-                    if key not in loaded_settings:
-                        logger.debug(f"Adding key {key} to loaded_settings")
-                        loaded_settings[key] = value
-
-        recursive_update_settings(state.settings, loaded_settings)
-        recursive_reactivize_settings(loaded_settings)
-        state.settings = loaded_settings
+    if not loaded_settings:
+        state.settings = ReactiveValue(state.hardcoded_initial_settings)
+        recursive_reactivize_settings(state.settings)
         set_handlers_for_configuration_changes(state)
+        return
+    # Take extra keys and values from self.state.settings and add them to loaded_settings
+    # Then make self.state.settings equal to loaded_settings
+    # Now do the same but recursively for all dictionaries in self.state.settings
 
+    def recursive_update_settings(hardcoded_settings: dict, loaded_settings: dict) -> None:
+        """
+        This takes care of merging the settings that come from the settings file with the settings that come from the code.
 
-def add_all_dsdl_paths_to_pythonpath(state: GodState) -> None:
-    """This function adds all paths in state.settings.dsdl_paths to the python path."""
-    dsdl_search_directories_setting = state.settings.get("DSDL search directories")
-    if dsdl_search_directories_setting:
-        for path_object in dsdl_search_directories_setting:
-            try:
-                path = path_object["value"].value
-            except TypeError:
-                path = path_object.value
-            add_path_to_sys_path(path)
-        # Save the current sys.path into os.environ["PYTHONPATH"]
-        separator = ";" if os.name == "nt" else ":"
-        os.environ["PYTHONPATH"] = separator.join(sys.path)
+        To be precise, it puts settings from the hardcoded_settings into the loaded_settings.
+
+        When the hardcoded value is set to __deleted__ then it also deletes an entry from the loaded_settings dictionary. See issue #282.
+
+        This doesn't work with any reactive values because it is run once before any reaction to the change of values are needed.
+        """
+        for key, value in hardcoded_settings.items():
+            if value == "__deleted__":
+                if key in loaded_settings:
+                    del loaded_settings[key]
+                continue
+            if isinstance(value, dict):
+                if key not in loaded_settings:
+                    logger.debug(f"Adding key {key} (has dict value) to loaded_settings")
+                    loaded_settings[key] = value
+                else:
+                    recursive_update_settings(value, loaded_settings[key])
+            elif hardcoded_settings.get("__type__") == "radio":
+                # Iterate over loaded_settings.get("values") and check if it already has every value from settings.get("values")
+                values_in_loaded_settings = loaded_settings.get("values")
+                values_in_settings = hardcoded_settings.get("values")
+                if isinstance(values_in_loaded_settings, MutableSequence) and isinstance(
+                    values_in_settings, MutableSequence
+                ):
+                    for value in values_in_settings:
+                        if value not in values_in_loaded_settings:
+                            logger.debug(f"Adding value {value} to loaded_settings")
+                            values_in_loaded_settings.append(value)
+            elif isinstance(value, list):
+                if key not in loaded_settings:
+                    logger.debug(f"Adding key {key} (has list value) to loaded_settings")
+                    loaded_settings[key] = value
+                else:
+                    for index, list_value in enumerate(value):
+                        does_value_exist_in_list = False
+                        for loaded_list_value in loaded_settings[key]:
+                            if isinstance(loaded_list_value, (int, float, bool, str)):
+                                if list_value == loaded_list_value:
+                                    does_value_exist_in_list = True
+                                    break
+                            if isinstance(loaded_list_value, dict):
+                                if equals_dict(list_value, loaded_list_value):
+                                    does_value_exist_in_list = True
+                                    break
+                            elif isinstance(loaded_list_value, list):
+                                if equals_list(list_value, loaded_list_value):
+                                    does_value_exist_in_list = True
+                                    break
+                        is_a_primitive_type = isinstance(list_value, (int, float, bool, str))
+                        # Users usually configure primitive types (textual values), we don't want to override ones they delete from lists.
+                        # If they want the default settings back then they delete the entire key of the list.
+                        if not does_value_exist_in_list and not is_a_primitive_type:
+                            logger.debug(f"Adding value {list_value} to loaded_settings")
+                            loaded_settings[key].append(list_value)
+                        else:
+                            logger.info(f"Value {list_value} already exists in loaded_settings")
+            else:
+                if key not in loaded_settings:
+                    logger.debug(f"Adding key {key} to loaded_settings")
+                    loaded_settings[key] = value
+
+    recursive_update_settings(state.hardcoded_initial_settings, loaded_settings)
+    loaded_settings = ReactiveValue(loaded_settings)
+    recursive_reactivize_settings(loaded_settings)
+    state.settings = loaded_settings
+    set_handlers_for_configuration_changes(state)

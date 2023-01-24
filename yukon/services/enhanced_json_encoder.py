@@ -10,7 +10,7 @@ import pycyphal
 
 import uavcan
 from yukon.domain.subscriptions.message_carrier import MessageCarrier
-from yukon.domain.reactive_proxy_objects import ReactiveValue
+from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.domain.subscriptions.synchronized_message_carrier import SynchronizedMessageCarrier
 from yukon.domain.subscriptions.synchronized_message_group import SynchronizedMessageGroup
 from yukon.domain.subscriptions.synchronized_message_store import SynchronizedMessageStore
@@ -26,7 +26,6 @@ from yukon.services.mydronecan.node_monitor import NodeMonitor
 INFINITY = float("inf")
 
 _logger = logging.getLogger(__name__)
-# _logger.setLevel(logging.DEBUG)
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
@@ -36,12 +35,11 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         _logger.debug("Serializing %r: %r", type(o), o)
         if isinstance(o, ReactiveValue):
             if isinstance(o.value, ReactiveValue):
+                # Reactive values can, however, contain lists and dicts that contain ReactiveValues
                 _logger.warning("ReactiveValue contains ReactiveValue")
                 raise TypeError("ReactiveValue contains ReactiveValue")
-            if isinstance(o.value, (float, int, str, bool)):
+            if isinstance(o.value, (float, int, str, bool, list, dict)):
                 return o.value
-            else:
-                raise TypeError("ReactiveValue contains unsupported type %r", type(o.value))
         if isinstance(o, UUID):
             return str(o)
         if isinstance(o, MessageCarrier):
@@ -263,3 +261,21 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         if not isinstance(chunks, (list, tuple)):
             chunks = list(chunks)
         return "".join(chunks)
+
+
+class EnhancedJSONEncoderForSavingSettings(EnhancedJSONEncoder):
+    def default(self, o: typing.Any) -> typing.Any:
+        if isinstance(o, ReactiveValue):
+            if isinstance(o.value, ReactiveValue):
+                # Reactive values can, however, contain lists and dicts that contain ReactiveValues
+                _logger.warning("ReactiveValue contains ReactiveValue")
+                raise TypeError("ReactiveValue contains ReactiveValue")
+            if isinstance(o.value, (float, int, str, bool)):
+                return o.value
+            if isinstance(o.value, list):
+                # Return a list that contains only even indexed values
+                return [x for i, x in enumerate(o.value) if i % 2 == 0 and i != 0]
+            if isinstance(o.value, dict):
+                # Return a dict that doesn't contain keys that start with __id__
+                return {k: v for k, v in o.value.items() if not k.startswith("__id__")}
+        return super().default(o)

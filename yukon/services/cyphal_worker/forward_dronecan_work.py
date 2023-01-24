@@ -13,8 +13,6 @@ from yukon.domain.god_state import GodState
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
-
 
 def make_handler_for_transmit(state: GodState) -> typing.Callable[[pycyphal.transport.can.CANCapture], None]:
     def handle_transmit_message_to_dronecan(can_capture: pycyphal.transport.can.CANCapture) -> None:

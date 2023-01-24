@@ -4,7 +4,8 @@ import { waitForElm, getKnownDatatypes, doCommandFeedbackResult } from "../../ut
 import {
     getHoveredContainerElementAndContainerObject,
     secondsToColonSeparatedString,
-    getDatatypesForPort
+    getDatatypesForPort,
+    getEmptyPortsForNode
 } from "../../utilities.module.js";
 import { fillSettings } from "./fill_settings.module.js";
 import { highlightElement, highlightElements, removeHighlightsFromObjects, removeHighlightFromElement, unhighlightAll, setPortStateAsHiglighted, setPortStateAsUnhiglighted, isPortStateHighlighted } from "./highlights.module.js";
@@ -61,6 +62,7 @@ export async function setUpMonitor2Component(container, yukon_state) {
         if (settings.SubscriptionsOffset) {
             subscriptionsInnerArea.style.left = settings.SubscriptionsOffset + "px";
             subscriptionsInnerArea.style.top = settings.SubscriptionsVerticalOffset + "px";
+            yukon_state.publishers = await yukon_state.zubax_apij.get_publishers();
             yukon_state.subscription_specifiers = await yukon_state.zubax_apij.get_current_available_subscription_specifiers();
             yukon_state.sync_subscription_specifiers = await yukon_state.zubax_apij.get_current_available_synchronized_subscription_specifiers();
             if (typeof yukon_state.subscription_specifiers_previous_hash === "undefined" || yukon_state.subscription_specifiers_previous_hash !== yukon_state.subscription_specifiers.hash) {
@@ -264,6 +266,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         }
     }
     updateLastHashes("monitor2_hash", yukon_state);
+    yukon_state.monitor2LastScrollTop = monitor2Div.parentElement.scrollTop;
     // Clear the container
     monitor2Div.innerHTML = "";
     for (const color of settings.HighlightColors) {
@@ -315,6 +318,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     const avatars_copy = Array.from(yukon_state.current_avatars)
     avatars_copy.sort(compareAvatar);
     let nodesToBePositioned = [];
+    // This is the text status part
     for (const avatar of avatars_copy) {
         const node_id = avatar.node_id;
         const get_up_to_date_avatar = () => { return yukon_state.current_avatars.find(a => a.node_id === node_id); };
@@ -332,9 +336,13 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         nodesToBePositioned.push([node, avatar]);
     }
     for (const [node, avatar] of nodesToBePositioned) {
-        const total_ports = avatar.ports.cln.length + avatar.ports.srv.length + avatar.ports.pub.length + avatar.ports.sub.length;
+        let total_empty_ports = getEmptyPortsForNode(avatar.node_id, yukon_state).length;
+        if (total_empty_ports > 0) {
+            total_empty_ports += 1; // Adds one length of settings["DistancePerHorizontalConnection"] for that is used there as spacing
+        }
+        const total_ports = avatar.ports.cln.length + avatar.ports.srv.length + avatar.ports.pub.length + avatar.ports.sub.length + total_empty_ports;
         console.assert(total_ports >= 0);
-        const avatar_height = Math.max(total_ports * settings["DistancePerHorizontalConnection"] + settings["AvatarConnectionPadding"], node.scrollHeight);
+        let avatar_height = total_ports * settings["DistancePerHorizontalConnection"] + settings["AvatarConnectionPadding"];
         node.style.height = avatar_height + "px";
         node.style.top = y_counter.value + "px";
         let avatar_y_counter = { value: settings["AvatarConnectionPadding"] };
@@ -359,7 +367,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             let currentLinkDsdlDatatype = null;
             let fixed_datatype_short = null;
             let fixed_datatype_full = null;
-            if (datatypes_response["fixed_id_messages"][port.port] !== undefined) {
+            if (datatypes_response["fixed_id_messages"] && datatypes_response["fixed_id_messages"][port.port] !== undefined) {
                 fixed_datatype_short = datatypes_response["fixed_id_messages"][port.port]["short_name"];
                 fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["full_name"];
             }
@@ -377,13 +385,118 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 isLast = true;
             }
             addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state);
+
             avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
         }
+        if (avatar_y_counter.value < 300) {
+            avatar_y_counter.value = 300;
+        }
+        if (avatar_height < avatar_y_counter.value) {
+            avatar_height = avatar_y_counter.value;
+        }
+        addEmptyPorts(node, avatar_y_counter, avatar.node_id, yukon_state);
+        y_counter.value += avatar_y_counter.value + settings["DistanceBetweenNodes"];
 
-
-        y_counter.value += avatar_height + settings["DistanceBetweenNodes"];
+        node.style.height = avatar_y_counter.value + "px";
     }
     addVerticalLines(monitor2Div, ports, y_counter, containerElement, settings, yukon_state);
+    monitor2Div.parentElement.scrollTop = yukon_state.monitor2LastScrollTop;
+}
+function isPortOkForAssignment(port_nr, yukon_state) {
+    return port_nr < 65535 && port_nr > 0;
+}
+const portTypeToLongTypeExplanation = {
+    "pub": "This is a publisher",
+    "sub": "This is a subscriber",
+    "srv": "This is a service"
+}
+function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
+    const emptyPortInfo = getEmptyPortsForNode(node_id, yukon_state); //  [{"link_name": "power", link_type: "sub", "full_name": "uavcan.sub.power.id"}, {"link_name": "dynamics" ...}]
+    // Add a label saying "Unassigned ports" if there are any
+    if (emptyPortInfo.length > 0) {
+        const label = document.createElement("div");
+        label.style.position = "absolute";
+        label.style.top = avatar_y_counter.value - 15 + "px";
+        label.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 10 + "px");
+        label.style.width = "170px";
+        label.innerText = "Unassigned ports";
+        node.appendChild(label);
+    }
+
+    // Create a new div for each empty port, align it and style it just like port_number_label below in code
+    for (const portInfo of emptyPortInfo) {
+        const designatedHeight = settings["DistancePerHorizontalConnection"] - 4;
+        const emptyPortDiv = document.createElement("div");
+        emptyPortDiv.classList.add("port_number_label");
+        emptyPortDiv.classList.add("empty_port");
+        emptyPortDiv.style.height = designatedHeight + "px";
+        emptyPortDiv.style.position = "absolute";
+        emptyPortDiv.style.top = avatar_y_counter.value + "px";
+        emptyPortDiv.innerText = portInfo.link_name;
+        emptyPortDiv.title = portTypeToLongTypeExplanation[portInfo.link_type] || "";
+
+        if (portInfo.link_type === "srv") {
+            emptyPortDiv.style.backgroundColor = settings["ServicePortLabelBgColor"];
+            emptyPortDiv.style.setProperty("color", settings["ServicePortLabelColor"], "important");
+        } else if (portInfo.link_type === "pub") {
+            emptyPortDiv.style.backgroundColor = settings["PublisherPortLabelBgColor"];
+            emptyPortDiv.style.setProperty("color", settings["PublisherPortLabelColor"], "important");
+        } else if (portInfo.link_type === "sub") {
+            emptyPortDiv.style.backgroundColor = settings["SubscriberPortLabelBgColor"];
+            emptyPortDiv.style.setProperty("color", settings["SubscriberPortLabelColor"], "important");
+        }
+        // Align text right
+        emptyPortDiv.style.setProperty("text-align", "right");
+        // align it 50px to the left from the left side of the horizontal line
+        emptyPortDiv.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 10 + "px");
+        // When hovered over emptyPortDiv, replace the innerText with portInfo.datatype
+        emptyPortDiv.onmouseover = function () {
+            emptyPortDiv.innerText = portInfo.datatype;
+        };
+        // When mouse leaves emptyPortDiv, replace the innerText with portInfo.link_name
+        emptyPortDiv.onmouseout = function () {
+            emptyPortDiv.innerText = portInfo.link_name;
+        };
+        emptyPortDiv.style.width = settings.LinkInfoWidth + "px";
+        node.appendChild(emptyPortDiv);
+        // Also create a number input that has left set to settings["NodeXOffset"] + settings["NodeWidth"] - 190 + "px", the text input should have a placeholder of "Enter new port number"
+        // The width of the text input should be 170px
+        const number_input = document.createElement("input");
+        number_input.type = "number";
+        number_input.style.position = "absolute";
+        number_input.style.top = avatar_y_counter.value + "px";
+        number_input.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 155 + "px");
+        number_input.style.width = "130px";
+        number_input.style.height = designatedHeight + "px";;
+        number_input.placeholder = "New subject id";
+        number_input.title = "Enter a new subject id";
+        node.appendChild(number_input);
+
+        // Add a button that says "Assign" and has a click event listener that calls assignPortToLink
+        const assign_button = document.createElement("button");
+        assign_button.classList.add("btn", "btn-sm", "btn-primary");
+        assign_button.innerText = "Assign";
+        assign_button.style.position = "absolute";
+        assign_button.style.height = designatedHeight + "px";
+        assign_button.style.top = avatar_y_counter.value + "px";
+        assign_button.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 264 + "px");
+        assign_button.style.width = "100px";
+        assign_button.style.setProperty("padding-top", designatedHeight * 0.01 + "px", "important");
+        // Align text to the top
+        // assign_button.style.setProperty()
+        assign_button.addEventListener("click", async function () {
+            const response = await zubax_apij.update_register_value(portInfo.full_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
+            if (response.success) {
+                console.log("The port identifier for " + portInfo.full_name + " was successfully updated to " + number_input.value);
+                console.log("Usually it is the case that you should now restart the node before changes are applied.")
+            }
+        });
+
+        node.appendChild(assign_button);
+
+        avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
+    }
+    avatar_y_counter.value += 3;
 }
 function createElementForNode(avatar, text, container, fieldsObject, get_up_to_date_avatar, yukon_state) {
     // Verify that the avatar is not undefined
@@ -443,6 +556,8 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     const neededButtons = [{ "name": "Restart", "command": "65535", "title": "Restart device" }, { "name": "Save", "command": "65530", "title": "Save persistent states" }, { "name": "Estop", "command": "65531", "title": "Emergency stop" }];
     for (const button of neededButtons) {
         const btnButton = document.createElement("button");
+        btnButton.style.fontSize = "0.6rem";
+        btnButton.id = "btn" + avatar.node_id + "_" + button.name;
         btnButton.classList.add("btn_button");
         btnButton.classList.add("btn");
         btnButton.classList.add("btn-primary");
@@ -456,8 +571,13 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         inputGroup.appendChild(btnButton);
     }
     node.appendChild(inputGroup);
+    const inputGroup2 = document.createElement("div");
+    inputGroup2.classList.add("input-group");
+    inputGroup2.style.fontSize = "0.6rem";
+    inputGroup2.style.setProperty("backgroundColor", "transparent", "important");
     // Add a button for firmware update
     const btnFirmwareUpdate = document.createElement("button");
+    btnFirmwareUpdate.style.fontSize = "0.7rem";
     btnFirmwareUpdate.classList.add("btn_button", "btn", "btn-secondary", "btn-sm");
     btnFirmwareUpdate.innerHTML = "Choose firmware";
     btnFirmwareUpdate.addEventListener("click", async function () {
@@ -470,7 +590,66 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
             doCommandFeedbackResult(result, feedbackMessage);
         }
     });
-    node.appendChild(btnFirmwareUpdate);
+    inputGroup2.appendChild(btnFirmwareUpdate);
+    // Add a more button
+    const btnMore = document.createElement("button");
+    btnMore.classList.add("btn_button", "btn", "btn-secondary", "btn-sm");
+    btnMore.innerHTML = "More";
+
+    btnMore.addEventListener("click", async function () {
+        yukon_state.commandsComponent.parent.parent.setActiveContentItem(yukon_state.commandsComponent.parent);
+        let commandsElement = yukon_state.commandsComponent.getElement()[0];
+        // Tween feedbackMessage.style.backgroundColor from sepia to green
+        const starting_color_rgb = window.getComputedStyle(commandsElement, null).getPropertyValue('background-color').replace("rgb(", "").replace(")", "").split(",").map((x) => parseInt(x));
+        const increments_to_take = 144;
+        const ending_color_rgb = starting_color_rgb.slice();
+        let addedTint = -10;
+        if (starting_color_rgb[1] < 125) {
+            // This is dark mode
+            addedTint = 15; // Make it lighter
+        } else {
+            // This is light mode
+            addedTint = -15; // Make it darker
+        }
+        ending_color_rgb[1] = ending_color_rgb[1] + addedTint;
+        let increment_counter = 0;
+
+        let tweenFromCounter = increments_to_take;
+        let tweenFromFunction = () => {
+            let new_color = [];
+            for (let i = 0; i < 3; i++) {
+                new_color.push(starting_color_rgb[i] + (ending_color_rgb[i] - starting_color_rgb[i]) * tweenFromCounter / increments_to_take);
+            }
+            commandsElement.style.backgroundColor = `rgb(${new_color[0]}, ${new_color[1]}, ${new_color[2]})`;
+            if (tweenFromCounter > 0) {
+                tweenFromCounter--;
+                window.requestAnimationFrame(tweenFromFunction);
+            } else {
+                commandsElement.style.removeProperty("background-color");
+            }
+        };
+
+        let tweenToFunction = null;
+        tweenToFunction = () => {
+            let new_color = [];
+            for (let i = 0; i < 3; i++) {
+                new_color.push(starting_color_rgb[i] + (ending_color_rgb[i] - starting_color_rgb[i]) * increment_counter / increments_to_take);
+            }
+            commandsElement.style.backgroundColor = `rgb(${new_color[0]}, ${new_color[1]}, ${new_color[2]})`;
+            if (increment_counter < increments_to_take) {
+                increment_counter++;
+                window.requestAnimationFrame(tweenToFunction);
+            } else {
+                window.requestAnimationFrame(tweenFromFunction);
+            }
+        };
+
+
+        window.requestAnimationFrame(tweenToFunction);
+        // yukon_state.commandsComponent.parent.parent.toggleMaximise();
+    });
+    inputGroup2.appendChild(btnMore);
+    node.appendChild(inputGroup2);
     node.addEventListener("click", function () {
         let queue = []
         for (const element of yukon_state.myLayout.root.contentItems) {
@@ -568,7 +747,14 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
         link_name_label.style.top = temp_value;
     }
     // Create a label for the port number on the left side of the horizontal line
-    const port_number_label = document.createElement("label");
+    let portLabelElement = "label"
+    if (typeof currentLinkObject === "object") {
+        portLabelElement = "input"
+    }
+    const port_number_label = document.createElement(portLabelElement);
+    if (typeof currentLinkObject === "object") {
+        port_number_label.setAttribute("type", "number");
+    }
     port_number_label.classList.add("port_number_label");
     port_number_label.style.top = y_counter.value + avatar_y_counter.value - settings.HorizontalPortLabelOffsetY + "px";
     // align it 50px to the left from the left side of the horizontal line
@@ -582,7 +768,35 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
         port_number_label.style.height = "calc(fit-content + 2px)";
     }
     port_number_label.style.position = "absolute";
-    port_number_label.innerHTML = matchingPort.port;
+    if (typeof currentLinkObject === "object") {
+        port_number_label.value = currentLinkObject.port;
+        // If 2 seconds is gone past the last change, then save the value
+        let timeout = null;
+        port_number_label.addEventListener("change", (event) => {
+            if (timeout) {
+                clearTimeout(timeout);
+            }
+            timeout = setTimeout(async () => {
+                const response = await zubax_apij.update_register_value(currentLinkObject.full_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${port_number_label.value}]}}`), currentLinkObject.node_id);
+                let restartButton = document.querySelector("#btn" + currentLinkObject.node_id + "_Restart");
+                if (restartButton) {
+                    // Previous background color
+                    const previousBackgroundColor = restartButton.style.backgroundColor;
+                    // Flash it 3 times
+                    for (let i = 0; i < 3; i++) {
+                        restartButton = document.querySelector("#btn" + currentLinkObject.node_id + "_Restart");
+                        restartButton.title = "You should restart this node to apply the changes to port identifiers."
+                        restartButton.style.setProperty("background-color", "red", "important");
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        restartButton.style.setProperty("background-color", previousBackgroundColor, "important");
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+            }, 2000);
+        });
+    } else {
+        port_number_label.innerHTML = matchingPort.port;
+    }
     port_number_label.style.zIndex = "4";
     if (matchingPort.type === "srv") {
         port_number_label.style.backgroundColor = settings["ServicePortLabelBgColor"];

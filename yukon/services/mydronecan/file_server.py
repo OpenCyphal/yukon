@@ -19,7 +19,6 @@ import errno
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 # noinspection PyBroadException
 class SimpleFileServer(object):
@@ -85,7 +84,7 @@ class SimpleFileServer(object):
             # Seek to the start and read the whole file to get the length
             self.open_file_handle.seek(0)
             self.file_length = len(self.open_file_handle.read())
-        logger.debug("File read percentage: {0:.2f}%".format((e.request.offset / self.file_length) * 100))
+        logger.info("File read percentage: {0:.2f}%".format((e.request.offset / self.file_length) * 100))
         try:
             if self.open_file_handle is None:
                 self.open_file_handle = open(self.file_path, "rb")

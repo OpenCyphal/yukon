@@ -504,23 +504,6 @@ export function make_context_menus(yukon_state) {
         mode: "dark",
         menuItems: [
             {
-                content: "Show messages history on this subject",
-                events: {
-                    adjust: async (contextMenuContext, element, button) => {
-                        const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
-                        if (portType !== "pub") {
-                            element.parentElement.removeChild(element);
-                        }
-                        button.innerHTML = "Show message history for " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
-                    },
-                    click: async (e, elementOpenedOn) => {
-                        const portType = elementOpenedOn.getAttribute("data-port-type");
-                        const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
-
-                    }
-                }
-            },
-            {
                 content: "Add subscriber",
                 events: {
                     adjust: async (contextMenuContext, element, button) => {
@@ -549,7 +532,7 @@ export function make_context_menus(yukon_state) {
                     click: async (e, elementOpenedOn) => {
                         const portType = elementOpenedOn.getAttribute("data-port-type");
                         const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
-                        console.log("Adding subscriber to port " + portType + portNr);
+
                     }
                 }
             },
@@ -559,11 +542,19 @@ export function make_context_menus(yukon_state) {
     });
     monitor2_vertical_line_context_menu.init();
     const monitor2_general_context_menu = new ContextMenu({
-        target: ".lm_content:has(> #monitor2)",
+        target: ".lm_content:has(>#monitor2)",
         mode: "dark",
         menuItems: [
             subscriber_menu_items[0],
             subscriber_menu_items[1],
+            {
+                content: "Add a publisher",
+                events: {
+                    click: async (e, elementOpenedOn) => {
+                        yukon_state.publishers_being_set_up.push({});
+                    }
+                }
+            },
         ],
     });
     monitor2_general_context_menu.init();

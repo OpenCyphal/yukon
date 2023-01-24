@@ -23,9 +23,13 @@ export function fillSettings(settings, yukon_state) {
     settings.LinkLabelHighlightColor = "black";
     settings.LinkLabelHighlightTextColor = "white";
     settings.ServicePortLabelBgColor = "lightblue";
+    settings.ServicePortLabelColor = "black";
+    settings.PublisherPortLabelBgColor = "lightgreen";
+    settings.PublisherPortLabelColor = "black";
+    settings.SubscriberPortLabelBgColor = "pink";
+    settings.SubscriberPortLabelColor = "black";
     settings.ServiceColor = "lightblue";
     settings.ServiceForegroundColor = "black";
-    settings.ServicePortLabelColor = "black";
     // Add random shades of orange to the list
     settings.HighlightColorsRaw = yukon_state.all_settings["Monitor view"]["Highlight colors"];
     settings.HighlightColors = [];
@@ -41,8 +45,18 @@ export function fillSettings(settings, yukon_state) {
         }
     }
     // Use a for loop to generate the structure
+    let counter = 0;
     for (const color of settings.HighlightColorsRaw) {
+        if (counter == 0) {
+            counter += 1;
+            continue;
+        }
+        if (counter % 2 == 1) {
+            counter += 1;
+            continue;
+        }
         settings.HighlightColors.push({ color: color, taken: false });
+        counter += 1;
     }
     settings.DefaultMessageCapacity = yukon_state.all_settings["Monitor view"]["Default saved subscription messages capacity"];
 }

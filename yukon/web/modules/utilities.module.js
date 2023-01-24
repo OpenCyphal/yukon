@@ -97,7 +97,7 @@ export async function getDatatypesForPort(portNr, yukon_state) {
     let fixed_datatype_short = null;
     let fixed_datatype_full = null;
     const datatypes_response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
-    if (datatypes_response["fixed_id_messages"][portNr] !== undefined) {
+    if (datatypes_response && datatypes_response["fixed_id_messages"] && datatypes_response["fixed_id_messages"][portNr] !== undefined) {
         fixed_datatype_short = datatypes_response["fixed_id_messages"][portNr]["short_name"];
         fixed_datatype_full = datatypes_response["fixed_id_messages"][portNr]["full_name"];
         chosenDatatypes[fixed_datatype_full] = 1;
@@ -116,19 +116,25 @@ export async function getDatatypesForPort(portNr, yukon_state) {
     return sortedDatatypes;
 }
 
-export async function getEmptyPortsForNode(node_id, yukon_state) {
+export function getEmptyPortsForNode(node_id, yukon_state) {
     // Look for all registers that are named like "port_1.id" and "port_1.type"
     // If the id is empty, then the port is empty
     const emptyPorts = [];
-    const node = yukon_state.current_avatars.find(a => a.id === node_id);
+    const node = yukon_state.current_avatars.find(a => a.node_id === node_id);
     if (node) {
         for (const register_name in node.registers_values) {
             if (register_name.endsWith(".id")) {
                 const register_name_split = register_name.split(".");
                 const link_name = register_name_split[register_name_split.length - 2];
+                const link_type = register_name_split[register_name_split.length - 3];
+                const probable_datatype_register_name = register_name.replace(".id", ".type");
+                let detected_datatype = null;
+                if (node.registers_values[probable_datatype_register_name]) {
+                    detected_datatype = node.registers_values[probable_datatype_register_name];
+                }
                 const subject_id = node.registers_values[register_name];
-                if (subject_id === "") {
-                    emptyPorts.push(link_name);
+                if (subject_id.toString() === "65535") {
+                    emptyPorts.push({ "link_name": link_name, "link_type": link_type, "full_name": register_name, "datatype": detected_datatype });
                 }
             }
         }

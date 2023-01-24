@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 import threading
 import typing
 from dataclasses import dataclass, field
@@ -11,8 +12,9 @@ import dronecan
 import pycyphal
 from dronecan.node import Node
 import dronecan.app
+from yukon.domain.publisher import YukonPublisher
 import yukon.services.FileServer
-from yukon.domain.reactive_proxy_objects import ReactiveValue
+from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.domain.dronecan_traffic_queues import DroneCanTrafficQueues
 from yukon.domain.subscriptions.synchronized_subjects_specifier import SynchronizedSubjectsSpecifier
 from yukon.domain.subscriptions.synchronized_message_store import SynchronizedMessageStore
@@ -119,6 +121,7 @@ class CyphalState:
     synchronizers_by_specifier: Dict[
         SynchronizedSubjectsSpecifier, "pycyphal.presentation.subscription_synchronizer.Synchronizer"
     ] = field(default_factory=dict)
+    publishers_by_id: Dict[UUID, YukonPublisher] = field(default_factory=dict)
     message_stores_by_specifier: typing.Dict[SubjectSpecifier, MessagesStore] = field(default_factory=dict)
     centralized_allocator: Optional[CentralizedAllocator] = field(default_factory=none_factory)
     file_server: Optional[yukon.services.FileServer.FileServer] = field(default_factory=none_factory)
@@ -159,8 +162,8 @@ class GodState:
         self.dronecan = DroneCanState()
         self.avatar = AvatarState()
         self.allocation = AllocationState()
-        self.settings = {
-            "DSDL search directories": [{"__type__": "dirpath", "value": ReactiveValue("")}],
+        self.hardcoded_initial_settings = {
+            "DSDL search directories": [{"__type__": "dirpath", "value": ReactiveValue(str(Path.home() / ".cyphal"))}],
             "UI": {"Registers": {"Column width (pixels)": 400, "Wrap cell text": False}},
             "Node allocation": {
                 "__type__": "radio",
@@ -180,14 +183,14 @@ class GodState:
                 "File path": {"__type__": "dirpath", "value": ReactiveValue("")},
             },
             "Monitor view": {
-                "Show link name on another line": ReactiveValue(False),
+                "Show link name on another line": ReactiveValue(True),
                 "Link info width": ReactiveValue(300),
                 "Vertical line width": ReactiveValue(2),
                 "Horizontal line width": ReactiveValue(2),
                 "Distance between vertical lines": ReactiveValue(60),
                 "Node width": ReactiveValue(250),
                 "Distance per horizontal connection": ReactiveValue(20),
-                "Show name above datatype": ReactiveValue(False),
+                "Show name above datatype": ReactiveValue(True),
                 "Highlight colors": ["red", "green", "yellow", "orange", "purple", "brown", "aquamarine", "deeppink"],
                 "Default saved subscription messages capacity": ReactiveValue(50),
             },
@@ -197,6 +200,7 @@ class GodState:
                 "Port": ReactiveValue(9870),
             },
         }
+        self.settings: typing.Optional[ReactiveValue] = None
         self.callbacks: typing.Any = {
             "yukon_node_created": [],
             "yukon_node_attached": [],

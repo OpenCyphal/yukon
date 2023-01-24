@@ -81,6 +81,7 @@ class MessagesPublisher(logging.Handler):
             if record.levelno < get_level_no(self._state.gui.message_severity):
                 return
         add_message_to_messages_queue(self._state, record.getMessage(), record.levelno, record.name)
+        print_message(self._state, str(record.getMessage()).strip() + os.linesep, record.levelno, record.name)
         log_message(self._state, str(record.getMessage()).strip() + os.linesep)
 
 
@@ -101,9 +102,7 @@ def add_message_to_messages_queue(
 
 
 def print_message(state: "yukon.domain.god_state.GodState", text: str, severity: int, name: str = __name__) -> None:
-    print(text, end="")
-    if severity >= 30:  # At least a warning
-        eprint(text, end="")
+    eprint(text, end="")
 
 
 def add_local_message(state: "yukon.domain.god_state.GodState", text: str, severity: int, name: str = __name__) -> None:

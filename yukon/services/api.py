@@ -13,6 +13,8 @@ import traceback
 import yaml
 from uuid import uuid4
 from time import time
+
+from yukon.domain.publisher import YukonPublisher
 from yukon.custom_tk_dialog import launch_yes_no_dialog
 
 from yukon.services.utils import quit_application
@@ -38,15 +40,12 @@ from yukon.domain.subscriptions.synchronized_subjects_specifier import Synchroni
 
 
 from yukon.domain.transport.detach_transport_request import DetachTransportRequest
-from yukon.domain.reactive_proxy_objects import ReactiveValue
+from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.services.dtype_loader import load_dtype
 from yukon.services.settings_handler import (
-    save_settings,
-    load_settings,
-    loading_settings_into_yukon,
-    add_all_dsdl_paths_to_pythonpath,
     recursive_reactivize_settings,
-    modify_settings_values_from_a_new_copy,
+    save_settings,
+    loading_settings_into_yukon,
 )
 from yukon.domain.subscriptions.unsubscribe_request import UnsubscribeRequest
 from yukon.services.utils import clamp, get_datatypes_from_packages_directory_path, tolerance_from_key_delta
@@ -70,7 +69,6 @@ from yukon.domain.registers.reread_register_names_request import RereadRegisterN
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 def make_sure_is_deserialized(any_conf: typing.Any) -> typing.Any:
@@ -129,9 +127,6 @@ def unexplode_a_register(state: GodState, node_id: int, register_name: str, regi
     value = unexplode_value(register_value, prototype)
     # This is to get it back into the primitive shape and then serialize as JSON.
     return json.dumps(explode_value(value))
-
-
-logger.setLevel(logging.DEBUG)
 
 
 def unsimplify_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deserialized_conf: typing.Any) -> str:
@@ -245,6 +240,7 @@ class Api:
 
     def __init__(self, state: GodState):
         self.state = state
+        assert self.state is state
         self.last_avatars = []
 
     def get_socketcan_ports(self) -> Response:
@@ -335,7 +331,7 @@ class Api:
             file_dto["name"] = Path(file_path).name
         return file_dto
 
-    def update_register_value(self, register_name: str, register_value: str, node_id: str) -> typing.Any:
+    def update_register_value(self, register_name: str, register_value: typing.Any, node_id: str) -> typing.Any:
         import uavcan
 
         new_value: uavcan.register.Value_1 = unexplode_value(register_value)
@@ -495,7 +491,6 @@ class Api:
         add_register_update_log_item(self.state, register_name, register_value, node_id, bool(success))
 
     def subscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
-        add_all_dsdl_paths_to_pythonpath(self.state)
         if subject_id:
             subject_id = int(subject_id)
         self.state.queues.god_queue.put_nowait(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
@@ -542,6 +537,65 @@ class Api:
                     break
         # This jsonify is why I made sure to set up the JSON encoder for dsdl
         return jsonify(mapping)
+
+    def make_publisher(self, specifiers: str) -> Response:
+        result_ready_event = threading.Event()
+        was_publisher_created = False
+        result_message = ""
+        new_publisher = None
+
+        def make_publisher_task() -> None:
+            nonlocal result_message, new_publisher
+            try:
+                specifiers_object = [SubjectSpecifier.from_string(x) for x in json.loads(specifiers)]
+                new_publisher = YukonPublisher(self.state.cyphal.local_node, specifiers_object)
+                self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
+            except:
+                result_message = traceback.format_exc()
+
+        self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(make_publisher_task)
+        result_ready_event.wait(5)
+        if new_publisher and was_publisher_created:
+            return jsonify({"success": True, "id": new_publisher.id})
+        else:
+            return jsonify({"success": False, "message": result_message})
+
+    def make_publishers_with_values(self, specifiers_and_values: typing.Dict[str, str]) -> Response:
+        result_ready_event = threading.Event()
+        was_publisher_created = False
+        result_message = ""
+        new_publisher = None
+
+        def make_publisher_task() -> None:
+            nonlocal result_message, new_publisher
+            try:
+                specifiers_and_values_object = {
+                    SubjectSpecifier.from_string(x): y for x, y in specifiers_and_values.items()
+                }
+                new_publisher = YukonPublisher(self.state.cyphal.local_node, specifiers_and_values_object.keys())
+                self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
+                for specifier, value in specifiers_and_values_object.items():
+                    new_publisher.update_value(specifier, value)
+            except:
+                result_message = traceback.format_exc()
+
+        self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(make_publisher_task)
+        result_ready_event.wait(5)
+        if new_publisher and was_publisher_created:
+            return jsonify({"success": True, "id": new_publisher.id})
+        else:
+            return jsonify({"success": False, "message": result_message})
+
+    def update_publisher(self, publisher_id: str, specifier: str, data: str) -> Response:
+        try:
+            specifier_object = SubjectSpecifier.from_string(specifier)
+            self.state.cyphal.publishers_by_id[publisher_id].update_value(specifier_object, data)
+            return jsonify({"success": True})
+        except:
+            return jsonify({"success": False, "message": traceback.format_exc()})
+
+    def get_publishers(self) -> Response:
+        return jsonify(self.state.cyphal.publishers_by_id)
 
     def set_message_store_capacity(self, specifier: str, capacity: int) -> None:
         messages_store = self.state.cyphal.message_stores_by_specifier.get(SubjectSpecifier.from_string(specifier))
@@ -687,7 +741,6 @@ class Api:
 
     def get_known_datatypes_from_dsdl(self) -> Response:
         # iterate through the paths in PYTHONPATH
-        add_all_dsdl_paths_to_pythonpath(self.state)
         dsdl_folders = []
         # If the CYPHAL_PATH environment variable is set, add the value of that to the list of dsdl_folders
         # if "CYPHAL_PATH" in os.environ:
@@ -700,12 +753,47 @@ class Api:
         for dsdl_folder in dsdl_folders:
             return jsonify(get_datatypes_from_packages_directory_path(dsdl_folder))
 
-    def set_settings(self, settings: dict) -> None:
-        assert isinstance(settings, dict)
-        modify_settings_values_from_a_new_copy(self.state.settings, settings)
+    def setting_was_removed(self, id: str) -> Response:
+        removed_descendant = self.state.settings.remove_descendant_with_id(id)
+        if removed_descendant is not None:
+            return jsonify({"success": True, "id": id, "value": removed_descendant})
+        else:
+            return jsonify({"success": False})
+
+    def setting_was_changed(self, id: str, value: str) -> Response:
+        found_descendant = self.state.settings.get_descendant_with_id(id)
+        if found_descendant:
+            found_descendant.value = value
+            return jsonify({"success": True, "id": id, "value": value})
+        else:
+            logger.error("Could not find descendant with id " + id)
+        return jsonify({"success": False})
+
+    def array_item_was_added(self, parent_id: str, value: str, own_id: str) -> Response:
+        def append_value_to_parent(_value: str, parent: ReactiveValue) -> None:
+            if isinstance(_value, str):
+                try:
+                    value_object = json.loads(value)
+                except:
+                    value_object = _value
+            else:
+                value_object = _value
+            current_reactive_value_object = ReactiveValue(value_object)
+            recursive_reactivize_settings(current_reactive_value_object, parent)
+            parent.value.append(own_id)
+            parent.value.append(current_reactive_value_object)
+
+        found_parent = self.state.settings.get_descendant_with_id(parent_id)
+        if found_parent:
+            append_value_to_parent(value, found_parent)
+            return jsonify({"success": True, "parent_id": parent_id, "value": value})
+        else:
+            logger.error(f"Could not find parent with id {parent_id}")
+        return jsonify({"success": False})
 
     def get_settings(self) -> Response:
-        return jsonify(self.state.settings)
+        serialized_settings = jsonify(self.state.settings)
+        return serialized_settings
 
     def save_settings(self) -> None:
         save_settings(self.state.settings, Path.home() / "yukon_settings.yaml", self.state)

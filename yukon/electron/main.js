@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, MenuItem } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, Menu, MenuItem, shell } = require('electron')
 const process = require('process');
 const path = require('path')
 const http = require('http');
@@ -32,9 +32,31 @@ function createWindow() {
         }
         menu.popup();
     });
+    // https://www.electronjs.org/docs/latest/api/window-open
+    // https://www.electronjs.org/docs/latest/api/browser-window
     win.webContents.setWindowOpenHandler((details) => {
-        console.log("New window open!")
-        return { action: 'allow' }
+        console.log("details: " + JSON.stringify(details))
+        let the_title = "Yukon";
+        // If get_all_subscription_messages is in details.url then, the title is "Yukon - Subscription log viewer"
+        // Extract the message_specifier=7509 from details.url and set the title to "Yukon - 7509"
+        if (details.url.includes("get_all_subscription_messages")) {
+            // Use regex to extract the one occurence of message_specifier
+            const regex = /message_specifier=(\d+)/m;
+            the_title = `${details.url.match(regex)[1]} - Subscription log viewer`;
+        } else if (details.url.includes("get_latest_subscription_message")) {
+            const regex = /message_specifier=(\d+)/m;
+            the_title = `${details.url.match(regex)[1]} - Subscription latest message (no auto refresh, press CTRL+R to refresh)`;
+        }
+        return {
+            action: 'allow',
+            overrideBrowserWindowOptions: {
+                backgroundColor: 'white',
+                icon: path.join(app.getAppPath(), "icon_128_128.png"),
+                transparent: true,
+                darkTheme: true,
+                title: the_title
+            }
+        }
     })
     return win;
 }
@@ -60,6 +82,75 @@ const menuTemplate = [
             { role: 'togglefullscreen' }
         ]
     },
+    {
+        label: "Help",
+        // Create a menu item that will open the %HOME%/.yukon folder
+        submenu: [
+            {
+                label: "Open Yukon logs folder",
+                click: async () => {
+                    const home_dir = app.getPath('home');
+                    const yukon_home_dir = path.join(home_dir, ".yukon");
+                    const yukon_home_dir_exists = fs.existsSync(yukon_home_dir);
+                    if (yukon_home_dir_exists) {
+                        // Open the folder
+                        await shell.showItemInFolder(yukon_home_dir)
+                    }
+                }
+            },
+            {
+                label: "Open Cyphal DSDL source folder",
+                click: async () => {
+                    const home_dir = app.getPath('home');
+                    const yukon_home_dir = path.join(home_dir, ".cyphal");
+                    const yukon_home_dir_exists = fs.existsSync(yukon_home_dir);
+                    if (yukon_home_dir_exists) {
+                        // Open the folder
+                        await shell.showItemInFolder(yukon_home_dir)
+                    }
+                }
+            },
+            {
+                label: "Open compiled DSDL folder",
+                click: async () => {
+                    const home_dir = app.getPath('home');
+                    const yukon_home_dir = path.join(home_dir, ".pycyphal");
+                    const yukon_home_dir_exists = fs.existsSync(yukon_home_dir);
+                    if (yukon_home_dir_exists) {
+                        // Open the folder
+                        await shell.showItemInFolder(yukon_home_dir)
+                    }
+                }
+            },
+            // Create a menu item that will print the version number of Yukon from ../version.py
+            {
+                label: "Yukon version",
+                click: async () => {
+                    const version_file_path = path.join(app.getAppPath(), "..", "version.py");
+                    console.log("Version file path: " + version_file_path);
+                    const version_file_exists = fs.existsSync(version_file_path);
+                    if (version_file_exists) {
+                        const version_file_contents = fs.readFileSync(version_file_path, 'utf8');
+                        console.log("Version file contents: " + version_file_contents);
+                        const version_regex = /__version__ = "(\d+\.\d+\.\d+)"/m;
+                        const version = version_file_contents.match(version_regex)[1];
+                        console.log("Yukon version: " + version);
+                        dialog.showMessageBoxSync({
+                            type: "info",
+                            title: "Yukon version",
+                            message: "Yukon version: " + version
+                        });
+                    }
+                }
+            },
+            {
+                label: "Browse application directory of Yukon",
+                click: async () => {
+                    await shell.showItemInFolder(app.getAppPath())
+                }
+            }
+        ]
+    }
 ]
 app.whenReady().then(() => {
     // Send a GET request to http://locahost:5000/api/announce_running_in_electron

@@ -18,7 +18,7 @@
     font: 12px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
     border: 1px solid darkolivegreen;
     background-color: #d5d5d5;
-    color: #a33fff;
+    color: #000000;
     padding: 0.5em;
     padding-right: 50px;
     display: flex;
@@ -70,6 +70,17 @@
     background-color: black;
     color: white;
     cursor: pointer;
+}
+
+#monitor2 input.port_number_label::-webkit-outer-spin-button,
+.port_number_label::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox */
+#monitor2 input.port_number_label[type=number] {
+    -moz-appearance: textfield;
 }
 
 #subscriptions-inner-area {

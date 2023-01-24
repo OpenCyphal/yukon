@@ -58,7 +58,6 @@ export async function setUpMessagesComponent(container, yukon_state) {
             }
         }
     });
-    console.log("Messages javascript is ready");
 
     function showAllMessages() {
         var messagesList = document.querySelector("#messages-list");
@@ -93,6 +92,9 @@ export async function setUpMessagesComponent(container, yukon_state) {
     function applyTextFilterToMessages() {
         // Get the filter text from iTextFilter and save it in a variable
         var iTextFilter = document.getElementById("iTextFilter");
+        if (!iTextFilter) {
+            return;
+        }
         var messagesList = document.querySelector("#messages-list");
         var textFilter = iTextFilter.value;
         for (const child of messagesList.children) {

@@ -85,8 +85,7 @@ export function setUpTransportsListComponent(yukon_state) {
                 transport_interface.appendChild(can_data_rate);
                 // Add a button for copying the can_iface to the clipboard
                 const copy_button = document.createElement('button');
-                copy_button.classList.add("btn");
-                copy_button.classList.add("btn-primary");
+                copy_button.classList.add("btn", "btn-sm", "btn-primary");
                 copy_button.innerText = "Copy interface for Yakut";
                 copy_button.addEventListener('click', function () {
                     let text = "";

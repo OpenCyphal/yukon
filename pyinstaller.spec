@@ -2,15 +2,15 @@
 #
 # Copyright (C) 2018 Zubax Robotics OU
 #
-# This file is part of Kucher.
-# Kucher is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+# This file is part of Yukon.
+# Yukon is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-# Kucher is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# Yukon is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 # of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License along with Kucher.
+# You should have received a copy of the GNU General Public License along with Yukon.
 # If not, see <http://www.gnu.org/licenses/>.
 #
-# Author: Pavel Kirienko <pavel.kirienko@zubax.com>
+# Author: Silver Valdvee <silver.valdvee@zubax.com>
 #
 
 #
@@ -80,6 +80,9 @@ detected_hidden_imports += [
 site_packages = Path(sysconfig.get_paths()["purelib"])
 
 datas += [(site_packages / "dronecan", "dronecan")]
+datas += [(site_packages / "pydsdl", "pydsdl")]
+datas += [(site_packages / "pycyphal", "pycyphal")]
+datas += [(site_packages / "nunavut", "nunavut")]
 datas += [(site_packages / "can", "can")]
 
 if my_os == "Linux":
@@ -90,10 +93,10 @@ a = Analysis(
     pathex=None,
     binaries=[],
     datas=datas,
-    hiddenimports=detected_hidden_imports + ["pycyphal"] + ["pydsdl"] + ["sentry_sdk"] + ["nunavut"],
+    hiddenimports=detected_hidden_imports + ["sentry_sdk"] + ["importlib_resources"],
     hookspath=[],
     runtime_hooks=[],
-    excludes=["uavcan", "reg", "sirius_cyber_corp", "zubax", "zubax_internet", "dronecan", "can"],
+    excludes=["uavcan", "reg", "sirius_cyber_corp", "zubax", "zubax_internet", "dronecan", "can", "pydsdl", "nunavut"],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=None,
@@ -104,7 +107,7 @@ a = Analysis(
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 
 splash = Splash(
-    'docs/splash-cyphal.png',
+    "docs/splash-cyphal.png",
     binaries=a.binaries,
     datas=a.datas,
     text_pos=None,
@@ -129,6 +132,6 @@ exe = EXE(
     strip=False,
     upx=False,
     runtime_tmpdir=None,
-    console=my_os == "Linux",
+    console=False,
     icon="icon_128_128.png",
 )

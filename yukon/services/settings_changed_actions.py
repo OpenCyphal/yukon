@@ -1,21 +1,30 @@
 import asyncio
+import json
 import logging
+import os
+import sys
 import threading
 import traceback
+import typing
 
 import uavcan
 
+from pycyphal.dsdl import install_import_hook
+from pycyphal.dsdl._import_hook import DsdlMetaFinder
+
 import yukon
+from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.domain.request_run_dronecan import RequestRunDronecan
 from yukon.domain.start_fileserver_request import StartFileServerRequest
 from yukon.domain.udp_connection import UDPConnection
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.FileServer import FileServer
+from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.services.mydronecan.file_server import SimpleFileServer
 from yukon.services.udp_server import UDPConnectionServer
+from yukon.services.utils import add_path_to_sys_path
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 def set_udp_server_handlers(state: "yukon.domain.god_state.GodState") -> None:
@@ -187,7 +196,6 @@ def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
                             state.cyphal.centralized_allocator.start()
 
                             def allocated_hook(allocated_node_id: int) -> None:
-                                logger.setLevel(logging.DEBUG)
                                 logger.debug("Handling allocation of node %d", allocated_node_id)
                                 if new_mode == "Automatic persistent allocation":
                                     logger.debug("Now sending store persistent states to node %d", allocated_node_id)
@@ -228,8 +236,44 @@ def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
     state.settings["Node allocation"]["chosen_value"].connect(_handle_mode_change)
 
 
+def set_dsdl_path_change_handler(state: "yukon.domain.god_state.GodState") -> None:
+    def _handle_dsdl_path_change(_: typing.Any) -> None:
+        # Add $HOME/.pycyphal to sys.path
+        home = os.path.expanduser("~")
+        pycyphal_path = os.path.join(home, ".pycyphal")
+        add_path_to_sys_path(pycyphal_path)
+        logger.info(
+            "DSDL paths list is now this: "
+            + json.dumps(state.settings["DSDL search directories"].value, cls=EnhancedJSONEncoder)
+        )
+        # Make sure that all paths in state.settings["DSDL search directories"].value are in the CYPHAL_PATH environment variable
+        # If not, add them
+        dsdl_paths = state.settings["DSDL search directories"].value
+        # This is a dirty hack to remove import hooks, this should instead be done in Pycyphal, see issue #270
+        for entry in sys.meta_path.copy():
+            if isinstance(entry, DsdlMetaFinder) and type(entry).__name__ == "DsdlMetaFinder":
+                sys.meta_path.remove(entry)
+        real_dsdl_paths = []
+        for dsdl_path in dsdl_paths:
+            if isinstance(dsdl_path, ReactiveValue):
+                real_dsdl_path_str = dsdl_path["value"].value
+                # Make sure real_dsdl_path_str exists
+                if not os.path.exists(real_dsdl_path_str):
+                    logger.error("DSDL lookup path %s does not exist", real_dsdl_path_str)
+                    continue
+                real_dsdl_paths.append(real_dsdl_path_str)
+        if len(real_dsdl_paths) == 0:
+            logger.error("No DSDL paths are valid, this is a problem")
+            return
+        install_import_hook(real_dsdl_paths)
+
+    state.settings["DSDL search directories"].connect(_handle_dsdl_path_change)
+    _handle_dsdl_path_change(None)
+
+
 def set_handlers_for_configuration_changes(state: "yukon.domain.god_state.GodState") -> None:
     set_dronecan_handlers(state)
     set_file_server_handler(state)
     set_allocator_handler(state)
     set_udp_server_handlers(state)
+    set_dsdl_path_change_handler(state)

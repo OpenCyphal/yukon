@@ -1,3 +1,15 @@
+var lut = []; for (var i = 0; i < 256; i++) { lut[i] = (i < 16 ? '0' : '') + (i).toString(16); }
+function guid() {
+    var d0 = Math.random() * 0xffffffff | 0;
+    var d1 = Math.random() * 0xffffffff | 0;
+    var d2 = Math.random() * 0xffffffff | 0;
+    var d3 = Math.random() * 0xffffffff | 0;
+    return lut[d0 & 0xff] + lut[d0 >> 8 & 0xff] + lut[d0 >> 16 & 0xff] + lut[d0 >> 24 & 0xff] + '-' +
+        lut[d1 & 0xff] + lut[d1 >> 8 & 0xff] + '-' + lut[d1 >> 16 & 0x0f | 0x40] + lut[d1 >> 24 & 0xff] + '-' +
+        lut[d2 & 0x3f | 0x80] + lut[d2 >> 8 & 0xff] + '-' + lut[d2 >> 16 & 0xff] + lut[d2 >> 24 & 0xff] +
+        lut[d3 & 0xff] + lut[d3 >> 8 & 0xff] + lut[d3 >> 16 & 0xff] + lut[d3 >> 24 & 0xff];
+}
+
 export async function setUpSettingsComponent(container, yukon_state) {
     const containerElement = container.getElement()[0];
     let settings = yukon_state.all_settings;
@@ -16,6 +28,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
         pathInput.type = "text";
         pathInput.addEventListener("input", function () {
             settings["value"] = pathInput.value;
+            yukon_state.zubax_apij.setting_was_changed(settings["__id__"], pathInput.value)
         });
         pathInput.style.width = "calc(100% - 148px)";
         const pathButton = document.createElement("button");
@@ -38,6 +51,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             if (path) {
                 pathInput.value = path;
                 settings["value"] = path;
+                yukon_state.zubax_apij.setting_was_changed(settings["__id__"], settings)
             }
         });
         pathDiv.style.width = "100%";
@@ -50,20 +64,23 @@ export async function setUpSettingsComponent(container, yukon_state) {
         removeButton.classList.add("btn-danger");
         removeButton.classList.add("btn-sm");
         removeButton.innerText = "Remove";
-        removeButton.addEventListener("click", function () {
+        removeButton.addEventListener("click", async function () {
             // Delete the settings object
             // If parentSettings is an array
             if (Array.isArray(parentSettings)) {
                 // Find the index of the settings object
-                const index = parentSettings.indexOf(settings);
+                const index = parentSettings.indexOf(settings["__id__"]);
                 // Remove the settings object from the array
-                parentSettings.splice(index, 1);
+                parentSettings.splice(index, 2);
+                await yukon_state.zubax_apij.setting_was_removed(settings["__id__"])
                 parentDiv.parentElement.parentElement.removeChild(parentDiv.parentElement);
                 createSettingsDiv(parentSettings, parentDiv.parentElement.parentElement, null, null);
             } else if (typeof parentSettings === "object" && key_name) {
                 // If parentSettings is an object
                 // Delete the settings object
                 delete parentSettings[key_name];
+                delete parentSettings["__id__" + key_name]
+                await yukon_state.zubax_apij.setting_was_removed(settings["__id__"])
                 parentDiv.parentElement.innerHTML = "";
                 createSettingsDiv(parentSettings, parentDiv.parentElement, null, null);
             }
@@ -74,6 +91,11 @@ export async function setUpSettingsComponent(container, yukon_state) {
 
     function createRadioDiv(settings, parentdiv) {
         for (let i = 0; i < settings["values"].length; i++) {
+            if (i == 0) {
+                continue;
+            } else if (i % 2 == 1) {
+                continue;
+            }
             let value = settings["values"][i];
             let description = "";
             if (typeof settings["values"][i] === "object") {
@@ -115,7 +137,14 @@ export async function setUpSettingsComponent(container, yukon_state) {
         }
     }
 
-    function createSettingsDiv(settings, parentDiv, parentSettings) {
+    function createSettingsDiv(settings, parentDiv, parentSettings, outerRealDictionaryKey) {
+        let id = null;
+        if (Array.isArray(settings)) {
+            id = settings[0];
+            // console.log("Array id: " + id);
+        } else if (typeof settings === "object") {
+            id = settings["__id__"];
+        }
         if (settings["__type__"] === "radio") {
             createRadioDiv(settings, parentDiv);
             return;
@@ -124,7 +153,37 @@ export async function setUpSettingsComponent(container, yukon_state) {
             createPathDiv(settings, parentDiv, parentSettings, null, settings["__type__"]);
             return;
         }
-        for (const [key, value] of Object.entries(settings)) {
+        // The first entry in an array is always the id
+        // The next entry is the id of the first element
+        // The next entry after that is the first element
+        // Only the odd entries of arrays are real, even entries are just the id
+        // Make a dictionary where keys are ids and values are the values
+
+
+        for (let [key, value] of Object.entries(settings)) {
+            let innerId = null;
+            if (Array.isArray(settings)) {
+                key = parseInt(key);
+                // console.log("Key: " + key + " Type of key: " + typeof key + " Value: " + value);
+                if (key === 0) {
+                    continue;
+                }
+                if (key % 2 === 1) {
+                    continue;
+                } else {
+                    innerId = settings[key - 1];
+                }
+            } else if (typeof settings === "object") {
+                if (key.startsWith("__id__")) {
+                    continue;
+                } else {
+                    innerId = settings["__id__" + key]
+                }
+            }
+            // If key is a string and starts with __id__, then it is an id, continue
+            if (typeof key === "string" && key.startsWith("__id__")) {
+                continue;
+            }
             let realDictionaryKey = null;
             if (!Array.isArray(settings)) {
                 realDictionaryKey = key;
@@ -140,7 +199,8 @@ export async function setUpSettingsComponent(container, yukon_state) {
                 // Add a button for adding a key/value pair to the dictionary
                 continue;
             }
-            if (typeof value === 'object') {
+            const isInnerValueDictionary = typeof value === 'object';
+            if (isInnerValueDictionary) {
                 const cardDiv = document.createElement("div");
                 cardDiv.classList.add("card");
                 cardDiv.classList.add("mb-3");
@@ -182,7 +242,9 @@ export async function setUpSettingsComponent(container, yukon_state) {
                 btnRemove.classList.add("float-right");
                 btnRemove.innerHTML = "Remove";
                 btnRemove.addEventListener("click", async function () {
+                    yukon_state.zubax_apij.setting_was_removed(innerId);
                     delete settings[key];
+                    delete settings[innerId]
                     parentDiv.innerHTML = "";
                     createSettingsDiv(settings, parentDiv, parentSettings, realDictionaryKey);
                 });
@@ -200,8 +262,8 @@ export async function setUpSettingsComponent(container, yukon_state) {
                 const formGroupDiv = document.createElement("div");
                 formGroupDiv.classList.add("mb-3");
                 const label = document.createElement("label");
-
                 label.setAttribute("for", key);
+                label.classList.add("form-label");
                 if (key === "__editable__") {
                     const input = document.createElement("input");
                     input.type = "text";
@@ -244,16 +306,17 @@ export async function setUpSettingsComponent(container, yukon_state) {
                     });
                     formGroupDiv.appendChild(checkbox);
                 } else {
-                    formGroupDiv.classList.add("input-group");
+                    // formGroupDiv.classList.add("input-group");
                     if (typeof value === 'number') {
                         const input = document.createElement("input");
                         input.type = "number";
                         input.style.display = "inline";
                         input.classList.add("form-control");
                         input.value = value;
-                        input.style.width = "calc(100% - 70px)"
+                        // input.style.width = "calc(100% - 70px)"
                         input.addEventListener("change", async function () {
                             settings[key] = parseFloat(input.value);
+                            yukon_state.zubax_apij.setting_was_changed(innerId, input.value)
                         });
                         input.title = "Number field"
                         formGroupDiv.appendChild(input);
@@ -266,6 +329,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                         input.value = value;
                         input.addEventListener("change", async function () {
                             settings[key] = input.value;
+                            yukon_state.zubax_apij.setting_was_changed(innerId, input.value)
                         });
                         input.title = "Text field";
                         formGroupDiv.appendChild(input);
@@ -281,7 +345,8 @@ export async function setUpSettingsComponent(container, yukon_state) {
                     btnRemove.style.display = "inline";
                     btnRemove.innerHTML = "Remove";
                     btnRemove.addEventListener("click", async function () {
-                        settings.splice(key, 1);
+                        settings.splice(key - 1, 2);
+                        yukon_state.zubax_apij.setting_was_removed(innerId)
                         parentDiv.innerHTML = "";
                         createSettingsDiv(settings, parentDiv, parentSettings, realDictionaryKey);
                     });
@@ -317,18 +382,26 @@ export async function setUpSettingsComponent(container, yukon_state) {
             btnAddPath.classList.add("btn-primary");
             btnAddPath.innerText = "Add path";
             btnAddPath.addEventListener("click", function () {
-                settings.push({ "__type__": "dirpath", "value": "" });
+                const _guid = guid();
+                settings.push(_guid);
+                const new_value = { "__id__": _guid, "__type__": "dirpath", "value": "" };
+                settings.push(new_value);
                 parentDiv.innerHTML = "";
                 createSettingsDiv(settings, parentDiv, parentSettings, null);
+                yukon_state.zubax_apij.array_item_was_added(id, new_value, _guid)
             });
             const btnAddString = document.createElement("button");
             btnAddString.classList.add("btn");
             btnAddString.classList.add("btn-primary");
             btnAddString.innerText = "Add string";
             btnAddString.addEventListener("click", function () {
-                settings.push("");
+                const new_guid = guid();
+                settings.push(new_guid);
+                const new_value = "";
+                settings.push(new_value);
                 parentDiv.innerHTML = "";
                 createSettingsDiv(settings, parentDiv, parentSettings, null);
+                yukon_state.zubax_apij.array_item_was_added(id, new_value, new_guid)
             });
             // btnGroupDiv.appendChild(btnAddBool);
             // btnGroupDiv.appendChild(btnAddInt);
@@ -338,10 +411,11 @@ export async function setUpSettingsComponent(container, yukon_state) {
         }
     }
 
+    // TODO: This saving should take place when settings have been modified, not on a timer
     setInterval(async function () {
-        await yukon_state.zubax_apij.set_settings(yukon_state.all_settings);
         await yukon_state.zubax_apij.save_settings();
     }, 1000);
+
     createSettingsDiv(settings, settingsDiv, null, null)
     setInterval(function () {
         settingsDebugDiv.innerHTML = JSON.stringify(settings, null, 2);

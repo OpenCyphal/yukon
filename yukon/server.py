@@ -32,7 +32,6 @@ server.json_encoder = EnhancedJSONEncoder
 WSGIRequestHandler.protocol_version = "HTTP/1.1"
 our_token = "ABC"
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 @server.after_request
@@ -69,9 +68,9 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
         except Exception as e:  # pylint: disable=broad-except
             tb = traceback.format_exc()
             logger.exception("So something went wrong with calling the method %s", path)
-
+            logger.critical(str(e))
             logger.error("Arguments used calling the API %s", json.dumps(_object["arguments"]))
-            logger.critical(tb)
+            logger.critical(str(tb))
             return jsonify({"error": tb})
 
     @server.route("/api/get_latest_subscription_message", methods=["GET"])

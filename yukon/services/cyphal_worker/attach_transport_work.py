@@ -20,7 +20,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def do_attach_transport_work(state: GodState, atr: AttachTransportRequest) -> None:
-    _logger.warning("Doing attach transport work.")
+    _logger.info("Doing attach transport work.")
     try:
         if atr.requested_interface.is_udp:
             if state.cyphal.already_used_transport_interfaces.get(atr.requested_interface.udp_iface):
