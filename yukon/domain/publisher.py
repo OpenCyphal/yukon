@@ -8,7 +8,7 @@ from yukon.domain.publish_value_generator import StaticPublishValueGenerator
 from yukon.domain.subject_specifier import SubjectSpecifier
 from yukon.services.dtype_loader import load_dtype
 
-Builtin = typing.Union[typing.Dict, typing.List]
+Builtin = typing.Union[typing.Dict, typing.List, typing.Tuple, str, int, float, bool, None]
 
 
 class YukonPublisher:
@@ -27,20 +27,21 @@ class YukonPublisher:
     def from_specifier_value_dictionary(
         node: pycyphal.application.Node,
         specifiers_with_values: typing.Dict[SubjectSpecifier, Builtin],
-    ):
+    ) -> "YukonPublisher":
         new_publisher = YukonPublisher(node, list(specifiers_with_values.keys()))
         for specifier, value in specifiers_with_values.items():
             new_publisher.update_value(specifier, json.dumps(value))
+        return new_publisher
 
-    def _fill_data_for_specifier(self, subject_specifier: SubjectSpecifier):
-        self._loaded_datatypes[str(subject_specifier)] = load_dtype(self.datatype)
+    def _fill_data_for_specifier(self, subject_specifier: SubjectSpecifier) -> None:
+        self._loaded_datatypes[str(subject_specifier)] = load_dtype(subject_specifier.datatype)
         self._loaded_datatype_structures[str(subject_specifier)] = pycyphal.dsdl.to_builtin(
             self._loaded_datatypes[str(subject_specifier)]()
         )
-        self.set_datatype_value(subject_specifier, json.dumps(self._loaded_datatype_structures[str(subject_specifier)]))
+        self.update_value(subject_specifier, json.dumps(self._loaded_datatype_structures[str(subject_specifier)]))
         self.publishers[subject_specifier] = self.node.make_publisher()
 
-    def add_subject_specifier(self, subject_specifier: SubjectSpecifier):
+    def add_subject_specifier(self, subject_specifier: SubjectSpecifier) -> None:
         self.subject_specifiers.append(subject_specifier)
         self._fill_data_for_specifier(subject_specifier)
 
@@ -53,14 +54,14 @@ class YukonPublisher:
     def get_value(self, subject_specifier: SubjectSpecifier) -> typing.Any:
         return pycyphal.dsdl.to_builtin(self._loaded_datatype_values[subject_specifier])
 
-    def publish(self):
+    def publish(self) -> None:
         for publisher in self.publishers:
             publisher.publish(self._loaded_datatype_values[publisher.subject_specifier])
 
-    def __str__(self):
+    def __str__(self) -> str:
         """List all the specifiers and all in _loaded_datatype_values but first run"""
         return f"YukonPublisher: {self.id} - {self.subject_specifiers}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         all_values = [self.get_value(x) for x in self.subject_specifiers]
         return self.__str__() + "- \n" + json.dumps(all_values)

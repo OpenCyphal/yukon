@@ -538,64 +538,64 @@ class Api:
         # This jsonify is why I made sure to set up the JSON encoder for dsdl
         return jsonify(mapping)
 
-    def make_publisher(self, specifiers: str):
+    def make_publisher(self, specifiers: str) -> Response:
         result_ready_event = threading.Event()
         was_publisher_created = False
         result_message = ""
         new_publisher = None
 
-        def make_publisher_task():
+        def make_publisher_task() -> None:
             nonlocal result_message, new_publisher
             try:
                 specifiers_object = [SubjectSpecifier.from_string(x) for x in json.loads(specifiers)]
                 new_publisher = YukonPublisher(self.state.cyphal.local_node, specifiers_object)
-                self.cyphal.publishers_by_id[new_publisher.id] = new_publisher
+                self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
             except:
-                result_message = traceback.print_exc()
+                result_message = traceback.format_exc()
 
         self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(make_publisher_task)
         result_ready_event.wait(5)
-        if was_publisher_created:
+        if new_publisher and was_publisher_created:
             return jsonify({"success": True, "id": new_publisher.id})
         else:
             return jsonify({"success": False, "message": result_message})
 
-    def make_publishers_with_values(self, specifiers_and_values: typing.Dict[str, str]):
+    def make_publishers_with_values(self, specifiers_and_values: typing.Dict[str, str]) -> Response:
         result_ready_event = threading.Event()
         was_publisher_created = False
         result_message = ""
         new_publisher = None
 
-        def make_publisher_task():
+        def make_publisher_task() -> None:
             nonlocal result_message, new_publisher
             try:
                 specifiers_and_values_object = {
                     SubjectSpecifier.from_string(x): y for x, y in specifiers_and_values.items()
                 }
                 new_publisher = YukonPublisher(self.state.cyphal.local_node, specifiers_and_values_object.keys())
-                self.cyphal.publishers_by_id[new_publisher.id] = new_publisher
+                self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
                 for specifier, value in specifiers_and_values_object.items():
                     new_publisher.update_value(specifier, value)
             except:
-                result_message = traceback.print_exc()
+                result_message = traceback.format_exc()
 
         self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(make_publisher_task)
         result_ready_event.wait(5)
-        if was_publisher_created:
+        if new_publisher and was_publisher_created:
             return jsonify({"success": True, "id": new_publisher.id})
         else:
             return jsonify({"success": False, "message": result_message})
 
-    def update_publisher(self, publisher_id: str, specifier: str, data: str):
+    def update_publisher(self, publisher_id: str, specifier: str, data: str) -> Response:
         try:
             specifier_object = SubjectSpecifier.from_string(specifier)
-            self.cyphal.publishers_by_id[publisher_id].update_value(specifier_object, data)
+            self.state.cyphal.publishers_by_id[publisher_id].update_value(specifier_object, data)
             return jsonify({"success": True})
         except:
             return jsonify({"success": False, "message": traceback.format_exc()})
 
     def get_publishers(self) -> Response:
-        return jsonify(self.cyphal.publishers_by_id)
+        return jsonify(self.state.cyphal.publishers_by_id)
 
     def set_message_store_capacity(self, specifier: str, capacity: int) -> None:
         messages_store = self.state.cyphal.message_stores_by_specifier.get(SubjectSpecifier.from_string(specifier))
