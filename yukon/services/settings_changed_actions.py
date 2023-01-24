@@ -252,6 +252,10 @@ def set_dsdl_path_change_handler(state: "yukon.domain.god_state.GodState") -> No
         for dsdl_path in dsdl_paths:
             if isinstance(dsdl_path, ReactiveValue):
                 real_dsdl_path_str = dsdl_path["value"].value
+                # Make sure real_dsdl_path_str exists
+                if not os.path.exists(real_dsdl_path_str):
+                    logger.error("DSDL lookup path %s does not exist", real_dsdl_path_str)
+                    continue
                 real_dsdl_paths.append(real_dsdl_path_str)
         install_import_hook(real_dsdl_paths)
 

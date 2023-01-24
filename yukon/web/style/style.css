@@ -431,3 +431,21 @@ button#btnShowHideToolbar:active {
     background-color: #ccc;
     color: black;
 }
+
+.transport_interface .card-body {
+    padding-left: 2px !important;
+    padding-top: 0px !important;
+    padding: 8px;
+}
+
+.transport_interface .card-title {
+    margin-bottom: 2px;
+}
+
+.transport_interface button {
+    margin-bottom: 0.5em;
+}
+
+.card-body> :last-child {
+    margin-bottom: 0 !important;
+}

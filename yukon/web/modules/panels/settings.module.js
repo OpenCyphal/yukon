@@ -262,8 +262,8 @@ export async function setUpSettingsComponent(container, yukon_state) {
                 const formGroupDiv = document.createElement("div");
                 formGroupDiv.classList.add("mb-3");
                 const label = document.createElement("label");
-
                 label.setAttribute("for", key);
+                label.classList.add("form-label");
                 if (key === "__editable__") {
                     const input = document.createElement("input");
                     input.type = "text";
@@ -306,14 +306,14 @@ export async function setUpSettingsComponent(container, yukon_state) {
                     });
                     formGroupDiv.appendChild(checkbox);
                 } else {
-                    formGroupDiv.classList.add("input-group");
+                    // formGroupDiv.classList.add("input-group");
                     if (typeof value === 'number') {
                         const input = document.createElement("input");
                         input.type = "number";
                         input.style.display = "inline";
                         input.classList.add("form-control");
                         input.value = value;
-                        input.style.width = "calc(100% - 70px)"
+                        // input.style.width = "calc(100% - 70px)"
                         input.addEventListener("change", async function () {
                             settings[key] = parseFloat(input.value);
                             yukon_state.zubax_apij.setting_was_changed(innerId, input.value)

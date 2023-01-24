@@ -97,8 +97,8 @@
     }
 
     .mb-3 {
-        background: #353535;
-        color: #ffffff
+        background: inherit;
+        color: inherit;
     }
 
     #divMessagesHere {
@@ -242,7 +242,7 @@
     }
 
     .form-check {
-        background-color: #353535;
+        background-color: inherit;
     }
 
     .my-modal-content,

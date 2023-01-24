@@ -494,6 +494,7 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
 
         avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
     }
+    avatar_y_counter.value += 3;
 }
 function createElementForNode(avatar, text, container, fieldsObject, get_up_to_date_avatar, yukon_state) {
     // Verify that the avatar is not undefined
@@ -553,12 +554,12 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     const neededButtons = [{ "name": "Restart", "command": "65535", "title": "Restart device" }, { "name": "Save", "command": "65530", "title": "Save persistent states" }, { "name": "Estop", "command": "65531", "title": "Emergency stop" }];
     for (const button of neededButtons) {
         const btnButton = document.createElement("button");
+        btnButton.style.fontSize = "0.6rem";
         btnButton.id = "btn" + avatar.node_id + "_" + button.name;
         btnButton.classList.add("btn_button");
         btnButton.classList.add("btn");
         btnButton.classList.add("btn-primary");
         btnButton.classList.add("btn-sm");
-        btnButton.style.setProperty("height", settings["DistancePerHorizontalConnection"], "important");
         btnButton.innerHTML = button.name;
         btnButton.title = button.title;
         btnButton.onclick = async () => {
@@ -568,8 +569,13 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         inputGroup.appendChild(btnButton);
     }
     node.appendChild(inputGroup);
+    const inputGroup2 = document.createElement("div");
+    inputGroup2.classList.add("input-group");
+    inputGroup2.style.fontSize = "0.6rem";
+    inputGroup2.style.setProperty("backgroundColor", "transparent", "important");
     // Add a button for firmware update
     const btnFirmwareUpdate = document.createElement("button");
+    btnFirmwareUpdate.style.fontSize = "0.7rem";
     btnFirmwareUpdate.classList.add("btn_button", "btn", "btn-secondary", "btn-sm");
     btnFirmwareUpdate.innerHTML = "Choose firmware";
     btnFirmwareUpdate.addEventListener("click", async function () {
@@ -582,7 +588,66 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
             doCommandFeedbackResult(result, feedbackMessage);
         }
     });
-    node.appendChild(btnFirmwareUpdate);
+    inputGroup2.appendChild(btnFirmwareUpdate);
+    // Add a more button
+    const btnMore = document.createElement("button");
+    btnMore.classList.add("btn_button", "btn", "btn-secondary", "btn-sm");
+    btnMore.innerHTML = "More";
+
+    btnMore.addEventListener("click", async function () {
+        yukon_state.commandsComponent.parent.parent.setActiveContentItem(yukon_state.commandsComponent.parent);
+        let commandsElement = yukon_state.commandsComponent.getElement()[0];
+        // Tween feedbackMessage.style.backgroundColor from sepia to green
+        const starting_color_rgb = window.getComputedStyle(commandsElement, null).getPropertyValue('background-color').replace("rgb(", "").replace(")", "").split(",").map((x) => parseInt(x));
+        const increments_to_take = 144;
+        const ending_color_rgb = starting_color_rgb.slice();
+        let addedTint = -10;
+        if (starting_color_rgb[1] < 125) {
+            // This is dark mode
+            addedTint = 15; // Make it lighter
+        } else {
+            // This is light mode
+            addedTint = -15; // Make it darker
+        }
+        ending_color_rgb[1] = ending_color_rgb[1] + addedTint;
+        let increment_counter = 0;
+
+        let tweenFromCounter = increments_to_take;
+        let tweenFromFunction = () => {
+            let new_color = [];
+            for (let i = 0; i < 3; i++) {
+                new_color.push(starting_color_rgb[i] + (ending_color_rgb[i] - starting_color_rgb[i]) * tweenFromCounter / increments_to_take);
+            }
+            commandsElement.style.backgroundColor = `rgb(${new_color[0]}, ${new_color[1]}, ${new_color[2]})`;
+            if (tweenFromCounter > 0) {
+                tweenFromCounter--;
+                window.requestAnimationFrame(tweenFromFunction);
+            } else {
+                commandsElement.style.removeProperty("background-color");
+            }
+        };
+
+        let tweenToFunction = null;
+        tweenToFunction = () => {
+            let new_color = [];
+            for (let i = 0; i < 3; i++) {
+                new_color.push(starting_color_rgb[i] + (ending_color_rgb[i] - starting_color_rgb[i]) * increment_counter / increments_to_take);
+            }
+            commandsElement.style.backgroundColor = `rgb(${new_color[0]}, ${new_color[1]}, ${new_color[2]})`;
+            if (increment_counter < increments_to_take) {
+                increment_counter++;
+                window.requestAnimationFrame(tweenToFunction);
+            } else {
+                window.requestAnimationFrame(tweenFromFunction);
+            }
+        };
+
+
+        window.requestAnimationFrame(tweenToFunction);
+        // yukon_state.commandsComponent.parent.parent.toggleMaximise();
+    });
+    inputGroup2.appendChild(btnMore);
+    node.appendChild(inputGroup2);
     node.addEventListener("click", function () {
         let queue = []
         for (const element of yukon_state.myLayout.root.contentItems) {

@@ -257,6 +257,7 @@ window.console = new Proxy(old_console, {
                 myLayout.registerComponent("commandsComponent", function (container, componentState) {
                     registerComponentAction("../commands.panel.html", "commandsComponent", container, () => {
                         const containerElement = container.getElement()[0];
+                        yukon_state.commandsComponent = container;
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         setUpCommandsComponent.bind(outsideContext)(container, yukon_state);
                     });
