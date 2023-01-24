@@ -367,7 +367,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             let currentLinkDsdlDatatype = null;
             let fixed_datatype_short = null;
             let fixed_datatype_full = null;
-            if (datatypes_response["fixed_id_messages"][port.port] !== undefined) {
+            if (datatypes_response["fixed_id_messages"] && datatypes_response["fixed_id_messages"][port.port] !== undefined) {
                 fixed_datatype_short = datatypes_response["fixed_id_messages"][port.port]["short_name"];
                 fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["full_name"];
             }

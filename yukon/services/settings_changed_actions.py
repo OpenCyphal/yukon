@@ -22,6 +22,7 @@ from yukon.services.FileServer import FileServer
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
 from yukon.services.mydronecan.file_server import SimpleFileServer
 from yukon.services.udp_server import UDPConnectionServer
+from yukon.services.utils import add_path_to_sys_path
 
 logger = logging.getLogger(__name__)
 
@@ -240,13 +241,7 @@ def set_dsdl_path_change_handler(state: "yukon.domain.god_state.GodState") -> No
         # Add $HOME/.pycyphal to sys.path
         home = os.path.expanduser("~")
         pycyphal_path = os.path.join(home, ".pycyphal")
-        if pycyphal_path not in sys.path:
-            sys.path.append(pycyphal_path)
-        # Also add it to PYTHONPATH
-        if "PYTHONPATH" in os.environ:
-            python_path = os.environ["PYTHONPATH"]
-            if pycyphal_path not in python_path:
-                os.environ["PYTHONPATH"] = python_path + os.pathsep + pycyphal_path
+        add_path_to_sys_path(pycyphal_path)
         logger.info(
             "DSDL paths list is now this: "
             + json.dumps(state.settings["DSDL search directories"].value, cls=EnhancedJSONEncoder)
@@ -267,6 +262,9 @@ def set_dsdl_path_change_handler(state: "yukon.domain.god_state.GodState") -> No
                     logger.error("DSDL lookup path %s does not exist", real_dsdl_path_str)
                     continue
                 real_dsdl_paths.append(real_dsdl_path_str)
+        if len(real_dsdl_paths) == 0:
+            logger.error("No DSDL paths are valid, this is a problem")
+            return
         install_import_hook(real_dsdl_paths)
 
     state.settings["DSDL search directories"].connect(_handle_dsdl_path_change)

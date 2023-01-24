@@ -37,7 +37,7 @@ def load_dtype(name: str, allow_minor_version_mismatch: bool = False) -> Type[An
         If the minor version is specified and there is no matching data type,
         repeat the search with the minor version omitted.
     """
-    _logger.info("Current CYPHAL_PATH environment variable: %s", os.environ.get("CYPHAL_PATH", "<not set>"))
+    _logger.debug("Current CYPHAL_PATH environment variable: %s", os.environ.get("CYPHAL_PATH", "<not set>"))
     for entry in sys.meta_path:
         if isinstance(entry, DsdlMetaFinder) and type(entry).__name__ == "DsdlMetaFinder":
             _logger.debug("Found DsdlMetaFinder in sys.meta_path")
@@ -60,14 +60,15 @@ def load_dtype(name: str, allow_minor_version_mismatch: bool = False) -> Type[An
 
 def _load(name_components: list[str], major: int | None, minor: int | None) -> Type[Any]:
     namespaces, short_name = name_components[:-1], name_components[-1]
-    _logger.info("Current PYTHONPATH: %s", sys.path)
+    _logger.debug("Current PYTHONPATH: %s", sys.path)
     try:
         mod = None
         for comp in namespaces:
             name = (mod.__name__ + "." + comp) if mod else comp  # type: ignore
             try:
                 mod = importlib.import_module(name)
-            except ImportError:  # We seem to have hit a reserved word; try with an underscore.
+            except ImportError as ie:  # We seem to have hit a reserved word; try with an underscore.
+                _logger.exception()
                 _logger.error("Failed to import %r, trying with an underscore", name)
                 mod = importlib.import_module(name + "_")
     except ImportError as ex:
@@ -87,6 +88,7 @@ def _load(name_components: list[str], major: int | None, minor: int | None) -> T
     )
     _logger.debug("Identifiers in %r matching %s.%s.%s: %r", mod, short_name, major, minor, matches)
     if not matches:
+        _logger.critical("Could not locate %s.%s.%s in module %r", short_name, major, minor, mod.__name__)
         raise NotFoundError(
             f"Could not locate "
             f"{short_name}.{major if major is not None else '*'}.{minor if minor is not None else '*'} "

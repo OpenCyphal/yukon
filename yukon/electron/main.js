@@ -127,7 +127,7 @@ const menuTemplate = [
                 label: "Yukon version",
                 click: async () => {
                     const version_file_path = path.join(app.getAppPath(), "..", "version.py");
-                    console.log("Version file path" + version_file_path);
+                    console.log("Version file path: " + version_file_path);
                     const version_file_exists = fs.existsSync(version_file_path);
                     if (version_file_exists) {
                         const version_file_contents = fs.readFileSync(version_file_path, 'utf8');
@@ -141,6 +141,12 @@ const menuTemplate = [
                             message: "Yukon version: " + version
                         });
                     }
+                }
+            },
+            {
+                label: "Browse application directory of Yukon",
+                click: async () => {
+                    await shell.showItemInFolder(app.getAppPath())
                 }
             }
         ]

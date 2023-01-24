@@ -97,7 +97,7 @@ export async function getDatatypesForPort(portNr, yukon_state) {
     let fixed_datatype_short = null;
     let fixed_datatype_full = null;
     const datatypes_response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
-    if (datatypes_response["fixed_id_messages"][portNr] !== undefined) {
+    if (datatypes_response && datatypes_response["fixed_id_messages"] && datatypes_response["fixed_id_messages"][portNr] !== undefined) {
         fixed_datatype_short = datatypes_response["fixed_id_messages"][portNr]["short_name"];
         fixed_datatype_full = datatypes_response["fixed_id_messages"][portNr]["full_name"];
         chosenDatatypes[fixed_datatype_full] = 1;

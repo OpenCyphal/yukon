@@ -298,15 +298,3 @@ def loading_settings_into_yukon(state: GodState) -> None:
     recursive_reactivize_settings(loaded_settings)
     state.settings = loaded_settings
     set_handlers_for_configuration_changes(state)
-
-
-def add_all_dsdl_source_paths_to_pythonpath(state: GodState) -> None:
-    """This function adds all paths in state.settings.dsdl_paths to the python path."""
-    dsdl_search_directories_setting = state.settings.get("DSDL search directories")
-    if dsdl_search_directories_setting:
-        for path_object in dsdl_search_directories_setting:
-            try:
-                path = path_object["value"].value
-            except TypeError:
-                path = path_object.value
-            add_path_to_cyphal_path(path)

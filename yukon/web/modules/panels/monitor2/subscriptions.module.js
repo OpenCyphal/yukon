@@ -5,12 +5,14 @@ function createCloseButton() {
     closeButton.innerText = "x";
     closeButton.style.borderWidth = "0";
     closeButton.style.position = "absolute";
-    closeButton.style.right = "1px";
     closeButton.style.display = "flex";
     // Align text to the baseline
     closeButton.style.alignItems = "flex-end";
     closeButton.style.justifyContent = "center";
-    closeButton.style.top = "1px";
+    // closeButton.style.right = "1px";
+    // closeButton.style.top = "1px";
+    closeButton.style.right = -23 + "px";
+    closeButton.style.top = 1 + "px";
     closeButton.style.marginTop = "0";
     // Make sure the button has a 1x1 aspect ratio and a width of 14px
     closeButton.style.width = "20px";
