@@ -360,6 +360,7 @@ window.console = new Proxy(old_console, {
                         }
                     }
                     let spanAutoScroll = null;
+                    let spanSearch = null;
                     if (hasMessagesPanel) {
                         spanAutoScroll = document.createElement("span");
                         // Add a checkbox and a label  for it in liAutoScroll
@@ -378,6 +379,24 @@ window.console = new Proxy(old_console, {
                         spanAutoScroll.appendChild(cbAutoscroll);
                         spanAutoScroll.appendChild(labelAutoscroll);
                         stack.header.controlsContainer.prepend(spanAutoScroll);
+                        spanSearch = document.createElement("span");
+                        // Float spanSearch to the left
+                        spanSearch.style.cssFloat = "left";
+                        spanSearch.style.display = "flex";
+                        spanSearch.style.justifyContent = "center";
+                        const inputSearch = document.createElement("input");
+                        inputSearch.type = "text";
+                        inputSearch.title = "Only messages containing this text will be shown."
+                        inputSearch.id = "iTextFilter";
+                        inputSearch.placeholder = "Filter messages";
+                        inputSearch.style.marginLeft = "0.15em";
+                        inputSearch.style.height = "100%";
+                        spanSearch.style.height = "17px";
+                        spanSearch.style.marginRight = "7px";
+                        spanSearch.style.fontSize = "12px";
+                        spanSearch.style.display = "inline-block";
+                        spanSearch.appendChild(inputSearch);
+                        stack.header.controlsContainer.prepend(spanSearch);
                     }
 
                     stack.on('activeContentItemChanged', function (contentItem) {
@@ -396,6 +415,15 @@ window.console = new Proxy(old_console, {
                                 spanAutoScroll.style.display = "none";
                             }
                         }
+                        if (spanSearch) {
+                            if (activeElementName === "messagesComponent") {
+                                spanSearch.style.display = "flex";
+                            } else {
+                                spanSearch.style.display = "none";
+                            }
+
+                        }
+
                         const container = stack.getActiveContentItem().container.getElement()[0];
                         // If the key "isExpanded" is not contained in the state of the container
 
