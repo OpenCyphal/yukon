@@ -37,6 +37,8 @@ from yukon.sentry_setup import setup_sentry
 from yukon.server import server, make_landing_and_bridge
 from yukon.services.utils import quit_application
 
+# mypy: warn_unused_ignores=False
+
 mimetypes.add_type("text/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
 mimetypes.add_type("text/html", ".html")
