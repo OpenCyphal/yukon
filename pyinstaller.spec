@@ -80,6 +80,8 @@ detected_hidden_imports += [
 site_packages = Path(sysconfig.get_paths()["purelib"])
 
 datas += [(site_packages / "dronecan", "dronecan")]
+datas += [(site_packages / "pydsdl", "pydsdl")]
+datas += [(site_packages / "nunavut", "nunavut")]
 datas += [(site_packages / "can", "can")]
 
 if my_os == "Linux":
@@ -104,7 +106,7 @@ a = Analysis(
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 
 splash = Splash(
-    'docs/splash-cyphal.png',
+    "docs/splash-cyphal.png",
     binaries=a.binaries,
     datas=a.datas,
     text_pos=None,

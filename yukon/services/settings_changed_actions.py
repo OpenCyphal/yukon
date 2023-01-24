@@ -237,6 +237,16 @@ def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
 
 def set_dsdl_path_change_handler(state: "yukon.domain.god_state.GodState") -> None:
     def _handle_dsdl_path_change(_: typing.Any) -> None:
+        # Add $HOME/.pycyphal to sys.path
+        home = os.path.expanduser("~")
+        pycyphal_path = os.path.join(home, ".pycyphal")
+        if pycyphal_path not in sys.path:
+            sys.path.append(pycyphal_path)
+        # Also add it to PYTHONPATH
+        if "PYTHONPATH" in os.environ:
+            python_path = os.environ["PYTHONPATH"]
+            if pycyphal_path not in python_path:
+                os.environ["PYTHONPATH"] = python_path + os.pathsep + pycyphal_path
         logger.info(
             "DSDL paths list is now this: "
             + json.dumps(state.settings["DSDL search directories"].value, cls=EnhancedJSONEncoder)

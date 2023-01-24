@@ -60,7 +60,7 @@ def load_dtype(name: str, allow_minor_version_mismatch: bool = False) -> Type[An
 
 def _load(name_components: list[str], major: int | None, minor: int | None) -> Type[Any]:
     namespaces, short_name = name_components[:-1], name_components[-1]
-    _logger.debug("Current PYTHONPATH: %s", sys.path)
+    _logger.info("Current PYTHONPATH: %s", sys.path)
     try:
         mod = None
         for comp in namespaces:
