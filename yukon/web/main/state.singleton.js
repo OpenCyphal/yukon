@@ -26,7 +26,7 @@ var yukon_state = {
     "is_currently_restoring_default_layout": false,
     "all_settings": null,
     containerElementToContainerObjectMap: new WeakMap(),
-
+    "publishers": [],
     mousePos: null,
     "settings": {
         "showAlotOfButtons": false,

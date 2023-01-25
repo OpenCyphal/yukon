@@ -20,9 +20,23 @@ import {
 import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./panels/registers.module.js";
 import { rereadNode, rereadPairs } from "./panels/registers.data.module.js";
 import { downloadIcon, copyIcon, pasteIcon } from "./icons.module.js";
-import { copyObject } from "./utilities.module.js";
+import { copyObject, getDictionaryValueFieldName } from "./utilities.module.js";
 import { copyTextToClipboard } from "./copy.module.js";
 import { getPortType } from "./panels/monitor2/monitor2.module.js";
+
+var lut = []; for (var i = 0; i < 256; i++) { lut[i] = (i < 16 ? '0' : '') + (i).toString(16); }
+function guid() {
+    var d0 = Math.random() * 0xffffffff | 0;
+    var d1 = Math.random() * 0xffffffff | 0;
+    var d2 = Math.random() * 0xffffffff | 0;
+    var d3 = Math.random() * 0xffffffff | 0;
+    return lut[d0 & 0xff] + lut[d0 >> 8 & 0xff] + lut[d0 >> 16 & 0xff] + lut[d0 >> 24 & 0xff] + '-' +
+        lut[d1 & 0xff] + lut[d1 >> 8 & 0xff] + '-' + lut[d1 >> 16 & 0x0f | 0x40] + lut[d1 >> 24 & 0xff] + '-' +
+        lut[d2 & 0x3f | 0x80] + lut[d2 >> 8 & 0xff] + '-' + lut[d2 >> 16 & 0xff] + lut[d2 >> 24 & 0xff] +
+        lut[d3 & 0xff] + lut[d3 >> 8 & 0xff] + lut[d3 >> 16 & 0xff] + lut[d3 >> 24 & 0xff];
+}
+
+
 export function make_context_menus(yukon_state) {
     const addLocalMessage = yukon_state.addLocalMessage;
     const importFromSelectedConfigurationMenuElement = {
@@ -551,7 +565,7 @@ export function make_context_menus(yukon_state) {
                 content: "Add a publisher",
                 events: {
                     click: async (e, elementOpenedOn) => {
-                        yukon_state.publishers_being_set_up.push({});
+                        yukon_state.publishers.push({ id: guid() });
                     }
                 }
             },

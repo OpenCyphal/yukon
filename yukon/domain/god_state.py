@@ -178,10 +178,7 @@ class GodState:
                 "chosen_value": ReactiveValue("Manual"),
                 "name": "Node allocation",
             },
-            "Firmware updates": {
-                "Enabled": ReactiveValue(False),
-                "File path": {"__type__": "dirpath", "value": ReactiveValue("")},
-            },
+            "Firmware updates": "__deleted__",
             "Monitor view": {
                 "Show link name on another line": ReactiveValue(True),
                 "Link info width": ReactiveValue(300),

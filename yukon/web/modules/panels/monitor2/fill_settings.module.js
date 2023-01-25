@@ -34,6 +34,7 @@ export function fillSettings(settings, yukon_state) {
     settings.HighlightColorsRaw = yukon_state.all_settings["Monitor view"]["Highlight colors"];
     settings.HighlightColors = [];
     settings.SubscriptionsOffset = null;
+    settings.PublishersOffset = null;
     settings.SubscriptionsVerticalOffset = settings.PageMarginTop;
     settings.SubscriptionsVerticalSpacing = 20;
     settings.ShowLinkNameOnSeparateLine = yukon_state.all_settings["Monitor view"]["Show link name on another line"]
