@@ -1,4 +1,4 @@
-name: Yukon tests
+name: Yukon CI
 on: push
 concurrency:
   group: "CI"
@@ -29,7 +29,7 @@ jobs:
           PYTHONPATH="." nox -s pytest
 
   build-release-linux:
-    name: Yukon Linux Build
+    name: Yukon Ubuntu 20.04 Build
     runs-on: ubuntu-20.04
     if: contains(github.event.head_commit.message, '#build-gnu-linux') || github.ref == 'refs/heads/main'
     steps:
@@ -97,7 +97,7 @@ jobs:
           path: dist/Yukon
           retention-days: 7
   build-release-linux2:
-    name: Yukon Linux Build
+    name: Yukon Ubuntu 22.04 Build
     runs-on: ubuntu-22.04
     if: contains(github.event.head_commit.message, '#build-gnu-linux') || github.ref == 'refs/heads/main'
     steps:
@@ -165,7 +165,7 @@ jobs:
           path: dist/Yukon
           retention-days: 7
   build-release-windows:
-    name: Yukon Windows Build
+    name: Yukon Windows test and build
     runs-on: windows-latest
     if: contains(github.event.head_commit.message, '#build-windows') || github.ref == 'refs/heads/main'
     steps:
