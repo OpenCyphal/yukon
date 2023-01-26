@@ -19,15 +19,198 @@ export function updatePublishers(publishersOuterArea, yukon_state) {
         publishersOuterArea.appendChild(frame);
     }
 }
+function createDatatypeField() {
+    const listOfOptions = ["foo.bar", "foo.baz", "foo.baz", "kala.saba", "kassi.nurr", "airplane.engine.cover.vent"];
+    // Create a div that wraps around the text field and the dropdown menu
+    const wrapper = document.createElement('div');
+    wrapper.style.position = "relative";
+    wrapper.style.display = "flex";
+    wrapper.style.alignItems = "center";
+    wrapper.style.justifyContent = "center";
+    wrapper.style.width = "250px";
+    // Create a text field
+    const textField = document.createElement('input');
+    textField.type = "text";
+    textField.style.position = "relative";
+    textField.style.display = "flex";
+    // Position in center
+    textField.style.alignItems = "center";
+    textField.style.justifyContent = "center";
+    textField.style.width = "250px";
+    // When the text field is focused, show a dropdown menu with all the available datatypes
+    // For now use ["foo.bar", "foo.baz", "foo.baz"] as the list of available datatypes
+    wrapper.appendChild(textField);
+    let dropdown = null
+    // textField.addEventListener('focusout', () => {
+    //     if (dropdown) {
+    //         dropdown.remove();
+    //         dropdown = null;
+    //     }
+    // });
+    let showDropdown = function (listOfOptions) {
+        dropdown = document.createElement('div');
+        dropdown.style.backgroundColor = "white";
+        dropdown.style.border = "1px solid black";
+        dropdown.style.position = "absolute";
+        dropdown.style.width = "400px";
+        dropdown.style.height = "250px";
+        dropdown.style.top = 34 + "px"; // Height of the text field + 2px
+        dropdown.style.left = 0;
+        // Add a list of all the datatypes
+        const list = document.createElement('div');
+        dropdown.appendChild(list);
+        for (const datatype of listOfOptions) {
+            const listItem = document.createElement('div');
+            listItem.style.width = "100%";
+            listItem.style.color = "black";
+            listItem.style.borderBottom = "1px solid black";
+            listItem.classList.add("dropdown-list-item");
+            listItem.innerText = datatype;
+            listItem.addEventListener('click', () => {
+                textField.value = datatype;
+                dropdown.remove();
+            });
+            list.appendChild(listItem);
+        }
+        wrapper.appendChild(dropdown);
+    }
+    let highlightFirstElement = function () {
+        const firstElement = dropdown.querySelector(".dropdown-list-item");
+        if (firstElement === null) {
+            return;
+        }
+        firstElement.classList.add("highlighted");
+    }
+    let highlightLastElement = function () {
+        const lastElement = dropdown.querySelector(".dropdown-list-item:last-child");
+        if (lastElement === null) {
+            return;
+        }
+        lastElement.classList.add("highlighted");
+    }
+
+    let moveHighlightDown = function () {
+        const highlightedItem = dropdown.querySelector(".highlighted");
+        if (highlightedItem === null) {
+            highlightFirstElement();
+            return;
+        }
+        const nextSibling = highlightedItem.nextSibling;
+        if (nextSibling === null) {
+            return;
+        }
+        highlightedItem.classList.remove("highlighted");
+        nextSibling.classList.add("highlighted");
+    }
+    let moveHighlightUp = function () {
+        const highlightedItem = dropdown.querySelector(".highlighted");
+        if (highlightedItem === null) {
+            highlightLastElement();
+            return;
+        }
+        const previousSibling = highlightedItem.previousSibling;
+        if (previousSibling === null) {
+            return;
+        }
+        highlightedItem.classList.remove("highlighted");
+        previousSibling.classList.add("highlighted");
+    }
+
+    // On down arrow, move the highlight down
+    textField.addEventListener('keydown', (event) => {
+        if (event.key === "ArrowDown") {
+            moveHighlightDown();
+        }
+    });
+
+    // On up arrow, move the highlight up
+    textField.addEventListener('keydown', (event) => {
+        if (event.key === "ArrowUp") {
+            moveHighlightUp();
+        }
+    });
+
+    // On enter, select the highlighted item
+    textField.addEventListener('keydown', (event) => {
+        if (event.key === "Enter") {
+            const highlightedItem = dropdown.querySelector(".highlighted");
+            if (highlightedItem === null) {
+                return;
+            }
+            textField.value = highlightedItem.innerText;
+            dropdown.remove();
+            dropdown = null;
+        }
+    });
+
+    // On tab, add one segment from the highlighted element to textField.value, a segment is separated by a full stop
+    // If textfield.value is currently at a full stop then add the next segment
+    // Otherwise add the remaining part that is missing until the next full stop
+    textField.addEventListener('keydown', (event) => {
+        if (event.key === "Tab") {
+            event.preventDefault();
+            const highlightedItem = dropdown.querySelector(".highlighted");
+            if (highlightedItem === null) {
+                return;
+            }
+            const highlightedItemText = highlightedItem.innerText;
+            const textFieldValue = textField.value;
+            const textFieldValueSegments = textFieldValue.split(".");
+            const highlightedItemTextSegments = highlightedItemText.split(".");
+            textField.value = highlightedItemTextSegments.splice(0, textFieldValueSegments.length).join(".");
+        }
+    });
+
+
+    textField.addEventListener('click', () => {
+        if (dropdown) {
+            dropdown.remove();
+            dropdown = null;
+            return;
+        }
+        showDropdown(listOfOptions);
+    });
+    // If the user starts typing something that matches a start of a datatype, show the dropdown menu
+    // Also highlight the matching part of the datatype
+    textField.addEventListener('input', () => {
+        const text = textField.value;
+        const matchingDatatypes = listOfOptions.filter((datatype) => datatype.startsWith(text));
+        if (matchingDatatypes.length === 0) {
+            if (dropdown) {
+                dropdown.remove();
+                dropdown = null;
+            }
+            return;
+        }
+        if (dropdown) {
+            dropdown.remove();
+            dropdown = null;
+        }
+        showDropdown(matchingDatatypes);
+        // If only one datatype matches, higlight the matching part
+        if (matchingDatatypes.length === 1) {
+            // Add highlight to the first element of dropdown
+            const firstElement = dropdown.querySelector(".dropdown-list-item");
+            firstElement.classList.add("highlighted");
+        }
+    });
+    // When escape is pressed, remove the dropdown
+    textField.addEventListener('keydown', (event) => {
+        if (event.key === "Escape") {
+            if (dropdown) {
+                dropdown.remove();
+                dropdown = null;
+            }
+        }
+    });
+
+    return wrapper;
+}
 function createFieldRow() {
     const row = document.createElement('div');
     row.classList.add("publisher-row");
     // Add a text field of 250px width, after that a number field of 50px width and a spinenr and a number field of 50px width
-    const textField = document.createElement('input');
-    textField.type = "text";
-    textField.classList.add("text-field");
-    textField.style.width = "250px";
-    row.appendChild(textField);
+    row.appendChild(createDatatypeField());
     const numberField1 = document.createElement('input');
     numberField1.type = "number";
     numberField1.classList.add("number-field");
@@ -83,9 +266,16 @@ function createPublisherFrame() {
     content.appendChild(separator);
     const fieldRow = createFieldRow();
     content.appendChild(fieldRow);
-    const spinner1 = createSpinner();
-    frame.appendChild(createSpinner("100px"));
-    frame.appendChild(spinner1);
+    // Add a button for adding a new field row
+    const addFieldButton = document.createElement('button');
+    addFieldButton.classList.add("add-field-button");
+    addFieldButton.innerText = "Add Field";
+    addFieldButton.addEventListener('click', () => {
+        const fieldRow = createFieldRow();
+        // Insert the new field row before the add field button
+        content.insertBefore(fieldRow, addFieldButton);
+    });
+    content.appendChild(addFieldButton);
     return frame;
 }
 function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null) {

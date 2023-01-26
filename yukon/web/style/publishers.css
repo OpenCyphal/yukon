@@ -6,7 +6,6 @@
     background-color: rgb(118, 99, 99);
     border: 1px solid #ccc;
     border-radius: 4px;
-    overflow: hidden;
     padding: 0.5em;
 }
 .spinner-knob {
@@ -41,6 +40,9 @@
     margin: 0.5em 0;
     height: 1.5em;
 }
-.publisher-row * {
+.publisher-row>* {
     margin-left: 0.5em;
+}
+.highlighted {
+    background-color: #ccc;
 }
