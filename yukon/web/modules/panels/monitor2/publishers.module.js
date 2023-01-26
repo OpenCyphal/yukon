@@ -218,7 +218,26 @@ function createDatatypeField() {
 
     return wrapper;
 }
-function createFieldRow() {
+function createBooleanFieldRow() {
+    const row = document.createElement('div');
+    row.classList.add("publisher-row");
+    // Add a text field of 250px width, after that a number field of 50px width and a spinenr and a number field of 50px width
+    row.appendChild(createDatatypeField());
+    const booleanField = document.createElement('input');
+    booleanField.type = "checkbox";
+    booleanField.classList.add("boolean-field");
+    row.appendChild(booleanField);
+    // Add a remove button
+    const removeButton = document.createElement('button');
+    removeButton.classList.add("remove-button");
+    removeButton.innerText = "X";
+    removeButton.addEventListener('click', () => {
+        row.remove();
+    });
+    row.appendChild(removeButton);
+    return row;
+}
+function createNumberFieldRow() {
     const row = document.createElement('div');
     row.classList.add("publisher-row");
     // Add a text field of 250px width, after that a number field of 50px width and a spinenr and a number field of 50px width
@@ -296,18 +315,27 @@ function createPublisherFrame() {
     const separator = document.createElement('div');
     separator.classList.add("separator");
     content.appendChild(separator);
-    const fieldRow = createFieldRow();
+    const fieldRow = createNumberFieldRow();
     content.appendChild(fieldRow);
     // Add a button for adding a new field row
-    const addFieldButton = document.createElement('button');
-    addFieldButton.classList.add("add-field-button");
-    addFieldButton.innerText = "Add Field";
-    addFieldButton.addEventListener('click', () => {
-        const fieldRow = createFieldRow();
+    const addNumberFieldButton = document.createElement('button');
+    addNumberFieldButton.classList.add("add-field-button");
+    addNumberFieldButton.innerText = "Add number field";
+    addNumberFieldButton.addEventListener('click', () => {
+        const fieldRow = createNumberFieldRow();
         // Insert the new field row before the add field button
-        content.insertBefore(fieldRow, addFieldButton);
+        content.insertBefore(fieldRow, addNumberFieldButton);
     });
-    content.appendChild(addFieldButton);
+    content.appendChild(addNumberFieldButton);
+    const addBooleanFieldButton = document.createElement('button');
+    addBooleanFieldButton.classList.add("add-field-button");
+    addBooleanFieldButton.innerText = "Add boolean field";
+    addBooleanFieldButton.addEventListener('click', () => {
+        const fieldRow = createBooleanFieldRow();
+        // Insert the new field row before the add field button
+        content.insertBefore(fieldRow, addNumberFieldButton);
+    });
+    content.appendChild(addBooleanFieldButton);
     return frame;
 }
 function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getMinValue = null, getMaxValue = null) {
@@ -478,19 +506,19 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
                 valueChangedCallback(newValue);
             }
 
-            hoveringValueSpan = document.body.querySelector(".hovering-value") || document.createElement('span');
-            hoveringValueSpan.classList.add("hovering-value");
-            document.body.appendChild(hoveringValueSpan);
-            hoveringValueSpan.innerText = spinnerValue.toFixed(4);
-            hoveringValueSpan.style.position = "absolute";
-            hoveringValueSpan.style.left = mousePos.x + 20 + "px";
-            hoveringValueSpan.style.top = mousePos.y + 20 + "px";
-            // Remove the hovering value span after 2 seconds when there hasn't been any mouse wheel scrolling
-            wheelScrollValueIndicatorTimeout = setTimeout(() => {
-                if (hoveringValueSpan && hoveringValueSpan.parentElement == document.body) {
-                    document.body.removeChild(hoveringValueSpan);
-                }
-            }, 2000);
+            // hoveringValueSpan = document.body.querySelector(".hovering-value") || document.createElement('span');
+            // hoveringValueSpan.classList.add("hovering-value");
+            // document.body.appendChild(hoveringValueSpan);
+            // hoveringValueSpan.innerText = spinnerValue.toFixed(4);
+            // hoveringValueSpan.style.position = "absolute";
+            // hoveringValueSpan.style.left = mousePos.x + 20 + "px";
+            // hoveringValueSpan.style.top = mousePos.y + 20 + "px";
+            // // Remove the hovering value span after 2 seconds when there hasn't been any mouse wheel scrolling
+            // wheelScrollValueIndicatorTimeout = setTimeout(() => {
+            //     if (hoveringValueSpan && hoveringValueSpan.parentElement == document.body) {
+            //         document.body.removeChild(hoveringValueSpan);
+            //     }
+            // }, 2000);
 
         }
     });
