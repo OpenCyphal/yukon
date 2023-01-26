@@ -20,7 +20,7 @@ export function updatePublishers(publishersOuterArea, yukon_state) {
     }
 }
 function createDatatypeField() {
-    const listOfOptions = ["foo.bar", "foo.baz", "foo.baz", "kala.saba", "kassi.nurr", "airplane.engine.cover.vent"];
+    const listOfOptions = ["foo.bar", "foo.baz", "foo.baz", "kala.saba", "kassi.nurr", "airplane.engine.cover.vent", "airplane.engine.cover.duct", "airplane.motor.cover.duct"];
     // Create a div that wraps around the text field and the dropdown menu
     const wrapper = document.createElement('div');
     wrapper.style.position = "relative";
@@ -51,6 +51,7 @@ function createDatatypeField() {
         dropdown = document.createElement('div');
         dropdown.style.backgroundColor = "white";
         dropdown.style.border = "1px solid black";
+        dropdown.style.zIndex = 100;
         dropdown.style.position = "absolute";
         dropdown.style.width = "400px";
         dropdown.style.height = "250px";
@@ -215,6 +216,7 @@ function createFieldRow() {
     numberField1.type = "number";
     numberField1.classList.add("number-field");
     numberField1.style.width = "50px";
+    numberField1.value = 0
     row.appendChild(numberField1);
     const spinner = createSpinner("100%");
     spinner.style.marginLeft = "2px";
@@ -224,6 +226,7 @@ function createFieldRow() {
     numberField2.type = "number";
     numberField2.classList.add("number-field");
     numberField2.style.width = "50px";
+    numberField2.value = 100;
     row.appendChild(numberField2);
     return row;
 }
@@ -313,7 +316,9 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null) {
         mousePos.x = e.clientX;
         mousePos.y = e.clientY;
     });
-
+    let previousSpinnerAngle = 0.0;
+    spinner.setAttribute("data-value", 0.0);
+    let hoveringValueSpan = null;
     let faceToMouse = function (mouseEvent) {
         // Get the mouse position
         // Get the spinner's absolute position relative to the window
@@ -324,6 +329,10 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null) {
 
         // Get the angle between the mouse and the spinner
         const angle = Math.atan2(mousePos.y - spinnerPos.y, mousePos.x - spinnerPos.x);
+        const angleDiff = angle - previousSpinnerAngle;
+        previousSpinnerAngle = angle;
+        spinner.setAttribute("data-angle", angle);
+        spinner.setAttribute("data-value", (parseFloat(spinner.getAttribute("data-value")) + angleDiff).toFixed(4));
         // This didn't work, use acos instead
         // const angle2 = Math.acos((mousePos.x - spinnerPos.x) / Math.sqrt(Math.pow(mousePos.x - spinnerPos.x, 2) + Math.pow(mousePos.y - spinnerPos.y, 2)));
         // console.log(angle2);
@@ -336,6 +345,9 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null) {
     let mouseDown = false;
     spinner.addEventListener('mousedown', (e) => {
         mouseDown = true;
+        hoveringValueSpan = document.createElement('span');
+        hoveringValueSpan.classList.add("hovering-value");
+        document.body.appendChild(hoveringValueSpan);
         // Make sure that nothing in the document is selectable 
         document.body.style.userSelect = "none";
         // While mouse is down, on every requestAnimationFrame call faceToMouse
@@ -344,11 +356,18 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null) {
             if (mouseDown) {
                 window.requestAnimationFrame(faceToMouseLoop);
             }
+            // Position a span above the mouse showing the current value
+            hoveringValueSpan.innerText = spinner.getAttribute("data-value");
+            hoveringValueSpan.style.position = "absolute";
+            hoveringValueSpan.style.left = mousePos.x + 20 + "px";
+            hoveringValueSpan.style.top = mousePos.y + 20 + "px";
+
         };
         window.requestAnimationFrame(faceToMouseLoop);
     });
     document.addEventListener('mouseup', (e) => {
         document.body.style.userSelect = "auto";
+        document.body.removeChild(hoveringValueSpan);
         mouseDown = false;
     });
     return spinner;

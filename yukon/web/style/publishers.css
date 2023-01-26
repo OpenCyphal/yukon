@@ -46,3 +46,7 @@
 .highlighted {
     background-color: #ccc;
 }
+.hovering-value{
+    text-shadow: 0 0 0.1em #000, 0 0 0.1em #000, 0 0 0.1em #000, 0 0 0.1em #000;
+    color: #fff;
+}
