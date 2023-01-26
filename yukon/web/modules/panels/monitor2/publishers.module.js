@@ -8,7 +8,7 @@ export function updatePublishers(publishersOuterArea, yukon_state) {
             continue;
         }
 
-        const frame = createPublisherFrame();
+        const frame = createPublisherFrame(yukon_state);
         frame.id = publisher.id;
         frame.style.top = 200 + "px";
         frame.style.left = 200 + "px";
@@ -19,7 +19,7 @@ export function updatePublishers(publishersOuterArea, yukon_state) {
         publishersOuterArea.appendChild(frame);
     }
 }
-function createDatatypeField() {
+function createDatatypeField(yukon_state) {
     const listOfOptions = ["foo.bar", "foo.baz", "foo.baz", "kala.saba", "kassi.nurr", "airplane.engine.cover.vent", "airplane.engine.cover.duct", "airplane.motor.cover.duct"];
     // Create a div that wraps around the text field and the dropdown menu
     const wrapper = document.createElement('div');
@@ -218,7 +218,7 @@ function createDatatypeField() {
 
     return wrapper;
 }
-function createBooleanFieldRow() {
+function createBooleanFieldRow(yukon_state) {
     const row = document.createElement('div');
     row.classList.add("publisher-row");
     // Add a text field of 250px width, after that a number field of 50px width and a spinenr and a number field of 50px width
@@ -237,7 +237,7 @@ function createBooleanFieldRow() {
     row.appendChild(removeButton);
     return row;
 }
-function createNumberFieldRow() {
+function createNumberFieldRow(yukon_state) {
     const row = document.createElement('div');
     row.classList.add("publisher-row");
     // Add a text field of 250px width, after that a number field of 50px width and a spinenr and a number field of 50px width
@@ -267,6 +267,9 @@ function createNumberFieldRow() {
     valueField.classList.add("value-field");
     valueField.style.width = "100px";
     valueField.value = 0;
+    valueField.addEventListener('input', () => {
+        spinner.setValue(parseFloat(valueField.value));
+    });
     row.appendChild(valueField);
     // Add a remove button
     const removeButton = document.createElement('button');
@@ -278,7 +281,7 @@ function createNumberFieldRow() {
     row.appendChild(removeButton);
     return row;
 }
-function createPublisherFrame() {
+function createPublisherFrame(yukon_state) {
     const frame = document.createElement('div');
     frame.classList.add("publisher-frame");
     // Create a vertical flexbox for holding rows of content
@@ -315,14 +318,14 @@ function createPublisherFrame() {
     const separator = document.createElement('div');
     separator.classList.add("separator");
     content.appendChild(separator);
-    const fieldRow = createNumberFieldRow();
+    const fieldRow = createNumberFieldRow(yukon_state);
     content.appendChild(fieldRow);
     // Add a button for adding a new field row
     const addNumberFieldButton = document.createElement('button');
     addNumberFieldButton.classList.add("add-field-button");
     addNumberFieldButton.innerText = "Add number field";
     addNumberFieldButton.addEventListener('click', () => {
-        const fieldRow = createNumberFieldRow();
+        const fieldRow = createNumberFieldRow(yukon_state);
         // Insert the new field row before the add field button
         content.insertBefore(fieldRow, addNumberFieldButton);
     });
@@ -363,7 +366,11 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
     let previousSpinnerAngle = 0.0;
     let spinnerValue = 0.0;
     let spinnerAngle = 0.0;
-    spinner.setAttribute("data-angle", 0.0);
+    const multiplier = 1;
+    const valueRange = () => getMaxValue() - getMinValue();
+    const wholeRange = () => valueRange() * multiplier;
+    const maxAngle = () => wholeRange() - Math.floor((wholeRange()) / (Math.PI * 2)) * (Math.PI * 2);
+    const minAngle = 0;
     spinnerValue = getMinValue() || 0;
     if (getMinValue) {
         spinnerValue = getMinValue();
@@ -389,15 +396,8 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
                 smallestIndex = i;
             }
         }
-        const multiplier = 1;
-        const valueRange = () => getMaxValue() - getMinValue();
-        const wholeRange = () => valueRange() * multiplier;
-        const maxAngle = () => wholeRange() - Math.floor((wholeRange()) / (Math.PI * 2)) * (Math.PI * 2);
-        const minAngle = 0;
         const angleDiff = options[smallestIndex];
-        if (Math.abs(angleDiff) > 2) {
-            console.log("angleDiff: " + angleDiff);
-        }
+
         let newValue = parseFloat(spinnerValue) + angleDiff;
         let wasClamped = false;
         // Clamp data-value between getMinValue and getMaxValue
@@ -468,13 +468,10 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
             }
             // Rotate the spinner by 1 degree if the mouse is scrolled up, -1 degree if the mouse is scrolled down
             let multiplier = 1;
+            const addedIncrement = (e.deltaY > 0 ? -1 * multiplier : 1 * multiplier);
             if (e.shiftKey) {
                 multiplier = 10;
             }
-            const valueRange = () => getMaxValue() - getMinValue();
-            const addedIncrement = (e.deltaY > 0 ? -1 * multiplier : 1 * multiplier);
-            const wholeRange = () => valueRange() * multiplier;
-            const maxAngle = () => wholeRange() - Math.floor((wholeRange()) / (Math.PI * 2)) * (Math.PI * 2);
             let newValue = spinnerValue + addedIncrement;
             let newAngle = spinnerAngle + addedIncrement;
             const minAngle = 0;
@@ -505,21 +502,6 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
             if (valueChangedCallback) {
                 valueChangedCallback(newValue);
             }
-
-            // hoveringValueSpan = document.body.querySelector(".hovering-value") || document.createElement('span');
-            // hoveringValueSpan.classList.add("hovering-value");
-            // document.body.appendChild(hoveringValueSpan);
-            // hoveringValueSpan.innerText = spinnerValue.toFixed(4);
-            // hoveringValueSpan.style.position = "absolute";
-            // hoveringValueSpan.style.left = mousePos.x + 20 + "px";
-            // hoveringValueSpan.style.top = mousePos.y + 20 + "px";
-            // // Remove the hovering value span after 2 seconds when there hasn't been any mouse wheel scrolling
-            // wheelScrollValueIndicatorTimeout = setTimeout(() => {
-            //     if (hoveringValueSpan && hoveringValueSpan.parentElement == document.body) {
-            //         document.body.removeChild(hoveringValueSpan);
-            //     }
-            // }, 2000);
-
         }
     });
     document.addEventListener('mouseup', (e) => {
@@ -531,12 +513,10 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
     });
     return {
         "spinnerElement": spinner, "setValue": (newValue) => {
-            const angle = parseFloat(spinner.getAttribute("data-angle"));
-            const value = parseFloat(spinnerValue);
-            spinnerValue = parseFloat(newValue).toFixed(4);
+            const newAngle = newValue * multiplier;
+            spinnerValue = newValue;
             spinner.style.transform = `rotate(${newAngle}rad)`;
             previousSpinnerAngle = newAngle;
-            spinner.setAttribute("data-angle", newAngle);
         }
     };
 }
