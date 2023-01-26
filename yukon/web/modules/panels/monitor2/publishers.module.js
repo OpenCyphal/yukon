@@ -54,7 +54,9 @@ function createDatatypeField() {
         dropdown.style.zIndex = 100;
         dropdown.style.position = "absolute";
         dropdown.style.width = "400px";
-        dropdown.style.height = "250px";
+        dropdown.style.height = "fit-content"
+        dropdown.style.maxHeight = "100px";
+        dropdown.style.overflowY = "scroll";
         dropdown.style.top = 34 + "px"; // Height of the text field + 2px
         dropdown.style.left = 0;
         // Add a list of all the datatypes
@@ -116,11 +118,19 @@ function createDatatypeField() {
         highlightedItem.classList.remove("highlighted");
         previousSibling.classList.add("highlighted");
     }
+    let scrollToHighlightedElement = function () {
+        const highlightedItem = dropdown.querySelector(".highlighted");
+        if (highlightedItem === null) {
+            return;
+        }
+        highlightedItem.scrollIntoView();
+    }
 
     // On down arrow, move the highlight down
     textField.addEventListener('keydown', (event) => {
         if (event.key === "ArrowDown") {
             moveHighlightDown();
+            scrollToHighlightedElement();
         }
     });
 
@@ -128,6 +138,7 @@ function createDatatypeField() {
     textField.addEventListener('keydown', (event) => {
         if (event.key === "ArrowUp") {
             moveHighlightUp();
+            scrollToHighlightedElement();
         }
     });
 
@@ -219,11 +230,13 @@ function createFieldRow() {
     numberField1.style.width = "50px";
     numberField1.value = 0
     row.appendChild(numberField1);
+    const valueField = document.createElement('input');
     const numberField2 = document.createElement('input');
-    const spinner = createSpinner("100%", null, () => numberField1.value, () => numberField2.value);
-    spinner.style.marginLeft = "2px";
-    spinner.style.marginRight = "2px";
-    row.appendChild(spinner);
+    const spinner = createSpinner("100%", (x) => valueField.value = x, () => parseFloat(numberField1.value), () => parseFloat(numberField2.value));
+    const spinnerElement = spinner.spinnerElement;
+    spinnerElement.style.marginLeft = "2px";
+    spinnerElement.style.marginRight = "2px";
+    row.appendChild(spinnerElement);
     numberField2.classList.add("max-value-field");
     numberField2.type = "number";
     numberField2.classList.add("number-field");
@@ -231,12 +244,19 @@ function createFieldRow() {
     numberField2.value = 100;
     row.appendChild(numberField2);
     // Add a number field for value
-    const valueField = document.createElement('input');
     valueField.type = "number";
     valueField.classList.add("value-field");
-    valueField.style.width = "50px";
+    valueField.style.width = "100px";
     valueField.value = 0;
     row.appendChild(valueField);
+    // Add a remove button
+    const removeButton = document.createElement('button');
+    removeButton.classList.add("remove-button");
+    removeButton.innerText = "X";
+    removeButton.addEventListener('click', () => {
+        row.remove();
+    });
+    row.appendChild(removeButton);
     return row;
 }
 function createPublisherFrame() {
@@ -313,10 +333,12 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
         mousePos.y = e.clientY;
     });
     let previousSpinnerAngle = 0.0;
+    let spinnerValue = 0.0;
+    let spinnerAngle = 0.0;
     spinner.setAttribute("data-angle", 0.0);
-    spinner.setAttribute("data-value", 0.0);
+    spinnerValue = getMinValue() || 0;
     if (getMinValue) {
-        spinner.setAttribute("data-value", getMinValue());
+        spinnerValue = getMinValue();
     }
     let hoveringValueSpan = null;
     let faceToMouse = function (mouseEvent) {
@@ -328,8 +350,8 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
         };
 
         // Get the angle between the mouse and the spinner
-        const angle = Math.atan2(mousePos.y - spinnerPos.y, mousePos.x - spinnerPos.x);
-        let options = [angle + 2 * Math.PI - previousSpinnerAngle, angle - previousSpinnerAngle, angle - 2 * Math.PI - previousSpinnerAngle]
+        let newAngle = Math.atan2(mousePos.y - spinnerPos.y, mousePos.x - spinnerPos.x);
+        let options = [newAngle + 2 * Math.PI - previousSpinnerAngle, newAngle - previousSpinnerAngle, newAngle - 2 * Math.PI - previousSpinnerAngle]
         // Take the absolute value of every option in options and find the smallest absolute value, then save the index of that value
         let smallestIndex = 0;
         let smallestValue = Math.abs(options[0]);
@@ -339,36 +361,41 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
                 smallestIndex = i;
             }
         }
+        const multiplier = 1;
+        const valueRange = () => getMaxValue() - getMinValue();
+        const wholeRange = () => valueRange() * multiplier;
+        const maxAngle = () => wholeRange() - Math.floor((wholeRange()) / (Math.PI * 2)) * (Math.PI * 2);
+        const minAngle = 0;
         const angleDiff = options[smallestIndex];
-        spinner.setAttribute("data-value", (parseFloat(spinner.getAttribute("data-value")) + angleDiff).toFixed(4));
+        if (Math.abs(angleDiff) > 2) {
+            console.log("angleDiff: " + angleDiff);
+        }
+        let newValue = parseFloat(spinnerValue) + angleDiff;
         let wasClamped = false;
         // Clamp data-value between getMinValue and getMaxValue
         if (getMinValue) {
             const minValue = getMinValue();
-            if (parseFloat(spinner.getAttribute("data-value")) <= minValue) {
-                spinner.setAttribute("data-value", minValue);
+            if (newValue <= minValue) {
+                newAngle = minAngle;
+                newValue = minValue;
                 wasClamped = true;
             }
         }
         if (getMaxValue) {
             const maxValue = getMaxValue();
-            if (parseFloat(spinner.getAttribute("data-value")) >= maxValue) {
-                spinner.setAttribute("data-value", maxValue);
+            if (newValue >= maxValue) {
+                newAngle = maxAngle();
+                newValue = maxValue;
                 wasClamped = true;
             }
         }
-        // This didn't work, use acos instead
-        // const angle2 = Math.acos((mousePos.x - spinnerPos.x) / Math.sqrt(Math.pow(mousePos.x - spinnerPos.x, 2) + Math.pow(mousePos.y - spinnerPos.y, 2)));
-        // console.log(angle2);
-        // Rotate the spinner
         if (valueChangedCallback) {
-            valueChangedCallback(angle);
+            valueChangedCallback(newValue);
         }
-        if (!wasClamped) {
-            previousSpinnerAngle = angle;
-            spinner.style.transform = `rotate(${angle}rad)`;
-            spinner.setAttribute("data-angle", angle);
-        }
+        previousSpinnerAngle = newAngle;
+        spinner.style.transform = `rotate(${newAngle}rad)`;
+        spinnerValue = newValue;
+        spinnerAngle = newAngle;
     }
     let mouseDown = false;
     let wheelScrollValueIndicatorTimeout = null;
@@ -390,7 +417,7 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
                 window.requestAnimationFrame(faceToMouseLoop);
             }
             // Position a span above the mouse showing the current value
-            hoveringValueSpan.innerText = spinner.getAttribute("data-value");
+            hoveringValueSpan.innerText = spinnerValue;
             hoveringValueSpan.style.position = "absolute";
             hoveringValueSpan.style.left = mousePos.x + 20 + "px";
             hoveringValueSpan.style.top = mousePos.y + 20 + "px";
@@ -400,7 +427,6 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
     });
     // When mouse is scrolled while it is hovering spinner, rotate it
     spinner.addEventListener('wheel', (e) => {
-
         // Get the mouse position
         // Get the spinner's absolute position relative to the window
         const spinnerPos = {
@@ -413,17 +439,16 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
                 clearTimeout(wheelScrollValueIndicatorTimeout);
             }
             // Rotate the spinner by 1 degree if the mouse is scrolled up, -1 degree if the mouse is scrolled down
-            const angle = parseFloat(spinner.getAttribute("data-angle"));
-            const value = parseFloat(spinner.getAttribute("data-value"));
-            const valueRange = () => getMaxValue() - getMinValue();
             let multiplier = 1;
             if (e.shiftKey) {
                 multiplier = 10;
             }
+            const valueRange = () => getMaxValue() - getMinValue();
             const addedIncrement = (e.deltaY > 0 ? -1 * multiplier : 1 * multiplier);
-            let newValue = parseFloat(value) + addedIncrement;
-            let newAngle = parseFloat(angle) + addedIncrement;
-            const maxAngle = () => valueRange() * multiplier;
+            const wholeRange = () => valueRange() * multiplier;
+            const maxAngle = () => wholeRange() - Math.floor((wholeRange()) / (Math.PI * 2)) * (Math.PI * 2);
+            let newValue = spinnerValue + addedIncrement;
+            let newAngle = spinnerAngle + addedIncrement;
             const minAngle = 0;
             let isClamped = false;
             if (getMinValue) {
@@ -444,14 +469,19 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
                     newAngle = maxAngle();
                 }
             }
-            spinner.setAttribute("data-value", parseFloat(newValue).toFixed(4));
+            spinnerValue = newValue;
+            spinnerAngle = newAngle;
             spinner.style.transform = `rotate(${newAngle}rad)`;
             previousSpinnerAngle = newAngle;
-            spinner.setAttribute("data-angle", newAngle);
+
+            if (valueChangedCallback) {
+                valueChangedCallback(newValue);
+            }
+
             hoveringValueSpan = document.body.querySelector(".hovering-value") || document.createElement('span');
             hoveringValueSpan.classList.add("hovering-value");
             document.body.appendChild(hoveringValueSpan);
-            hoveringValueSpan.innerText = spinner.getAttribute("data-value");
+            hoveringValueSpan.innerText = spinnerValue.toFixed(4);
             hoveringValueSpan.style.position = "absolute";
             hoveringValueSpan.style.left = mousePos.x + 20 + "px";
             hoveringValueSpan.style.top = mousePos.y + 20 + "px";
@@ -461,9 +491,7 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
                     document.body.removeChild(hoveringValueSpan);
                 }
             }, 2000);
-            if (valueChangedCallback) {
-                valueChangedCallback(newValue);
-            }
+
         }
     });
     document.addEventListener('mouseup', (e) => {
@@ -473,5 +501,14 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
         }
         mouseDown = false;
     });
-    return spinner;
+    return {
+        "spinnerElement": spinner, "setValue": (newValue) => {
+            const angle = parseFloat(spinner.getAttribute("data-angle"));
+            const value = parseFloat(spinnerValue);
+            spinnerValue = parseFloat(newValue).toFixed(4);
+            spinner.style.transform = `rotate(${newAngle}rad)`;
+            previousSpinnerAngle = newAngle;
+            spinner.setAttribute("data-angle", newAngle);
+        }
+    };
 }
