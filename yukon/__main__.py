@@ -29,8 +29,8 @@ def run_application(is_headless: bool, port: Optional[int] = None, should_look_a
         )  # pylint: disable=no-value-for-parameter
     except KeyboardInterrupt:
         print("Yukon is closing.")
-    except:
-        print("Failure in Yukon.")
+    except Exception as e:
+        print("Failure in Yukon: " + str(e))
         try:
             import pyi_splash
 

@@ -1,3 +1,14 @@
+var lut = []; for (var i = 0; i < 256; i++) { lut[i] = (i < 16 ? '0' : '') + (i).toString(16); }
+function guid() {
+    var d0 = Math.random() * 0xffffffff | 0;
+    var d1 = Math.random() * 0xffffffff | 0;
+    var d2 = Math.random() * 0xffffffff | 0;
+    var d3 = Math.random() * 0xffffffff | 0;
+    return lut[d0 & 0xff] + lut[d0 >> 8 & 0xff] + lut[d0 >> 16 & 0xff] + lut[d0 >> 24 & 0xff] + '-' +
+        lut[d1 & 0xff] + lut[d1 >> 8 & 0xff] + '-' + lut[d1 >> 16 & 0x0f | 0x40] + lut[d1 >> 24 & 0xff] + '-' +
+        lut[d2 & 0x3f | 0x80] + lut[d2 >> 8 & 0xff] + '-' + lut[d2 >> 16 & 0xff] + lut[d2 >> 24 & 0xff] +
+        lut[d3 & 0xff] + lut[d3 >> 8 & 0xff] + lut[d3 >> 16 & 0xff] + lut[d3 >> 24 & 0xff];
+}
 export async function updatePublishers(publishersOuterArea, yukon_state) {
     // The client side should publish through calling the APIJ
     // The server side should publish when it receives a request from the client to do so
@@ -30,7 +41,7 @@ export async function updatePublishers(publishersOuterArea, yukon_state) {
         publishersOuterArea.appendChild(frame);
     }
 }
-async function createDatatypeField(yukon_state) {
+async function createDatatypeField(publisher, field, yukon_state) {
     const listOfOptions = await yukon_state.zubax_apij.get_publish_type_names();
     // Create a div that wraps around the text field and the dropdown menu
     const wrapper = document.createElement('div');
@@ -42,6 +53,13 @@ async function createDatatypeField(yukon_state) {
     // Create a text field
     const textField = document.createElement('input');
     textField.type = "text";
+    if (field && field.type_name) {
+        textField.value = field.type_name;
+    }
+    textField.addEventListener('change', async () => {
+        const newDatatype = textField.value;
+        await yukon_state.zubax_apij.set_publisher_field_type_name(publisher.id, field.id, newDatatype);
+    });
     textField.style.position = "relative";
     textField.style.display = "flex";
     // Position in center
@@ -235,11 +253,16 @@ async function createDatatypeField(yukon_state) {
 
     return wrapper;
 }
-async function createBooleanFieldRow(yukon_state) {
+async function createBooleanFieldRow(publisher, yukon_state) {
     const row = document.createElement('div');
+    const rowId = guid();
+    row.id = rowId;
     row.classList.add("publisher-row");
+    if (!field) {
+        field = (await yukon_state.zubax_apij.make_publisher_field(publisher.id, rowId)).field;
+    }
     // Add a text field of 250px width, after that a number field of 50px width and a spinenr and a number field of 50px width
-    row.appendChild(await createDatatypeField(yukon_state));
+    row.appendChild(await createDatatypeField(publisher, field, yukon_state));
     const booleanField = document.createElement('input');
     booleanField.type = "checkbox";
     booleanField.classList.add("boolean-field");
@@ -254,11 +277,21 @@ async function createBooleanFieldRow(yukon_state) {
     row.appendChild(removeButton);
     return row;
 }
-async function createNumberFieldRow(yukon_state) {
+async function createNumberFieldRow(publisher, yukon_state, field) {
     const row = document.createElement('div');
+    const rowId = guid();
+    if (field && field.id) {
+        row.id = field.id;
+    } else {
+        row.id = rowId;
+    }
+    if (!field) {
+        field = (await yukon_state.zubax_apij.make_publisher_field(publisher.id, rowId)).field;
+        console.log(field);
+    }
     row.classList.add("publisher-row");
     // Add a text field of 250px width, after that a number field of 50px width and a spinenr and a number field of 50px width
-    row.appendChild(await createDatatypeField(yukon_state));
+    row.appendChild(await createDatatypeField(publisher, field, yukon_state));
     const numberField1 = document.createElement('input');
     numberField1.type = "number";
     numberField1.classList.add("number-field");
@@ -314,6 +347,10 @@ async function createPublisherFrame(publisher, yukon_state) {
     refreshRateSpinner.type = "number";
     refreshRateSpinner.classList.add("refresh-rate-spinner");
     refreshRateSpinner.value = 15;
+    refreshRateSpinner.addEventListener('input', () => {
+        publisher.refresh_rate = parseFloat(refreshRateSpinner.value);
+        yukon_state.zubax_apij.set_publisher_rate(publisher.id, publisher.refresh_rate)
+    });
     refreshRateRow.appendChild(refreshRateSpinner);
     // Add a text saying, "Hz"
     const hzText = document.createElement('span');
@@ -336,19 +373,28 @@ async function createPublisherFrame(publisher, yukon_state) {
     nameInput.type = "text";
     nameInput.classList.add("publisher-name-input");
     nameInput.placeholder = "Publisher name";
+    nameInput.value = publisher.name;
+    nameInput.addEventListener('input', async () => {
+        await yukon_state.zubax_apij.set_publisher_name(publisher.id, nameInput.value);
+    });
     refreshRateRow.appendChild(nameInput);
     // Add a separator box between the refresh rate row and the next row
     const separator = document.createElement('div');
     separator.classList.add("separator");
     content.appendChild(separator);
-    const fieldRow = await createNumberFieldRow(yukon_state);
-    content.appendChild(fieldRow);
+    const publisherFieldsResponse = await yukon_state.zubax_apij.get_publisher_fields(publisher.id);
+    if (publisherFieldsResponse.success && publisherFieldsResponse.fields && Array.isArray(publisherFieldsResponse.fields)) {
+        for (const [id, field] of Object.entries(publisherFieldsResponse.fields)) {
+            const fieldRow = await createNumberFieldRow(publisher, yukon_state, field);
+            content.appendChild(fieldRow);
+        }
+    }
     // Add a button for adding a new field row
     const addNumberFieldButton = document.createElement('button');
     addNumberFieldButton.classList.add("add-field-button");
     addNumberFieldButton.innerText = "Add number field";
     addNumberFieldButton.addEventListener('click', async () => {
-        const fieldRow = await createNumberFieldRow(yukon_state);
+        const fieldRow = await createNumberFieldRow(publisher, yukon_state);
         // Insert the new field row before the add field button
         content.insertBefore(fieldRow, addNumberFieldButton);
     });
@@ -543,10 +589,29 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
     });
     return {
         "spinnerElement": spinner, "setValue": (newValue) => {
-            const newAngle = newValue * multiplier;
+            const circle = Math.PI * 2;
+            spinnerAngle = newValue - Math.floor(newValue / circle) * circle;
             spinnerValue = newValue;
-            spinner.style.transform = `rotate(${newAngle}rad)`;
-            previousSpinnerAngle = newAngle;
+            if (getMinValue) {
+                const minValue = getMinValue();
+                if (spinnerValue <= minValue) {
+                    spinnerValue = minValue;
+                    valueChangedCallback(spinnerValue);
+                    // Set the angle to the corresponding clamped angle
+                    spinnerAngle = minAngle;
+                }
+            }
+            if (getMaxValue) {
+                const maxValue = getMaxValue();
+                if (spinnerValue >= maxValue) {
+                    spinnerValue = maxValue;
+                    valueChangedCallback(spinnerValue);
+                    // Set the angle to the corresponding clamped angle
+                    spinnerAngle = maxAngle();
+                }
+            }
+            spinner.style.transform = `rotate(${spinnerAngle}rad)`;
+            previousSpinnerAngle = spinnerAngle;
         }
     };
 }
