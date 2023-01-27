@@ -555,9 +555,18 @@ class Api:
         field = self.state.cyphal.publishers_by_id[publisher_id].add_field(field_id)
         return jsonify({"success": True, "field": field})
 
-    def set_publisher_field_type_name(self, publisher_id: str, field_id: str, datatype: str) -> Response:
-        self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).type_name = datatype
+    def delete_publisher_field(self, publisher_id: str, field_id: str) -> Response:
+        self.state.cyphal.publishers_by_id[publisher_id].delete_field(field_id)
         return jsonify({"success": True})
+
+    def set_publisher_field_type_name(self, publisher_id: str, field_id: str, datatype: str) -> Response:
+        try:
+            self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).type_name = datatype
+            return jsonify(
+                {"success": True, "field": self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id)}
+            )
+        except:
+            return jsonify({"success": False, "message": traceback.format_exc()})
 
     def get_publisher_field(self, publisher_id: str, field_id: str) -> Response:
         return jsonify(self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id))
@@ -568,6 +577,28 @@ class Api:
             return jsonify({"success": True, "fields": fields})
         except:
             return jsonify({"success": False, "message": traceback.format_exc(), "fields": []})
+
+    def set_publisher_field_value(self, publisher_id: str, field_id: str, value: str) -> Response:
+        try:
+            self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).value = value
+            return jsonify({"success": True})
+        except:
+            return jsonify({"success": False, "message": traceback.format_exc()})
+
+    def get_publisher_field_value(self, publisher_id: str, field_id: str) -> Response:
+        try:
+            value = self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).value
+            return jsonify({"success": True, "value": value})
+        except:
+            return jsonify({"success": False, "message": traceback.format_exc()})
+
+    def set_field_min_max(self, publisher_id: str, field_id: str, min: float, max: float) -> Response:
+        try:
+            self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).min = min
+            self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).max = max
+            return jsonify({"success": True})
+        except:
+            return jsonify({"success": False, "message": traceback.format_exc()})
 
     def set_publisher_rate(self, publisher_id: str, rate: int) -> Response:
         try:

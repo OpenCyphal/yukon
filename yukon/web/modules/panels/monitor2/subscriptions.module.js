@@ -120,6 +120,11 @@ async function fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, l
 }
 function fillExistingDivs(existing_divs, existing_specifiers, subscriptionsDiv, yukon_state) {
     for (const child of subscriptionsDiv.children) {
+        const isSubscriptionDiv = !child.classList.contains(".publisher-frame");
+        if (!isSubscriptionDiv) {
+            console.log("Is not a subscription")
+            continue;
+        }
         const specifier = child.getAttribute("data-specifier");
         const isBeingSetup = child.getAttribute("data-is-being-setup");
         const isExisting = existing_specifiers[specifier];

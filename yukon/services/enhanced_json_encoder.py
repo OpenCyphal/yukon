@@ -55,11 +55,15 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             return {
                 "id": o.id,
                 "name": o.name,
+                "fields": o.fields,
             }
         if isinstance(o, PublisherField):
             return {
                 "id": o.id,
                 "type_name": o.type_name,
+                "value": o.value,
+                "min": o.min,
+                "max": o.max,
             }
         if isinstance(o, NodeMonitor.Entry):
             if o.info is None or o.info.hardware_version is None:

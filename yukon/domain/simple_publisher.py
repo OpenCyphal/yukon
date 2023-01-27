@@ -9,6 +9,7 @@ class SimplePublisher:
         self.name = ""
         self.fields: typing.Dict[str, PublisherField] = {}
         self.rate_per_second = 1
+        self.enabled = False
 
     def add_field(self, id: str):
         self.fields[id] = PublisherField(id)
@@ -16,3 +17,6 @@ class SimplePublisher:
 
     def get_field(self, id: str) -> PublisherField:
         return self.fields[id]
+
+    def delete_field(self, id: str):
+        del self.fields[id]

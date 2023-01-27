@@ -27,8 +27,8 @@ export async function updatePublishers(publishersOuterArea, yukon_state) {
         console.log(`Rendering publisher ${JSON.stringify(publisher)}`, publisher);
         const frame = await createPublisherFrame(publisher, yukon_state);
         frame.id = publisher.id;
-        frame.style.top = 200 + "px";
-        frame.style.left = 200 + "px";
+        // frame.style.top = 200 + "px";
+        // frame.style.left = 200 + "px";
         // Add a text saying, "Publisher"
         const publisherText = document.createElement('span');
         publisherText.innerText = "Publisher (id: " + publisher.id + ")";
@@ -55,10 +55,22 @@ async function createDatatypeField(publisher, field, yukon_state) {
     textField.type = "text";
     if (field && field.type_name) {
         textField.value = field.type_name;
+        setTimeout(() => {
+            textField.scrollLeft = textField.scrollWidth;
+        }, 100);
     }
+    let savedScroll = 0;
     textField.addEventListener('change', async () => {
+        console.log("Changing datatype to " + textField.value)
+        textField.scrollLeft = textField.scrollWidth;
         const newDatatype = textField.value;
         await yukon_state.zubax_apij.set_publisher_field_type_name(publisher.id, field.id, newDatatype);
+    });
+    textField.addEventListener("scroll", () => {
+        savedScroll = textField.scrollLeft;
+    });
+    textField.addEventListener("focusout", () => {
+        textField.scrollLeft = savedScroll;
     });
     textField.style.position = "relative";
     textField.style.display = "flex";
@@ -69,7 +81,6 @@ async function createDatatypeField(publisher, field, yukon_state) {
     // When the text field is focused, show a dropdown menu with all the available datatypes
     // For now use ["foo.bar", "foo.baz", "foo.baz"] as the list of available datatypes
     wrapper.appendChild(textField);
-    let dropdown = null
     // textField.addEventListener('focusout', () => {
     //     if (dropdown) {
     //         dropdown.remove();
@@ -77,20 +88,20 @@ async function createDatatypeField(publisher, field, yukon_state) {
     //     }
     // });
     let showDropdown = async function (listOfOptions) {
-        dropdown = document.createElement('div');
-        dropdown.style.backgroundColor = "white";
-        dropdown.style.border = "1px solid black";
-        dropdown.style.zIndex = 100;
-        dropdown.style.position = "absolute";
-        dropdown.style.width = "400px";
-        dropdown.style.height = "fit-content"
-        dropdown.style.maxHeight = "100px";
-        dropdown.style.overflowY = "scroll";
-        dropdown.style.top = 34 + "px"; // Height of the text field + 2px
-        dropdown.style.left = 0;
+        publisher.dropdown = document.createElement('div');
+        publisher.dropdown.style.backgroundColor = "white";
+        publisher.dropdown.style.border = "1px solid black";
+        publisher.dropdown.style.zIndex = 100;
+        publisher.dropdown.style.position = "absolute";
+        publisher.dropdown.style.width = "400px";
+        publisher.dropdown.style.height = "fit-content"
+        publisher.dropdown.style.maxHeight = "100px";
+        publisher.dropdown.style.overflowY = "scroll";
+        publisher.dropdown.style.top = 34 + "px"; // Height of the text field + 2px
+        publisher.dropdown.style.left = 0;
         // Add a list of all the datatypes
         const list = document.createElement('div');
-        dropdown.appendChild(list);
+        publisher.dropdown.appendChild(list);
         for (const datatype of listOfOptions) {
             const listItem = document.createElement('div');
             listItem.style.width = "100%";
@@ -106,21 +117,22 @@ async function createDatatypeField(publisher, field, yukon_state) {
             }
             listItem.addEventListener('click', () => {
                 textField.value = datatype;
-                dropdown.remove();
+                textField.dispatchEvent(new Event("change"));
+                publisher.dropdown.remove();
             });
             list.appendChild(listItem);
         }
-        wrapper.appendChild(dropdown);
+        wrapper.appendChild(publisher.dropdown);
     }
     let highlightFirstElement = function () {
-        const firstElement = dropdown.querySelector(".dropdown-list-item");
+        const firstElement = publisher.dropdown.querySelector(".dropdown-list-item");
         if (firstElement === null) {
             return;
         }
         firstElement.classList.add("highlighted");
     }
     let highlightLastElement = function () {
-        const lastElement = dropdown.querySelector(".dropdown-list-item:last-child");
+        const lastElement = publisher.dropdown.querySelector(".dropdown-list-item:last-child");
         if (lastElement === null) {
             return;
         }
@@ -128,7 +140,7 @@ async function createDatatypeField(publisher, field, yukon_state) {
     }
 
     let moveHighlightDown = function () {
-        const highlightedItem = dropdown.querySelector(".highlighted");
+        const highlightedItem = publisher.dropdown.querySelector(".highlighted");
         if (highlightedItem === null) {
             highlightFirstElement();
             return;
@@ -141,7 +153,7 @@ async function createDatatypeField(publisher, field, yukon_state) {
         nextSibling.classList.add("highlighted");
     }
     let moveHighlightUp = function () {
-        const highlightedItem = dropdown.querySelector(".highlighted");
+        const highlightedItem = publisher.dropdown.querySelector(".highlighted");
         if (highlightedItem === null) {
             highlightLastElement();
             return;
@@ -154,7 +166,7 @@ async function createDatatypeField(publisher, field, yukon_state) {
         previousSibling.classList.add("highlighted");
     }
     let scrollToHighlightedElement = function () {
-        const highlightedItem = dropdown.querySelector(".highlighted");
+        const highlightedItem = publisher.dropdown.querySelector(".highlighted");
         if (highlightedItem === null) {
             return;
         }
@@ -180,13 +192,14 @@ async function createDatatypeField(publisher, field, yukon_state) {
     // On enter, select the highlighted item
     textField.addEventListener('keydown', (event) => {
         if (event.key === "Enter") {
-            const highlightedItem = dropdown.querySelector(".highlighted");
+            const highlightedItem = publisher.dropdown.querySelector(".highlighted");
             if (highlightedItem === null) {
                 return;
             }
             textField.value = highlightedItem.innerText;
-            dropdown.remove();
-            dropdown = null;
+            textField.dispatchEvent(new Event("change"));
+            publisher.dropdown.remove();
+            publisher.dropdown = null;
         }
     });
 
@@ -196,7 +209,7 @@ async function createDatatypeField(publisher, field, yukon_state) {
     textField.addEventListener('keydown', (event) => {
         if (event.key === "Tab") {
             event.preventDefault();
-            const highlightedItem = dropdown.querySelector(".highlighted");
+            const highlightedItem = publisher.dropdown.querySelector(".highlighted");
             if (highlightedItem === null) {
                 return;
             }
@@ -205,14 +218,15 @@ async function createDatatypeField(publisher, field, yukon_state) {
             const textFieldValueSegments = textFieldValue.split(".");
             const highlightedItemTextSegments = highlightedItemText.split(".");
             textField.value = highlightedItemTextSegments.splice(0, textFieldValueSegments.length).join(".");
+            textField.dispatchEvent(new Event("change"));
         }
     });
 
 
     textField.addEventListener('click', async () => {
-        if (dropdown) {
-            dropdown.remove();
-            dropdown = null;
+        if (publisher.dropdown) {
+            publisher.dropdown.remove();
+            publisher.dropdown = null;
             return;
         }
         await showDropdown(listOfOptions);
@@ -223,35 +237,45 @@ async function createDatatypeField(publisher, field, yukon_state) {
         const text = textField.value;
         const matchingDatatypes = listOfOptions.filter((datatype) => datatype.startsWith(text));
         if (matchingDatatypes.length === 0) {
-            if (dropdown) {
-                dropdown.remove();
-                dropdown = null;
+            if (publisher.dropdown) {
+                publisher.dropdown.remove();
+                publisher.dropdown = null;
             }
             return;
         }
-        if (dropdown) {
-            dropdown.remove();
-            dropdown = null;
+        if (publisher.dropdown) {
+            publisher.dropdown.remove();
+            publisher.dropdown = null;
         }
         await showDropdown(matchingDatatypes);
         // If only one datatype matches, higlight the matching part
         if (matchingDatatypes.length === 1) {
             // Add highlight to the first element of dropdown
-            const firstElement = dropdown.querySelector(".dropdown-list-item");
+            const firstElement = publisher.dropdown.querySelector(".dropdown-list-item");
             firstElement.classList.add("highlighted");
         }
     });
     // When escape is pressed, remove the dropdown
     textField.addEventListener('keydown', (event) => {
         if (event.key === "Escape") {
-            if (dropdown) {
-                dropdown.remove();
-                dropdown = null;
+            if (publisher.dropdown) {
+                publisher.dropdown.remove();
+                publisher.dropdown = null;
             }
         }
     });
 
     return wrapper;
+}
+function createRemoveButton(publisher, field, row, yukon_state) {
+    const removeButton = document.createElement('button');
+    removeButton.classList.add("remove-button");
+    removeButton.innerText = "X";
+    removeButton.addEventListener('click', async () => {
+        await yukon_state.zubax_apij.delete_publisher_field(publisher.id, field.id);
+        row.remove();
+    });
+    return removeButton;
 }
 async function createBooleanFieldRow(publisher, yukon_state) {
     const row = document.createElement('div');
@@ -268,15 +292,11 @@ async function createBooleanFieldRow(publisher, yukon_state) {
     booleanField.classList.add("boolean-field");
     row.appendChild(booleanField);
     // Add a remove button
-    const removeButton = document.createElement('button');
-    removeButton.classList.add("remove-button");
-    removeButton.innerText = "X";
-    removeButton.addEventListener('click', () => {
-        row.remove();
-    });
+    const removeButton = createRemoveButton(publisher, field, row, yukon_state);
     row.appendChild(removeButton);
     return row;
 }
+
 async function createNumberFieldRow(publisher, yukon_state, field) {
     const row = document.createElement('div');
     const rowId = guid();
@@ -297,37 +317,57 @@ async function createNumberFieldRow(publisher, yukon_state, field) {
     numberField1.classList.add("number-field");
     numberField1.classList.add("min-value-field")
     numberField1.style.width = "50px";
-    numberField1.value = 0
+    numberField1.value = field.min;
+    numberField1.title = "Minimum value";
     row.appendChild(numberField1);
     const valueField = document.createElement('input');
+    valueField.title = "Value";
     const numberField2 = document.createElement('input');
-    const spinner = createSpinner("100%", (x) => valueField.value = x, () => parseFloat(numberField1.value), () => parseFloat(numberField2.value));
+    const spinner = createSpinner("100%", (x) => {
+        valueField.value = x;
+        yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
+    }, () => parseFloat(numberField1.value), () => parseFloat(numberField2.value));
+
     const spinnerElement = spinner.spinnerElement;
     spinnerElement.style.marginLeft = "2px";
     spinnerElement.style.marginRight = "2px";
+    spinnerElement.title = "Value knob / dial"
     row.appendChild(spinnerElement);
     numberField2.classList.add("max-value-field");
+    numberField2.title = "Maximum value";
     numberField2.type = "number";
     numberField2.classList.add("number-field");
     numberField2.style.width = "50px";
-    numberField2.value = 100;
+    numberField2.value = field.max;
+    numberField2.addEventListener('input', async () => {
+        if (valueField.value > numberField2.value) {
+            spinner.setValue(parseFloat(numberField2.value));
+        }
+        await yukon_state.zubax_apij.set_field_min_max(publisher.id, field.id, parseFloat(numberField1.value), parseFloat(numberField2.value));
+        // numberField2.dispatchEvent(new CustomEvent('maxChanged', {
+        //     bubbles: true,
+        // }));
+    });
+    numberField1.addEventListener('input', async () => {
+        if (valueField.value < numberField1.value) {
+            spinner.setValue(parseFloat(numberField1.value));
+        }
+        await yukon_state.zubax_apij.set_field_min_max(publisher.id, field.id, parseFloat(numberField1.value), parseFloat(numberField2.value));
+    });
     row.appendChild(numberField2);
     // Add a number field for value
     valueField.type = "number";
     valueField.classList.add("value-field");
     valueField.style.width = "100px";
-    valueField.value = 0;
-    valueField.addEventListener('input', () => {
+    valueField.addEventListener('input', async () => {
+        yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
         spinner.setValue(parseFloat(valueField.value));
     });
+    spinner.setValue(parseFloat(field.value));
+    valueField.value = field.value;
     row.appendChild(valueField);
     // Add a remove button
-    const removeButton = document.createElement('button');
-    removeButton.classList.add("remove-button");
-    removeButton.innerText = "X";
-    removeButton.addEventListener('click', () => {
-        row.remove();
-    });
+    const removeButton = createRemoveButton(publisher, field, row, yukon_state);
     row.appendChild(removeButton);
     return row;
 }
@@ -383,7 +423,7 @@ async function createPublisherFrame(publisher, yukon_state) {
     separator.classList.add("separator");
     content.appendChild(separator);
     const publisherFieldsResponse = await yukon_state.zubax_apij.get_publisher_fields(publisher.id);
-    if (publisherFieldsResponse.success && publisherFieldsResponse.fields && Array.isArray(publisherFieldsResponse.fields)) {
+    if (publisherFieldsResponse.success && publisherFieldsResponse.fields) {
         for (const [id, field] of Object.entries(publisherFieldsResponse.fields)) {
             const fieldRow = await createNumberFieldRow(publisher, yukon_state, field);
             content.appendChild(fieldRow);
@@ -549,7 +589,8 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
             }
             const addedIncrement = (e.deltaY > 0 ? -scroll_multiplier : scroll_multiplier);
             let newValue = spinnerValue + addedIncrement;
-            let newAngle = spinnerAngle + 1 / addedIncrement;
+            let newAngle = newValue / Math.pow(multiplier(), 3);
+            newAngle = newAngle - Math.floor(newAngle / (2 * Math.PI)) * 2 * Math.PI;
             const minAngle = 0;
             let isClamped = false;
             if (getMinValue) {
@@ -588,10 +629,11 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
         mouseDown = false;
     });
     return {
-        "spinnerElement": spinner, "setValue": (newValue) => {
+        "spinnerElement": spinner,
+        "setValue": (newValue) => {
             const circle = Math.PI * 2;
-            spinnerAngle = newValue - Math.floor(newValue / circle) * circle;
-            spinnerValue = newValue;
+            spinnerValue = newValue / multiplier();
+            spinnerAngle = spinnerValue - Math.floor(spinnerValue / circle) * circle;
             if (getMinValue) {
                 const minValue = getMinValue();
                 if (spinnerValue <= minValue) {

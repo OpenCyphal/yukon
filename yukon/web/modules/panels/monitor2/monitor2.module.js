@@ -50,12 +50,12 @@ export async function setUpMonitor2Component(container, yukon_state) {
         console.log("monitor2Div is not null");
     }
     fillSettings(settings, yukon_state);
-    const publishersOuterArea = containerElement.querySelector("#publishers-outer-area");
-    setInterval(async () => {
-        await updatePublishers(publishersOuterArea, yukon_state);
-    }, 1500);
     const subscriptionsOuterArea = containerElement.querySelector("#subscriptions-outer-area");
+    const publishersOuterArea = containerElement.querySelector("#publishers-outer-area");
     const subscriptionsInnerArea = document.createElement("div");
+    setInterval(async () => {
+        await updatePublishers(subscriptionsInnerArea, yukon_state);
+    }, 1500);
     subscriptionsInnerArea.id = "subscriptions-inner-area";
     subscriptionsInnerArea.style.position = "absolute";
     subscriptionsOuterArea.appendChild(subscriptionsInnerArea);
