@@ -356,8 +356,8 @@ async function createPublisherFrame(publisher, yukon_state) {
     const addBooleanFieldButton = document.createElement('button');
     addBooleanFieldButton.classList.add("add-field-button");
     addBooleanFieldButton.innerText = "Add boolean field";
-    addBooleanFieldButton.addEventListener('click', () => {
-        const fieldRow = createBooleanFieldRow();
+    addBooleanFieldButton.addEventListener('click', async () => {
+        const fieldRow = await createBooleanFieldRow(yukon_state);
         // Insert the new field row before the add field button
         content.insertBefore(fieldRow, addNumberFieldButton);
     });
@@ -389,9 +389,17 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
     let previousSpinnerAngle = 0.0;
     let spinnerValue = 0.0;
     let spinnerAngle = 0.0;
-    const multiplier = 1;
     const valueRange = () => getMaxValue() - getMinValue();
-    const wholeRange = () => valueRange() * multiplier;
+    const multiplier = () => {
+        if (valueRange() <= 1) {
+            return 0.15;
+        } else if (valueRange() <= 2) {
+            return 0.25;
+        } else {
+            return 1;
+        }
+    };
+    const wholeRange = () => valueRange() * 1 / multiplier();
     const maxAngle = () => wholeRange() - Math.floor((wholeRange()) / (Math.PI * 2)) * (Math.PI * 2);
     const minAngle = 0;
     spinnerValue = getMinValue() || 0;
@@ -421,7 +429,7 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
         }
         const angleDiff = options[smallestIndex];
 
-        let newValue = parseFloat(spinnerValue) + angleDiff;
+        let newValue = spinnerValue + angleDiff * multiplier();
         let wasClamped = false;
         // Clamp data-value between getMinValue and getMaxValue
         if (getMinValue) {
@@ -489,13 +497,13 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
                 clearTimeout(wheelScrollValueIndicatorTimeout);
             }
             // Rotate the spinner by 1 degree if the mouse is scrolled up, -1 degree if the mouse is scrolled down
-            let multiplier = 1;
-            const addedIncrement = (e.deltaY > 0 ? -1 * multiplier : 1 * multiplier);
+            let scroll_multiplier = multiplier();
             if (e.shiftKey) {
-                multiplier = 10;
+                scroll_multiplier = 10 * multiplier();
             }
+            const addedIncrement = (e.deltaY > 0 ? -scroll_multiplier : scroll_multiplier);
             let newValue = spinnerValue + addedIncrement;
-            let newAngle = spinnerAngle + addedIncrement;
+            let newAngle = spinnerAngle + 1 / addedIncrement;
             const minAngle = 0;
             let isClamped = false;
             if (getMinValue) {
