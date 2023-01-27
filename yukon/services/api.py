@@ -16,6 +16,7 @@ from time import time
 
 from yukon.domain.publisher import YukonPublisher
 from yukon.custom_tk_dialog import launch_yes_no_dialog
+from yukon.domain.simple_publisher import SimplePublisher
 
 from yukon.services.utils import quit_application
 
@@ -538,6 +539,18 @@ class Api:
         # This jsonify is why I made sure to set up the JSON encoder for dsdl
         return jsonify(mapping)
 
+    def make_simple_publisher(self) -> Response:
+        try:
+            new_publisher = SimplePublisher(str(uuid4()))
+            self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
+            return jsonify({"success": True, "id": new_publisher.id})
+        except:
+            return jsonify({"success": False, "message": traceback.format_exc()})
+
+    def set_publisher_name(self, id: str, new_name: str):
+        self.state.cyphal.publishers_by_id[id].name = new_name
+        return jsonify({"success": True})
+
     def make_publisher(self, specifiers: str) -> Response:
         result_ready_event = threading.Event()
         was_publisher_created = False
@@ -596,6 +609,36 @@ class Api:
 
     def get_publishers(self) -> Response:
         return jsonify(self.state.cyphal.publishers_by_id)
+
+    def get_number_type_min_max_values(self, type_name: str) -> Response:
+        _match = re.match(r"uavcan\.primitive\.array\.([A-Za-z]+)([0-9]+)_([0-9]+)_([0-9]+)", type_name)
+        if _match:
+            bit_depth = int(_match.group(2))
+            is_signed = _match.group(1) != "Natural"
+            return jsonify(
+                {
+                    "success": True,
+                    "min": -(2 ** (bit_depth - 1)) if is_signed else 0,
+                    "max": 2 ** (bit_depth - 1) - 1 if is_signed else 2**bit_depth - 1,
+                }
+            )
+        return {"success": False, "message": "Unknown type name"}
+
+    def get_publish_type_names(self) -> Response:
+        return jsonify(
+            [
+                "uavcan.primitive.array.Real64_1_0",
+                "uavcan.primitive.array.Real32_1_0",
+                "uavcan.primitive.array.Real16_1_0",
+                "uavcan.primitive.array.Integer64_1_0",
+                "uavcan.primitive.array.Integer32_1_0",
+                "uavcan.primitive.array.Integer16_1_0",
+                "uavcan.primitive.array.Natural64_1_0",
+                "uavcan.primitive.array.Natural32_1_0",
+                "uavcan.primitive.array.Natural16_1_0",
+                "uavcan.primitive.array.Natural8_1_0",
+            ]
+        )
 
     def set_message_store_capacity(self, specifier: str, capacity: int) -> None:
         messages_store = self.state.cyphal.message_stores_by_specifier.get(SubjectSpecifier.from_string(specifier))
@@ -819,3 +862,6 @@ class Api:
         req.image_file_remote_path.path = "a"
         logging.debug("Sending %r to %r", req, node_id)
         self.state.dronecan.node.request(req, node_id, lambda e: None)
+
+    def set_publisher_rate(self, rate: int) -> None:
+        self.state.publisher_rate = rate

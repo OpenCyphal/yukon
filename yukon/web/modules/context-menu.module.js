@@ -565,7 +565,12 @@ export function make_context_menus(yukon_state) {
                 content: "Add a publisher",
                 events: {
                     click: async (e, elementOpenedOn) => {
-                        yukon_state.publishers.push({ id: guid() });
+                        const response = await yukon_state.zubax_apij.make_simple_publisher();
+                        if (response && response.success) {
+                            // yukon_state.publishers.push({ id: response.id });
+                            console.log("Added a publisher with ID " + response.id);
+                        }
+                        // yukon_state.publishers.push({ id: guid() });
                     }
                 }
             },

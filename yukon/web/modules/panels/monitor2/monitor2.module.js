@@ -52,7 +52,7 @@ export async function setUpMonitor2Component(container, yukon_state) {
     fillSettings(settings, yukon_state);
     const publishersOuterArea = containerElement.querySelector("#publishers-outer-area");
     setInterval(async () => {
-        updatePublishers(publishersOuterArea, yukon_state);
+        await updatePublishers(publishersOuterArea, yukon_state);
     }, 1500);
     const subscriptionsOuterArea = containerElement.querySelector("#subscriptions-outer-area");
     const subscriptionsInnerArea = document.createElement("div");

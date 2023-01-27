@@ -1,26 +1,37 @@
-export function updatePublishers(publishersOuterArea, yukon_state) {
+export async function updatePublishers(publishersOuterArea, yukon_state) {
+    // The client side should publish through calling the APIJ
+    // The server side should publish when it receives a request from the client to do so
+    // We are trying to make sure that the client side is responsive when the user is publishing
+    // When the client side crashes and stops publishing, the server side will not publish
+    // Also the server side will turn off the Enabled checkbox if the client side crashes
+    // This is so that when the client side recovers, it will not start publishing before the user wants it to
     if (Array.isArray(yukon_state.publishers) === false) {
         return;
     }
-    for (const publisher of yukon_state.publishers) {
+    for (const [id, publisher] of Object.entries(await yukon_state.zubax_apij.get_publishers())) {
         if (publishersOuterArea.querySelector(`[id="${publisher.id}"]`)) {
             // This publisher is already in the DOM
             continue;
         }
-
-        const frame = createPublisherFrame(yukon_state);
+        console.log(`Rendering publisher ${JSON.stringify(publisher)}`, publisher);
+        const frame = await createPublisherFrame(publisher, yukon_state);
         frame.id = publisher.id;
         frame.style.top = 200 + "px";
         frame.style.left = 200 + "px";
         // Add a text saying, "Publisher"
         const publisherText = document.createElement('span');
-        publisherText.innerText = "Publisher";
+        publisherText.innerText = "Publisher (id: " + publisher.id + ")";
         frame.prepend(publisherText);
+        const refreshRateInput = frame.querySelector(".refresh-rate-spinner");
+        refreshRateInput.addEventListener("input", async () => {
+            const newRefreshRate = refreshRateInput.value;
+            await yukon_state.zubax_apij.set_publisher_refresh_rate(publisher.id, newRefreshRate);
+        });
         publishersOuterArea.appendChild(frame);
     }
 }
-function createDatatypeField(yukon_state) {
-    const listOfOptions = ["foo.bar", "foo.baz", "foo.baz", "kala.saba", "kassi.nurr", "airplane.engine.cover.vent", "airplane.engine.cover.duct", "airplane.motor.cover.duct"];
+async function createDatatypeField(yukon_state) {
+    const listOfOptions = await yukon_state.zubax_apij.get_publish_type_names();
     // Create a div that wraps around the text field and the dropdown menu
     const wrapper = document.createElement('div');
     wrapper.style.position = "relative";
@@ -47,7 +58,7 @@ function createDatatypeField(yukon_state) {
     //         dropdown = null;
     //     }
     // });
-    let showDropdown = function (listOfOptions) {
+    let showDropdown = async function (listOfOptions) {
         dropdown = document.createElement('div');
         dropdown.style.backgroundColor = "white";
         dropdown.style.border = "1px solid black";
@@ -69,6 +80,12 @@ function createDatatypeField(yukon_state) {
             listItem.style.borderBottom = "1px solid black";
             listItem.classList.add("dropdown-list-item");
             listItem.innerText = datatype;
+            const response = await yukon_state.zubax_apij.get_number_type_min_max_values(datatype);
+            if (response && response.success && response.min && response.max) {
+                listItem.title = "Min: " + response.min + ", Max: " + response.max;
+            } else if (response && response.success == false) {
+                listItem.title = "Error: " + response.error;
+            }
             listItem.addEventListener('click', () => {
                 textField.value = datatype;
                 dropdown.remove();
@@ -174,17 +191,17 @@ function createDatatypeField(yukon_state) {
     });
 
 
-    textField.addEventListener('click', () => {
+    textField.addEventListener('click', async () => {
         if (dropdown) {
             dropdown.remove();
             dropdown = null;
             return;
         }
-        showDropdown(listOfOptions);
+        await showDropdown(listOfOptions);
     });
     // If the user starts typing something that matches a start of a datatype, show the dropdown menu
     // Also highlight the matching part of the datatype
-    textField.addEventListener('input', () => {
+    textField.addEventListener('input', async () => {
         const text = textField.value;
         const matchingDatatypes = listOfOptions.filter((datatype) => datatype.startsWith(text));
         if (matchingDatatypes.length === 0) {
@@ -198,7 +215,7 @@ function createDatatypeField(yukon_state) {
             dropdown.remove();
             dropdown = null;
         }
-        showDropdown(matchingDatatypes);
+        await showDropdown(matchingDatatypes);
         // If only one datatype matches, higlight the matching part
         if (matchingDatatypes.length === 1) {
             // Add highlight to the first element of dropdown
@@ -218,11 +235,11 @@ function createDatatypeField(yukon_state) {
 
     return wrapper;
 }
-function createBooleanFieldRow(yukon_state) {
+async function createBooleanFieldRow(yukon_state) {
     const row = document.createElement('div');
     row.classList.add("publisher-row");
     // Add a text field of 250px width, after that a number field of 50px width and a spinenr and a number field of 50px width
-    row.appendChild(createDatatypeField());
+    row.appendChild(await createDatatypeField(yukon_state));
     const booleanField = document.createElement('input');
     booleanField.type = "checkbox";
     booleanField.classList.add("boolean-field");
@@ -237,11 +254,11 @@ function createBooleanFieldRow(yukon_state) {
     row.appendChild(removeButton);
     return row;
 }
-function createNumberFieldRow(yukon_state) {
+async function createNumberFieldRow(yukon_state) {
     const row = document.createElement('div');
     row.classList.add("publisher-row");
     // Add a text field of 250px width, after that a number field of 50px width and a spinenr and a number field of 50px width
-    row.appendChild(createDatatypeField());
+    row.appendChild(await createDatatypeField(yukon_state));
     const numberField1 = document.createElement('input');
     numberField1.type = "number";
     numberField1.classList.add("number-field");
@@ -281,7 +298,7 @@ function createNumberFieldRow(yukon_state) {
     row.appendChild(removeButton);
     return row;
 }
-function createPublisherFrame(yukon_state) {
+async function createPublisherFrame(publisher, yukon_state) {
     const frame = document.createElement('div');
     frame.classList.add("publisher-frame");
     // Create a vertical flexbox for holding rows of content
@@ -314,18 +331,24 @@ function createPublisherFrame(yukon_state) {
     enableText.innerText = "Enable";
     enableText.style.marginLeft = "2px";
     refreshRateRow.appendChild(enableText);
+    // Add an input box for entering a name for the publisher
+    const nameInput = document.createElement('input');
+    nameInput.type = "text";
+    nameInput.classList.add("publisher-name-input");
+    nameInput.placeholder = "Publisher name";
+    refreshRateRow.appendChild(nameInput);
     // Add a separator box between the refresh rate row and the next row
     const separator = document.createElement('div');
     separator.classList.add("separator");
     content.appendChild(separator);
-    const fieldRow = createNumberFieldRow(yukon_state);
+    const fieldRow = await createNumberFieldRow(yukon_state);
     content.appendChild(fieldRow);
     // Add a button for adding a new field row
     const addNumberFieldButton = document.createElement('button');
     addNumberFieldButton.classList.add("add-field-button");
     addNumberFieldButton.innerText = "Add number field";
-    addNumberFieldButton.addEventListener('click', () => {
-        const fieldRow = createNumberFieldRow(yukon_state);
+    addNumberFieldButton.addEventListener('click', async () => {
+        const fieldRow = await createNumberFieldRow(yukon_state);
         // Insert the new field row before the add field button
         content.insertBefore(fieldRow, addNumberFieldButton);
     });
@@ -449,7 +472,6 @@ function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getM
             hoveringValueSpan.style.position = "absolute";
             hoveringValueSpan.style.left = mousePos.x + 20 + "px";
             hoveringValueSpan.style.top = mousePos.y + 20 + "px";
-
         };
         window.requestAnimationFrame(faceToMouseLoop);
     });
