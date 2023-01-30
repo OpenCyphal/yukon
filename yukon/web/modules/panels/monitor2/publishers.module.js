@@ -323,10 +323,14 @@ async function createNumberFieldRow(publisher, yukon_state, field) {
     const valueField = document.createElement('input');
     valueField.title = "Value";
     const numberField2 = document.createElement('input');
-    const spinner = createSpinner("100%", (x) => {
+    const spinner = createSpinner("100%", 
+    (x) => { // Value changed callback
         valueField.value = x;
         yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
-    }, () => parseFloat(numberField1.value), () => parseFloat(numberField2.value));
+    },
+    () => parseFloat(numberField1.value), // Get minimum value
+    () => parseFloat(numberField2.value) // Get maximum value
+    );
 
     const spinnerElement = spinner.spinnerElement;
     spinnerElement.style.marginLeft = "2px";
