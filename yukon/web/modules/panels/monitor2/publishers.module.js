@@ -277,7 +277,7 @@ function createRemoveButton(publisher, field, row, yukon_state) {
     });
     return removeButton;
 }
-async function createBooleanFieldRow(publisher, yukon_state) {
+async function createBooleanFieldRow(publisher, yukon_state, field) {
     const row = document.createElement('div');
     const rowId = guid();
     row.id = rowId;
@@ -429,25 +429,29 @@ async function createPublisherFrame(publisher, yukon_state) {
             content.appendChild(fieldRow);
         }
     }
+    // Create an input-group for holding the add field buttons
+    const addFieldInputGroup = document.createElement('div');
+    addFieldInputGroup.classList.add("input-group");
+    content.appendChild(addFieldInputGroup);
     // Add a button for adding a new field row
     const addNumberFieldButton = document.createElement('button');
-    addNumberFieldButton.classList.add("add-field-button");
+    addNumberFieldButton.classList.add("btn", "btn-sm", "btn-secondary", "add-field-button");
     addNumberFieldButton.innerText = "Add number field";
     addNumberFieldButton.addEventListener('click', async () => {
         const fieldRow = await createNumberFieldRow(publisher, yukon_state);
         // Insert the new field row before the add field button
-        content.insertBefore(fieldRow, addNumberFieldButton);
+        content.insertBefore(fieldRow, addFieldInputGroup);
     });
-    content.appendChild(addNumberFieldButton);
+    addFieldInputGroup.appendChild(addNumberFieldButton);
     const addBooleanFieldButton = document.createElement('button');
-    addBooleanFieldButton.classList.add("add-field-button");
+    addBooleanFieldButton.classList.add("btn", "btn-sm", "btn-secondary", "add-field-button");
     addBooleanFieldButton.innerText = "Add boolean field";
     addBooleanFieldButton.addEventListener('click', async () => {
-        const fieldRow = await createBooleanFieldRow(yukon_state);
+        const fieldRow = await createBooleanFieldRow(publisher, yukon_state);
         // Insert the new field row before the add field button
-        content.insertBefore(fieldRow, addNumberFieldButton);
+        content.insertBefore(fieldRow, addFieldInputGroup);
     });
-    content.appendChild(addBooleanFieldButton);
+    addFieldInputGroup.appendChild(addBooleanFieldButton);
     return frame;
 }
 function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getMinValue = null, getMaxValue = null) {
