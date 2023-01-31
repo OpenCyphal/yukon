@@ -547,6 +547,13 @@ class Api:
         except:
             return jsonify({"success": False, "message": traceback.format_exc()})
 
+    def remove_publisher(self, id: str) -> Response:
+        try:
+            del self.state.cyphal.publishers_by_id[id]
+            return jsonify({"success": True})
+        except:
+            return jsonify({"success": False, "message": traceback.format_exc()})
+
     def set_publisher_name(self, id: str, new_name: str) -> Response:
         self.state.cyphal.publishers_by_id[id].name = new_name
         return jsonify({"success": True})

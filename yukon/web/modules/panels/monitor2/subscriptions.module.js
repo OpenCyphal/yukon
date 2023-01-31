@@ -538,6 +538,7 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
         }
 
         const subscribeButton = document.createElement("button");
+        subscribeButton.classList.add("btn", "btn-primary", "btn-sm");
         subscribeButton.innerText = "Subscribe";
         subscribeButton.addEventListener("click", async () => {
             subscribeCallback(isSynchronous, subscriptionElement, list_of_subscription_getters, settings, subscriptionsDiv, yukon_state);

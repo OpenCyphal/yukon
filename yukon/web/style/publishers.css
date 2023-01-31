@@ -16,6 +16,10 @@
     min-width: 157px;
 }
 
+.publisher-frame .remove-button {
+    border-width: 0.5px;
+}
+
 .spinner-knob {
     display: flex;
     justify-content: center;

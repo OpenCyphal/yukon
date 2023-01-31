@@ -9,6 +9,27 @@ function guid() {
         lut[d2 & 0x3f | 0x80] + lut[d2 >> 8 & 0xff] + '-' + lut[d2 >> 16 & 0xff] + lut[d2 >> 24 & 0xff] +
         lut[d3 & 0xff] + lut[d3 >> 8 & 0xff] + lut[d3 >> 16 & 0xff] + lut[d3 >> 24 & 0xff];
 }
+function createCloseButton() {
+    const closeButton = document.createElement("button");
+    closeButton.classList.add("btn", "btn-sm", "btn-danger")
+    closeButton.innerText = "x";
+    closeButton.style.borderWidth = "0";
+    closeButton.style.position = "absolute";
+    closeButton.style.display = "flex";
+    // Align text to the baseline
+    closeButton.style.alignItems = "flex-end";
+    closeButton.style.justifyContent = "center";
+    // closeButton.style.right = "1px";
+    // closeButton.style.top = "1px";
+    closeButton.style.right = -23 + "px";
+    closeButton.style.top = 1 + "px";
+    closeButton.style.marginTop = "0";
+    // Make sure the button has a 1x1 aspect ratio and a width of 14px
+    closeButton.style.width = "20px";
+    closeButton.style.height = "20px";
+    closeButton.style.padding = "0px";
+    return closeButton;
+}
 export async function updatePublishers(publishersOuterArea, yukon_state) {
     // The client side should publish through calling the APIJ
     // The server side should publish when it receives a request from the client to do so
@@ -323,13 +344,13 @@ async function createNumberFieldRow(publisher, yukon_state, field) {
     const valueField = document.createElement('input');
     valueField.title = "Value";
     const numberField2 = document.createElement('input');
-    const spinner = createSpinner("100%", 
-    (x) => { // Value changed callback
-        valueField.value = x;
-        yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
-    },
-    () => parseFloat(numberField1.value), // Get minimum value
-    () => parseFloat(numberField2.value) // Get maximum value
+    const spinner = createSpinner("100%",
+        (x) => { // Value changed callback
+            valueField.value = x;
+            yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
+        },
+        () => parseFloat(numberField1.value), // Get minimum value
+        () => parseFloat(numberField2.value) // Get maximum value
     );
 
     const spinnerElement = spinner.spinnerElement;
@@ -344,7 +365,7 @@ async function createNumberFieldRow(publisher, yukon_state, field) {
     numberField2.style.width = "50px";
     numberField2.value = field.max;
     numberField2.addEventListener('input', async () => {
-        if (valueField.value > numberField2.value) {
+        if (parseFloat(valueField.value) > parseFloat(numberField2.value)) {
             spinner.setValue(parseFloat(numberField2.value));
         }
         await yukon_state.zubax_apij.set_field_min_max(publisher.id, field.id, parseFloat(numberField1.value), parseFloat(numberField2.value));
@@ -353,7 +374,7 @@ async function createNumberFieldRow(publisher, yukon_state, field) {
         // }));
     });
     numberField1.addEventListener('input', async () => {
-        if (valueField.value < numberField1.value) {
+        if (parseFloat(valueField.value) < parseFloat(numberField1.value)) {
             spinner.setValue(parseFloat(numberField1.value));
         }
         await yukon_state.zubax_apij.set_field_min_max(publisher.id, field.id, parseFloat(numberField1.value), parseFloat(numberField2.value));
@@ -378,6 +399,12 @@ async function createNumberFieldRow(publisher, yukon_state, field) {
 async function createPublisherFrame(publisher, yukon_state) {
     const frame = document.createElement('div');
     frame.classList.add("publisher-frame");
+    const closeButton = createCloseButton()
+    closeButton.addEventListener('click', () => {
+        yukon_state.zubax_apij.remove_publisher(publisher.id);
+        frame.remove();
+    });
+    frame.appendChild(closeButton);
     // Create a vertical flexbox for holding rows of content
     const content = document.createElement('div');
     content.classList.add("publisher-content");
@@ -458,6 +485,7 @@ async function createPublisherFrame(publisher, yukon_state) {
     addFieldInputGroup.appendChild(addBooleanFieldButton);
     return frame;
 }
+
 function createSpinner(spinnerSizePx = "50px", valueChangedCallback = null, getMinValue = null, getMaxValue = null) {
     // Create a span that is circular and has a border.
     // It should also have a slight shadow.
