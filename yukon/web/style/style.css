@@ -2,6 +2,18 @@
     box-sizing: border-box;
 }
 
+.lm_controls .lm_close {
+    padding-top: 0.5px;
+    background: url(../../images/X_light.png) no-repeat center center !important;
+    background-size: 70% !important;
+}
+
+.lm_close_tab {
+    padding-top: 0.5px;
+    background: url(../../images/X_light.png) no-repeat center center !important;
+    background-size: 80% !important;
+}
+
 #messages-list {}
 
 #messages-list textarea {

@@ -175,7 +175,7 @@ class GodState:
                     "Automatic",
                     {"value": "Manual", "description": "Switch to this to turn off Node allocation"},
                 ],
-                "chosen_value": ReactiveValue("Manual"),
+                "chosen_value": ReactiveValue("Automatic"),
                 "name": "Node allocation",
             },
             "Firmware updates": "__deleted__",

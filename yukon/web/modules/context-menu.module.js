@@ -314,10 +314,10 @@ export function make_context_menus(yukon_state) {
         {
             content: `Reread node`,
             events: {
-                click: (e, elementOpenedOn) => {
+                click: async (e, elementOpenedOn) => {
                     const headerCell = elementOpenedOn;
                     const node_id = headerCell.getAttribute("data-node_id");
-                    rereadNode(parseInt(node_id))
+                    await rereadNode(parseInt(node_id), yukon_state);
                 }
             }
         },

@@ -1,5 +1,5 @@
-import {updateRegistersTableColors} from "./registers.module.js";
-import {copyObject, getDictionaryValueFieldName} from "../utilities.module.js";
+import { updateRegistersTableColors } from "./registers.module.js";
+import { copyObject, getDictionaryValueFieldName } from "../utilities.module.js";
 
 function trueFalseDecider(stringInput) {
     stringInput = stringInput.trim().toLowerCase();
@@ -88,6 +88,6 @@ export function rereadPairs(pairs, yukon_state) {
     yukon_state.zubax_api.reread_registers(pairs);
 }
 
-export function rereadNode(integer_node_id) {
-    zubax_api.reread_node(integer_node_id)
+export async function rereadNode(integer_node_id, yukon_state) {
+    await yukon_state.zubax_apij.reread_node(integer_node_id)
 }

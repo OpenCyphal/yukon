@@ -459,7 +459,7 @@ class Api:
     def reread_node(self, node_id: str) -> None:
         node_id_as_int = int(node_id)
         if node_id_as_int:
-            self.state.queues.reread_register_names.put(RereadRegisterNamesRequest(node_id_as_int))
+            self.state.queues.god_queue.put(RereadRegisterNamesRequest(node_id_as_int))
 
     def announce_running_in_electron(self) -> None:
         logger.info("Announcing running in electron.")
