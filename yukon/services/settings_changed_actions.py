@@ -97,43 +97,6 @@ def set_dronecan_handlers(state: "yukon.domain.god_state.GodState") -> None:
     state.dronecan.firmware_update_path.connect(_handle_dronecan_fileserver_path_change)
 
 
-def set_file_server_handler(state: "yukon.domain.god_state.GodState") -> None:
-    def _handle_path_change(new_value: str) -> None:
-        logger.info("File server path changed to " + new_value)
-        if state.cyphal.file_server:
-            state.cyphal.file_server.roots = [new_value]
-
-    def _handle_enabled_change(should_be_enabled: bool) -> None:
-        is_already_running = state.cyphal.file_server is not None
-        if is_already_running:
-            if not should_be_enabled:
-                state.cyphal.file_server.close()
-                state.cyphal.file_server = None
-        else:
-            if should_be_enabled:
-
-                def _run_file_server() -> None:
-                    state.cyphal.file_server = FileServer(
-                        state.cyphal.local_node, [state.settings["Firmware updates"]["File path"]["value"].value]
-                    )
-                    logger.info(
-                        "File server started on path " + state.settings["Firmware updates"]["File path"]["value"].value
-                    )
-                    state.cyphal.file_server.start()
-
-                if not state.cyphal_worker_asyncio_loop:
-                    logger.debug("No asyncio loop, postponing allocator run")
-                    state.callbacks["yukon_node_attached"].append(_run_file_server)
-                else:
-                    assert state.cyphal.local_node
-                    assert state.cyphal.local_node.id
-                    state.cyphal_worker_asyncio_loop.call_soon_threadsafe(_run_file_server)
-
-    state.settings["Firmware updates"]["File path"]["value"].connect(_handle_path_change)
-    state.settings["Firmware updates"]["Enabled"].connect(_handle_enabled_change)
-    _handle_enabled_change(state.settings["Firmware updates"]["Enabled"].value)
-
-
 async def send_store_presistent_states_to_node(
     state: "yukon.domain.god_state.GodState", target_node_id: int, delay: float
 ) -> None:
@@ -273,7 +236,6 @@ def set_dsdl_path_change_handler(state: "yukon.domain.god_state.GodState") -> No
 
 def set_handlers_for_configuration_changes(state: "yukon.domain.god_state.GodState") -> None:
     set_dronecan_handlers(state)
-    set_file_server_handler(state)
     set_allocator_handler(state)
     set_udp_server_handlers(state)
     set_dsdl_path_change_handler(state)

@@ -9,6 +9,8 @@ from uuid import UUID
 import pycyphal
 
 import uavcan
+from yukon.domain.publisher_field import PublisherField
+from yukon.domain.simple_publisher import SimplePublisher
 from yukon.domain.subscriptions.message_carrier import MessageCarrier
 from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.domain.subscriptions.synchronized_message_carrier import SynchronizedMessageCarrier
@@ -48,6 +50,20 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                 | {
                     "_meta_": o.metadata | {"counter": o.counter},
                 }
+            }
+        if isinstance(o, SimplePublisher):
+            return {
+                "id": o.id,
+                "name": o.name,
+                "fields": o.fields,
+            }
+        if isinstance(o, PublisherField):
+            return {
+                "id": o.id,
+                "type_name": o.type_name,
+                "value": o.value,
+                "min": o.min,
+                "max": o.max,
             }
         if isinstance(o, NodeMonitor.Entry):
             if o.info is None or o.info.hardware_version is None:

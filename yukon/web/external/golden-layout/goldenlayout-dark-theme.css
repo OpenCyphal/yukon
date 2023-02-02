@@ -28,7 +28,8 @@
         transition: opacity 200ms ease
     }
 
-    .lm_splitter:hover, .lm_splitter.lm_dragging {
+    .lm_splitter:hover,
+    .lm_splitter.lm_dragging {
         background: #444444;
         opacity: 1
     }
@@ -78,11 +79,13 @@
         opacity: 1
     }
 
-    .lm_dragProxy.lm_bottom .lm_header .lm_tab, .lm_stack.lm_bottom .lm_header .lm_tab {
+    .lm_dragProxy.lm_bottom .lm_header .lm_tab,
+    .lm_stack.lm_bottom .lm_header .lm_tab {
         box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.3)
     }
 
-    .lm_dragProxy.lm_bottom .lm_header .lm_tab.lm_active, .lm_stack.lm_bottom .lm_header .lm_tab.lm_active {
+    .lm_dragProxy.lm_bottom .lm_header .lm_tab.lm_active,
+    .lm_stack.lm_bottom .lm_header .lm_tab.lm_active {
         box-shadow: 0 2px 2px #000000
     }
 
@@ -90,7 +93,8 @@
         background-color: #452500
     }
 
-    .lm_tab:hover, .lm_tab.lm_active {
+    .lm_tab:hover,
+    .lm_tab.lm_active {
         background: #222222;
         color: #dddddd
     }
@@ -99,7 +103,7 @@
         color: #ffffff
     }
 
-    .lm_controls > li {
+    .lm_controls>li {
         position: relative;
         background-position: center center;
         background-repeat: no-repeat;
@@ -107,7 +111,7 @@
         transition: opacity 300ms ease
     }
 
-    .lm_controls > li:hover {
+    .lm_controls>li:hover {
         opacity: 1
     }
 

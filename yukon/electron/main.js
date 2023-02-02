@@ -148,6 +148,20 @@ const menuTemplate = [
                 click: async () => {
                     await shell.showItemInFolder(app.getAppPath())
                 }
+            },
+            {
+                label: "Open Yukon in a web browser",
+                click: async () => {
+                    const url = `http://127.0.0.1:${yukon_server_port}/main/main.html?port=${yukon_server_port}`
+                    shell.openExternal(url);
+                }
+            },
+            {
+                label: "Open Yukon download webpage",
+                click: async () => {
+                    const url = `https://files.zubax.com/products/org.opencyphal.yukon/releases/`
+                    shell.openExternal(url);
+                }
             }
         ]
     }

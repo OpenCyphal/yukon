@@ -20,6 +20,7 @@ class YukonPublisher:
         self._loaded_datatype_values: typing.Dict[SubjectSpecifier, typing.Any] = {}
         self.publishers: typing.Dict[SubjectSpecifier, pycyphal.presentation.Publisher] = {}
         self.id = uuid4()
+        self.ratePerSecond = 1
         for subject_specifier in self.subject_specifiers:
             self._fill_data_for_specifier(subject_specifier)
 

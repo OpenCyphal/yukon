@@ -10,14 +10,11 @@ import {
 import { fillSettings } from "./fill_settings.module.js";
 import { highlightElement, highlightElements, removeHighlightsFromObjects, removeHighlightFromElement, unhighlightAll, setPortStateAsHiglighted, setPortStateAsUnhiglighted, isPortStateHighlighted } from "./highlights.module.js";
 import { drawSubscriptions } from "./subscriptions.module.js";
+import { updatePublishers } from "./publishers.module.js";
 
 const settings = {};
 
 let linesByPortAndPortType = [];
-
-async function drawPublishers() {
-
-}
 
 const portOrder = { "pub": 0, "sub": 0, "srv": 1, "cli": 1 }
 const portOrder2 = ["pub", "sub", "srv", "cli"]
@@ -54,7 +51,11 @@ export async function setUpMonitor2Component(container, yukon_state) {
     }
     fillSettings(settings, yukon_state);
     const subscriptionsOuterArea = containerElement.querySelector("#subscriptions-outer-area");
+    const publishersOuterArea = containerElement.querySelector("#publishers-outer-area");
     const subscriptionsInnerArea = document.createElement("div");
+    setInterval(async () => {
+        await updatePublishers(subscriptionsInnerArea, yukon_state);
+    }, 1500);
     subscriptionsInnerArea.id = "subscriptions-inner-area";
     subscriptionsInnerArea.style.position = "absolute";
     subscriptionsOuterArea.appendChild(subscriptionsInnerArea);
@@ -62,7 +63,7 @@ export async function setUpMonitor2Component(container, yukon_state) {
         if (settings.SubscriptionsOffset) {
             subscriptionsInnerArea.style.left = settings.SubscriptionsOffset + "px";
             subscriptionsInnerArea.style.top = settings.SubscriptionsVerticalOffset + "px";
-            yukon_state.publishers = await yukon_state.zubax_apij.get_publishers();
+            // yukon_state.publishers = await yukon_state.zubax_apij.get_publishers();
             yukon_state.subscription_specifiers = await yukon_state.zubax_apij.get_current_available_subscription_specifiers();
             yukon_state.sync_subscription_specifiers = await yukon_state.zubax_apij.get_current_available_synchronized_subscription_specifiers();
             if (typeof yukon_state.subscription_specifiers_previous_hash === "undefined" || yukon_state.subscription_specifiers_previous_hash !== yukon_state.subscription_specifiers.hash) {

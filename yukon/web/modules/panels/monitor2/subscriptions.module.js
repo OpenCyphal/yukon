@@ -120,6 +120,10 @@ async function fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, l
 }
 function fillExistingDivs(existing_divs, existing_specifiers, subscriptionsDiv, yukon_state) {
     for (const child of subscriptionsDiv.children) {
+        const isSubscriptionDiv = child.classList.contains("subscription");
+        if (!isSubscriptionDiv) {
+            continue;
+        }
         const specifier = child.getAttribute("data-specifier");
         const isBeingSetup = child.getAttribute("data-is-being-setup");
         const isExisting = existing_specifiers[specifier];
@@ -534,6 +538,7 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
         }
 
         const subscribeButton = document.createElement("button");
+        subscribeButton.classList.add("btn", "btn-primary", "btn-sm");
         subscribeButton.innerText = "Subscribe";
         subscribeButton.addEventListener("click", async () => {
             subscribeCallback(isSynchronous, subscriptionElement, list_of_subscription_getters, settings, subscriptionsDiv, yukon_state);

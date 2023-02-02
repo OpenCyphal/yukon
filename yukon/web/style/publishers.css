@@ -1,0 +1,71 @@
+.publisher-frame {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    background-color: rgb(118, 99, 99);
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.5em;
+    margin-top: 0.5em;
+    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, .2);
+    color: #ffffff;
+}
+
+.publisher-frame .publisher-name-input {
+    min-width: 157px;
+}
+
+.publisher-frame .remove-button {
+    border-width: 0.5px;
+}
+
+.spinner-knob {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    aspect-ratio: 1 / 1;
+    background-color: green;
+    border-radius: 50%;
+}
+
+.knob-dot {
+    position: relative;
+    left: 20%;
+    width: 50%;
+    height: 10%;
+    background-color: aliceblue;
+}
+
+.refresh-rate-spinner {
+    width: 50px;
+}
+
+.separator {
+    width: 100%;
+    height: 1px;
+    background-color: #ccc;
+    margin: 0.5em 0;
+}
+
+.publisher-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    margin: 0.5em 0;
+    height: 1.5em;
+}
+
+.publisher-row>* {
+    margin-left: 0.5em;
+}
+
+.highlighted {
+    background-color: #ccc;
+}
+
+.hovering-value {
+    text-shadow: 0 0 0.1em #000, 0 0 0.1em #000, 0 0 0.1em #000, 0 0 0.1em #000;
+    color: #fff;
+}

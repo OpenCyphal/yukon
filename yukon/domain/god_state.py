@@ -175,13 +175,10 @@ class GodState:
                     "Automatic",
                     {"value": "Manual", "description": "Switch to this to turn off Node allocation"},
                 ],
-                "chosen_value": ReactiveValue("Manual"),
+                "chosen_value": ReactiveValue("Automatic"),
                 "name": "Node allocation",
             },
-            "Firmware updates": {
-                "Enabled": ReactiveValue(False),
-                "File path": {"__type__": "dirpath", "value": ReactiveValue("")},
-            },
+            "Firmware updates": "__deleted__",
             "Monitor view": {
                 "Show link name on another line": ReactiveValue(True),
                 "Link info width": ReactiveValue(300),
