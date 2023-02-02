@@ -79,8 +79,8 @@ export async function setUpSettingsComponent(container, yukon_state) {
                 // If parentSettings is an object
                 // Delete the settings object
                 delete parentSettings[key_name];
-                delete parentSettings["__id__" + key_name]
-                await yukon_state.zubax_apij.setting_was_removed(settings["__id__"])
+                delete parentSettings["__id__" + key_name];
+                await yukon_state.zubax_apij.setting_was_removed(settings["__id__"]);
                 parentDiv.parentElement.innerHTML = "";
                 createSettingsDiv(parentSettings, parentDiv.parentElement, null, null);
             }
@@ -117,6 +117,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
             radioInput.addEventListener("change", function () {
                 if (this.checked) {
                     settings["chosen_value"] = value;
+                    yukon_state.zubax_apij.setting_was_changed(settings["__id__chosen_value"], value)
                 }
             });
             const radioLabel = document.createElement("label");
@@ -346,7 +347,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                     btnRemove.innerHTML = "Remove";
                     btnRemove.addEventListener("click", async function () {
                         settings.splice(key - 1, 2);
-                        yukon_state.zubax_apij.setting_was_removed(innerId)
+                        await yukon_state.zubax_apij.setting_was_removed(innerId)
                         parentDiv.innerHTML = "";
                         createSettingsDiv(settings, parentDiv, parentSettings, realDictionaryKey);
                     });

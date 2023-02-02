@@ -157,8 +157,8 @@ class ReactiveValue:
     @value.setter
     def value(self, value: Any) -> None:
         if self._value != value:
-            self.bubble_react(self)
             self._value = value
+            self.bubble_react(self)
 
     def __str__(self) -> str:
         return str(self.value)
