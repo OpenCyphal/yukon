@@ -1,9 +1,12 @@
-import {update_avatars_dto} from '../data.module.js'
-import {secondsToString} from "../utilities.module.js";
+import { update_avatars_dto } from '../data.module.js'
+import { secondsToString } from "../utilities.module.js";
 
 export function setUpStatusComponent(yukon_state) {
     async function update_avatars_table() {
         var table_body = document.querySelector('#avatars_table tbody');
+        if (!table_body) {
+            return;
+        }
         table_body.innerHTML = "";
         if (yukon_state.current_avatars.length == 0) {
             table_body.innerHTML = "No data, connect a transport from the panel on the right side."

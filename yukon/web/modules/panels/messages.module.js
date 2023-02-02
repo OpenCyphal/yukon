@@ -134,6 +134,9 @@ export async function setUpMessagesComponent(container, yukon_state) {
 
     async function update_messages() {
         var messagesList = document.querySelector("#messages-list");
+        if (!messagesList) {
+            return;
+        }
         messagesList.addEventListener("click", unsetAutoscroll);
         // If it wasn't for autoscroll toggling this event itself then this could be used to turn off autoscroll
         // messagesList.parentElement.parentElement.parentElement.addEventListener("scroll", unsetAutoscroll);

@@ -6,7 +6,21 @@ const net = require('net');
 const fs = require('fs');
 console.log(app.getAppPath())
 yukon_server_port = process.env.YUKON_SERVER_PORT;
+function getYukonVersion() {
+    const version_file_path = path.join(app.getAppPath(), "..", "version.py");
+    console.log("Version file path: " + version_file_path);
+    const version_file_exists = fs.existsSync(version_file_path);
+    if (version_file_exists) {
+        const version_file_contents = fs.readFileSync(version_file_path, 'utf8');
+        console.log("Version file contents: " + version_file_contents);
+        const version_regex = /__version__ = "(\d+\.\d+\.\d+)"/m;
+        const version = version_file_contents.match(version_regex)[1];
+        return version;
+    }
+    return "0.0.0";
+}
 function createWindow() {
+    const yukon_version = getYukonVersion();
     const win = new BrowserWindow({
         width: 800,
         height: 600,
@@ -14,6 +28,7 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js')
         },
         icon: path.join(app.getAppPath(), "icon_128_128.png"),
+        title: "Yukon " + yukon_version
     })
     win.setBackgroundColor('#000')
     // Get the environment variable YUKON_SERVER_PORT
@@ -36,7 +51,7 @@ function createWindow() {
     // https://www.electronjs.org/docs/latest/api/browser-window
     win.webContents.setWindowOpenHandler((details) => {
         console.log("details: " + JSON.stringify(details))
-        let the_title = "Yukon";
+        let the_title = "Yukon " + getYukonVersion();
         // If get_all_subscription_messages is in details.url then, the title is "Yukon - Subscription log viewer"
         // Extract the message_specifier=7509 from details.url and set the title to "Yukon - 7509"
         if (details.url.includes("get_all_subscription_messages")) {
@@ -60,8 +75,9 @@ function createWindow() {
     })
     return win;
 }
+
 const isMac = process.platform === 'darwin'
-const menuTemplate = [
+let menuTemplate = [
     {
         label: 'File',
         submenu: [
@@ -124,26 +140,6 @@ const menuTemplate = [
             },
             // Create a menu item that will print the version number of Yukon from ../version.py
             {
-                label: "Yukon version",
-                click: async () => {
-                    const version_file_path = path.join(app.getAppPath(), "..", "version.py");
-                    console.log("Version file path: " + version_file_path);
-                    const version_file_exists = fs.existsSync(version_file_path);
-                    if (version_file_exists) {
-                        const version_file_contents = fs.readFileSync(version_file_path, 'utf8');
-                        console.log("Version file contents: " + version_file_contents);
-                        const version_regex = /__version__ = "(\d+\.\d+\.\d+)"/m;
-                        const version = version_file_contents.match(version_regex)[1];
-                        console.log("Yukon version: " + version);
-                        dialog.showMessageBoxSync({
-                            type: "info",
-                            title: "Yukon version",
-                            message: "Yukon version: " + version
-                        });
-                    }
-                }
-            },
-            {
                 label: "Browse application directory of Yukon",
                 click: async () => {
                     await shell.showItemInFolder(app.getAppPath())
@@ -162,9 +158,35 @@ const menuTemplate = [
                     const url = `https://files.zubax.com/products/org.opencyphal.yukon/releases/`
                     shell.openExternal(url);
                 }
-            }
+            },
+            {
+                label: "Open OpenCyphal forum",
+                click: async () => {
+                    const url = `https://forum.opencyphal.org/`
+                    shell.openExternal(url);
+                }
+            },
+            {
+                label: "Open the Yukon category in the OpenCyphal forum",
+                click: async () => {
+                    const url = `https://forum.opencyphal.org/c/app/yukon/14`
+                    shell.openExternal(url);
+                }
+            },
+            {
+                label: "About",
+                click: async () => {
+                    const yukon_version = getYukonVersion();
+                    console.log("Yukon version: " + yukon_version);
+                    dialog.showMessageBoxSync({
+                        type: "info",
+                        title: "About Yukon",
+                        message: "Yukon version: " + yukon_version + "\n" + "Forum for asking questions: https://forum.opencyphal.org/"
+                    });
+                }
+            },
         ]
-    }
+    },
 ]
 app.whenReady().then(() => {
     // Send a GET request to http://locahost:5000/api/announce_running_in_electron
@@ -175,6 +197,13 @@ app.whenReady().then(() => {
     ipcMain.handle('dialog:openPath', handlePathOpen);
     ipcMain.handle('dialog:saveFile', handleFileSave);
     const window = createWindow();
+    menuTemplate.push({
+        label: "Restore default layout",
+        click: async () => {
+            await window.webContents.send('restore_default_layout')
+            removeAllRecoverButtons();
+        }
+    })
     console.log("Setting up IPC handlers")
     const menu = Menu.buildFromTemplate(menuTemplate)
     ipcMain.handle('panels:addRecovery', function (_, panelName, panelText) {
@@ -229,6 +258,14 @@ function removeRecoverButton(panelText) {
     panelsMenuTemplate.submenu = panelsMenuTemplate.submenu.filter(x => x.label !== panelText);
     if (panelsMenuTemplate.submenu.length === 0) {
         menuTemplate.splice(menuTemplate.indexOf(panelsMenuTemplate), 1);
+    }
+    const new_menu = Menu.buildFromTemplate(menuTemplate)
+    Menu.setApplicationMenu(new_menu);
+}
+function removeAllRecoverButtons() {
+    try {
+        menuTemplate.splice(menuTemplate.indexOf(panelsMenuTemplate), 1);
+    } catch (e) {
     }
     const new_menu = Menu.buildFromTemplate(menuTemplate)
     Menu.setApplicationMenu(new_menu);

@@ -1,4 +1,4 @@
-from typing import Any, NoReturn, Sequence
+from typing import Any, List, NoReturn, Sequence
 import typing
 from parsimonious import NodeVisitor
 from parsimonious.nodes import Node
@@ -24,50 +24,36 @@ class FieldModifyingVisitor(NodeVisitor):
     def __init__(self, obj: object, value: Any):
         self._obj = obj
         self._value = value
-        self.current_pointer = self._obj
-        self.previous_pointer = self._obj
-        self.last_index = None
-        self.identifiers = []
+        self.current_pointer: object = self._obj
+        self.previous_pointer: object = self._obj
+        self.last_index: int = None
+        self.identifiers: List[str] = []
 
-    @property
-    def result(self) -> Any:
-        return self._obj
-
-    def visit_id(self, node, visited_children) -> typing.Tuple[str, str]:
-        # visited_children = [c for c in visited_children if c is not None]
+    def visit_id(self, node: Node, visited_children: Sequence[Any]) -> typing.Tuple[str, str]:
         if hasattr(self._obj, node.text):
             self.current_pointer = getattr(self._obj, node.text)
-            print("Setting pointer to ", self.current_pointer)
         return_value = ("id", node.text)
         self.identifiers.append(node.text)
-        print(return_value, visited_children)
         return return_value
 
-    def visit_attr_ref(self, node, visited_children) -> typing.Tuple[str, str]:
-        # visited_children = [c for c in visited_children if c is not None]
+    def visit_attr_ref(self, node: Node, visited_children: Sequence[Any]) -> typing.Tuple[str, str]:
         identifier = self.identifiers[-1]
         self.previous_pointer = self.current_pointer
         self.current_pointer = getattr(self.current_pointer, identifier)
         return_value = ("attr_ref", node.text)
-        print(return_value, visited_children)
         return return_value
 
-    def visit_index_ref(self, node, visited_children) -> typing.Tuple[str, str]:
-        # visited_children = [c for c in visited_children if c is not None]
+    def visit_index_ref(self, node: Node, visited_children: Sequence[Any]) -> typing.Tuple[str, str]:
         index = self.last_index
         identifier = self.identifiers[-1]
-
-        # Resize the numpy array at current_pointer
         if isinstance(self.current_pointer, np.ndarray):
-            setattr(self.previous_pointer, identifier, np.resize(self.current_pointer, index + 1))
             self.current_pointer = getattr(self.previous_pointer, identifier)
             self.current_pointer[index] = self._value
+            setattr(self.previous_pointer, identifier, self.current_pointer)
         return_value = ("index_ref", node.text)
-        print(return_value, visited_children)
-        print("Setting value at index", index)
         return return_value
 
-    def visit_integer(self, node, visited_children) -> typing.Tuple[str, str]:
+    def visit_integer(self, node: Node, visited_children: Sequence[Any]) -> typing.Tuple[str, str]:
         return_value = ("integer", int(node.text))
         self.last_index = int(node.text)
         return return_value

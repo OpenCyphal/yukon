@@ -17,6 +17,7 @@ from time import time
 from yukon.domain.publisher import YukonPublisher
 from yukon.custom_tk_dialog import launch_yes_no_dialog
 from yukon.domain.simple_publisher import SimplePublisher
+from yukon.services.snoop_registers import get_register_names
 
 from yukon.services.utils import quit_application
 
@@ -456,10 +457,21 @@ class Api:
             raise Exception("Failed to receive a response for sending command.")
         return jsonify({"success": response.is_success, "message": response.message})
 
-    def reread_node(self, node_id: str) -> None:
-        node_id_as_int = int(node_id)
-        if node_id_as_int:
-            self.state.queues.god_queue.put(RereadRegisterNamesRequest(node_id_as_int))
+    def reread_node(self, node_id: str) -> Response:
+        async def get_register_names_helper() -> None:
+            await get_register_names(
+                self.state,
+                node_id,
+                self.state.avatar.avatars_by_node_id[node_id],
+                True,
+            )
+
+        try:
+            self.state.cyphal_worker_asyncio_loop.create_task(get_register_names_helper())
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error(tb)
+            return jsonify({"success": False, "message": str(e)})
 
     def announce_running_in_electron(self) -> None:
         logger.info("Announcing running in electron.")

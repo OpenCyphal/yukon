@@ -70,7 +70,9 @@ window.console = new Proxy(old_console, {
     let elementPreviousParents = {}; // Component name and the corresponding previous parent element
     if (!isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_browser();
+        document.title = "Yukon (browser)";
     }
+
 
 
     function setUpMonitorComponent() {
@@ -486,7 +488,6 @@ window.console = new Proxy(old_console, {
             yukon_state.myLayout.updateSize();
         });
         window.addEventListener("resize", () => {
-            console.log("resize event");
             setTimeout(function () {
                 yukon_state.myLayout.updateSize();
             }, 50);
@@ -496,6 +497,18 @@ window.console = new Proxy(old_console, {
                 yukon_state.myLayout.updateSize();
             }, 50);
         });
+        if (isRunningInElectron(yukon_state)) {
+            window.electronAPI.onRestoreDefaultLayout(function () {
+                console.log("Restore default layout requested");
+                yukon_state.is_currently_restoring_default_layout = true;
+                setTimeout(function () {
+                    yukon_state.is_currently_restoring_default_layout = false;
+                }, 3000);
+                initalizeLayout();
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        }
 
         function registerComponentAction(uri, componentName, container, actionWhenCreating) {
             let isDestroyed = true;

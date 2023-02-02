@@ -28,7 +28,6 @@ from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.registers.reread_registers_request import RereadRegistersRequest
 from yukon.domain.registers.update_register_request import UpdateRegisterRequest
 from yukon.services.cyphal_worker.forward_dronecan_work import do_forward_dronecan_work
-from yukon.services.cyphal_worker.reread_register_names_work import do_reread_register_names_work
 from yukon.services.cyphal_worker.unsubscribe_requests_work import do_unsubscribe_requests_work
 from yukon.services.cyphal_worker.detach_transport_work import do_detach_transport_work
 from yukon.services.cyphal_worker.subscribe_requests_work import do_subscribe_requests_work
@@ -108,8 +107,6 @@ def cyphal_worker(state: GodState) -> None:
                     state.dronecan.thread = threading.Thread(target=run_dronecan, args=(state,), daemon=True)
                     state.dronecan.thread.start()
                     logger.info("DroneCAN firmware substitution is now " + "enabled")
-                elif isinstance(queue_element, RereadRegisterNamesRequest):
-                    await do_reread_register_names_work(state, queue_element)
         except Exception as e:
             logger.exception(e)
             raise e
