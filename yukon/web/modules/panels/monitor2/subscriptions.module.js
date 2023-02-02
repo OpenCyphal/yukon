@@ -20,6 +20,18 @@ function createCloseButton() {
     closeButton.style.padding = "0px";
     return closeButton;
 }
+function addLatestMessageCopyActions(pLatestMessage) {
+    pLatestMessage.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        console.log("Copied latest message to clipboard: " + pLatestMessage.innerText);
+        navigator.clipboard.writeText(pLatestMessage.innerText);
+    });
+    pLatestMessage.addEventListener("click", (event) => {
+        event.preventDefault();
+        console.log("Copied latest message to clipboard: " + pLatestMessage.innerText);
+        navigator.clipboard.writeText(pLatestMessage.innerText);
+    });
+}
 async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchIntervalId, lastCurrentMessagesLength, yukon_state) {
     const current_messages = yukon_state.subscriptions[specifier];
     const full_specifiers = [specifier + ":" + yukon_state.subscriptions[specifier].length];
@@ -211,6 +223,7 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     subscriptionElement.classList.add("subscription");
     subscriptionElement.setAttribute("data-specifier", specifier);
     const pLatestMessage = document.createElement("p");
+    addLatestMessageCopyActions(pLatestMessage);
     pLatestMessage.style.marginBottom = "0";
     pLatestMessage.innerText = "Yet to receive messages...";
     subscriptionElement.appendChild(pLatestMessage);
@@ -341,6 +354,8 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     header2.innerText = specifiersString;
     subscriptionElement.appendChild(header2);
     const pLatestMessage = document.createElement("p");
+    // If pLatestMessage is left or right clicked, then copy it's inner text to clipboard
+    addLatestMessageCopyActions(pLatestMessage);
     pLatestMessage.style.marginBottom = "0";
     pLatestMessage.innerText = "Yet to receive messages...";
     subscriptionElement.appendChild(pLatestMessage);

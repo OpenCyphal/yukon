@@ -16,5 +16,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     addRecoverablePanel: (panelName, panelText) => ipcRenderer.invoke('panels:addRecovery', panelName, panelText),
     removeRecoverButton: (panelText) => ipcRenderer.invoke('panels:removeRecovery', panelText),
     onOpenSettings: (callback) => ipcRenderer.on('openSettings', callback),
-    onRecoverPanel: (panelName) => ipcRenderer.on('panels:recover', panelName)
+    onRecoverPanel: (panelName) => ipcRenderer.on('panels:recover', panelName),
+    onRestoreDefaultLayout: (callback) => ipcRenderer.on('restore_default_layout', callback),
 })

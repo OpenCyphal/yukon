@@ -1,4 +1,16 @@
 @media (prefers-color-scheme: dark) {
+    .lm_controls .lm_close {
+        padding-top: 0.5px;
+        background: url(../../images/X_light.png) no-repeat center center !important;
+        background-size: 70% !important;
+    }
+
+    .lm_close_tab {
+        top: 4px !important;
+        background: url(../../images/X_light.png) no-repeat center center !important;
+        background-size: 80% !important;
+    }
+
     .lm_content {
         color: #ffffff
     }

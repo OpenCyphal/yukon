@@ -11,12 +11,12 @@ class SimplePublisher:
         self.rate_per_second = 1
         self.enabled = False
 
-    def add_field(self, id: str):
+    def add_field(self, id: str) -> PublisherField:
         self.fields[id] = PublisherField(id)
         return self.fields[id]
 
     def get_field(self, id: str) -> PublisherField:
         return self.fields[id]
 
-    def delete_field(self, id: str):
+    def delete_field(self, id: str) -> None:
         del self.fields[id]
