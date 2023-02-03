@@ -108,11 +108,36 @@ def modify(obj, path, value):
     return obj
 
 
+def get_all_fields_recursive(field: pydsdl.Field, depth=0):
+    try:
+        for field in field.data_type.fields:
+            if not isinstance(field, pydsdl.PaddingField):
+                print(f"{'  ' * depth}{field.name}")
+                # This is where the attribute error comes from when it's not a compound type, that's ok
+                get_all_fields_recursive(field, depth + 1)
+    except AttributeError:
+        # No longer a CompositeType, a leaf node of some other type
+        pass
+
+
+def get_all_properties_recursive(obj, depth=0):
+    model = pycyphal.dsdl.get_model(obj)
+    properties = []
+    for field in model.fields_except_padding:
+        print(f"{'  ' * depth}{field.name}")
+        get_all_fields_recursive(field, depth + 1)
+
+
+# get_all_properties_recursive(load_dtype("uavcan.node.port.List.0.1"))
+get_all_properties_recursive(load_dtype("uavcan.metatransport.can.Frame.0.1"))
+
+
 obj = uavcan.node.port.List_0_1()
 modify(obj, "publishers.sparse_list[125].value", 3)
 modify(obj, "publishers.sparse_list[10].value", 123)
 assert obj.publishers.sparse_list[10].value == 123
 assert obj.publishers.sparse_list[125].value == 3
+
 
 import uavcan.node.Heartbeat_1_0
 
