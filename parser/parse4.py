@@ -108,24 +108,42 @@ def modify(obj, path, value):
     return obj
 
 
-def get_all_fields_recursive(field: pydsdl.Field, depth=0):
+def get_all_fields_recursive(
+    field: pydsdl.Field, properties: typing.List[str], previous_components: typing.List[str], depth=0
+):
+    """
+    Recursively get all fields of a composite type
+
+    :param field: The field to get the fields of
+    :param properties: The list of properties to append to
+    :param previous_components: The list of previous components to append to, components make up the full path
+    :param depth: The depth of the recursion
+    """
+    previous_components.append(field.name)
     try:
         for field in field.data_type.fields:
             if not isinstance(field, pydsdl.PaddingField):
-                print(f"{'  ' * depth}{field.name}")
+                # print(f"{'  ' * depth}{field.name}")
                 # This is where the attribute error comes from when it's not a compound type, that's ok
-                get_all_fields_recursive(field, depth + 1)
+                previous_path = ".".join(previous_components)
+                properties.append(previous_path + "." + field.name)
+                get_all_fields_recursive(field, properties, depth + 1)
     except AttributeError:
         # No longer a CompositeType, a leaf node of some other type
         pass
 
 
-def get_all_properties_recursive(obj, depth=0):
+def get_all_properties_recursive(obj):
+    """
+    Recursively get all properties of a composite type
+
+    :param obj: The object to get the properties of
+    """
     model = pycyphal.dsdl.get_model(obj)
     properties = []
     for field in model.fields_except_padding:
-        print(f"{'  ' * depth}{field.name}")
-        get_all_fields_recursive(field, depth + 1)
+        get_all_fields_recursive(field, properties, [str(model)])
+    print(properties)
 
 
 # get_all_properties_recursive(load_dtype("uavcan.node.port.List.0.1"))
@@ -196,3 +214,8 @@ except IndexError:
     pass
 else:
     assert False
+
+
+def do_it_all(type_specifier, field_specifier):
+    # Get a type specifier
+    _type = load_dtype(type_specifier)
