@@ -125,7 +125,7 @@ def unexplode_a_register(state: GodState, node_id: int, register_name: str, regi
     assert isinstance(node_id, int)
     assert isinstance(register_value, str)
     avatar = state.avatar.avatars_by_node_id[node_id]
-    prototype = unexplode_value(avatar.register_exploded_values[register_name])
+    prototype = unexplode_value(avatar.registers_exploded_values[register_name])
     value = unexplode_value(register_value, prototype)
     # This is to get it back into the primitive shape and then serialize as JSON.
     return json.dumps(explode_value(value))
@@ -145,7 +145,7 @@ def unsimplify_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deser
                     logger.debug("Unsimplifying %s", register_name)
                     simplified_value2 = json.loads(json.dumps(simplified_value))
                     logger.debug("The simplified value is %r", simplified_value2)
-                    prototype = unexplode_value(avatar.register_exploded_values[register_name])
+                    prototype = unexplode_value(avatar.registers_exploded_values[register_name])
                     logger.debug("prototype: %r", prototype)
                     if simplified_value2 == "NaN":
                         simplified_value2 = float("nan")
@@ -220,7 +220,7 @@ def add_register_update_log_item(
     request_sent_time = datetime.fromtimestamp(time()).strftime("%H:%M:%S.%f")
     target_avatar = state.avatar.avatars_by_node_id.get(int(node_id))
     if target_avatar:
-        value_before_update = target_avatar.register_values.get(register_name)
+        value_before_update = target_avatar.registers_values.get(register_name)
         if not value_before_update:
             value_before_update = ""
     else:

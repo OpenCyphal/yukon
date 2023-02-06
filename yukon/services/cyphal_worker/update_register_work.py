@@ -67,7 +67,7 @@ def assemble_response_and_log_item(
 async def do_update_register_work(state: GodState, register_update: UpdateRegisterRequest) -> None:
     try:
         try:
-            value_before_update: str = state.avatar.avatars_by_node_id[register_update.node_id].register_values[
+            value_before_update: str = state.avatar.avatars_by_node_id[register_update.node_id].registers_values[
                 register_update.register_name
             ]
         except KeyError as e:

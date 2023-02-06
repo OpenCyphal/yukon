@@ -116,7 +116,7 @@ export async function getDatatypesForPort(portNr, yukon_state) {
     return sortedDatatypes;
 }
 
-export function getEmptyPortsForNode(node_id, yukon_state) {
+export function getUnassignedPortsForNode(node_id, yukon_state) {
     // Look for all registers that are named like "port_1.id" and "port_1.type"
     // If the id is empty, then the port is empty
     const emptyPorts = [];
@@ -132,8 +132,18 @@ export function getEmptyPortsForNode(node_id, yukon_state) {
                 if (node.registers_values[probable_datatype_register_name]) {
                     detected_datatype = node.registers_values[probable_datatype_register_name];
                 }
-                const subject_id = node.registers_values[register_name];
-                if (subject_id.toString() === "65535") {
+                const subject_id = parseInt(node.registers_values[register_name]);
+                // If for whatever reason the port is not in the pub, sub, cln, srv lists of node.ports, then it should be displayed still in the unassigned ports list
+                const isPortNotDisplayed = node.ports[link_type] && node.ports[link_type].indexOf(subject_id) === -1;
+                if (subject_id === 0) {
+                    console.log("sus")
+                }
+                if (isPortNotDisplayed) {
+                    console.log(`Port was not yet displayed: ${link_name} ${link_type} ${register_name} ${detected_datatype} ${subject_id}`);
+                } else {
+                    console.log(`Port was already displayed: ${link_name} ${link_type} ${register_name} ${detected_datatype} ${subject_id}`);
+                }
+                if (isPortNotDisplayed || subject_id === 65535) {
                     emptyPorts.push({ "link_name": link_name, "link_type": link_type, "full_name": register_name, "datatype": detected_datatype });
                 }
             }

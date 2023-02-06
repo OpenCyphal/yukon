@@ -37,8 +37,8 @@ async def get_register_value(
                 return
             assert register_name is not None
             exploded_value = explode_value(obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent})
-            current_avatar.register_exploded_values[register_name] = exploded_value
-            current_avatar.register_values[register_name] = str(explode_value(obj.value, simplify=True))
+            current_avatar.registers_exploded_values[register_name] = exploded_value
+            current_avatar.registers_values[register_name] = str(explode_value(obj.value, simplify=True))
             return response
         else:
             print("Failed response to register value for " + register_name)
@@ -75,4 +75,4 @@ async def get_register_names(
             break
     if state.avatar.disappeared_nodes.get(node_id):
         logger.debug("Node %d disappeared before register names could be retrieved", node_id)
-    new_avatar.register_values = register_values
+    new_avatar.registers_values = register_values

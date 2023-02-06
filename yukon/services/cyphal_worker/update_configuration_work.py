@@ -19,7 +19,7 @@ async def do_apply_configuration_work(state: GodState, config: ApplyConfiguratio
         if is_configuration_simplified(data):
             at_least_one_register_was_modified = False
             for register_name, register_value in data.items():
-                prototype_string = state.avatar.avatars_by_node_id[int(config.node_id)].register_exploded_values.get(
+                prototype_string = state.avatar.avatars_by_node_id[int(config.node_id)].registers_exploded_values.get(
                     register_name, None
                 )
                 if prototype_string is None:
