@@ -50,11 +50,12 @@ export function getRelatedLinks(port, yukon_state) {
             const register_name = registersKeys[j];
             const register_name_split = register_name.split(".");
             const link_name = register_name_split[register_name_split.length - 2];
+            const link_type = register_name_split[register_name_split.length - 3];
             const value = avatar.registers_values[register_name];
             if (parseInt(value) === port && register_name.endsWith(".id")) {
                 const datatype_key = registersKeys.find((a) => a.endsWith(link_name + ".type"));
                 const datatype = avatar.registers_values[datatype_key];
-                links.push({ name: link_name, node_id: avatar.node_id, "port": port, type: register_name_split[1], "full_name": register_name, "datatype": datatype });
+                links.push({ name: link_name, node_id: avatar.node_id, "port": port, type: link_type, "full_name": register_name, "datatype": datatype });
             }
         }
     }
