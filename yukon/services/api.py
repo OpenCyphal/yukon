@@ -420,14 +420,6 @@ class Api:
         self.state.gui.last_poll_received = monotonic()
         avatar_list = [avatar.to_builtin() for avatar in list(self.state.avatar.avatars_by_node_id.values())]
         avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
-        # if self.state.avatar.hide_yakut_avatar:
-        #     for avatar in avatar_list:
-        #         amount_of_subscriptions = len(avatar["ports"]["sub"])
-        #         if avatar["name"] and avatar["name"] == "yakut":
-        #             avatar_list.remove(avatar)
-        #         elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
-        #             avatar_list.remove(avatar)
-        # return_string = json.dumps(, cls=EnhancedJSONEncoder)
         return jsonify(avatar_dto)
 
     def set_log_level(self, severity: str) -> None:
@@ -578,9 +570,18 @@ class Api:
         self.state.cyphal.publishers_by_id[publisher_id].delete_field(field_id)
         return jsonify({"success": True})
 
-    def set_publisher_field_type_name(self, publisher_id: str, field_id: str, datatype: str) -> Response:
+    def set_publisher_field_type_path(self, publisher_id: str, field_id: str, type_path: str) -> Response:
         try:
-            self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).type_name = datatype
+            self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).type_path = type_path
+            return jsonify(
+                {"success": True, "field": self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id)}
+            )
+        except:
+            return jsonify({"success": False, "message": traceback.format_exc()})
+
+    def set_publisher_field_specifier(self, publisher_id: str, field_id: str, datatype: str) -> Response:
+        try:
+            self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).field_specifier = datatype
             return jsonify(
                 {"success": True, "field": self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id)}
             )

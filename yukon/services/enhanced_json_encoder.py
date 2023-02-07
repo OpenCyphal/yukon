@@ -60,7 +60,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         if isinstance(o, PublisherField):
             return {
                 "id": o.id,
-                "type_name": o.type_name,
+                "field_specifier": o.field_specifier,
                 "value": o.value,
                 "min": o.min,
                 "max": o.max,
