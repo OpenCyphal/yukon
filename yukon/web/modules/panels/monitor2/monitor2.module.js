@@ -258,22 +258,18 @@ function unselectPort(portNr) {
         yukon_state.monitor2selections = yukon_state.monitor2selections.filter((p) => p !== portNr);
     }
 }
-function addMissingPorts(ports, yukon_state) {
+function addMissingPorts(avatar, yukon_state) {
     // This function sees if there are any assigned subject ids in register values that need to be added to the ports
     // This is needed because sometimes a node will not publish its status on its ports to the port list subject
-
-    // Iterate through all avatars in yukon_state.current_avatars
-    for (const avatar of yukon_state.current_avatars) {
-        // Iterate through all registers in the avatar
-        for (const [name, value] of Object.entries(avatar.registers_values)) {
-            let split_name = name.split(".");
-            let end_part = split_name[split_name.length - 1];
-            if (end_part === "id") {
-                let link_name = split_name[split_name.length - 2];
-                let link_type = split_name[split_name.length - 3];
-                if (ports[link_type] && ports[link_type].indexOf(parseInt(value)) === -1) {
-                    ports[link_type].push(parseInt(value));
-                }
+    // Iterate through all registers in the avatar
+    for (const [name, value] of Object.entries(avatar.registers_values)) {
+        let split_name = name.split(".");
+        let end_part = split_name[split_name.length - 1];
+        if (end_part === "id") {
+            let link_name = split_name[split_name.length - 2];
+            let link_type = split_name[split_name.length - 3];
+            if (avatar.ports[link_type] && avatar.ports[link_type].indexOf(parseInt(value)) === -1) {
+                avatar.ports[link_type].push(parseInt(value));
             }
         }
     }
@@ -300,7 +296,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     let ports = yukon_state.monitor2.ports;
 
     for (const avatar of yukon_state.current_avatars) {
-        addMissingPorts(avatar.ports, yukon_state);
+        addMissingPorts(avatar, yukon_state);
         for (const port_type of Object.keys(avatar.ports)) {
             for (const port of avatar.ports[port_type]) {
                 if (port === "") {
@@ -387,7 +383,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             }
             // Getting info about more links than necessary for later highlighting purposes
             const relatedLinks = getRelatedLinks(port.port, yukon_state);
-            const currentLinkObject = relatedLinks.find(link => link.port === port.port && link.type === matchingPort.type);
+            const currentLinkObject = relatedLinks.find(link => link.port === port.port && link.type === matchingPort.type && link.node_id === avatar.node_id);
             let toggledOn = { value: false };
             let currentLinkDsdlDatatype = null;
             let fixed_datatype_short = null;
