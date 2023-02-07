@@ -49,14 +49,14 @@ async def do_apply_configuration_work(state: GodState, config: ApplyConfiguratio
     elif config.is_network_config:
         logger.debug("Setting configuration for all configured nodes")
         data = json.loads(config.configuration)
-        for node_id, register_values_exploded in data.items():
+        for node_id, registers_values_exploded in data.items():
             if "__" in node_id:
                 continue
             # If register_values_exploded is not a dict, it is an error
-            if not isinstance(register_values_exploded, dict):
+            if not isinstance(registers_values_exploded, dict):
                 logger.error(f"Configuration for node {node_id} is not a dict")
                 continue
-            for k, v in register_values_exploded.items():
+            for k, v in registers_values_exploded.items():
                 state.queues.god_queue.put_nowait(
                     UpdateRegisterRequest(uuid4(), k, unexplode_value(v), int(node_id), time.time())
                 )

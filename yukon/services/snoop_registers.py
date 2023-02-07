@@ -50,7 +50,7 @@ async def get_register_value(
 async def get_register_names(
     state: GodState, node_id: int, new_avatar: Avatar, is_reread: typing.Optional[bool] = None
 ) -> None:
-    register_values: typing.Any = {}
+    registers_values: typing.Any = {}
     counter = 0
     list_client = state.cyphal.local_node.make_client(List_1, node_id)
     if is_reread:
@@ -70,9 +70,9 @@ async def get_register_names(
             if response:
                 obj = response[0]
                 counter += 1
-                register_values[register_name] = str(_simplify_value(obj.value))
+                registers_values[register_name] = str(_simplify_value(obj.value))
         else:
             break
     if state.avatar.disappeared_nodes.get(node_id):
         logger.debug("Node %d disappeared before register names could be retrieved", node_id)
-    new_avatar.registers_values = register_values
+    new_avatar.registers_values = registers_values
