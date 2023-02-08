@@ -1,18 +1,8 @@
 import { createSpinner } from "./spinner.module.js";
 import { createNumberFieldRow } from "./number_field.js";
 import { createBooleanFieldRow } from "./boolean_field.js";
-import { createDatatypeField } from "./autocomplete.field.js";
-var lut = []; for (var i = 0; i < 256; i++) { lut[i] = (i < 16 ? '0' : '') + (i).toString(16); }
-function guid() {
-    var d0 = Math.random() * 0xffffffff | 0;
-    var d1 = Math.random() * 0xffffffff | 0;
-    var d2 = Math.random() * 0xffffffff | 0;
-    var d3 = Math.random() * 0xffffffff | 0;
-    return lut[d0 & 0xff] + lut[d0 >> 8 & 0xff] + lut[d0 >> 16 & 0xff] + lut[d0 >> 24 & 0xff] + '-' +
-        lut[d1 & 0xff] + lut[d1 >> 8 & 0xff] + '-' + lut[d1 >> 16 & 0x0f | 0x40] + lut[d1 >> 24 & 0xff] + '-' +
-        lut[d2 & 0x3f | 0x80] + lut[d2 >> 8 & 0xff] + '-' + lut[d2 >> 16 & 0xff] + lut[d2 >> 24 & 0xff] +
-        lut[d3 & 0xff] + lut[d3 >> 8 & 0xff] + lut[d3 >> 16 & 0xff] + lut[d3 >> 24 & 0xff];
-}
+import { createAutocompleteField, createDatatypeField } from "./autocomplete.field.js";
+
 function createCloseButton() {
     const closeButton = document.createElement("button");
     closeButton.classList.add("btn", "btn-sm", "btn-danger")
@@ -63,7 +53,7 @@ export async function updatePublishers(publishersOuterArea, yukon_state) {
     }
 }
 
-function createRemoveButton(publisher, field, row, yukon_state) {
+export function createRemoveButton(publisher, field, row, yukon_state) {
     const removeButton = document.createElement('button');
     removeButton.classList.add("remove-button");
     removeButton.innerText = "X";
@@ -85,6 +75,13 @@ async function createPublisherFrame(publisher, yukon_state) {
     });
 
     frame.appendChild(closeButton);
+    let isInitialized = false;
+    possibleTypes = []
+    const chooseTypeField = await createAutocompleteField(possibleTypes, [async function () {
+        if (!isInitialized) { isInitialized = true; } else { return; }
+        await typeWasChosen();
+    }], {}, yukon_state);
+    frame.append(chooseTypeField);
     async function typeWasChosen() {
         // Create a vertical flexbox for holding rows of content
         const content = document.createElement('div');
@@ -170,5 +167,6 @@ async function createPublisherFrame(publisher, yukon_state) {
         });
         addFieldInputGroup.appendChild(addBooleanFieldButton);
     }
+    // await typeWasChosen();
     return frame;
 }

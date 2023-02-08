@@ -1,3 +1,7 @@
+import { guid } from "../../guid.js";
+import { createDatatypeField } from "./autocomplete.field.js";
+import { createSpinner } from "./spinner.module.js";
+import { createRemoveButton } from "./publishers.module.js";
 export async function createNumberFieldRow(publisher, yukon_state, field) {
     const row = document.createElement('div');
     const rowId = guid();
