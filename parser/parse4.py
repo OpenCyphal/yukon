@@ -1,3 +1,5 @@
+import dataclasses
+import enum
 import typing
 import numpy as np
 import uavcan.node.port.List_0_1
@@ -108,8 +110,43 @@ def modify(obj, path, value):
     return obj
 
 
+# The user will provide only primitive values, all composite types are automatically generated around them
+class PrimitiveFieldType(enum.Enum):
+    Real = 0
+    UnsignedInteger = 1
+    Integer = 2
+    Boolean = 3
+    String = 4
+
+
+def determine_primitive_field_type(field: pydsdl.Field) -> PrimitiveFieldType:
+    """
+    Determine the primitive field type of a field
+
+    :param field: The field to determine the primitive field type of
+    :return: The primitive field type
+    """
+    if isinstance(field.data_type, pydsdl.PrimitiveType):
+        if isinstance(field.data_type, pydsdl.SignedIntegerType):
+            return PrimitiveFieldType.Integer
+        elif isinstance(field.data_type, pydsdl.UnsignedIntegerType):
+            return PrimitiveFieldType.UnsignedInteger
+        elif isinstance(field.data_type, pydsdl.FloatType):
+            return PrimitiveFieldType.Real
+        elif isinstance(field.data_type, pydsdl.BooleanType):
+            return PrimitiveFieldType.Boolean
+        elif isinstance(field.data_type, pydsdl.StringType):
+            return PrimitiveFieldType.String
+
+
+@dataclasses.dataclass
+class SimplifiedFieldDTO:
+    field_name: str
+    field_type: PrimitiveFieldType
+
+
 def get_all_fields_recursive(
-    field: pydsdl.Field, properties: typing.List[str], previous_components: typing.List[str], depth=0
+    field: pydsdl.Field, properties: typing.List[SimplifiedFieldDTO], previous_components: typing.List[str], depth=0
 ):
     """
     Recursively get all fields of a composite type
@@ -119,16 +156,21 @@ def get_all_fields_recursive(
     :param previous_components: The list of previous components to append to, components make up the full path
     :param depth: The depth of the recursion
     """
-    previous_components.append(field.name)
+    if field.name == "error":
+        print("This")
     try:
+        previous_components.append(field.name)
         for field in field.data_type.fields:
             if not isinstance(field, pydsdl.PaddingField):
                 # print(f"{'  ' * depth}{field.name}")
                 # This is where the attribute error comes from when it's not a compound type, that's ok
                 previous_path = ".".join(previous_components)
-                properties.append(previous_path + "." + field.name)
-                get_all_fields_recursive(field, properties, depth + 1)
-    except AttributeError:
+                path = previous_path + "." + field.name
+                if isinstance(field.data_type, pydsdl.PrimitiveType):
+                    properties.append(SimplifiedFieldDTO(path, determine_primitive_field_type(field)))
+                else:
+                    get_all_fields_recursive(field, properties, previous_components, depth + 1)
+    except AttributeError as e:
         # No longer a CompositeType, a leaf node of some other type
         pass
 
@@ -142,7 +184,10 @@ def get_all_properties_recursive(obj):
     model = pycyphal.dsdl.get_model(obj)
     properties = []
     for field in model.fields_except_padding:
-        get_all_fields_recursive(field, properties, [str(model)])
+        if isinstance(field.data_type, pydsdl.PrimitiveType):
+            properties.append(SimplifiedFieldDTO(model + field.name, determine_primitive_field_type(field)))
+        else:
+            get_all_fields_recursive(field, properties, [str(model)])
     print(properties)
 
 
