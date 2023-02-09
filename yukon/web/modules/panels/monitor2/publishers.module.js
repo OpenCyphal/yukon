@@ -76,11 +76,19 @@ async function createPublisherFrame(publisher, yukon_state) {
 
     frame.appendChild(closeButton);
     let isInitialized = false;
-    possibleTypes = []
-    const chooseTypeField = await createAutocompleteField(possibleTypes, [async function () {
+    const possibleTypes = await (yukon_state.zubax_apij.get_known_datatypes_from_dsdl());
+    const variableIdMessages = possibleTypes["variable_id_messages"];
+    const chooseTypeField = await createAutocompleteField(variableIdMessages, [async function (chosenType) {
+        yukon_state.zubax_apij.set_publisher_datatype(publisher.id, chosenType);
         if (!isInitialized) { isInitialized = true; } else { return; }
         await typeWasChosen();
     }], {}, yukon_state);
+    if (publisher.datatype) {
+        console.log("Publisher already has a datatype.")
+        chooseTypeField.value = publisher.datatype;
+    } else {
+        console.log("publisher doesn't have a datatype yet")
+    }
     frame.append(chooseTypeField);
     async function typeWasChosen() {
         // Create a vertical flexbox for holding rows of content

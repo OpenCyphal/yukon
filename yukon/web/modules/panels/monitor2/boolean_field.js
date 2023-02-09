@@ -1,4 +1,6 @@
 import { guid } from "../../guid.js";
+import { createDatatypeField } from "./autocomplete.field.js";
+import { createRemoveButton } from "./publishers.module.js";
 export async function createBooleanFieldRow(publisher, yukon_state, field) {
     const row = document.createElement('div');
     const rowId = guid();

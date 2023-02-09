@@ -19,7 +19,7 @@ from yukon.custom_tk_dialog import launch_yes_no_dialog
 from yukon.domain.simple_publisher import SimplePublisher
 from yukon.services.snoop_registers import get_register_names
 
-from yukon.services.utils import quit_application
+from yukon.services.utils import get_all_datatypes, get_datatype_return_dto, quit_application
 
 try:
     from yaml import CLoader as Loader
@@ -579,6 +579,13 @@ class Api:
         except:
             return jsonify({"success": False, "message": traceback.format_exc()})
 
+    def set_publisher_datatype(self, publisher_id: str, datatype: str) -> Response:
+        try:
+            self.state.cyphal.publishers_by_id[publisher_id].datatype = datatype
+            return jsonify({"success": True, "publisher": self.state.cyphal.publishers_by_id[publisher_id]})
+        except:
+            return jsonify({"success": False, "message": traceback.format_exc()})
+
     def set_publisher_field_specifier(self, publisher_id: str, field_id: str, datatype: str) -> Response:
         try:
             self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).field_specifier = datatype
@@ -870,7 +877,7 @@ class Api:
                 dsdl_folders.append(Path(path))
                 break
         for dsdl_folder in dsdl_folders:
-            return jsonify(get_datatypes_from_packages_directory_path(dsdl_folder))
+            return jsonify(get_datatype_return_dto(get_all_datatypes(dsdl_folder)))
 
     def setting_was_removed(self, id: str) -> Response:
         removed_descendant = self.state.settings.remove_descendant_with_id(id)
@@ -938,6 +945,3 @@ class Api:
         req.image_file_remote_path.path = "a"
         logging.debug("Sending %r to %r", req, node_id)
         self.state.dronecan.node.request(req, node_id, lambda e: None)
-
-    def set_publisher_rate(self, rate: int) -> None:
-        self.state.publisher_rate = rate

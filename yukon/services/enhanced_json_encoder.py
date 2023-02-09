@@ -55,6 +55,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             return {
                 "id": o.id,
                 "name": o.name,
+                "datatype": o.datatype,
                 "fields": o.fields,
             }
         if isinstance(o, PublisherField):

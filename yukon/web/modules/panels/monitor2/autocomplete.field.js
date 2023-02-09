@@ -10,6 +10,12 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
     const textField = document.createElement('input');
     textField.classList.add("autocomplete-field");
     textField.type = "text";
+    if (!choices || choices.length == 0) {
+        wrapper.appendChild(textField);
+        textField.value = "No choices available";
+        textField.disabled = true;
+        return wrapper;
+    }
     let savedScroll = 0;
     textField.addEventListener('change', async () => {
         console.log("Changing datatype to " + textField.value)
@@ -220,12 +226,14 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
 }
 export async function createDatatypeField(publisher, field, yukon_state) {
     const listOfOptions = await yukon_state.zubax_apij.get_publish_type_names();
+
     const wrapper = createAutocompleteField(["ABC", "CDEF", "ABC.DEF", "DEF.ABC"], [async function (new_value) {
         await yukon_state.zubax_apij.set_publisher_field_specifier(publisher.id, field.id, new_value);
+        await publisher.update_fields();
     }], publisher, listOfOptions);
     const textField = (await wrapper).querySelector(".autocomplete-field");
     if (field && field.field_specifier) {
-        textField.value = field.specifier;
+        textField.value = field.field_specifier;
         setTimeout(() => {
             textField.scrollLeft = textField.scrollWidth;
         }, 100);

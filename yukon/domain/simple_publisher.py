@@ -7,6 +7,7 @@ class SimplePublisher:
     def __init__(self, _id: str):
         self.id = _id
         self.name = ""
+        self.datatype = ""
         self.fields: typing.Dict[str, PublisherField] = {}
         self.rate_per_second = 1
         self.enabled = False
