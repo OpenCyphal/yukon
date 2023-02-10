@@ -1,4 +1,5 @@
 import dataclasses
+import enum
 import importlib
 import inspect
 import os
@@ -248,7 +249,7 @@ def get_all_field_dtos(obj) -> typing.List[SimplifiedFieldDTO]:
     properties = []
     for field in model.fields_except_padding:
         if isinstance(field.data_type, pydsdl.PrimitiveType):
-            properties.append(SimplifiedFieldDTO(model + field.name, determine_primitive_field_type(field)))
+            properties.append(SimplifiedFieldDTO(str(model) + field.name, determine_primitive_field_type(field)))
         else:
             get_all_fields_recursive(field, properties, [str(model)])
     return properties

@@ -19,7 +19,7 @@ from yukon.custom_tk_dialog import launch_yes_no_dialog
 from yukon.domain.simple_publisher import SimplePublisher
 from yukon.services.snoop_registers import get_register_names
 
-from yukon.services.utils import get_all_datatypes, get_datatype_return_dto, quit_application
+from yukon.services.utils import get_all_datatypes, get_all_field_dtos, get_datatype_return_dto, quit_application
 
 try:
     from yaml import CLoader as Loader
@@ -566,6 +566,12 @@ class Api:
         field = self.state.cyphal.publishers_by_id[publisher_id].add_field(field_id)
         return jsonify({"success": True, "field": field})
 
+    def get_publisher_possible_paths_for_autocomplete(self, publisher_id: str) -> Response:
+        """Returns a list of possible paths for the publisher_id."""
+        publisher: SimplePublisher = self.state.cyphal.publishers_by_id[publisher_id]
+        result = get_all_field_dtos(load_dtype(publisher.datatype))
+        return jsonify(result)
+
     def delete_publisher_field(self, publisher_id: str, field_id: str) -> Response:
         self.state.cyphal.publishers_by_id[publisher_id].delete_field(field_id)
         return jsonify({"success": True})
@@ -633,54 +639,6 @@ class Api:
             return jsonify({"success": True})
         except:
             return jsonify({"success": False, "message": traceback.format_exc()})
-
-    def make_publisher(self, specifiers: str) -> Response:
-        result_ready_event = threading.Event()
-        was_publisher_created = False
-        result_message = ""
-        new_publisher = None
-
-        def make_publisher_task() -> None:
-            nonlocal result_message, new_publisher
-            try:
-                specifiers_object = [SubjectSpecifier.from_string(x) for x in json.loads(specifiers)]
-                new_publisher = YukonPublisher(self.state.cyphal.local_node, specifiers_object)
-                self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
-            except:
-                result_message = traceback.format_exc()
-
-        self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(make_publisher_task)
-        result_ready_event.wait(5)
-        if new_publisher and was_publisher_created:
-            return jsonify({"success": True, "id": new_publisher.id})
-        else:
-            return jsonify({"success": False, "message": result_message})
-
-    def make_publishers_with_values(self, specifiers_and_values: typing.Dict[str, str]) -> Response:
-        result_ready_event = threading.Event()
-        was_publisher_created = False
-        result_message = ""
-        new_publisher = None
-
-        def make_publisher_task() -> None:
-            nonlocal result_message, new_publisher
-            try:
-                specifiers_and_values_object = {
-                    SubjectSpecifier.from_string(x): y for x, y in specifiers_and_values.items()
-                }
-                new_publisher = YukonPublisher(self.state.cyphal.local_node, specifiers_and_values_object.keys())
-                self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
-                for specifier, value in specifiers_and_values_object.items():
-                    new_publisher.update_value(specifier, value)
-            except:
-                result_message = traceback.format_exc()
-
-        self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(make_publisher_task)
-        result_ready_event.wait(5)
-        if new_publisher and was_publisher_created:
-            return jsonify({"success": True, "id": new_publisher.id})
-        else:
-            return jsonify({"success": False, "message": result_message})
 
     def update_publisher(self, publisher_id: str, specifier: str, data: str) -> Response:
         try:

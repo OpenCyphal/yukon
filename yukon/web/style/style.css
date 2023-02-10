@@ -459,3 +459,13 @@ button#btnShowHideToolbar:active {
 .card-body> :last-child {
     margin-bottom: 0 !important;
 }
+
+button:active {
+    animation: bounce .3s infinite alternate;
+}
+
+@keyframes bounce {
+    to {
+        transform: scale(1.05);
+    }
+}

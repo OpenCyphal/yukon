@@ -80,12 +80,16 @@ async function createPublisherFrame(publisher, yukon_state) {
     const variableIdMessages = possibleTypes["variable_id_messages"];
     const chooseTypeField = await createAutocompleteField(variableIdMessages, [async function (chosenType) {
         yukon_state.zubax_apij.set_publisher_datatype(publisher.id, chosenType);
+        publisher.possiblePaths = await yukon_state.zubax_apij.get_publisher_possible_paths_for_autocomplete(publisher.id);
         if (!isInitialized) { isInitialized = true; } else { return; }
         await typeWasChosen();
     }], {}, yukon_state);
+    chooseTypeField.style.width = "100%";
     if (publisher.datatype) {
         console.log("Publisher already has a datatype.")
         chooseTypeField.value = publisher.datatype;
+        // This is not actually implemented yet because switching the type of the publisher
+        // after it's been created is not a priority, the user could just create a new publisher and delete the old one
     } else {
         console.log("publisher doesn't have a datatype yet")
     }

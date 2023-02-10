@@ -5,10 +5,11 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
     wrapper.style.display = "flex";
     wrapper.style.alignItems = "center";
     wrapper.style.justifyContent = "center";
-    wrapper.style.width = "250px";
+    // wrapper.style.width = "250px";
     // Create a text field
     const textField = document.createElement('input');
     textField.classList.add("autocomplete-field");
+    textField.style.width = "100%";
     textField.type = "text";
     if (!choices || choices.length == 0) {
         wrapper.appendChild(textField);
@@ -36,7 +37,7 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
     // Position in center
     textField.style.alignItems = "center";
     textField.style.justifyContent = "center";
-    textField.style.width = "250px";
+    // textField.style.width = "250px";
     // When the text field is focused, show a dropdown menu with all the available datatypes
     // For now use ["foo.bar", "foo.baz", "foo.baz"] as the list of available datatypes
     wrapper.appendChild(textField);
@@ -52,22 +53,30 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
         state_holder.dropdown.style.border = "1px solid black";
         state_holder.dropdown.style.zIndex = 100;
         state_holder.dropdown.style.position = "absolute";
-        state_holder.dropdown.style.width = "400px";
+        state_holder.dropdown.style.width = "600px";
         state_holder.dropdown.style.height = "fit-content"
-        state_holder.dropdown.style.maxHeight = "100px";
+        state_holder.dropdown.style.maxHeight = "400px";
         state_holder.dropdown.style.overflowY = "scroll";
         state_holder.dropdown.style.top = 34 + "px"; // Height of the text field + 2px
-        state_holder.dropdown.style.left = 0;
+        state_holder.dropdown.style.left = "-30px";
         // Add a list of all the datatypes
         const list = document.createElement('div');
         state_holder.dropdown.appendChild(list);
-        for (const datatype of choices) {
+        for (const something of choices) {
             const listItem = document.createElement('div');
             listItem.style.width = "100%";
             listItem.style.color = "black";
+            listItem.style.fontSize = "0.8rem";
             listItem.style.borderBottom = "1px solid black";
             listItem.classList.add("dropdown-list-item");
-            listItem.innerText = datatype;
+            // If something is an object then
+            let textOfSomething = "";
+            if (typeof something === "object") {
+                textOfSomething = something.name;
+            } else {
+                textOfSomething = something;
+            }
+            listItem.innerText = textOfSomething;
             // const response = await yukon_state.zubax_apij.get_number_type_min_max_values(datatype);
             // if (response && response.success && response.min && response.max) {
             //     listItem.title = "Min: " + response.min + ", Max: " + response.max;
@@ -75,7 +84,7 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
             //     listItem.title = "Error: " + response.error;
             // }
             listItem.addEventListener('click', () => {
-                textField.value = datatype;
+                textField.value = textOfSomething;
                 textField.dispatchEvent(new Event("change"));
                 state_holder.dropdown.remove();
             });
@@ -193,7 +202,7 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
     // Also highlight the matching part of the datatype
     textField.addEventListener('input', async () => {
         const text = textField.value;
-        const matchingDatatypes = choices.filter((datatype) => datatype.startsWith(text));
+        const matchingDatatypes = choices.filter((datatype) => datatype.name.startsWith(text));
         if (matchingDatatypes.length === 0) {
             if (state_holder.dropdown) {
                 state_holder.dropdown.remove();
@@ -225,9 +234,9 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
     return wrapper;
 }
 export async function createDatatypeField(publisher, field, yukon_state) {
-    const listOfOptions = await yukon_state.zubax_apij.get_publish_type_names();
+    const listOfOptions = publisher.possiblePaths;
 
-    const wrapper = createAutocompleteField(["ABC", "CDEF", "ABC.DEF", "DEF.ABC"], [async function (new_value) {
+    const wrapper = createAutocompleteField(listOfOptions, [async function (new_value) {
         await yukon_state.zubax_apij.set_publisher_field_specifier(publisher.id, field.id, new_value);
         await publisher.update_fields();
     }], publisher, listOfOptions);
