@@ -10,6 +10,7 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
     const textField = document.createElement('input');
     textField.classList.add("autocomplete-field");
     textField.style.width = "100%";
+    textField.style.minWidth = "270px";
     textField.type = "text";
     if (!choices || choices.length == 0) {
         wrapper.appendChild(textField);
@@ -202,7 +203,13 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
     // Also highlight the matching part of the datatype
     textField.addEventListener('input', async () => {
         const text = textField.value;
-        const matchingDatatypes = choices.filter((datatype) => datatype.name.startsWith(text));
+        const matchingDatatypes = choices.filter((datatype) => {
+            if (typeof datatype === "object") {
+                return datatype.name.startsWith(text)
+            } else if (typeof datatype.name === "string") {
+                return datatype.startsWith(text)
+            }
+        });
         if (matchingDatatypes.length === 0) {
             if (state_holder.dropdown) {
                 state_holder.dropdown.remove();
@@ -224,7 +231,7 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
     });
     // When escape is pressed, remove the dropdown
     textField.addEventListener('keydown', (event) => {
-        if (event.key === "Escape") {
+        if (event.key === "Escape" || event.key === "Enter") {
             if (state_holder.dropdown) {
                 state_holder.dropdown.remove();
                 state_holder.dropdown = null;
@@ -239,7 +246,7 @@ export async function createDatatypeField(publisher, field, yukon_state) {
     const wrapper = createAutocompleteField(listOfOptions, [async function (new_value) {
         await yukon_state.zubax_apij.set_publisher_field_specifier(publisher.id, field.id, new_value);
         await publisher.update_fields();
-    }], publisher, listOfOptions);
+    }], publisher, yukon_state);
     const textField = (await wrapper).querySelector(".autocomplete-field");
     if (field && field.field_specifier) {
         textField.value = field.field_specifier;

@@ -167,10 +167,15 @@ def get_datatype_return_dto(all_classes: typing.List[Datatype]):
         if datatype.is_fixed_id:
             return_object["fixed_id_messages"][str(datatype.class_reference._FIXED_PORT_ID_)] = {
                 "short_name": datatype.class_reference.__name__,
-                "full_name": datatype.name,
+                "name": datatype.name,
             }
         else:
-            return_object["variable_id_messages"].append(datatype.name)
+            return_object["variable_id_messages"].append(
+                {
+                    "short_name": datatype.class_reference.__name__,
+                    "name": datatype.name,
+                }
+            )
     return return_object
 
 
@@ -190,16 +195,19 @@ def determine_primitive_field_type(field: pydsdl.Field) -> PrimitiveFieldType:
     :param field: The field to determine the primitive field type of
     :return: The primitive field type
     """
-    if isinstance(field.data_type, pydsdl.PrimitiveType):
-        if isinstance(field.data_type, pydsdl.SignedIntegerType):
+    datatype = field.data_type
+    if isinstance(field.data_type, pydsdl.ArrayType):
+        datatype = field.data_type.element_type
+    if isinstance(datatype, pydsdl.PrimitiveType):
+        if isinstance(datatype, pydsdl.SignedIntegerType):
             return PrimitiveFieldType.Integer
-        elif isinstance(field.data_type, pydsdl.UnsignedIntegerType):
+        elif isinstance(datatype, pydsdl.UnsignedIntegerType):
             return PrimitiveFieldType.UnsignedInteger
-        elif isinstance(field.data_type, pydsdl.FloatType):
+        elif isinstance(datatype, pydsdl.FloatType):
             return PrimitiveFieldType.Real
-        elif isinstance(field.data_type, pydsdl.BooleanType):
+        elif isinstance(datatype, pydsdl.BooleanType):
             return PrimitiveFieldType.Boolean
-        elif isinstance(field.data_type, pydsdl.StringType):
+        elif isinstance(datatype, pydsdl.StringType):
             return PrimitiveFieldType.String
 
 
@@ -207,6 +215,8 @@ def determine_primitive_field_type(field: pydsdl.Field) -> PrimitiveFieldType:
 class SimplifiedFieldDTO:
     field_name: str
     field_type: PrimitiveFieldType
+    is_array: bool
+    short_name: str
 
 
 def get_all_fields_recursive(
@@ -231,7 +241,11 @@ def get_all_fields_recursive(
                 previous_path = ".".join(previous_components)
                 path = previous_path + "." + field.name
                 if isinstance(field.data_type, pydsdl.PrimitiveType):
-                    properties.append(SimplifiedFieldDTO(path, determine_primitive_field_type(field)))
+                    properties.append(
+                        SimplifiedFieldDTO(path, determine_primitive_field_type(field), False, field.name)
+                    )
+                elif isinstance(field.data_type, pydsdl.ArrayType):
+                    properties.append(SimplifiedFieldDTO(path, determine_primitive_field_type(field), True, field.name))
                 else:
                     get_all_fields_recursive(field, properties, previous_components, depth + 1)
     except AttributeError as e:
@@ -249,7 +263,17 @@ def get_all_field_dtos(obj) -> typing.List[SimplifiedFieldDTO]:
     properties = []
     for field in model.fields_except_padding:
         if isinstance(field.data_type, pydsdl.PrimitiveType):
-            properties.append(SimplifiedFieldDTO(str(model) + field.name, determine_primitive_field_type(field)))
+            properties.append(
+                SimplifiedFieldDTO(
+                    str(model) + "." + field.name, determine_primitive_field_type(field), False, field.name
+                )
+            )
+        elif isinstance(field.data_type, pydsdl.ArrayType):
+            properties.append(
+                SimplifiedFieldDTO(
+                    str(model) + "." + field.name, determine_primitive_field_type(field), True, field.name
+                )
+            )
         else:
             get_all_fields_recursive(field, properties, [str(model)])
     return properties
