@@ -66,14 +66,19 @@ def make_electron_logger(state: "GodState") -> logging.Logger:
     return electron_logger
 
 
+def decide_logging_severity(state: "GodState") -> None:
+    state.gui.is_built_executable = is_built_executable
+    # We don't need to show debug info to the user by default,
+    # this is only enabled by the user or enabled by default in dev mode
+    if is_built_executable:
+        state.gui.message_severity = "info"
+
+
 def run_electron(state: GodState) -> None:
     # Make the thread sleep for 1 second waiting for the server to start
     while not state.gui.is_port_decided:
         sleep(1)
-    state.gui.is_built_executable = is_built_executable
-    # We don't need to show debug info to the user by default, this is only enabled by the user or enabled by default in dev mode
-    if is_built_executable:
-        state.gui.message_severity = "info"
+    decide_logging_severity(state)
     electron_logger = make_electron_logger(state)
     exe_path = get_electron_path()
 

@@ -1,7 +1,7 @@
 export function fillSettings(settings, yukon_state) {
     settings.VerticalLineMarginTop = 3;
     settings.PageMarginTop = 20;
-    settings.NodeXOffset = 20;
+    settings.NodeXOffset = 5;
     settings.DistancePerHorizontalConnection = yukon_state.all_settings["Monitor view"]["Distance per horizontal connection"];
     settings.DistanceBetweenNodes = 2;
     settings.NodeWidth = yukon_state.all_settings["Monitor view"]["Node width"];

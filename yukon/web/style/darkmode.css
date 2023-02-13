@@ -279,4 +279,18 @@
     .pair-div:hover span {
         color: #000;
     }
+
+    .lm_header .lm_controls .lm_tabdropdown::before {
+        animation: colorTween 5s infinite;
+    }
+
+    @keyframes colorTween {
+        0% {
+            color: #ffff00;
+        }
+
+        100% {
+            color: #ff7f00;
+        }
+    }
 }

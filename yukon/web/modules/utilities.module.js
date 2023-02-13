@@ -10,7 +10,23 @@ export function secondsToString(seconds) {
     const numhours = Math.floor(((seconds % 31536000) % 86400) / 3600);
     const numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
     const numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
-    return numyears + " years " + numdays + " days " + numhours + " hours " + numminutes + " minutes " + numseconds + " seconds";
+    let return_string = "";
+    if (numyears > 0) {
+        return_string += numyears + " years ";
+    }
+    if (numdays > 0) {
+        return_string += numdays + " days ";
+    }
+    if (numhours > 0) {
+        return_string += numhours + " hours ";
+    }
+    if (numminutes > 0) {
+        return_string += numminutes + " minutes ";
+    }
+    if (numseconds > 0) {
+        return_string += numseconds + " seconds ";
+    }
+    return return_string;
 }
 export function secondsToColonSeparatedString(seconds) {
 

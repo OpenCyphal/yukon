@@ -612,6 +612,7 @@ class Api:
             return jsonify({"success": True})
         except Exception as e:
             return jsonify({"success": False, "message": str(e)})
+
     def set_publisher_enabled(self, id: str, enabled: bool) -> Response:
         try:
             publisher = self.state.cyphal.publishers_by_id.get(id)
@@ -624,6 +625,7 @@ class Api:
             logger.error("Failed to set publisher enabled.")
             logger.error(str(tb))
             return jsonify({"success": False, "message": str(e)})
+
     def make_publisher_field(self, publisher_id: str, field_id: str) -> Response:
         try:
             field = self.state.cyphal.publishers_by_id[publisher_id].add_field(field_id)
