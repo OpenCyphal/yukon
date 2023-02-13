@@ -298,4 +298,12 @@
             color: #ff7f00;
         }
     }
+
+    .lm_header .lm_tab {
+        padding-top: 0px !important;
+    }
+
+    .lm_header .lm_tab.lm_active {
+        padding-top: 2px !important;
+    }
 }
