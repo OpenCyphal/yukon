@@ -409,6 +409,18 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
 
             avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
         }
+        // Iterate over every element in node and find the lowest positioned element
+        // Save the height based on that
+        let height = 0;
+        for(const child of node.children) {
+            if (child.offsetTop + child.offsetHeight > height) {
+                height = child.offsetTop + child.offsetHeight;
+            }
+        }
+        let marginBetween = 8;
+        if(avatar_y_counter.value < height + marginBetween) {
+            avatar_y_counter.value = height + marginBetween;
+        }
         if (avatar_y_counter.value < 300) {
             avatar_y_counter.value = 300;
         }
@@ -493,7 +505,9 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         assign_button.style.setProperty("left", assignButtonLeftOffset);
         const assignButtonWidth = 100;
         assign_button.style.width = assignButtonWidth + "px";
-        assign_button.style.setProperty("padding-top", designatedHeight * 0.01 + "px", "important");
+        assign_button.style.display = "flex";
+        assign_button.style.alignItems = "center";
+        assign_button.style.justifyContent = "center";
         // Align text to the top
         // assign_button.style.setProperty()
 
