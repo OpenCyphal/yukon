@@ -339,62 +339,79 @@ class Api:
         return file_dto
 
     def update_register_value(self, register_name: str, register_value: typing.Any, node_id: str) -> typing.Any:
-        import uavcan
+        try:
+            import uavcan
 
-        new_value: uavcan.register.Value_1 = unexplode_value(register_value)
-        request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id), time())
-        self.state.queues.god_queue.put_nowait(request)
-        timeout = time() + 5
+            new_value: uavcan.register.Value_1 = unexplode_value(register_value)
+            request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id), time())
+            self.state.queues.god_queue.put_nowait(request)
+            timeout = time() + 5
 
-        while time() < timeout:
-            # This is a get from a dictionary, not a queue, so it is not blocking
-            response = self.state.queues.update_registers_response.get(request.request_id)
-            if not response:
-                sleep(0.1)
-            else:
-                if response.success:
-                    logger.info(f"Successfully updated register {register_name} to {register_value}")
+            while time() < timeout:
+                # This is a get from a dictionary, not a queue, so it is not blocking
+                response = self.state.queues.update_registers_response.get(request.request_id)
+                if not response:
+                    sleep(0.1)
                 else:
-                    logger.error(f"Failed to update register {register_name} to {register_value}")
-                return jsonify(response)
-        logger.critical("Something is wrong with updating registers.")
-        raise Exception(f"Failed to update register {register_name} to {register_value}, critical timeout")
+                    if response.success:
+                        logger.info(f"Successfully updated register {register_name} to {register_value}")
+                    else:
+                        logger.error(f"Failed to update register {register_name} to {register_value}")
+                    return jsonify(response)
+            logger.critical("Something is wrong with updating registers.")
+            raise Exception(f"Failed to update register {register_name} to {register_value}, critical timeout")
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error(f"Failed to update register value.")
+            logger.error(tb)
+            return jsonify({"success": False, "message": str(e)})
 
     def get_register_update_log_items(self) -> Response:
         return jsonify(self.state.cyphal.register_update_log)
 
     def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> typing.Any:
-        logger.info(f"Attaching UDP transport to {udp_iface}")
-        interface = Interface()
-        interface.is_udp = True
-        interface.udp_iface = udp_iface
-        interface.udp_mtu = int(udp_mtu)
-        interface.is_udp = True
-        atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-        self.state.queues.god_queue.put_nowait(atr)
         try:
-            response = self.state.queues.attach_transport_response.get(timeout=5)
-        except Empty:
-            raise Exception("Failed to receive a response for attached CAN transport.")
-        return jsonify(response)
+            logger.info(f"Attaching UDP transport to {udp_iface}")
+            interface = Interface()
+            interface.is_udp = True
+            interface.udp_iface = udp_iface
+            interface.udp_mtu = int(udp_mtu)
+            interface.is_udp = True
+            atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
+            self.state.queues.god_queue.put_nowait(atr)
+            try:
+                response = self.state.queues.attach_transport_response.get(timeout=5)
+            except Empty:
+                raise Exception("Failed to receive a response for attached CAN transport.")
+            return jsonify(response)
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error(f"Failed to attach UDP transport: {e}\n{tb}")
+            return jsonify({"is_success": False, "message": "Failed to attach UDP transport."})
 
     def attach_transport(
         self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
-        logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
-        interface = Interface()
-        interface.rate_arb = int(arb_rate)
-        interface.rate_data = int(data_rate)
-        interface.mtu = int(mtu)
-        interface.iface = interface_string
-
-        atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-        self.state.queues.god_queue.put_nowait(atr)
         try:
-            response = self.state.queues.attach_transport_response.get(timeout=5)
-        except Empty:
-            raise Exception("Failed to receive a response for attached CAN transport.")
-        return jsonify(response)
+            logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
+            interface = Interface()
+            interface.rate_arb = int(arb_rate)
+            interface.rate_data = int(data_rate)
+            interface.mtu = int(mtu)
+            interface.iface = interface_string
+
+            atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
+            self.state.queues.god_queue.put_nowait(atr)
+            try:
+                response = self.state.queues.attach_transport_response.get(timeout=5)
+            except Empty:
+                raise Exception("Failed to receive a response for attached CAN transport.")
+            return jsonify(response)
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error(f"Failed to attach transport: {e}\n{tb}")
+            logger.error(str(tb))
+            return jsonify({"is_success": False, "message": str(e)})
 
     def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
