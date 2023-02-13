@@ -10,7 +10,23 @@ export function secondsToString(seconds) {
     const numhours = Math.floor(((seconds % 31536000) % 86400) / 3600);
     const numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
     const numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
-    return numyears + " years " + numdays + " days " + numhours + " hours " + numminutes + " minutes " + numseconds + " seconds";
+    let return_string = "";
+    if (numyears > 0) {
+        return_string += numyears + " years ";
+    }
+    if (numdays > 0) {
+        return_string += numdays + " days ";
+    }
+    if (numhours > 0) {
+        return_string += numhours + " hours ";
+    }
+    if (numminutes > 0) {
+        return_string += numminutes + " minutes ";
+    }
+    if (numseconds > 0) {
+        return_string += numseconds + " seconds ";
+    }
+    return return_string;
 }
 export function secondsToColonSeparatedString(seconds) {
 
@@ -99,7 +115,7 @@ export async function getDatatypesForPort(portNr, yukon_state) {
     const datatypes_response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
     if (datatypes_response && datatypes_response["fixed_id_messages"] && datatypes_response["fixed_id_messages"][portNr] !== undefined) {
         fixed_datatype_short = datatypes_response["fixed_id_messages"][portNr]["short_name"];
-        fixed_datatype_full = datatypes_response["fixed_id_messages"][portNr]["full_name"];
+        fixed_datatype_full = datatypes_response["fixed_id_messages"][portNr]["name"];
         chosenDatatypes[fixed_datatype_full] = 1;
     }
     if (currentLinkObjects.length > 0) {
@@ -116,7 +132,7 @@ export async function getDatatypesForPort(portNr, yukon_state) {
     return sortedDatatypes;
 }
 
-export function getEmptyPortsForNode(node_id, yukon_state) {
+export function getUnassignedPortsForNode(node_id, yukon_state) {
     // Look for all registers that are named like "port_1.id" and "port_1.type"
     // If the id is empty, then the port is empty
     const emptyPorts = [];
@@ -132,8 +148,10 @@ export function getEmptyPortsForNode(node_id, yukon_state) {
                 if (node.registers_values[probable_datatype_register_name]) {
                     detected_datatype = node.registers_values[probable_datatype_register_name];
                 }
-                const subject_id = node.registers_values[register_name];
-                if (subject_id.toString() === "65535") {
+                const subject_id = parseInt(node.registers_values[register_name]);
+                // If for whatever reason the port is not in the pub, sub, cln, srv lists of node.ports, then it should be displayed still in the unassigned ports list
+                const isPortNotDisplayed = node.ports[link_type] && node.ports[link_type].indexOf(subject_id) === -1;
+                if (isPortNotDisplayed || subject_id === 65535) {
                     emptyPorts.push({ "link_name": link_name, "link_type": link_type, "full_name": register_name, "datatype": detected_datatype });
                 }
             }

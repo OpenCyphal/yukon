@@ -5,7 +5,7 @@ import {
     getHoveredContainerElementAndContainerObject,
     secondsToColonSeparatedString,
     getDatatypesForPort,
-    getEmptyPortsForNode
+    getUnassignedPortsForNode
 } from "../../utilities.module.js";
 import { fillSettings } from "./fill_settings.module.js";
 import { highlightElement, highlightElements, removeHighlightsFromObjects, removeHighlightFromElement, unhighlightAll, setPortStateAsHiglighted, setPortStateAsUnhiglighted, isPortStateHighlighted } from "./highlights.module.js";
@@ -258,6 +258,22 @@ function unselectPort(portNr) {
         yukon_state.monitor2selections = yukon_state.monitor2selections.filter((p) => p !== portNr);
     }
 }
+function addMissingPorts(avatar, yukon_state) {
+    // This function sees if there are any assigned subject ids in register values that need to be added to the ports
+    // This is needed because sometimes a node will not publish its status on its ports to the port list subject
+    // Iterate through all registers in the avatar
+    for (const [name, value] of Object.entries(avatar.registers_values)) {
+        let split_name = name.split(".");
+        let end_part = split_name[split_name.length - 1];
+        if (end_part === "id") {
+            let link_name = split_name[split_name.length - 2];
+            let link_type = split_name[split_name.length - 3];
+            if (avatar.ports[link_type] && avatar.ports[link_type].indexOf(parseInt(value)) === -1) {
+                avatar.ports[link_type].push(parseInt(value));
+            }
+        }
+    }
+}
 async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     if (!areThereAnyNewOrMissingHashes("monitor2_hash", yukon_state)) {
         updateLastHashes("monitor2_hash", yukon_state);
@@ -277,8 +293,10 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     let y_counter = { value: settings["PageMarginTop"] };
     yukon_state.monitor2 = {};
     yukon_state.monitor2.ports = [];
-    const ports = yukon_state.monitor2.ports;
+    let ports = yukon_state.monitor2.ports;
+
     for (const avatar of yukon_state.current_avatars) {
+        addMissingPorts(avatar, yukon_state);
         for (const port_type of Object.keys(avatar.ports)) {
             for (const port of avatar.ports[port_type]) {
                 if (port === "") {
@@ -337,7 +355,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         nodesToBePositioned.push([node, avatar]);
     }
     for (const [node, avatar] of nodesToBePositioned) {
-        let total_empty_ports = getEmptyPortsForNode(avatar.node_id, yukon_state).length;
+        let total_empty_ports = getUnassignedPortsForNode(avatar.node_id, yukon_state).length;
         if (total_empty_ports > 0) {
             total_empty_ports += 1; // Adds one length of settings["DistancePerHorizontalConnection"] for that is used there as spacing
         }
@@ -355,6 +373,8 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
                 }
             }
         }
+
+
         avatar_ports_all_in_one.sort(comparePorts)
         for (const port of avatar_ports_all_in_one) {
             const matchingPort = ports.find(p => p.port === port.port && p.type === port.type);
@@ -363,14 +383,14 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             }
             // Getting info about more links than necessary for later highlighting purposes
             const relatedLinks = getRelatedLinks(port.port, yukon_state);
-            const currentLinkObject = relatedLinks.find(link => link.port === port.port && link.type === matchingPort.type);
+            const currentLinkObject = relatedLinks.find(link => link.port === port.port && link.type === matchingPort.type && link.node_id === avatar.node_id);
             let toggledOn = { value: false };
             let currentLinkDsdlDatatype = null;
             let fixed_datatype_short = null;
             let fixed_datatype_full = null;
             if (datatypes_response["fixed_id_messages"] && datatypes_response["fixed_id_messages"][port.port] !== undefined) {
                 fixed_datatype_short = datatypes_response["fixed_id_messages"][port.port]["short_name"];
-                fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["full_name"];
+                fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["name"];
             }
             if (currentLinkObject !== undefined) {
                 currentLinkDsdlDatatype = currentLinkObject.datatype || "";
@@ -412,7 +432,7 @@ const portTypeToLongTypeExplanation = {
     "srv": "This is a service"
 }
 function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
-    const emptyPortInfo = getEmptyPortsForNode(node_id, yukon_state); //  [{"link_name": "power", link_type: "sub", "full_name": "uavcan.sub.power.id"}, {"link_name": "dynamics" ...}]
+    const emptyPortInfo = getUnassignedPortsForNode(node_id, yukon_state); //  [{"link_name": "power", link_type: "sub", "name": "uavcan.sub.power.id"}, {"link_name": "dynamics" ...}]
     // Add a label saying "Unassigned ports" if there are any
     if (emptyPortInfo.length > 0) {
         const label = document.createElement("div");
@@ -486,9 +506,9 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         // Align text to the top
         // assign_button.style.setProperty()
         assign_button.addEventListener("click", async function () {
-            const response = await zubax_apij.update_register_value(portInfo.full_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
+            const response = await zubax_apij.update_register_value(portInfo.name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
             if (response.success) {
-                console.log("The port identifier for " + portInfo.full_name + " was successfully updated to " + number_input.value);
+                console.log("The port identifier for " + portInfo.name + " was successfully updated to " + number_input.value);
                 console.log("Usually it is the case that you should now restart the node before changes are applied.")
             }
         });

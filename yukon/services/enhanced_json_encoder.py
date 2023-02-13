@@ -16,6 +16,7 @@ from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.domain.subscriptions.synchronized_message_carrier import SynchronizedMessageCarrier
 from yukon.domain.subscriptions.synchronized_message_group import SynchronizedMessageGroup
 from yukon.domain.subscriptions.synchronized_message_store import SynchronizedMessageStore
+from yukon.services.utils import SimplifiedFieldDTO
 
 from yukon.services.value_utils import explode_value
 from yukon.domain.transport.attach_transport_response import AttachTransportResponse
@@ -55,12 +56,15 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             return {
                 "id": o.id,
                 "name": o.name,
+                "datatype": o.datatype,
                 "fields": o.fields,
             }
+        if isinstance(o, SimplifiedFieldDTO):
+            return {"name": o.short_name, "type": o.field_type.name, "full_name": o.field_name}
         if isinstance(o, PublisherField):
             return {
                 "id": o.id,
-                "type_name": o.type_name,
+                "field_specifier": o.field_specifier,
                 "value": o.value,
                 "min": o.min,
                 "max": o.max,

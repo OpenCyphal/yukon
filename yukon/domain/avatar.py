@@ -36,8 +36,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self._iface = iface
         self._info = info
         self._register_set: typing.Set[str] = set([])
-        self.register_values: typing.Dict[str, str] = {}
-        self.register_exploded_values: typing.Dict[str, typing.Dict[str, Any]] = {}
+        self.registers_values: typing.Dict[str, str] = {}
+        self.registers_exploded_values: typing.Dict[str, typing.Dict[str, Any]] = {}
         self.access_requests_names_by_transfer_id: typing.Dict[int, str] = {}
         self._last_register_request_name = ""
         self._num_info_requests = 0
@@ -105,8 +105,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         if register_name is None:
             logger.error("No register name for transfer ID %d", transfer_id)
         exploded_value = explode_value(obj.value, metadata={"mutable": obj.mutable, "persistent": obj.persistent})
-        self.register_exploded_values[register_name] = exploded_value
-        self.register_values[register_name] = str(explode_value(obj.value, simplify=True))
+        self.registers_exploded_values[register_name] = exploded_value
+        self.registers_values[register_name] = str(explode_value(obj.value, simplify=True))
 
     def _on_list_response(self, ts: float, obj: Any) -> None:
         import uavcan.node
@@ -277,9 +277,9 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                 "srv": list(self._ports.srv),
             },
             "registers": list(self._register_set),
-            "registers_values": self.register_values,
-            "registers_exploded_values": self.register_exploded_values,
-            "registers_hash": hash(json.dumps(self.register_exploded_values, sort_keys=True)),
+            "registers_values": self.registers_values,
+            "registers_exploded_values": self.registers_exploded_values,
+            "registers_hash": hash(json.dumps(self.registers_exploded_values, sort_keys=True)),
             "disappeared": self.disappeared,
             "disappeared_since": self.disappeared_since,
         }
@@ -304,7 +304,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(frozenset(self._ports.cln))
             ^ hash(frozenset(self._ports.srv))
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
-            ^ hash(frozenset(self.register_values))
+            ^ hash(frozenset(self.registers_values))
         )
 
     def __repr__(self) -> str:

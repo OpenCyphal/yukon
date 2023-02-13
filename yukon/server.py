@@ -67,10 +67,10 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
             return response
         except Exception as e:  # pylint: disable=broad-except
             tb = traceback.format_exc()
-            logger.exception("So something went wrong with calling the method %s", path)
+            logger.exception("Error with %s", path)
+            logger.critical(str(tb))
             logger.critical(str(e))
             logger.error("Arguments used calling the API %s", json.dumps(_object["arguments"]))
-            logger.critical(str(tb))
             return jsonify({"error": tb})
 
     @server.route("/api/get_latest_subscription_message", methods=["GET"])

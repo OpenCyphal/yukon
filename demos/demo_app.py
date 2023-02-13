@@ -14,7 +14,7 @@ import random
 # DSDL files are automatically compiled by pycyphal import hook from sources pointed by CYPHAL_PATH env variable.
 import sirius_cyber_corp  # This is our vendor-specific root namespace. Custom data types.
 import pycyphal.application  # This module requires the root namespace "uavcan" to be transcompiled.
-from pycyphal.application.register import ValueProxy, Real32
+from pycyphal.application.register import ValueProxy, Real32, Natural16, String
 
 # Import other namespaces we're planning to use. Nested namespaces are not auto-imported, so in order to reach,
 # say, "uavcan.node.Heartbeat", you have to "import uavcan.node".
@@ -25,7 +25,7 @@ import uavcan.si.unit.voltage  # noqa
 
 handler = logging.StreamHandler(sys.stderr)
 logger = logging.getLogger(__name__)
-log_format = '%(name)s - %(levelname)s - %(message)s'
+log_format = "%(name)s - %(levelname)s - %(message)s"
 formatter = logging.Formatter(log_format)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -41,7 +41,11 @@ async def publish_temperature_measurement(publisher):
             # logger.info("Publishing temperature measurement")
             await asyncio.sleep(1)
             random_float = 20 * random.random()
-            await publisher.publish(uavcan.si.sample.temperature.Scalar_1(uavcan.time.SynchronizedTimestamp_1_0(time.monotonic()), random_float))
+            await publisher.publish(
+                uavcan.si.sample.temperature.Scalar_1(
+                    uavcan.time.SynchronizedTimestamp_1_0(time.monotonic()), random_float
+                )
+            )
             # print(f"Published random temperature measurement: {random_float}", file=sys.stderr)
     except:
         logger.exception("Exception in temperature measurement publisher")
@@ -59,7 +63,9 @@ class DemoApp:
     def __init__(self) -> None:
         # Add the node id from its environment variable to the REGISTER_FILE filename
         # so that each node has its own register file.
-        self.REGISTER_FILE = pathlib.Path(self.REGISTER_FILE).with_name(f"{os.environ.get('UAVCAN__NODE__ID', '0')}_{self.REGISTER_FILE}")
+        self.REGISTER_FILE = pathlib.Path(self.REGISTER_FILE).with_name(
+            f"{os.environ.get('UAVCAN__NODE__ID', '0')}_{self.REGISTER_FILE}"
+        )
         node_info = uavcan.node.GetInfo_1.Response(
             software_version=uavcan.node.Version_1(major=1, minor=0),
             name="org.opencyphal.pycyphal.demo.demo_app",
@@ -148,7 +154,9 @@ class DemoApp:
             temperature_setpoint = msg.kelvin
 
         self._sub_t_sp.receive_in_background(on_setpoint)  # IoC-style handler.
-
+        self._node.registry.setdefault("register.of.port.sus.pub.undefined.id", ValueProxy(Natural16([0])))
+        # self._node.registry.setdefault("register.of.port.sus.pub.undefined.type", ValueProxy(String("sustype")))
+        self._node.registry["register.of.port.sus.undefined"] = 0
         # Expose internal states to external observers for diagnostic purposes. Here, we define read-only registers.
         # Since they are computed at every invocation, they are never stored in the register file.
         self._node.registry["thermostat.error"] = lambda: temperature_error
@@ -162,13 +170,14 @@ class DemoApp:
             except asyncio.CancelledError:
                 pass  # Task cancellation should not be logged as an error.
             except Exception:  # pylint: disable=broad-except
-                logging.exception('Exception raised by task = %r', _task)
+                logging.exception("Exception raised by task = %r", _task)
 
         async def updater():
             while True:
                 self._node.registry.setdefault("time.in.nice.format", ValueProxy(Real32(time.monotonic())))
                 self._node.registry["time.in.nice.format"] = ValueProxy(Real32(time.monotonic()))
                 await asyncio.sleep(0.2)
+
         updater_task = asyncio.create_task(updater())
         updater_task.add_done_callback(_handle_task_result)
 
@@ -196,6 +205,7 @@ class DemoApp:
         """
         self._node.close()
 
+
 async def main() -> None:
     logging.root.setLevel(logging.INFO)
     app = DemoApp()
@@ -205,6 +215,7 @@ async def main() -> None:
         pass
     finally:
         app.close()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -30,6 +30,7 @@ class FieldModifyingVisitor(NodeVisitor):
         self.identifiers: List[str] = []
 
     def visit_id(self, node: Node, visited_children: Sequence[Any]) -> typing.Tuple[str, str]:
+        print(f"Visiting id {node.text}")
         if hasattr(self._obj, node.text):
             self.current_pointer = getattr(self._obj, node.text)
         return_value = ("id", node.text)
@@ -37,6 +38,7 @@ class FieldModifyingVisitor(NodeVisitor):
         return return_value
 
     def visit_attr_ref(self, node: Node, visited_children: Sequence[Any]) -> typing.Tuple[str, str]:
+        print(f"Visiting attr_ref {node.text}")
         identifier = self.identifiers[-1]
         self.previous_pointer = self.current_pointer
         self.current_pointer = getattr(self.current_pointer, identifier)
@@ -44,6 +46,7 @@ class FieldModifyingVisitor(NodeVisitor):
         return return_value
 
     def visit_index_ref(self, node: Node, visited_children: Sequence[Any]) -> typing.Tuple[str, str]:
+        print(f"Visiting index_ref {node.text}")
         index = self.last_index
         identifier = self.identifiers[-1]
         if isinstance(self.current_pointer, np.ndarray):
@@ -54,11 +57,13 @@ class FieldModifyingVisitor(NodeVisitor):
         return return_value
 
     def visit_integer(self, node: Node, visited_children: Sequence[Any]) -> typing.Tuple[str, str]:
+        print(f"Visiting integer {node.text}")
         return_value = ("integer", int(node.text))
         self.last_index = int(node.text)
         return return_value
 
     def generic_visit(self, node: Node, visited_children: Sequence[Any]) -> Any:
+        print(f"Visiting generic {node.text}")
         return visited_children or node
 
 

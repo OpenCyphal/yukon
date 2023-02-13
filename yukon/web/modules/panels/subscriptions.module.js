@@ -99,7 +99,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
         }
         for (const id in response["fixed_id_messages"]) {
             const datatype_short = response["fixed_id_messages"][id]["short_name"];
-            const datatype_full = response["fixed_id_messages"][id]["full_name"];
+            const datatype_full = response["fixed_id_messages"][id]["name"];
             // Add a new option to the select
             const option = document.createElement('option');
             option.innerHTML = datatype_full + "(" + id + ")";

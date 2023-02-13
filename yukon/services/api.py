@@ -19,7 +19,7 @@ from yukon.custom_tk_dialog import launch_yes_no_dialog
 from yukon.domain.simple_publisher import SimplePublisher
 from yukon.services.snoop_registers import get_register_names
 
-from yukon.services.utils import quit_application
+from yukon.services.utils import get_all_datatypes, get_all_field_dtos, get_datatype_return_dto, quit_application
 
 try:
     from yaml import CLoader as Loader
@@ -125,7 +125,7 @@ def unexplode_a_register(state: GodState, node_id: int, register_name: str, regi
     assert isinstance(node_id, int)
     assert isinstance(register_value, str)
     avatar = state.avatar.avatars_by_node_id[node_id]
-    prototype = unexplode_value(avatar.register_exploded_values[register_name])
+    prototype = unexplode_value(avatar.registers_exploded_values[register_name])
     value = unexplode_value(register_value, prototype)
     # This is to get it back into the primitive shape and then serialize as JSON.
     return json.dumps(explode_value(value))
@@ -145,7 +145,7 @@ def unsimplify_configuration(avatars_by_node_id: typing.Dict[int, Avatar], deser
                     logger.debug("Unsimplifying %s", register_name)
                     simplified_value2 = json.loads(json.dumps(simplified_value))
                     logger.debug("The simplified value is %r", simplified_value2)
-                    prototype = unexplode_value(avatar.register_exploded_values[register_name])
+                    prototype = unexplode_value(avatar.registers_exploded_values[register_name])
                     logger.debug("prototype: %r", prototype)
                     if simplified_value2 == "NaN":
                         simplified_value2 = float("nan")
@@ -217,17 +217,22 @@ def add_register_update_log_item(
     state: GodState, register_name: str, register_value: str, node_id: str, success: bool
 ) -> None:
     """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
-    request_sent_time = datetime.fromtimestamp(time()).strftime("%H:%M:%S.%f")
-    target_avatar = state.avatar.avatars_by_node_id.get(int(node_id))
-    if target_avatar:
-        value_before_update = target_avatar.register_values.get(register_name)
-        if not value_before_update:
+    try:
+        request_sent_time = datetime.fromtimestamp(time()).strftime("%H:%M:%S.%f")
+        target_avatar = state.avatar.avatars_by_node_id.get(int(node_id))
+        if target_avatar:
+            value_before_update = target_avatar.registers_values.get(register_name)
+            if not value_before_update:
+                value_before_update = ""
+        else:
             value_before_update = ""
-    else:
-        value_before_update = ""
-    state.cyphal.register_update_log.append(
-        UpdateRegisterLogItem(None, register_name, request_sent_time, None, value_before_update, success)
-    )
+        state.cyphal.register_update_log.append(
+            UpdateRegisterLogItem(None, register_name, request_sent_time, None, value_before_update, success)
+        )
+    except Exception as e:
+        logger.exception("Failed to add register update log item")
+        tb = traceback.format_exc()
+        logger.error(f"Traceback: {str(tb)}")
 
 
 class SendingApi:
@@ -334,62 +339,79 @@ class Api:
         return file_dto
 
     def update_register_value(self, register_name: str, register_value: typing.Any, node_id: str) -> typing.Any:
-        import uavcan
+        try:
+            import uavcan
 
-        new_value: uavcan.register.Value_1 = unexplode_value(register_value)
-        request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id), time())
-        self.state.queues.god_queue.put_nowait(request)
-        timeout = time() + 5
+            new_value: uavcan.register.Value_1 = unexplode_value(register_value)
+            request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id), time())
+            self.state.queues.god_queue.put_nowait(request)
+            timeout = time() + 5
 
-        while time() < timeout:
-            # This is a get from a dictionary, not a queue, so it is not blocking
-            response = self.state.queues.update_registers_response.get(request.request_id)
-            if not response:
-                sleep(0.1)
-            else:
-                if response.success:
-                    logger.info(f"Successfully updated register {register_name} to {register_value}")
+            while time() < timeout:
+                # This is a get from a dictionary, not a queue, so it is not blocking
+                response = self.state.queues.update_registers_response.get(request.request_id)
+                if not response:
+                    sleep(0.1)
                 else:
-                    logger.error(f"Failed to update register {register_name} to {register_value}")
-                return jsonify(response)
-        logger.critical("Something is wrong with updating registers.")
-        raise Exception(f"Failed to update register {register_name} to {register_value}, critical timeout")
+                    if response.success:
+                        logger.info(f"Successfully updated register {register_name} to {register_value}")
+                    else:
+                        logger.error(f"Failed to update register {register_name} to {register_value}")
+                    return jsonify(response)
+            logger.critical("Something is wrong with updating registers.")
+            raise Exception(f"Failed to update register {register_name} to {register_value}, critical timeout")
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error(f"Failed to update register value.")
+            logger.error(tb)
+            return jsonify({"success": False, "message": str(e)})
 
     def get_register_update_log_items(self) -> Response:
         return jsonify(self.state.cyphal.register_update_log)
 
     def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> typing.Any:
-        logger.info(f"Attaching UDP transport to {udp_iface}")
-        interface = Interface()
-        interface.is_udp = True
-        interface.udp_iface = udp_iface
-        interface.udp_mtu = int(udp_mtu)
-        interface.is_udp = True
-        atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-        self.state.queues.god_queue.put_nowait(atr)
         try:
-            response = self.state.queues.attach_transport_response.get(timeout=5)
-        except Empty:
-            raise Exception("Failed to receive a response for attached CAN transport.")
-        return jsonify(response)
+            logger.info(f"Attaching UDP transport to {udp_iface}")
+            interface = Interface()
+            interface.is_udp = True
+            interface.udp_iface = udp_iface
+            interface.udp_mtu = int(udp_mtu)
+            interface.is_udp = True
+            atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
+            self.state.queues.god_queue.put_nowait(atr)
+            try:
+                response = self.state.queues.attach_transport_response.get(timeout=5)
+            except Empty:
+                raise Exception("Failed to receive a response for attached CAN transport.")
+            return jsonify(response)
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error(f"Failed to attach UDP transport: {e}\n{tb}")
+            return jsonify({"is_success": False, "message": "Failed to attach UDP transport."})
 
     def attach_transport(
         self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
-        logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
-        interface = Interface()
-        interface.rate_arb = int(arb_rate)
-        interface.rate_data = int(data_rate)
-        interface.mtu = int(mtu)
-        interface.iface = interface_string
-
-        atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-        self.state.queues.god_queue.put_nowait(atr)
         try:
-            response = self.state.queues.attach_transport_response.get(timeout=5)
-        except Empty:
-            raise Exception("Failed to receive a response for attached CAN transport.")
-        return jsonify(response)
+            logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
+            interface = Interface()
+            interface.rate_arb = int(arb_rate)
+            interface.rate_data = int(data_rate)
+            interface.mtu = int(mtu)
+            interface.iface = interface_string
+
+            atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
+            self.state.queues.god_queue.put_nowait(atr)
+            try:
+                response = self.state.queues.attach_transport_response.get(timeout=5)
+            except Empty:
+                raise Exception("Failed to receive a response for attached CAN transport.")
+            return jsonify(response)
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error(f"Failed to attach transport: {e}\n{tb}")
+            logger.error(str(tb))
+            return jsonify({"is_success": False, "message": str(e)})
 
     def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
@@ -420,14 +442,6 @@ class Api:
         self.state.gui.last_poll_received = monotonic()
         avatar_list = [avatar.to_builtin() for avatar in list(self.state.avatar.avatars_by_node_id.values())]
         avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
-        # if self.state.avatar.hide_yakut_avatar:
-        #     for avatar in avatar_list:
-        #         amount_of_subscriptions = len(avatar["ports"]["sub"])
-        #         if avatar["name"] and avatar["name"] == "yakut":
-        #             avatar_list.remove(avatar)
-        #         elif amount_of_subscriptions == 8192:  # only yakut subscribes to every port number
-        #             avatar_list.remove(avatar)
-        # return_string = json.dumps(, cls=EnhancedJSONEncoder)
         return jsonify(avatar_dto)
 
     def set_log_level(self, severity: str) -> None:
@@ -504,9 +518,14 @@ class Api:
         add_register_update_log_item(self.state, register_name, register_value, node_id, bool(success))
 
     def subscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
-        if subject_id:
-            subject_id = int(subject_id)
-        self.state.queues.god_queue.put_nowait(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
+        try:
+            if subject_id:
+                subject_id = int(subject_id)
+            self.state.queues.god_queue.put_nowait(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
+        except Exception as e:
+            logger.error("Failed to register subscribe intent.", exc_info=True)
+            logger.error(str(e))
+            return jsonify({"success": False, "message": "Failed to register subscribe intent."})
         try:
             response = self.state.queues.subscribe_requests_responses.get(timeout=5)
         except Empty:
@@ -526,12 +545,24 @@ class Api:
             messages_store.enable_udp_output = False
 
     def unsubscribe(self, specifier: str) -> Response:
-        self.state.queues.god_queue.put_nowait(UnsubscribeRequest(SubjectSpecifier.from_string(specifier)))
         try:
-            response = self.state.queues.unsubscribe_requests_responses.get(timeout=5)
-        except Empty:
-            raise Exception("Failed to receive a response for unsubscribing.")
-        return jsonify(response)
+            self.state.queues.god_queue.put_nowait(UnsubscribeRequest(SubjectSpecifier.from_string(specifier)))
+            try:
+                response = self.state.queues.unsubscribe_requests_responses.get(timeout=5)
+            except Empty:
+                logger.error("Failed to receive a confirmation for unsubscribing.")
+            else:
+                return jsonify(
+                    {
+                        "success": response.success,
+                        "message": "Unsubscribed from " + specifier,
+                    }
+                )
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Failed to register unsubscribe intent.")
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": "Failed to register unsubscribe intent."})
 
     def fetch_messages_for_subscription_specifiers(self, specifiers: str) -> Response:
         """
@@ -540,24 +571,30 @@ class Api:
         The DTO, which specifiers is a JSON serialized list of,
         contains an additional counter also separated by a colon.
         """
-        specifiers_object = json.loads(specifiers)
-        dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
-        mapping = {}
-        for specifier, messages_store in self.state.cyphal.message_stores_by_specifier.items():
-            for dto in dtos:
-                if dto.does_equal_specifier(specifier):
-                    mapping[str(dto)] = messages_store.messages[dto.counter - messages_store.start_index :]
-                    break
-        # This jsonify is why I made sure to set up the JSON encoder for dsdl
-        return jsonify(mapping)
+        try:
+            specifiers_object = json.loads(specifiers)
+            dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
+            mapping = {}
+            for specifier, messages_store in self.state.cyphal.message_stores_by_specifier.items():
+                for dto in dtos:
+                    if dto.does_equal_specifier(specifier):
+                        mapping[str(dto)] = messages_store.messages[dto.counter - messages_store.start_index :]
+                        break
+            # This jsonify is why I made sure to set up the JSON encoder for dsdl
+            return jsonify(mapping)
+        except Exception as e:
+            logger.error("Failed to fetch messages for subscription specifiers.", exc_info=True)
+            logger.error(str(e))
+            return jsonify({"success": False, "message": "Failed to fetch messages for subscription specifiers."})
 
     def make_simple_publisher(self) -> Response:
         try:
             new_publisher = SimplePublisher(str(uuid4()))
             self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
-            return jsonify({"success": True, "id": new_publisher.id})
         except:
             return jsonify({"success": False, "message": traceback.format_exc()})
+        else:
+            return jsonify({"success": True, "id": new_publisher.id})
 
     def remove_publisher(self, id: str) -> Response:
         try:
@@ -567,20 +604,79 @@ class Api:
             return jsonify({"success": False, "message": traceback.format_exc()})
 
     def set_publisher_name(self, id: str, new_name: str) -> Response:
-        self.state.cyphal.publishers_by_id[id].name = new_name
-        return jsonify({"success": True})
+        try:
+            publisher = self.state.cyphal.publishers_by_id.get(id)
+            if publisher is None:
+                return jsonify({"success": False, "message": "Publisher %s not found." % id})
+            publisher.name = new_name
+            return jsonify({"success": True})
+        except Exception as e:
+            return jsonify({"success": False, "message": str(e)})
+
+    def set_publisher_enabled(self, id: str, enabled: bool) -> Response:
+        try:
+            publisher = self.state.cyphal.publishers_by_id.get(id)
+            if publisher is None:
+                return jsonify({"success": False, "message": "Publisher %s not found." % id})
+            publisher.enabled = enabled
+            return jsonify({"success": True})
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Failed to set publisher enabled.")
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": str(e)})
 
     def make_publisher_field(self, publisher_id: str, field_id: str) -> Response:
-        field = self.state.cyphal.publishers_by_id[publisher_id].add_field(field_id)
-        return jsonify({"success": True, "field": field})
+        try:
+            field = self.state.cyphal.publishers_by_id[publisher_id].add_field(field_id)
+            return jsonify({"success": True, "field": field})
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Failed to make publisher field.")
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": "Failed to make publisher field."})
+
+    def get_publisher_possible_paths_for_autocomplete(self, publisher_id: str) -> Response:
+        """Returns a list of possible paths for the publisher_id."""
+        try:
+            publisher: SimplePublisher = self.state.cyphal.publishers_by_id[publisher_id]
+            result = get_all_field_dtos(load_dtype(publisher.datatype))
+            return jsonify(result)
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Failed to get publisher possible paths for autocomplete.")
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": "Failed to get publisher possible paths for autocomplete."})
 
     def delete_publisher_field(self, publisher_id: str, field_id: str) -> Response:
-        self.state.cyphal.publishers_by_id[publisher_id].delete_field(field_id)
-        return jsonify({"success": True})
-
-    def set_publisher_field_type_name(self, publisher_id: str, field_id: str, datatype: str) -> Response:
         try:
-            self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).type_name = datatype
+            self.state.cyphal.publishers_by_id[publisher_id].delete_field(field_id)
+            return jsonify({"success": True})
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Failed to delete publisher field.")
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": "Failed to delete publisher field."})
+
+    def set_publisher_field_type_path(self, publisher_id: str, field_id: str, type_path: str) -> Response:
+        try:
+            self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).type_path = type_path
+            return jsonify(
+                {"success": True, "field": self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id)}
+            )
+        except:
+            return jsonify({"success": False, "message": traceback.format_exc()})
+
+    def set_publisher_datatype(self, publisher_id: str, datatype: str) -> Response:
+        try:
+            self.state.cyphal.publishers_by_id[publisher_id].datatype = datatype
+            return jsonify({"success": True, "publisher": self.state.cyphal.publishers_by_id[publisher_id]})
+        except:
+            return jsonify({"success": False, "message": traceback.format_exc()})
+
+    def set_publisher_field_specifier(self, publisher_id: str, field_id: str, datatype: str) -> Response:
+        try:
+            self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).field_specifier = datatype
             return jsonify(
                 {"success": True, "field": self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id)}
             )
@@ -626,54 +722,6 @@ class Api:
         except:
             return jsonify({"success": False, "message": traceback.format_exc()})
 
-    def make_publisher(self, specifiers: str) -> Response:
-        result_ready_event = threading.Event()
-        was_publisher_created = False
-        result_message = ""
-        new_publisher = None
-
-        def make_publisher_task() -> None:
-            nonlocal result_message, new_publisher
-            try:
-                specifiers_object = [SubjectSpecifier.from_string(x) for x in json.loads(specifiers)]
-                new_publisher = YukonPublisher(self.state.cyphal.local_node, specifiers_object)
-                self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
-            except:
-                result_message = traceback.format_exc()
-
-        self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(make_publisher_task)
-        result_ready_event.wait(5)
-        if new_publisher and was_publisher_created:
-            return jsonify({"success": True, "id": new_publisher.id})
-        else:
-            return jsonify({"success": False, "message": result_message})
-
-    def make_publishers_with_values(self, specifiers_and_values: typing.Dict[str, str]) -> Response:
-        result_ready_event = threading.Event()
-        was_publisher_created = False
-        result_message = ""
-        new_publisher = None
-
-        def make_publisher_task() -> None:
-            nonlocal result_message, new_publisher
-            try:
-                specifiers_and_values_object = {
-                    SubjectSpecifier.from_string(x): y for x, y in specifiers_and_values.items()
-                }
-                new_publisher = YukonPublisher(self.state.cyphal.local_node, specifiers_and_values_object.keys())
-                self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
-                for specifier, value in specifiers_and_values_object.items():
-                    new_publisher.update_value(specifier, value)
-            except:
-                result_message = traceback.format_exc()
-
-        self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(make_publisher_task)
-        result_ready_event.wait(5)
-        if new_publisher and was_publisher_created:
-            return jsonify({"success": True, "id": new_publisher.id})
-        else:
-            return jsonify({"success": False, "message": result_message})
-
     def update_publisher(self, publisher_id: str, specifier: str, data: str) -> Response:
         try:
             specifier_object = SubjectSpecifier.from_string(specifier)
@@ -683,21 +731,33 @@ class Api:
             return jsonify({"success": False, "message": traceback.format_exc()})
 
     def get_publishers(self) -> Response:
-        return jsonify(self.state.cyphal.publishers_by_id)
+        try:
+            return jsonify(self.state.cyphal.publishers_by_id)
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Failed to get publishers.")
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": "Failed to get publishers."})
 
     def get_number_type_min_max_values(self, type_name: str) -> Response:
-        _match = re.match(r"uavcan\.primitive\.array\.([A-Za-z]+)([0-9]+)_([0-9]+)_([0-9]+)", type_name)
-        if _match:
-            bit_depth = int(_match.group(2))
-            is_signed = _match.group(1) != "Natural"
-            return jsonify(
-                {
-                    "success": True,
-                    "min": -(2 ** (bit_depth - 1)) if is_signed else 0,
-                    "max": 2 ** (bit_depth - 1) - 1 if is_signed else 2**bit_depth - 1,
-                }
-            )
-        return {"success": False, "message": "Unknown type name"}
+        try:
+            _match = re.match(r"uavcan\.primitive\.array\.([A-Za-z]+)([0-9]+)_([0-9]+)_([0-9]+)", type_name)
+            if _match:
+                bit_depth = int(_match.group(2))
+                is_signed = _match.group(1) != "Natural"
+                return jsonify(
+                    {
+                        "success": True,
+                        "min": -(2 ** (bit_depth - 1)) if is_signed else 0,
+                        "max": 2 ** (bit_depth - 1) - 1 if is_signed else 2**bit_depth - 1,
+                    }
+                )
+            return {"success": False, "message": "Unknown type name"}
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Failed to get publishers.")
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": "Failed to get publishers."})
 
     def get_publish_type_names(self) -> Response:
         return jsonify(
@@ -721,102 +781,115 @@ class Api:
             messages_store.capacity = int(capacity)
 
     def set_sync_store_capacity(self, specifiers: str, capacity: int) -> None:
-        specifiers_object = json.loads(specifiers)
-        synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
-        messages_store = self.state.cyphal.synchronized_message_stores[synchronized_subjects_specifier]
-        if messages_store:
-            messages_store.capacity = int(capacity)
+        try:
+            specifiers_object = json.loads(specifiers)
+            synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
+            messages_store = self.state.cyphal.synchronized_message_stores[synchronized_subjects_specifier]
+            if messages_store:
+                messages_store.capacity = int(capacity)
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Failed to set sync store capacity.")
+            logger.error(str(tb))
 
     def subscribe_synchronized(self, specifiers: str) -> Response:
-        result_ready_event = threading.Event()
-        was_subscription_success: bool = False
-        message: str = ""
-        tolerance = 0.1
+        try:
+            result_ready_event = threading.Event()
+            was_subscription_success: bool = False
+            message: str = ""
+            tolerance = 0.1
 
-        def subscribe_task() -> None:
-            nonlocal was_subscription_success, message
-            try:
-                specifiers_object = json.loads(specifiers)
-                synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
-                if self.state.cyphal.synchronizers_by_specifier.get(synchronized_subjects_specifier):
-                    raise Exception("Already subscribed to synchronized messages for this specifier.")
-                subscribers = []
-                for dto in synchronized_subjects_specifier.specifiers:
-                    new_subscriber = self.state.cyphal.local_node.make_subscriber(
-                        load_dtype(dto.datatype), dto.subject_id
-                    )
-                    subscribers.append(new_subscriber)
-                synchronizer = MonotonicClusteringSynchronizer(subscribers, get_local_reception_timestamp, tolerance)
-                self.state.cyphal.synchronizers_by_specifier[synchronized_subjects_specifier] = synchronizer
-                synchronized_message_store = SynchronizedMessageStore(specifiers)
-                self.state.cyphal.synchronized_message_stores[
-                    synchronized_subjects_specifier
-                ] = synchronized_message_store
-                synchronized_message_store.specifiers = specifiers
-                counter = 0
-                prev_key: typing.Any = None
-
-                def message_receiver(*messages: typing.Tuple[typing.Any]) -> None:
-                    nonlocal counter, prev_key
-                    timestamp = None
-                    # Missing a messages list and the timestamp
-                    synchronized_message_group = SynchronizedMessageGroup()
-                    try:
-                        key = sum(get_local_reception_timestamp(x) for x in messages) / len(messages)
-                        if prev_key is not None:
-                            synchronizer.tolerance = clamp(
-                                (1e-6, 10.0),
-                                (synchronizer.tolerance + tolerance_from_key_delta(prev_key, key)) * 0.5,
-                            )
-                        prev_key = key
-                    except:
-                        tb = traceback.format_exc()
-                        logger.error(tb)
-                    for index, message in enumerate(messages):
-                        synchronized_message_carrier = SynchronizedMessageCarrier(
-                            pycyphal.dsdl.to_builtin(message[0]),
-                            None,
-                            counter,
-                            synchronized_subjects_specifier.specifiers[index].subject_id,
+            def subscribe_task() -> None:
+                nonlocal was_subscription_success, message
+                try:
+                    specifiers_object = json.loads(specifiers)
+                    synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
+                    if self.state.cyphal.synchronizers_by_specifier.get(synchronized_subjects_specifier):
+                        raise Exception("Already subscribed to synchronized messages for this specifier.")
+                    subscribers = []
+                    for dto in synchronized_subjects_specifier.specifiers:
+                        new_subscriber = self.state.cyphal.local_node.make_subscriber(
+                            load_dtype(dto.datatype), dto.subject_id
                         )
-                        counter += 1
-                        synchronized_message_group.carriers.append(synchronized_message_carrier)
-                    synchronized_message_store.messages.append(synchronized_message_group)
-                    if synchronized_message_store.counter >= synchronized_message_store.capacity:
-                        synchronized_message_store.messages.pop(0)
-                        synchronized_message_store.start_index += 1
+                        subscribers.append(new_subscriber)
+                    synchronizer = MonotonicClusteringSynchronizer(
+                        subscribers, get_local_reception_timestamp, tolerance
+                    )
+                    self.state.cyphal.synchronizers_by_specifier[synchronized_subjects_specifier] = synchronizer
+                    synchronized_message_store = SynchronizedMessageStore(specifiers)
+                    self.state.cyphal.synchronized_message_stores[
+                        synchronized_subjects_specifier
+                    ] = synchronized_message_store
+                    synchronized_message_store.specifiers = specifiers
+                    counter = 0
+                    prev_key: typing.Any = None
 
-                synchronizer.receive_in_background(message_receiver)
-                was_subscription_success = True
-                result_ready_event.set()
+                    def message_receiver(*messages: typing.Tuple[typing.Any]) -> None:
+                        nonlocal counter, prev_key
+                        timestamp = None
+                        # Missing a messages list and the timestamp
+                        synchronized_message_group = SynchronizedMessageGroup()
+                        try:
+                            key = sum(get_local_reception_timestamp(x) for x in messages) / len(messages)
+                            if prev_key is not None:
+                                synchronizer.tolerance = clamp(
+                                    (1e-6, 10.0),
+                                    (synchronizer.tolerance + tolerance_from_key_delta(prev_key, key)) * 0.5,
+                                )
+                            prev_key = key
+                        except:
+                            tb = traceback.format_exc()
+                            logger.error(tb)
+                        for index, message in enumerate(messages):
+                            synchronized_message_carrier = SynchronizedMessageCarrier(
+                                pycyphal.dsdl.to_builtin(message[0]),
+                                None,
+                                counter,
+                                synchronized_subjects_specifier.specifiers[index].subject_id,
+                            )
+                            counter += 1
+                            synchronized_message_group.carriers.append(synchronized_message_carrier)
+                        synchronized_message_store.messages.append(synchronized_message_group)
+                        if synchronized_message_store.counter >= synchronized_message_store.capacity:
+                            synchronized_message_store.messages.pop(0)
+                            synchronized_message_store.start_index += 1
 
-            except Exception as e:
-                print("Exception in subscribe_synchronized: " + str(e))
-                tb = traceback.format_exc()
-                logger.error(tb)
-                message = tb
+                    synchronizer.receive_in_background(message_receiver)
+                    was_subscription_success = True
+                    result_ready_event.set()
 
-            # synchronizer.receive_in_background
+                except Exception as e:
+                    print("Exception in subscribe_synchronized: " + str(e))
+                    tb = traceback.format_exc()
+                    logger.error(tb)
+                    message = tb
 
-        self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(subscribe_task)
-        if result_ready_event.wait(1.7):
-            return jsonify(
-                {
-                    "success": was_subscription_success,
-                    "specifiers": specifiers,
-                    "message": message,
-                    "tolerance": tolerance,
-                }
-            )
-        else:
-            return jsonify(
-                {
-                    "success": False,
-                    "specifiers": specifiers,
-                    "message": "Timed out waiting for a response from the Cyphal worker thread.",
-                    "tolerance": tolerance,
-                }
-            )
+                # synchronizer.receive_in_background
+
+            self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(subscribe_task)
+            if result_ready_event.wait(1.7):
+                return jsonify(
+                    {
+                        "success": was_subscription_success,
+                        "specifiers": specifiers,
+                        "message": message,
+                        "tolerance": tolerance,
+                    }
+                )
+            else:
+                return jsonify(
+                    {
+                        "success": False,
+                        "specifiers": specifiers,
+                        "message": "Timed out waiting for a response from the Cyphal worker thread.",
+                        "tolerance": tolerance,
+                    }
+                )
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Failed to subscribe to synchronized messages.")
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": tb})
 
     def unsubscribe_synchronized(self, specifiers: str) -> Response:
         try:
@@ -828,96 +901,157 @@ class Api:
             del self.state.cyphal.synchronized_message_stores[sync_specifier]
             return jsonify({"success": True, "specifiers": specifiers})
         except:
+            logger.error("Failed to unsubscribe from synchronized messages.")
             tb = traceback.format_exc()
+            logger.error(str(tb))
             return jsonify({"success": False, "specifiers": specifiers, "message": tb})
 
     def fetch_synchronized_messages_for_specifiers(self, specifiers: str, counter: int) -> Response:
         """Specifiers is a JSON serialized list of specifiers."""
-        specifiers_object = json.loads(specifiers)
-        specifier_objects = [SubjectSpecifier.from_string(x) for x in specifiers_object]
-        """An array containing arrays of synchronized messages"""
-        synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
-            SynchronizedSubjectsSpecifier(specifier_objects)
-        )
-        return jsonify(synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :])
+        try:
+            specifiers_object = json.loads(specifiers)
+            specifier_objects = [SubjectSpecifier.from_string(x) for x in specifiers_object]
+            """An array containing arrays of synchronized messages"""
+            synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
+                SynchronizedSubjectsSpecifier(specifier_objects)
+            )
+            return jsonify(synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :])
+        except Exception as e:
+            logger.error("Failed to fetch synchronized messages.")
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": tb})
 
     def get_current_available_subscription_specifiers(self) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
-        specifiers = []
-        for specifier, messages_store in self.state.cyphal.message_stores_by_specifier.items():
-            specifiers.append(str(specifier))
-        specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
-        return jsonify(specifiers_return_value)
+        try:
+            specifiers = []
+            for specifier, messages_store in self.state.cyphal.message_stores_by_specifier.items():
+                specifiers.append(str(specifier))
+            specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
+            return jsonify(specifiers_return_value)
+        except Exception as e:
+            logger.error("Failed to get current available subscription specifiers.")
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": tb})
 
     def get_current_available_synchronized_subscription_specifiers(self) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
-        specifiers = []
-        for specifier, messages_store in self.state.cyphal.synchronized_message_stores.items():
-            specifiers.append(str(specifier))
-        specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
-        return jsonify(specifiers_return_value)
+        try:
+            specifiers = []
+            for specifier, messages_store in self.state.cyphal.synchronized_message_stores.items():
+                specifiers.append(str(specifier))
+            specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
+            return jsonify(specifiers_return_value)
+        except Exception as e:
+            logger.error("Failed to get current available synchronized subscription specifiers.")
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": tb})
 
     def get_known_datatypes_from_dsdl(self) -> Response:
-        # iterate through the paths in PYTHONPATH
-        dsdl_folders = []
-        # If the CYPHAL_PATH environment variable is set, add the value of that to the list of dsdl_folders
-        # if "CYPHAL_PATH" in os.environ:
-        #     dsdl_folders.append(Path(os.environ["CYPHAL_PATH"]))
-        for path in sys.path:
-            # if the path contains .compiled (which is our dsdl folder) then
-            if ".compiled" in path:
-                dsdl_folders.append(Path(path))
-                break
-        for dsdl_folder in dsdl_folders:
-            return jsonify(get_datatypes_from_packages_directory_path(dsdl_folder))
+        try:
+            # iterate through the paths in PYTHONPATH
+            dsdl_folders = []
+            # If the CYPHAL_PATH environment variable is set, add the value of that to the list of dsdl_folders
+            # if "CYPHAL_PATH" in os.environ:
+            #     dsdl_folders.append(Path(os.environ["CYPHAL_PATH"]))
+            for path in sys.path:
+                # if the path contains .compiled (which is our dsdl folder) then
+                if ".compiled" in path:
+                    dsdl_folders.append(Path(path))
+                    break
+            for dsdl_folder in dsdl_folders:
+                return jsonify(get_datatype_return_dto(get_all_datatypes(dsdl_folder)))
+        except Exception as e:
+            logger.error("Failed to get known datatypes from dsdl.")
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": tb})
 
     def setting_was_removed(self, id: str) -> Response:
-        removed_descendant = self.state.settings.remove_descendant_with_id(id)
-        if removed_descendant is not None:
-            return jsonify({"success": True, "id": id, "value": removed_descendant})
-        else:
-            return jsonify({"success": False})
+        try:
+            removed_descendant = self.state.settings.remove_descendant_with_id(id)
+            if removed_descendant is not None:
+                return jsonify({"success": True, "id": id, "value": removed_descendant})
+            else:
+                return jsonify({"success": False})
+        except Exception as e:
+            logger.error("Failed to remove setting.")
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": tb})
 
     def setting_was_changed(self, id: str, value: str) -> Response:
-        found_descendant = self.state.settings.get_descendant_with_id(id)
-        if found_descendant:
-            found_descendant.value = value
-            return jsonify({"success": True, "id": id, "value": value})
-        else:
-            logger.error("Could not find descendant with id " + id)
-        return jsonify({"success": False})
+        try:
+            found_descendant = self.state.settings.get_descendant_with_id(id)
+            if found_descendant:
+                found_descendant.value = value
+                return jsonify({"success": True, "id": id, "value": value})
+            else:
+                logger.error("Could not find descendant with id " + id)
+            return jsonify({"success": False})
+        except Exception as e:
+            logger.error("Failed to change setting.")
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": tb})
 
     def array_item_was_added(self, parent_id: str, value: str, own_id: str) -> Response:
-        def append_value_to_parent(_value: str, parent: ReactiveValue) -> None:
-            if isinstance(_value, str):
-                try:
-                    value_object = json.loads(value)
-                except:
-                    value_object = _value
-            else:
-                value_object = _value
-            current_reactive_value_object = ReactiveValue(value_object)
-            recursive_reactivize_settings(current_reactive_value_object, parent)
-            parent.value.append(own_id)
-            parent.value.append(current_reactive_value_object)
+        try:
 
-        found_parent = self.state.settings.get_descendant_with_id(parent_id)
-        if found_parent:
-            append_value_to_parent(value, found_parent)
-            return jsonify({"success": True, "parent_id": parent_id, "value": value})
-        else:
-            logger.error(f"Could not find parent with id {parent_id}")
-        return jsonify({"success": False})
+            def append_value_to_parent(_value: str, parent: ReactiveValue) -> None:
+                if isinstance(_value, str):
+                    try:
+                        value_object = json.loads(value)
+                    except:
+                        value_object = _value
+                else:
+                    value_object = _value
+                current_reactive_value_object = ReactiveValue(value_object)
+                recursive_reactivize_settings(current_reactive_value_object, parent)
+                parent.value.append(own_id)
+                parent.value.append(current_reactive_value_object)
+
+            found_parent = self.state.settings.get_descendant_with_id(parent_id)
+            if found_parent:
+                append_value_to_parent(value, found_parent)
+                return jsonify({"success": True, "parent_id": parent_id, "value": value})
+            else:
+                logger.error(f"Could not find parent with id {parent_id}")
+            return jsonify({"success": False})
+        except Exception as e:
+            logger.error("Failed to add array item.")
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": tb})
 
     def get_settings(self) -> Response:
-        serialized_settings = jsonify(self.state.settings)
-        return serialized_settings
+        try:
+            serialized_settings = jsonify(self.state.settings)
+            return serialized_settings
+        except Exception as e:
+            logger.error("Failed to get settings.")
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": tb})
 
     def save_settings(self) -> None:
-        save_settings(self.state.settings, Path.home() / "yukon_settings.yaml", self.state)
+        try:
+            save_settings(self.state.settings, Path.home() / "yukon_settings.yaml", self.state)
+        except Exception as e:
+            logger.error("Failed to save settings.")
+            tb = traceback.format_exc()
+            logger.error(str(tb))
 
     def load_settings(self) -> None:
-        loading_settings_into_yukon(self.state)
+        try:
+            loading_settings_into_yukon(self.state)
+        except Exception as e:
+            logger.error("Failed to load settings.")
+            tb = traceback.format_exc()
+            logger.error(str(tb))
 
     def set_dronecan_fw_substitution_enabled(self, enabled: bool) -> None:
         self.state.dronecan.firmware_update_enabled.value = enabled
@@ -932,8 +1066,13 @@ class Api:
         return jsonify(list(self.state.dronecan.all_entries))
 
     def dronecan_node_fw_update(self, node_id: int, path: str) -> None:
-        self.state.dronecan.firmware_update_path.value = path
-        req = dronecan.uavcan.protocol.file.BeginFirmwareUpdate.Request()
-        req.image_file_remote_path.path = "a"
-        logging.debug("Sending %r to %r", req, node_id)
-        self.state.dronecan.node.request(req, node_id, lambda e: None)
+        try:
+            self.state.dronecan.firmware_update_path.value = path
+            req = dronecan.uavcan.protocol.file.BeginFirmwareUpdate.Request()
+            req.image_file_remote_path.path = "a"
+            logging.debug("Sending %r to %r", req, node_id)
+            self.state.dronecan.node.request(req, node_id, lambda e: None)
+        except Exception as e:
+            logger.error("Failed to send firmware update request.")
+            tb = traceback.format_exc()
+            logger.error(str(tb))

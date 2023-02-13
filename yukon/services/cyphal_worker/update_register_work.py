@@ -67,7 +67,7 @@ def assemble_response_and_log_item(
 async def do_update_register_work(state: GodState, register_update: UpdateRegisterRequest) -> None:
     try:
         try:
-            value_before_update: str = state.avatar.avatars_by_node_id[register_update.node_id].register_values[
+            value_before_update: str = state.avatar.avatars_by_node_id[register_update.node_id].registers_values[
                 register_update.register_name
             ]
         except KeyError as e:
@@ -87,6 +87,9 @@ async def do_update_register_work(state: GodState, register_update: UpdateRegist
         if isinstance(access_response.value.empty, uavcan.primitive.Empty_1):
             raise RegisterDoesNotExistOnNode(register_update.register_name, register_update.node_id)
         assemble_response_and_log_item(state, register_update, value_before_update, None, True)
+    except NoResponse as e:
+        tb = traceback.format_exc()
+        assemble_response_and_log_item(state, register_update, value_before_update, tb, False)
     except NoSuccess as e:
         tb = traceback.format_exc()
         assemble_response_and_log_item(state, register_update, value_before_update, tb, False)
@@ -96,3 +99,6 @@ async def do_update_register_work(state: GodState, register_update: UpdateRegist
     except NodeDoesNotExist as e:
         tb = traceback.format_exc()
         assemble_response_and_log_item(state, register_update, None, tb, False)
+    except Exception as e:
+        tb = traceback.format_exc()
+        assemble_response_and_log_item(state, register_update, value_before_update, tb, False)

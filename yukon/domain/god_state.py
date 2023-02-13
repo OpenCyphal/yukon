@@ -81,6 +81,7 @@ class GuiState:
     gui_running: bool = True
     last_poll_received: float = 0.0
     time_allowed_between_polls: float = 6.5
+    # logging level / log level / message severity
     message_severity: str = "DEBUG"
     server_port: int = 5000
     is_port_decided: bool = False
@@ -88,6 +89,8 @@ class GuiState:
     is_headless: bool = False
     is_running_in_browser: bool = False
     is_target_client_known: bool = False
+    # Basically if this is a production environment or a development run
+    is_built_executable: bool = False
 
 
 @dataclass

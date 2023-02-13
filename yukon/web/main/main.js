@@ -73,8 +73,6 @@ window.console = new Proxy(old_console, {
         document.title = "Yukon (browser)";
     }
 
-
-
     function setUpMonitorComponent() {
         yukon_state.my_graph = create_directed_graph(yukon_state);
 
