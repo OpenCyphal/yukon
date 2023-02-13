@@ -12,6 +12,17 @@ class SimplePublisher:
         self.rate_per_second = 1
         self.enabled = False
 
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, value: bool) -> None:
+        self._enabled = value
+
+    def publish(self) -> None:
+        pass
+
     def add_field(self, id: str) -> PublisherField:
         self.fields[id] = PublisherField(id)
         return self.fields[id]

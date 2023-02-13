@@ -48,9 +48,13 @@ paths = sys.path
 
 logger = logging.getLogger()
 
+is_built_executable = False
+
 if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    is_built_executable = True
     root_path = sys._MEIPASS  # type: ignore # pylint: disable=protected-access
 else:
+    is_built_executable = False
     root_path = str(Path(os.path.dirname(os.path.abspath(__file__))).parent)
 
 
@@ -66,6 +70,10 @@ def run_electron(state: GodState) -> None:
     # Make the thread sleep for 1 second waiting for the server to start
     while not state.gui.is_port_decided:
         sleep(1)
+    state.gui.is_built_executable = is_built_executable
+    # We don't need to show debug info to the user by default, this is only enabled by the user or enabled by default in dev mode
+    if is_built_executable:
+        state.gui.message_severity = "info"
     electron_logger = make_electron_logger(state)
     exe_path = get_electron_path()
 

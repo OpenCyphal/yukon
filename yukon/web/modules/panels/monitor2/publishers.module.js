@@ -127,7 +127,10 @@ async function createPublisherFrame(publisher, yukon_state) {
         const enableCheckbox = document.createElement('input');
         enableCheckbox.type = "checkbox";
         enableCheckbox.classList.add("enable-checkbox");
-        enableCheckbox.checked = true;
+        enableCheckbox.checked = false;
+        enableCheckbox.addEventListener('change', async () => {
+            await yukon_state.zubax_apij.set_publisher_enabled(publisher.id, enableCheckbox.checked);
+        });
         refreshRateRow.appendChild(enableCheckbox);
         // Add a text saying, "Enable"
         const enableText = document.createElement('span');
