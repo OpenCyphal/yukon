@@ -280,8 +280,13 @@
         color: #000;
     }
 
+    .lm_header .lm_controls .lm_tabdropdown {
+        opacity: 1;
+    }
+
     .lm_header .lm_controls .lm_tabdropdown::before {
         animation: colorTween 5s infinite;
+        opacity: 1;
     }
 
     @keyframes colorTween {
