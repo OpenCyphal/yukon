@@ -390,7 +390,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
             let fixed_datatype_full = null;
             if (datatypes_response["fixed_id_messages"] && datatypes_response["fixed_id_messages"][port.port] !== undefined) {
                 fixed_datatype_short = datatypes_response["fixed_id_messages"][port.port]["short_name"];
-                fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["full_name"];
+                fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["name"];
             }
             if (currentLinkObject !== undefined) {
                 currentLinkDsdlDatatype = currentLinkObject.datatype || "";
@@ -432,7 +432,7 @@ const portTypeToLongTypeExplanation = {
     "srv": "This is a service"
 }
 function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
-    const emptyPortInfo = getUnassignedPortsForNode(node_id, yukon_state); //  [{"link_name": "power", link_type: "sub", "full_name": "uavcan.sub.power.id"}, {"link_name": "dynamics" ...}]
+    const emptyPortInfo = getUnassignedPortsForNode(node_id, yukon_state); //  [{"link_name": "power", link_type: "sub", "name": "uavcan.sub.power.id"}, {"link_name": "dynamics" ...}]
     // Add a label saying "Unassigned ports" if there are any
     if (emptyPortInfo.length > 0) {
         const label = document.createElement("div");
@@ -506,9 +506,9 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         // Align text to the top
         // assign_button.style.setProperty()
         assign_button.addEventListener("click", async function () {
-            const response = await zubax_apij.update_register_value(portInfo.full_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
+            const response = await zubax_apij.update_register_value(portInfo.name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
             if (response.success) {
-                console.log("The port identifier for " + portInfo.full_name + " was successfully updated to " + number_input.value);
+                console.log("The port identifier for " + portInfo.name + " was successfully updated to " + number_input.value);
                 console.log("Usually it is the case that you should now restart the node before changes are applied.")
             }
         });

@@ -13,9 +13,14 @@ async def do_reread_registers_work(state: GodState, request2: RereadRegistersReq
     logger.debug("request2 in do_reread_registers_work: %r", request2)
     try:
         for node_id in request2.pairs:
-            node_id2 = int(node_id)
-            for register_name in request2.pairs[node_id]:
-                asyncio.create_task(get_register_value(state, node_id2, register_name, True))
+            try:
+                node_id2 = int(node_id)
+                for register_name in request2.pairs[node_id]:
+                    asyncio.create_task(get_register_value(state, node_id2, register_name, True))
+            except:
+                tb = traceback.format_exc()
+                logger.exception("Reread register values failed")
+                logger.critical(tb)
     except:
         tb = traceback.format_exc()
         logger.exception("Reread register values failed")

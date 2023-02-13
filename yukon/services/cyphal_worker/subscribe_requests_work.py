@@ -59,9 +59,14 @@ async def do_subscribe_requests_work(state: GodState, subscribe_request: Subscri
         tb = traceback.format_exc()
         logger.error(str(e))
         logger.error(str(tb))
-        subscribe_response = SubscribeResponse(
-            subscribe_request.specifier.subject_id, subscribe_request.specifier.datatype, False, str(tb)
-        )
-        state.queues.subscribe_requests_responses.put(subscribe_response)
+        try:
+            subscribe_response = SubscribeResponse(
+                subscribe_request.specifier.subject_id, subscribe_request.specifier.datatype, False, str(tb)
+            )
+            state.queues.subscribe_requests_responses.put(subscribe_response)
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error(str(e))
+            logger.error(str(tb))
     else:
         logger.info("Subscribed to " + str(subscribe_request.specifier.subject_id))

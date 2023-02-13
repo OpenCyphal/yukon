@@ -99,7 +99,7 @@ export async function getDatatypesForPort(portNr, yukon_state) {
     const datatypes_response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
     if (datatypes_response && datatypes_response["fixed_id_messages"] && datatypes_response["fixed_id_messages"][portNr] !== undefined) {
         fixed_datatype_short = datatypes_response["fixed_id_messages"][portNr]["short_name"];
-        fixed_datatype_full = datatypes_response["fixed_id_messages"][portNr]["full_name"];
+        fixed_datatype_full = datatypes_response["fixed_id_messages"][portNr]["name"];
         chosenDatatypes[fixed_datatype_full] = 1;
     }
     if (currentLinkObjects.length > 0) {

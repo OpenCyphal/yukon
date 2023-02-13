@@ -106,7 +106,9 @@ def get_all_datatypes(path: Path) -> typing.List[Datatype]:
     return all_classes
 
 
-def scan_package_look_for_classes(package_root, package_path):
+def scan_package_look_for_classes(
+    package_root: typing.Union[str, Path], package_path: typing.Union[str, Path]
+) -> typing.List[Datatype]:
     if isinstance(package_path, str):
         package_path = Path(package_path)
     if isinstance(package_root, str):
@@ -158,24 +160,28 @@ def scan_package_look_for_classes(package_root, package_path):
     return classes
 
 
-def get_datatype_return_dto(all_classes: typing.List[Datatype]):
+def get_datatype_return_dto(all_classes: typing.List[Datatype]) -> typing.Any:
     return_object: typing.Any = {
         "fixed_id_messages": {},
         "variable_id_messages": [],
     }
     for datatype in all_classes:
-        if datatype.is_fixed_id:
-            return_object["fixed_id_messages"][str(datatype.class_reference._FIXED_PORT_ID_)] = {
-                "short_name": datatype.class_reference.__name__,
-                "name": datatype.name,
-            }
-        else:
-            return_object["variable_id_messages"].append(
-                {
+        try:
+            if datatype.is_fixed_id:
+                return_object["fixed_id_messages"][str(datatype.class_reference._FIXED_PORT_ID_)] = {
                     "short_name": datatype.class_reference.__name__,
                     "name": datatype.name,
                 }
-            )
+            else:
+                return_object["variable_id_messages"].append(
+                    {
+                        "short_name": datatype.class_reference.__name__,
+                        "name": datatype.name,
+                    }
+                )
+        except Exception as e:
+            logger.error(str(e))
+            logger.exception("Failed to get datatype for %s", datatype)
     return return_object
 
 
@@ -186,6 +192,7 @@ class PrimitiveFieldType(enum.Enum):
     Integer = 2
     Boolean = 3
     String = 4
+    Unknown = 5
 
 
 def determine_primitive_field_type(field: pydsdl.Field) -> PrimitiveFieldType:
@@ -209,6 +216,7 @@ def determine_primitive_field_type(field: pydsdl.Field) -> PrimitiveFieldType:
             return PrimitiveFieldType.Boolean
         elif isinstance(datatype, pydsdl.StringType):
             return PrimitiveFieldType.String
+    return PrimitiveFieldType.Unknown
 
 
 @dataclasses.dataclass
@@ -220,15 +228,20 @@ class SimplifiedFieldDTO:
 
 
 def get_all_fields_recursive(
-    field: pydsdl.Field, properties: typing.List[SimplifiedFieldDTO], previous_components: typing.List[str], depth=0
-):
+    field: pydsdl.Field,
+    properties: typing.List[SimplifiedFieldDTO],
+    previous_components: typing.List[str],
+    depth: int = 0,
+) -> None:
     """
-    Recursively get all fields of a composite type
+    Recursively get all fields of a composite type. Fills in the properties list.
 
     :param field: The field to get the fields of
     :param properties: The list of properties to append to
     :param previous_components: The list of previous components to append to, components make up the full path
     :param depth: The depth of the recursion
+
+    :return: None
     """
     if field.name == "error":
         print("This")
@@ -253,7 +266,7 @@ def get_all_fields_recursive(
         pass
 
 
-def get_all_field_dtos(obj) -> typing.List[SimplifiedFieldDTO]:
+def get_all_field_dtos(obj: typing.Any) -> typing.List[SimplifiedFieldDTO]:
     """
     Recursively get all properties of a composite type
 
@@ -330,7 +343,7 @@ def get_datatypes_from_packages_directory_path(path: Path) -> typing.Any:
                         desired_class_name = _class.__name__
                         return_object["fixed_id_messages"][str(_class._FIXED_PORT_ID_)] = {
                             "short_name": desired_class_name,
-                            "full_name": model.full_name,
+                            "name": model.full_name,
                         }
                     elif hasattr(_class, "_serialize_"):
                         return_object["variable_id_messages"].append(model.full_name)

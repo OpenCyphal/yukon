@@ -82,7 +82,7 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
             // if (response && response.success && response.min && response.max) {
             //     listItem.title = "Min: " + response.min + ", Max: " + response.max;
             // } else if (response && response.success == false) {
-            //     listItem.title = "Error: " + response.error;
+            //     listItem.title = "Error: " + response.message;
             // }
             listItem.addEventListener('click', () => {
                 textField.value = textOfSomething;

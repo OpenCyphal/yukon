@@ -179,7 +179,7 @@ async function refreshKnownDatatypes(iSelectFixedIdMessageType, iSelectAny, iSel
     }
     for (const id in response["fixed_id_messages"]) {
         const datatype_short = response["fixed_id_messages"][id]["short_name"];
-        const datatype_full = response["fixed_id_messages"][id]["full_name"];
+        const datatype_full = response["fixed_id_messages"][id]["name"];
         // Add a new option to the select
         const option = document.createElement('option');
         option.innerHTML = datatype_full + "(" + id + ")";
@@ -317,7 +317,7 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
             yukon_state.subscription_specifiers.specifiers = yukon_state.subscription_specifiers.specifiers.filter((specifier_) => { return specifier_ !== specifier; });
             await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
         } else {
-            console.error("Failed to unsubscribe: " + response.error);
+            console.error("Failed to unsubscribe: " + response.message);
         }
     };
 
@@ -371,7 +371,7 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
             clearInterval(fetchIntervalId.value);
             await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
         } else {
-            console.error("Failed to unsubscribe: " + response.error);
+            console.error("Failed to unsubscribe: " + response.message);
         }
     };
     // Add a button for unsubscribing
@@ -611,7 +611,7 @@ async function subscribeCallback(isSynchronous, subscriptionElement, list_of_sub
             subscriptionElement.parentElement.removeChild(subscriptionElement);
             await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
         } else {
-            console.error("Failed to subscribe: " + response.error);
+            console.error("Failed to subscribe: " + response.message);
         }
     }
 }
