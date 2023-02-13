@@ -367,6 +367,10 @@ button#btnShowHideToolbar:active {
     padding: 0.2vw;
 }
 
+.my-container :first-child {
+    margin-top: 0 !important;
+}
+
 .subscription {
     display: block;
     border: 1px solid rgb(90, 90, 90);
@@ -426,14 +430,6 @@ button#btnShowHideToolbar:active {
     padding-right: 0.5em;
     padding-bottom: 0.5em;
 } */
-
-.cool-container {
-    padding-top: 0.5em;
-    padding-left: 0.5em;
-    padding-right: 0.5em;
-    padding-bottom: 0.5em;
-}
-
 .container:has(> #settings-div) {
     padding-bottom: 0.5em;
 }

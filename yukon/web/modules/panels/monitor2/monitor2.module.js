@@ -438,7 +438,7 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         const label = document.createElement("div");
         label.style.position = "absolute";
         label.style.top = avatar_y_counter.value - 15 + "px";
-        label.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 10 + "px");
+        label.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] + "px");
         label.style.width = "170px";
         label.innerText = "Unassigned ports";
         node.appendChild(label);
@@ -469,7 +469,7 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         // Align text right
         emptyPortDiv.style.setProperty("text-align", "right");
         // align it 50px to the left from the left side of the horizontal line
-        emptyPortDiv.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 10 + "px");
+        emptyPortDiv.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] + "px");
         // When hovered over emptyPortDiv, replace the innerText with portInfo.datatype
         emptyPortDiv.onmouseover = function () {
             emptyPortDiv.innerText = portInfo.datatype;
@@ -480,18 +480,7 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         };
         emptyPortDiv.style.width = settings.LinkInfoWidth + "px";
         node.appendChild(emptyPortDiv);
-        // Also create a number input that has left set to settings["NodeXOffset"] + settings["NodeWidth"] - 190 + "px", the text input should have a placeholder of "Enter new port number"
-        // The width of the text input should be 170px
-        const number_input = document.createElement("input");
-        number_input.type = "number";
-        number_input.style.position = "absolute";
-        number_input.style.top = avatar_y_counter.value + "px";
-        number_input.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 155 + "px");
-        number_input.style.width = "130px";
-        number_input.style.height = designatedHeight + "px";;
-        number_input.placeholder = "New subject id";
-        number_input.title = "Enter a new subject id";
-        node.appendChild(number_input);
+
 
         // Add a button that says "Assign" and has a click event listener that calls assignPortToLink
         const assign_button = document.createElement("button");
@@ -500,11 +489,29 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         assign_button.style.position = "absolute";
         assign_button.style.height = designatedHeight + "px";
         assign_button.style.top = avatar_y_counter.value + "px";
-        assign_button.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 264 + "px");
-        assign_button.style.width = "100px";
+        const assignButtonLeftOffset = 3 + "px";
+        assign_button.style.setProperty("left", assignButtonLeftOffset);
+        const assignButtonWidth = 100;
+        assign_button.style.width = assignButtonWidth + "px";
         assign_button.style.setProperty("padding-top", designatedHeight * 0.01 + "px", "important");
         // Align text to the top
         // assign_button.style.setProperty()
+
+        node.appendChild(assign_button);
+
+        // Also create a number input that has left set to settings["NodeXOffset"] + settings["NodeWidth"] - 190 + "px", the text input should have a placeholder of "Enter new port number"
+        // The width of the text input should be 170px
+        const number_input = document.createElement("input");
+        number_input.type = "number";
+        number_input.style.position = "absolute";
+        number_input.style.top = avatar_y_counter.value + "px";
+        number_input.style.left = assignButtonWidth + 12 + "px";
+        number_input.style.width = "130px";
+        number_input.style.height = designatedHeight + "px";;
+        number_input.placeholder = "New subject id";
+        number_input.title = "Enter a new subject id";
+        node.appendChild(number_input);
+
         assign_button.addEventListener("click", async function () {
             const response = await zubax_apij.update_register_value(portInfo.name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
             if (response.success) {
@@ -513,7 +520,6 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
             }
         });
 
-        node.appendChild(assign_button);
 
         avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
     }
