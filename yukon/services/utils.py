@@ -81,28 +81,6 @@ def get_all_datatypes(path: Path) -> typing.List[Datatype]:
         all_classes.extend(scan_package_look_for_classes(path, init_file.relative_to(path).parent))
 
     all_classes = list(set(all_classes))
-    # relative_paths_to_packages = [package.relative_to(path) for package in init_file_packages]
-    # package_contents = [a for package in init_file_packages for a in list(package.glob("**/*.py"))]
-    # # Relative paths to every py file in every package
-    # # Remove __init__.py files
-    # relative_package_contents = [py_file for py_file in package_contents if py_file.name != "__init__.py"]
-    # # Remove the .py extension
-    # relative_package_contents = [py_file.with_suffix("").relative_to(path) for py_file in relative_package_contents]
-    # all_classes = []
-    # # Convert to a list of strings
-    # relative_package_contents = [
-    #     {
-    #         "file_full_path": str(py_file.absolute()),
-    #         "full_relative_name": str(py_file).replace("\\", "."),
-    #         "just_name": py_file.name,
-    #     }
-    #     for py_file in relative_package_contents
-    # ]
-    # for content in relative_package_contents:
-    #     all_classes.extend(scan_package_look_for_classes(content["file_full_path"]))
-    # # Deduplicate datatypes
-    # return_object["variable_id_messages"] = list(set(return_object["variable_id_messages"]))
-
     return all_classes
 
 
@@ -115,7 +93,7 @@ def scan_package_look_for_classes(
         package_root = Path(package_root)
     classes = []
     add_path_to_sys_path(str(package_root))
-    proper_module_path = str(package_path).replace("\\", ".")
+    proper_module_path = str(package_path).replace(os.path.sep, ".")
     try:
         package = importlib.import_module(proper_module_path)
     except:
@@ -147,14 +125,6 @@ def scan_package_look_for_classes(
                     continue
                 if hasattr(_class, "_FIXED_PORT_ID_") or hasattr(_class, "_serialize_"):
                     classes.append(Datatype(hasattr(_class, "_FIXED_PORT_ID_"), model.full_name, _class))
-                # if :
-                #     desired_class_name = _class.__name__
-                #     return_object["fixed_id_messages"][str(_class._FIXED_PORT_ID_)] = {
-                #         "short_name": desired_class_name,
-                #         "full_name": model.full_name,
-                #     }
-                # elif hasattr(_class, "_serialize_"):
-                #     return_object["variable_id_messages"].append(model.full_name)
     except Empty:
         pass
     return classes
@@ -290,68 +260,6 @@ def get_all_field_dtos(obj: typing.Any) -> typing.List[SimplifiedFieldDTO]:
         else:
             get_all_fields_recursive(field, properties, [str(model)])
     return properties
-
-
-def get_datatypes_from_packages_directory_path(path: Path) -> typing.Any:
-    """The path is to a folder like .compiled which contains dsdl packages"""
-    return_object: typing.Any = {
-        "fixed_id_messages": {},
-        "variable_id_messages": [],
-    }
-    # init_files = list(path.glob("**/__init__.py"))
-    # # List the parent directories of every __init__.py file
-    # init_file_packages = [init_file.parent for init_file in init_files]
-    # relative_paths_to_packages = [package.relative_to(path) for package in init_file_packages]
-    # package_contents = [a for package in init_file_packages for a in list(package.glob("**/*.py"))]
-    # # Relative paths to every py file in every package
-    # # Remove __init__.py files
-    # relative_package_contents = [py_file for py_file in package_contents if py_file.name != "__init__.py"]
-    # # Remove the .py extension
-    # relative_package_contents = [py_file.with_suffix("").relative_to(path) for py_file in relative_package_contents]
-    # # Convert to a list of strings
-    # relative_package_contents = [str(py_file).replace("\\", ".") for py_file in relative_package_contents]
-
-    for package_folder_str in list(next(os.walk(path))[1]):
-        package_folder = (path / package_folder_str).absolute()
-        add_path_to_sys_path(str(package_folder.absolute()))
-        package = importlib.import_module(package_folder.name)
-        # pycyphal.util.import_submodules(package)
-        # sys.path.remove(str(package_folder.absolute()))
-
-        queue: Queue = Queue()
-        queue.put((package, None))  # No previous class
-        counter = 0
-        try:
-            while True:
-                counter += 1
-                module_or_class, previous_module_or_class = queue.get_nowait()
-                elements = inspect.getmembers(module_or_class, lambda x: inspect.ismodule(x) or inspect.isclass(x))
-                for element in elements:
-                    if element[1].__name__ == "object" or element[1].__name__ == "type":
-                        continue
-                    queue.put((element[1], module_or_class))  # Previous class was module_or_class
-                if inspect.isclass(module_or_class):
-                    _class = module_or_class
-                    if not hasattr(module_or_class, "_deserialize_") and not hasattr(module_or_class, "_serialize_"):
-                        continue
-                    try:
-                        model = pycyphal.dsdl.get_model(_class)
-                    except Exception:
-                        logger.exception("Failed to get model for %s", _class)
-                        continue
-                    if hasattr(_class, "_FIXED_PORT_ID_"):
-                        desired_class_name = _class.__name__
-                        return_object["fixed_id_messages"][str(_class._FIXED_PORT_ID_)] = {
-                            "short_name": desired_class_name,
-                            "name": model.full_name,
-                        }
-                    elif hasattr(_class, "_serialize_"):
-                        return_object["variable_id_messages"].append(model.full_name)
-        except Empty:
-            pass
-    # Deduplicate datatypes
-    return_object["variable_id_messages"] = list(set(return_object["variable_id_messages"]))
-    return return_object
 
 
 def process_dsdl_path(path: Path) -> None:

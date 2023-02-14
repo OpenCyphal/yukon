@@ -208,15 +208,17 @@ export function add_node_id_headers(table_header_row, yukon_state) {
         table_header_cell.style.position = "relative";
         // Make a smaller invisible collider on top of table_header_cell, otherwise identical but 70% of the width
         const table_header_cell_collider = document.createElement('div');
+        table_header_cell_collider.classList.add("table_header_cell_collider");
         table_header_cell_collider.style.width = "70%";
         table_header_cell_collider.style.height = "100%";
-        table_header_cell_collider.style.minWidth = "95%";
-        table_header_cell_collider.style.maxWidth = "95%";
+        table_header_cell_collider.style.minWidth = "92%";
+        table_header_cell_collider.style.maxWidth = "92%";
         table_header_cell_collider.style.position = "absolute";
         table_header_cell_collider.style.top = "0";
-        table_header_cell_collider.style.left = "0";
+        table_header_cell_collider.style.left = "12px";
         table_header_cell_collider.style.zIndex = "100";
         table_header_cell_collider.style.opacity = "0";
+        // Right clicks should bubble below the collider
 
         table_header_cell.appendChild(table_header_cell_collider);
 

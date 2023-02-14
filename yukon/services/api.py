@@ -50,7 +50,7 @@ from yukon.services.settings_handler import (
     loading_settings_into_yukon,
 )
 from yukon.domain.subscriptions.unsubscribe_request import UnsubscribeRequest
-from yukon.services.utils import clamp, get_datatypes_from_packages_directory_path, tolerance_from_key_delta
+from yukon.services.utils import clamp, tolerance_from_key_delta
 from yukon.domain.subscriptions.subject_specifier_dto import SubjectSpecifierDto
 from yukon.domain.subject_specifier import SubjectSpecifier
 from yukon.domain.subscriptions.subscribe_request import SubscribeRequest
