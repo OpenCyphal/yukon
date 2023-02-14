@@ -154,9 +154,9 @@ class DemoApp:
             temperature_setpoint = msg.kelvin
 
         self._sub_t_sp.receive_in_background(on_setpoint)  # IoC-style handler.
-        self._node.registry.setdefault("register.of.port.sus.pub.undefined.id", ValueProxy(Natural16([0])))
+        self._node.registry.setdefault("uavcan.pub.udral.esc.0.id", ValueProxy(Natural16([0])))
         # self._node.registry.setdefault("register.of.port.sus.pub.undefined.type", ValueProxy(String("sustype")))
-        self._node.registry["register.of.port.sus.undefined"] = 0
+        self._node.registry["uavcan.pub.udral.esc.0.id"] = 0
         # Expose internal states to external observers for diagnostic purposes. Here, we define read-only registers.
         # Since they are computed at every invocation, they are never stored in the register file.
         self._node.registry["thermostat.error"] = lambda: temperature_error

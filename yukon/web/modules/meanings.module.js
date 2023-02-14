@@ -48,9 +48,12 @@ export function getRelatedLinks(port, yukon_state) {
         const registersKeys = Object.keys(avatar.registers_values);
         for (let j = 0; j < registersKeys.length; j++) {
             const register_name = registersKeys[j];
-            const register_name_split = register_name.split(".");
-            const link_name = register_name_split[register_name_split.length - 2];
-            const link_type = register_name_split[register_name_split.length - 3];
+            const regex = /uavcan\.(pub|sub|cln|srv)\.(.+?)\.id/;
+            // Use regex to extract the first and second ground, first group is link_type and second group is link_name from register_name
+            const results = register_name.match(regex);
+            if(!results) continue;
+            const link_type = results[1];
+            const link_name = results[2];
             const value = avatar.registers_values[register_name];
             if (parseInt(value) === port && register_name.endsWith(".id")) {
                 const datatype_key = registersKeys.find((a) => a.endsWith(link_name + ".type"));

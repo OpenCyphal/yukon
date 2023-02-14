@@ -263,14 +263,17 @@ function addMissingPorts(avatar, yukon_state) {
     // This is needed because sometimes a node will not publish its status on its ports to the port list subject
     // Iterate through all registers in the avatar
     for (const [name, value] of Object.entries(avatar.registers_values)) {
-        let split_name = name.split(".");
-        let end_part = split_name[split_name.length - 1];
-        if (end_part === "id") {
-            let link_name = split_name[split_name.length - 2];
-            let link_type = split_name[split_name.length - 3];
-            if (avatar.ports[link_type] && avatar.ports[link_type].indexOf(parseInt(value)) === -1) {
-                avatar.ports[link_type].push(parseInt(value));
-            }
+        if(parseInt(value) === 65535){
+            continue;
+        }
+        const regex = /uavcan\.(pub|sub|cln|srv)\.(.+?)\.id/;
+        // Use regex to extract the first and second ground, first group is link_type and second group is link_name from register_name
+        const results = name.match(regex);
+        if(!results) continue;
+        const link_type = results[1];
+        const link_name = results[2];
+        if (avatar.ports[link_type] && avatar.ports[link_type].indexOf(parseInt(value)) === -1) {
+            avatar.ports[link_type].push(parseInt(value));
         }
     }
 }
@@ -818,7 +821,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
                 clearTimeout(timeout);
             }
             timeout = setTimeout(async () => {
-                const response = await zubax_apij.update_register_value(currentLinkObject.full_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${port_number_label.value}]}}`), currentLinkObject.node_id);
+                const response = await zubax_apij.update_register_value(currentLinkObject.name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${port_number_label.value}]}}`), currentLinkObject.node_id);
                 let restartButton = document.querySelector("#btn" + currentLinkObject.node_id + "_Restart");
                 if (restartButton) {
                     // Previous background color
