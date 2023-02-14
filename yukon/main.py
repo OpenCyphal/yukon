@@ -71,7 +71,7 @@ def decide_logging_severity(state: "GodState") -> None:
     # We don't need to show debug info to the user by default,
     # this is only enabled by the user or enabled by default in dev mode
     if is_built_executable:
-        state.gui.message_severity = "info"
+        state.gui.message_severity = "INFO"
 
 
 def run_electron(state: GodState) -> None:
@@ -251,7 +251,7 @@ def run_server(state: GodState) -> None:
 
 def set_logging_levels() -> None:
     logging.getLogger("pycyphal").setLevel(logging.WARNING)
-    logging.getLogger("pycyphal.dsdl").setLevel(logging.DEBUG)
+    logging.getLogger("pycyphal.dsdl").setLevel(logging.WARNING)
     logging.getLogger("can").setLevel(logging.WARNING)
     logging.getLogger("asyncio").setLevel(logging.CRITICAL)
     logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
