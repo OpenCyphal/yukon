@@ -81,7 +81,7 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
             specifier1 = SubjectSpecifier.from_string(request.args.get("message_specifier"))
             message_store = state.cyphal.message_stores_by_specifier[specifier1]
             try:
-                serializable_object = message_store.messages[message_store.counter - 1]
+                serializable_object = message_store.messages[len(message_store.messages) - 1]
             except IndexError:
                 return jsonify({"note": "No messages yet"})
             if not request.args.get("as_yaml"):

@@ -61,7 +61,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                 "fields": o.fields,
             }
         if isinstance(o, SimplifiedFieldDTO):
-            return {"name": o.short_name, "type": o.field_type.name, "full_name": o.field_name}
+            return {"name": o.field_name, "type": o.field_type.name, "full_name": o.field_name}
         if isinstance(o, PublisherField):
             return {
                 "id": o.id,

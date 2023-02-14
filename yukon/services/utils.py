@@ -123,8 +123,7 @@ def scan_package_look_for_classes(
                 except Exception:
                     logger.exception("Failed to get model for %s", _class)
                     continue
-                if hasattr(_class, "_FIXED_PORT_ID_") or hasattr(_class, "_serialize_"):
-                    classes.append(Datatype(hasattr(_class, "_FIXED_PORT_ID_"), model.full_name, _class))
+                classes.append(Datatype(hasattr(_class, "_FIXED_PORT_ID_"), model.full_name, _class))
     except Empty:
         pass
     return classes
@@ -195,12 +194,14 @@ class SimplifiedFieldDTO:
     field_type: PrimitiveFieldType
     is_array: bool
     short_name: str
+    model_name: str
 
 
 def get_all_fields_recursive(
     field: pydsdl.Field,
     properties: typing.List[SimplifiedFieldDTO],
     previous_components: typing.List[str],
+    model_name: str,
     depth: int = 0,
 ) -> None:
     """
@@ -213,8 +214,6 @@ def get_all_fields_recursive(
 
     :return: None
     """
-    if field.name == "error":
-        print("This")
     try:
         previous_components.append(field.name)
         for field in field.data_type.fields:
@@ -225,12 +224,14 @@ def get_all_fields_recursive(
                 path = previous_path + "." + field.name
                 if isinstance(field.data_type, pydsdl.PrimitiveType):
                     properties.append(
-                        SimplifiedFieldDTO(path, determine_primitive_field_type(field), False, field.name)
+                        SimplifiedFieldDTO(path, determine_primitive_field_type(field), False, field.name, model_name)
                     )
                 elif isinstance(field.data_type, pydsdl.ArrayType):
-                    properties.append(SimplifiedFieldDTO(path, determine_primitive_field_type(field), True, field.name))
+                    properties.append(
+                        SimplifiedFieldDTO(path, determine_primitive_field_type(field), True, field.name, model_name)
+                    )
                 else:
-                    get_all_fields_recursive(field, properties, previous_components, depth + 1)
+                    get_all_fields_recursive(field, properties, previous_components, model_name, depth + 1)
     except AttributeError as e:
         # No longer a CompositeType, a leaf node of some other type
         pass
@@ -248,17 +249,17 @@ def get_all_field_dtos(obj: typing.Any) -> typing.List[SimplifiedFieldDTO]:
         if isinstance(field.data_type, pydsdl.PrimitiveType):
             properties.append(
                 SimplifiedFieldDTO(
-                    str(model) + "." + field.name, determine_primitive_field_type(field), False, field.name
+                    field.name, determine_primitive_field_type(field), False, field.name, str(model) + "." + field.name
                 )
             )
         elif isinstance(field.data_type, pydsdl.ArrayType):
             properties.append(
                 SimplifiedFieldDTO(
-                    str(model) + "." + field.name, determine_primitive_field_type(field), True, field.name
+                    field.name, determine_primitive_field_type(field), True, field.name, str(model) + "." + field.name
                 )
             )
         else:
-            get_all_fields_recursive(field, properties, [str(model)])
+            get_all_fields_recursive(field, properties, [], str(model))
     return properties
 
 def process_dsdl_path(path: Path) -> None:

@@ -928,7 +928,12 @@ class Api:
             synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
                 SynchronizedSubjectsSpecifier(specifier_objects)
             )
-            return jsonify(synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :])
+            if synchronized_messages_store.start_index >= counter:
+                return jsonify(synchronized_messages_store.messages[0:])
+            else:
+                return jsonify(
+                    synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :]
+                )
         except Exception as e:
             logger.error("Failed to fetch synchronized messages.")
             tb = traceback.format_exc()

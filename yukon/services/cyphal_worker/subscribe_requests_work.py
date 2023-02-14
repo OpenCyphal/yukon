@@ -43,10 +43,9 @@ async def do_subscribe_requests_work(state: GodState, subscribe_request: Subscri
                 messages_store.counter += 1
                 messages_store.messages.append(message_carrier)
                 # If the counter exceeds the capacity, remove the oldest message
-                if messages_store.counter > messages_store.capacity:
+                if messages_store.counter - messages_store.start_index > messages_store.capacity:
                     # TODO: Potential performance bottleneck
                     messages_store.messages.pop(0)
-                    messages_store.counter -= 1
                     messages_store.start_index += 1
 
         new_subscriber.receive_in_background(callback)
