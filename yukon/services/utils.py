@@ -261,7 +261,6 @@ def get_all_field_dtos(obj: typing.Any) -> typing.List[SimplifiedFieldDTO]:
             get_all_fields_recursive(field, properties, [str(model)])
     return properties
 
-
 def process_dsdl_path(path: Path) -> None:
     pass
     # for package_folder_str in list(next(os.walk(path))[1]):
