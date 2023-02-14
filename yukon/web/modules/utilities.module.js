@@ -63,8 +63,12 @@ export function getKnownDatatypes(yukon_state) {
         // For each register in registers_exploded
         for (let register_name in avatar.registers_values) {
             if (register_name.endsWith(".id")) {
-                const register_name_split = register_name.split(".");
-                const link_name = register_name_split[register_name_split.length - 2];
+                const regex = /uavcan\.(pub|sub|cln|srv)\.(.+?)\.id/;
+                // Use regex to extract the first and second ground, first group is link_type and second group is link_name from register_name
+                const results = register_name.match(regex);
+                if(!results) continue;
+                const link_type = results[1];
+                const link_name = results[2];
                 const datatype_register_name = Object.keys(avatar.registers_values).find((a) => a.endsWith(link_name + ".type"));
                 if (datatype_register_name) {
                     knownDatatypes.push(avatar.registers_values[datatype_register_name]);
@@ -141,8 +145,13 @@ export function getUnassignedPortsForNode(node_id, yukon_state) {
         for (const register_name in node.registers_values) {
             if (register_name.endsWith(".id")) {
                 const register_name_split = register_name.split(".");
-                const link_name = register_name_split[register_name_split.length - 2];
-                const link_type = register_name_split[register_name_split.length - 3];
+                const regex = /uavcan\.(pub|sub|cln|srv)\.(.+?)\.id/;
+                // Use regex to extract the first and second ground, first group is link_type and second group is link_name from register_name
+                const results = register_name.match(regex);
+                if(!results) continue;
+                const link_type = results[1];
+                const link_name = results[2];
+
                 const probable_datatype_register_name = register_name.replace(".id", ".type");
                 let detected_datatype = null;
                 if (node.registers_values[probable_datatype_register_name]) {
@@ -152,7 +161,7 @@ export function getUnassignedPortsForNode(node_id, yukon_state) {
                 // If for whatever reason the port is not in the pub, sub, cln, srv lists of node.ports, then it should be displayed still in the unassigned ports list
                 const isPortNotDisplayed = node.ports[link_type] && node.ports[link_type].indexOf(subject_id) === -1;
                 if (isPortNotDisplayed || subject_id === 65535) {
-                    emptyPorts.push({ "link_name": link_name, "link_type": link_type, "full_name": register_name, "datatype": detected_datatype });
+                    emptyPorts.push({ "link_name": link_name, "link_type": link_type, "full_name": register_name, "name": register_name, "datatype": detected_datatype });
                 }
             }
         }

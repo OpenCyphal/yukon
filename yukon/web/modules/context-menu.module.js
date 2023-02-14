@@ -224,13 +224,19 @@ export function make_context_menus(yukon_state) {
         context: this
     });
     table_cell_context_menu.init();
-
+    function getHeaderCellFromElement(elementOpenedOn) {
+        if(elementOpenedOn.classList.contains("table_header_cell_collider")) {
+            return elementOpenedOn.parentElement;
+        } else {
+            return elementOpenedOn;
+        }
+    }
     const table_header_context_menu_items = [
         {
             content: `Select node registers`,
             events: {
                 click: async (e, elementOpenedOn) => {
-                    const headerCell = elementOpenedOn;
+                    let headerCell = getHeaderCellFromElement(elementOpenedOn);
                     const node_id = headerCell.getAttribute("data-node_id");
                     selectColumn(parseInt(node_id), yukon_state);
                     updateRegistersTableColors(yukon_state);
@@ -241,7 +247,7 @@ export function make_context_menus(yukon_state) {
             content: `Apply config from file`,
             events: {
                 click: async (e, elementOpenedOn) => {
-                    const headerCell = elementOpenedOn;
+                    let headerCell = getHeaderCellFromElement(elementOpenedOn);
                     const node_id = headerCell.getAttribute("data-node_id");
                     const avatar = Object.values(yukon_state.current_avatars).find((e) => e.node_id == parseInt(node_id));
                     actionApplyConfiguration(true, false, avatar, false, yukon_state, e);
@@ -254,7 +260,7 @@ export function make_context_menus(yukon_state) {
             content: `Export all registers`,
             events: {
                 click: async (e, elementOpenedOn) => {
-                    const headerCell = elementOpenedOn;
+                    let headerCell = getHeaderCellFromElement(elementOpenedOn);
                     const node_id = headerCell.getAttribute("data-node_id");
                     const avatar = Object.values(yukon_state.current_avatars).find((e) => e.node_id == parseInt(node_id));
                     e.stopPropagation();
@@ -287,7 +293,7 @@ export function make_context_menus(yukon_state) {
             content: `Copy node registers as YAML`,
             events: {
                 click: async (e, elementOpenedOn) => {
-                    const headerCell = elementOpenedOn;
+                    let headerCell = getHeaderCellFromElement(elementOpenedOn);
                     const node_id = headerCell.getAttribute("data-node_id");
                     let pairs = get_all_selected_pairs({
                         "only_of_avatar_of_node_id": node_id,
@@ -303,7 +309,7 @@ export function make_context_menus(yukon_state) {
             content: `Reread node`,
             events: {
                 click: async (e, elementOpenedOn) => {
-                    const headerCell = elementOpenedOn;
+                    let headerCell = getHeaderCellFromElement(elementOpenedOn);
                     const node_id = headerCell.getAttribute("data-node_id");
                     await rereadNode(parseInt(node_id), yukon_state);
                 }
@@ -313,7 +319,7 @@ export function make_context_menus(yukon_state) {
             content: "Store persistent states",
             events: {
                 click: async (e, elementOpenedOn) => {
-                    const headerCell = elementOpenedOn;
+                    let headerCell = getHeaderCellFromElement(elementOpenedOn);
                     const node_id = headerCell.getAttribute("data-node_id");
                     const response = await yukon_state.zubax_apij.send_command(parseInt(node_id), 65530, "");
                     if (response) {
@@ -341,7 +347,7 @@ export function make_context_menus(yukon_state) {
     ];
 
     const table_header_context_menu = new ContextMenu({
-        target: ".node_id_header",
+        target: ".node_id_header,.table_header_cell_collider",
         mode: "dark",
         menuItems: table_header_context_menu_items,
         context: this

@@ -499,3 +499,7 @@ button:active {
 .lm_header .lm_tab.lm_active {
     padding-top: 2px !important;
 }
+
+.card :last-child {
+    margin-bottom: 0;
+}

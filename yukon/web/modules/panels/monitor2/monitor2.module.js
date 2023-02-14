@@ -263,14 +263,17 @@ function addMissingPorts(avatar, yukon_state) {
     // This is needed because sometimes a node will not publish its status on its ports to the port list subject
     // Iterate through all registers in the avatar
     for (const [name, value] of Object.entries(avatar.registers_values)) {
-        let split_name = name.split(".");
-        let end_part = split_name[split_name.length - 1];
-        if (end_part === "id") {
-            let link_name = split_name[split_name.length - 2];
-            let link_type = split_name[split_name.length - 3];
-            if (avatar.ports[link_type] && avatar.ports[link_type].indexOf(parseInt(value)) === -1) {
-                avatar.ports[link_type].push(parseInt(value));
-            }
+        if(parseInt(value) === 65535){
+            continue;
+        }
+        const regex = /uavcan\.(pub|sub|cln|srv)\.(.+?)\.id/;
+        // Use regex to extract the first and second ground, first group is link_type and second group is link_name from register_name
+        const results = name.match(regex);
+        if(!results) continue;
+        const link_type = results[1];
+        const link_name = results[2];
+        if (avatar.ports[link_type] && avatar.ports[link_type].indexOf(parseInt(value)) === -1) {
+            avatar.ports[link_type].push(parseInt(value));
         }
     }
 }
@@ -409,6 +412,18 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
 
             avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
         }
+        // Iterate over every element in node and find the lowest positioned element
+        // Save the height based on that
+        let height = 0;
+        for(const child of node.children) {
+            if (child.offsetTop + child.offsetHeight > height) {
+                height = child.offsetTop + child.offsetHeight;
+            }
+        }
+        let marginBetween = 8;
+        if(avatar_y_counter.value < height + marginBetween) {
+            avatar_y_counter.value = height + marginBetween;
+        }
         if (avatar_y_counter.value < 300) {
             avatar_y_counter.value = 300;
         }
@@ -493,7 +508,9 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         assign_button.style.setProperty("left", assignButtonLeftOffset);
         const assignButtonWidth = 100;
         assign_button.style.width = assignButtonWidth + "px";
-        assign_button.style.setProperty("padding-top", designatedHeight * 0.01 + "px", "important");
+        assign_button.style.display = "flex";
+        assign_button.style.alignItems = "center";
+        assign_button.style.justifyContent = "center";
         // Align text to the top
         // assign_button.style.setProperty()
 
@@ -804,7 +821,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
                 clearTimeout(timeout);
             }
             timeout = setTimeout(async () => {
-                const response = await zubax_apij.update_register_value(currentLinkObject.full_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${port_number_label.value}]}}`), currentLinkObject.node_id);
+                const response = await zubax_apij.update_register_value(currentLinkObject.name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${port_number_label.value}]}}`), currentLinkObject.node_id);
                 let restartButton = document.querySelector("#btn" + currentLinkObject.node_id + "_Restart");
                 if (restartButton) {
                     // Previous background color

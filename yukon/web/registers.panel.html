@@ -1,14 +1,19 @@
 <div class="my-container">
     <div id="registers-header">
-        <div class="registers-filters">
-            <label for="iRegistersFilter">Filter</label>
-            <input type="text" id="iRegistersFilter">
-        </div>
-        <div id="configChoice">
-            <label for="available_configurations_radios" id="lbl_available_configurations_radios">Choose one of the
-                available configurations:</label>
-            <button id="btnImportRegistersConfig" class="btn btn-sm btn-primary">Import registers config</button>
-            <div id="available_configurations_radios">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="registers-filters">
+                    <input type="text" id="iRegistersFilter" placeholder="Filter">
+                </div>
+                <label for="available_configurations_radios" id="lbl_available_configurations_radios">Choose one of the
+                    available configurations:</label>
+                <button id="btnImportRegistersConfig" class="btn btn-sm btn-primary">Import registers config</button>
+            </div>
+            <div class="col-md-8">
+                <div id="configChoice">
+                    <div id="available_configurations_radios">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
