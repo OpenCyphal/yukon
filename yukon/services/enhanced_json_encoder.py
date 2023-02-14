@@ -56,6 +56,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             return {
                 "id": o.id,
                 "name": o.name,
+                "port_id": o.port_id,
                 "datatype": o.datatype,
                 "fields": o.fields,
             }
