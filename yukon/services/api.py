@@ -589,9 +589,12 @@ class Api:
 
     def make_simple_publisher(self) -> Response:
         try:
-            new_publisher = SimplePublisher(str(uuid4()))
+            new_publisher = SimplePublisher(str(uuid4()), self.state)
             self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
-        except:
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Failed to make simple publisher.")
+            logger.error(str(tb))
             return jsonify({"success": False, "message": traceback.format_exc()})
         else:
             return jsonify({"success": True, "id": new_publisher.id})

@@ -16,9 +16,8 @@ from ruamel import yaml
 from ruamel.yaml.scanner import ScannerError
 
 from yukon.domain.reactive_value_objects import ReactiveValue
-from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder, EnhancedJSONEncoderForSavingSettings
+from yukon.services.enhanced_json_encoder import EnhancedJSONEncoderForSavingSettings
 from yukon.services.settings_changed_actions import set_handlers_for_configuration_changes
-from yukon.services.utils import add_path_to_cyphal_path, process_dsdl_path, add_path_to_sys_path
 from yukon.domain.god_state import GodState
 
 try:

@@ -245,7 +245,7 @@ export async function createDatatypeField(publisher, field, yukon_state) {
 
     const wrapper = createAutocompleteField(listOfOptions, [async function (new_value) {
         await yukon_state.zubax_apij.set_publisher_field_specifier(publisher.id, field.id, new_value);
-        await publisher.update_fields();
+        // await publisher.update_fields();
     }], publisher, yukon_state);
     const textField = (await wrapper).querySelector(".autocomplete-field");
     if (field && field.field_specifier) {

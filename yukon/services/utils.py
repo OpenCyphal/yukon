@@ -41,7 +41,6 @@ def add_path_to_sys_path(path: str) -> None:
     normalized_sys_paths = [str(Path(path).resolve()) for path in sys.path]
     normalized_path = Path(path).resolve()
     if str(normalized_path) not in normalized_sys_paths:
-        process_dsdl_path(Path(normalized_path))
         sys.path.append(str(normalized_path))
         logger.debug("Added %r to sys.path", normalized_path)
 
@@ -134,6 +133,7 @@ def get_datatype_return_dto(all_classes: typing.List[Datatype]) -> typing.Any:
         "fixed_id_messages": {},
         "variable_id_messages": [],
     }
+
     for datatype in all_classes:
         try:
             if datatype.is_fixed_id:
@@ -151,6 +151,8 @@ def get_datatype_return_dto(all_classes: typing.List[Datatype]) -> typing.Any:
         except Exception as e:
             logger.error(str(e))
             logger.exception("Failed to get datatype for %s", datatype)
+    # Sort return_object.variable_id_messages by name
+    return_object["variable_id_messages"] = sorted(return_object["variable_id_messages"], key=lambda x: x["name"])
     return return_object
 
 
@@ -164,16 +166,13 @@ class PrimitiveFieldType(enum.Enum):
     Unknown = 5
 
 
-def determine_primitive_field_type(field: pydsdl.Field) -> PrimitiveFieldType:
+def determine_primitive_field_type(datatype: pydsdl.SerializableType) -> PrimitiveFieldType:
     """
     Determine the primitive field type of a field
 
     :param field: The field to determine the primitive field type of
     :return: The primitive field type
     """
-    datatype = field.data_type
-    if isinstance(field.data_type, pydsdl.ArrayType):
-        datatype = field.data_type.element_type
     if isinstance(datatype, pydsdl.PrimitiveType):
         if isinstance(datatype, pydsdl.SignedIntegerType):
             return PrimitiveFieldType.Integer
@@ -224,12 +223,13 @@ def get_all_fields_recursive(
                 path = previous_path + "." + field.name
                 if isinstance(field.data_type, pydsdl.PrimitiveType):
                     properties.append(
-                        SimplifiedFieldDTO(path, determine_primitive_field_type(field), False, field.name, model_name)
+                        SimplifiedFieldDTO(
+                            path, determine_primitive_field_type(field.data_type), False, field.name, model_name
+                        )
                     )
                 elif isinstance(field.data_type, pydsdl.ArrayType):
-                    properties.append(
-                        SimplifiedFieldDTO(path, determine_primitive_field_type(field), True, field.name, model_name)
-                    )
+                    field_element_type = determine_primitive_field_type(field.data_type.element_type)
+                    properties.append(SimplifiedFieldDTO(path, field_element_type, True, field.name, model_name))
                 else:
                     get_all_fields_recursive(field, properties, previous_components, model_name, depth + 1)
     except AttributeError as e:
@@ -249,31 +249,24 @@ def get_all_field_dtos(obj: typing.Any) -> typing.List[SimplifiedFieldDTO]:
         if isinstance(field.data_type, pydsdl.PrimitiveType):
             properties.append(
                 SimplifiedFieldDTO(
-                    field.name, determine_primitive_field_type(field), False, field.name, str(model) + "." + field.name
+                    field.name,
+                    determine_primitive_field_type(field.data_type),
+                    False,
+                    field.name,
+                    str(model) + "." + field.name,
                 )
             )
         elif isinstance(field.data_type, pydsdl.ArrayType):
-            properties.append(
-                SimplifiedFieldDTO(
-                    field.name, determine_primitive_field_type(field), True, field.name, str(model) + "." + field.name
+            field_element_type = determine_primitive_field_type(field.data_type.element_type)
+            if field_element_type == PrimitiveFieldType.Unknown:
+                get_all_fields_recursive(field.data_type.element_type, properties, [field.name], str(model))
+            else:
+                properties.append(
+                    SimplifiedFieldDTO(field.name, field_element_type, True, field.name, str(model) + "." + field.name)
                 )
-            )
         else:
             get_all_fields_recursive(field, properties, [], str(model))
     return properties
-
-def process_dsdl_path(path: Path) -> None:
-    pass
-    # for package_folder_str in list(next(os.walk(path))[1]):
-    #     package_folder = (path / package_folder_str).absolute()
-    #     sys.path.append(str(package_folder.absolute()))
-    #     try:
-    #         package = importlib.import_module(package_folder.name)
-    #         pycyphal.util.import_submodules(package)
-    #     except Exception:
-    #         logger.warning("Failed to import %s", package_folder.name)
-    #     finally:
-    #         sys.path.remove(str(package_folder.absolute()))
 
 
 # These are for calculating the tolerance for the MonotonicClusteringSynchronizer

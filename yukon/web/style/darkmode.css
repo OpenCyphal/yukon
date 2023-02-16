@@ -181,8 +181,8 @@
     input[type="number"],
     .input-group-text,
     select {
-        background: #353535 !important;
-        color: #ffffff !important;
+        background: #353535;
+        color: #ffffff;
     }
 
     .input-group {

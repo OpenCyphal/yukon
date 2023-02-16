@@ -16,7 +16,7 @@ const settings = {};
 
 let linesByPortAndPortType = [];
 
-const portOrder = { "pub": 0, "sub": 0, "srv": 1, "cli": 1 }
+const portOrder = { "pub": 0, "sub": 1, "srv": 2, "cli": 3 }
 const portOrder2 = ["pub", "sub", "srv", "cli"]
 
 function comparePorts(a, b) {
@@ -263,13 +263,13 @@ function addMissingPorts(avatar, yukon_state) {
     // This is needed because sometimes a node will not publish its status on its ports to the port list subject
     // Iterate through all registers in the avatar
     for (const [name, value] of Object.entries(avatar.registers_values)) {
-        if(parseInt(value) === 65535){
+        if (parseInt(value) === 65535) {
             continue;
         }
         const regex = /uavcan\.(pub|sub|cln|srv)\.(.+?)\.id/;
         // Use regex to extract the first and second ground, first group is link_type and second group is link_name from register_name
         const results = name.match(regex);
-        if(!results) continue;
+        if (!results) continue;
         const link_type = results[1];
         const link_name = results[2];
         if (avatar.ports[link_type] && avatar.ports[link_type].indexOf(parseInt(value)) === -1) {
@@ -415,13 +415,13 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         // Iterate over every element in node and find the lowest positioned element
         // Save the height based on that
         let height = 0;
-        for(const child of node.children) {
+        for (const child of node.children) {
             if (child.offsetTop + child.offsetHeight > height) {
                 height = child.offsetTop + child.offsetHeight;
             }
         }
         let marginBetween = 8;
-        if(avatar_y_counter.value < height + marginBetween) {
+        if (avatar_y_counter.value < height + marginBetween) {
             avatar_y_counter.value = height + marginBetween;
         }
         if (avatar_y_counter.value < 300) {
@@ -527,6 +527,16 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         number_input.style.height = designatedHeight + "px";;
         number_input.placeholder = "New subject id";
         number_input.title = "Enter a new subject id";
+        if (portInfo.link_type === "srv") {
+            number_input.style.setProperty("background-color", settings["ServicePortLabelBgColor"], "important");
+            number_input.style.setProperty("color", settings["ServicePortLabelColor"], "important");
+        } else if (portInfo.link_type === "pub") {
+            number_input.style.setProperty("background-color", settings["PublisherPortLabelBgColor"], "important");
+            number_input.style.setProperty("color", settings["PublisherPortLabelColor"], "important");
+        } else if (portInfo.link_type === "sub") {
+            number_input.style.setProperty("background-color", settings["SubscriberPortLabelBgColor"], "important");
+            number_input.style.setProperty("color", settings["SubscriberPortLabelColor"], "important");
+        }
         node.appendChild(number_input);
 
         assign_button.addEventListener("click", async function () {
@@ -799,6 +809,16 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     if (typeof currentLinkObject === "object") {
         port_number_label.setAttribute("type", "number");
     }
+    if (matchingPort.type === "srv") {
+        port_number_label.style.setProperty("background-color", settings["ServicePortLabelBgColor"], "important");
+        port_number_label.style.setProperty("color", settings["ServicePortLabelColor"], "important");
+    } else if (matchingPort.type === "pub") {
+        port_number_label.style.setProperty("background-color", settings["PublisherPortLabelBgColor"], "important");
+        port_number_label.style.setProperty("color", settings["PublisherPortLabelColor"], "important");
+    } else if (matchingPort.type === "sub") {
+        port_number_label.style.setProperty("background-color", settings["SubscriberPortLabelBgColor"], "important");
+        port_number_label.style.setProperty("color", settings["SubscriberPortLabelColor"], "important");
+    }
     port_number_label.classList.add("port_number_label");
     port_number_label.style.top = y_counter.value + avatar_y_counter.value - settings.HorizontalPortLabelOffsetY + "px";
     // align it 50px to the left from the left side of the horizontal line
@@ -842,13 +862,13 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
         port_number_label.innerHTML = matchingPort.port;
     }
     port_number_label.style.zIndex = "4";
-    if (matchingPort.type === "srv") {
-        port_number_label.style.backgroundColor = settings["ServicePortLabelBgColor"];
-        port_number_label.style.setProperty("color", settings["ServicePortLabelColor"], "important");
-    } else {
-        port_number_label.style.backgroundColor = settings["LinkLabelHighlightColor"];
-        port_number_label.style.color = settings["LinkLabelHighlightTextColor"];
-    }
+    // if (matchingPort.type === "srv") {
+    //     port_number_label.style.backgroundColor = settings["ServicePortLabelBgColor"];
+    //     port_number_label.style.setProperty("color", settings["ServicePortLabelColor"], "important");
+    // } else {
+    //     port_number_label.style.backgroundColor = settings["LinkLabelHighlightColor"];
+    //     port_number_label.style.color = settings["LinkLabelHighlightTextColor"];
+    // }
     // Align text right
     port_number_label.style.textAlign = "right";
     monitor2Div.appendChild(port_number_label);
@@ -938,7 +958,7 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
         let port_label = document.createElement("label");
         port_label.classList.add("port_label");
         port_label.style.position = "absolute";
-        const isPortService = portOrder[port.type] == 1;
+        const isPortService = portOrder[port.type] == portOrder.srv || portOrder[port.type] == portOrder.cli;
         if (isPortService) {
             port_label.style.backgroundColor = settings["ServiceColor"];
             port_label.style.setProperty("color", settings["ServiceForegroundColor"], "important");

@@ -98,7 +98,6 @@ export function add_node_id_headers(table_header_row, yukon_state) {
             if (isSnappingThisElement) {
                 initialWidth = table_header_cell.offsetWidth;
                 yukon_state.edge_drag_start_position_x = yukon_state.mousePos.x;
-                console.log("Dragging column is now active");
                 yukon_state.is_cursor_dragging_column = true;
                 isDraggingThisElement = true;
             }
