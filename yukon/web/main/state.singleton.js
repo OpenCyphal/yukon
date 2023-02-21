@@ -28,6 +28,7 @@ var yukon_state = {
     containerElementToContainerObjectMap: new WeakMap(),
     "publishers": [],
     mousePos: null,
+    publish_intervals: {},
     "settings": {
         "showAlotOfButtons": false,
         "showDoubleRowHeadersFromCount": 6,

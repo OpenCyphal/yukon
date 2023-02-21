@@ -599,6 +599,18 @@ class Api:
         else:
             return jsonify({"success": True, "id": new_publisher.id})
 
+    def publish(self, publisher_id) -> Response:
+        publisher = self.state.cyphal.publishers_by_id.get(publisher_id)
+        if publisher is None:
+            return jsonify({"success": False, "message": "Publisher %s not found." % publisher_id})
+        try:
+            publisher.publish()
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Failed to publish.")
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": traceback.format_exc()})
+
     def remove_publisher(self, id: str) -> Response:
         try:
             del self.state.cyphal.publishers_by_id[id]
@@ -629,12 +641,24 @@ class Api:
             logger.error(str(tb))
             return jsonify({"success": False, "message": str(e)})
 
+    def get_potential_fixed_port_id_of_publisher(self, publisher_id: str) -> Response:
+        try:
+            publisher = self.state.cyphal.publishers_by_id.get(publisher_id)
+            if publisher is None:
+                return jsonify({"success": False, "message": "Publisher %s not found." % publisher_id})
+            return jsonify({"success": True, "port_id": publisher.port_id})
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Failed to get potential fixed port id of publisher.")
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": str(e)})
+
     def set_publisher_port_id(self, id: str, port_id: str) -> Response:
         try:
             publisher = self.state.cyphal.publishers_by_id.get(id)
             if publisher is None:
                 return jsonify({"success": False, "message": "Publisher %s not found." % id})
-            publisher.port_id = port_id
+            publisher.port_id = int(port_id)
             return jsonify({"success": True})
         except Exception as e:
             tb = traceback.format_exc()
@@ -971,8 +995,13 @@ class Api:
             logger.error(str(tb))
             return jsonify({"success": False, "message": tb})
 
+    def get_known_datatypes_from_dsdl_for_publishers(self) -> Response:
+        return_object = self.get_known_datatypes_from_dsdl()
+        return return_object
+
     def get_known_datatypes_from_dsdl(self) -> Response:
         try:
+            start_time = monotonic()
             # iterate through the paths in PYTHONPATH
             dsdl_folders = []
             # If the CYPHAL_PATH environment variable is set, add the value of that to the list of dsdl_folders
@@ -983,8 +1012,11 @@ class Api:
                 if ".compiled" in path:
                     dsdl_folders.append(Path(path))
                     break
+            final_return_object = {}
             for dsdl_folder in dsdl_folders:
-                return jsonify(get_datatype_return_dto(get_all_datatypes(dsdl_folder)))
+                final_return_object = {**final_return_object, **get_datatype_return_dto(get_all_datatypes(dsdl_folder))}
+            # logger.debug(f"get_known_datatypes_from_dsdl took {monotonic() - start_time} seconds.")
+            return jsonify(final_return_object)
         except Exception as e:
             logger.error("Failed to get known datatypes from dsdl.")
             tb = traceback.format_exc()

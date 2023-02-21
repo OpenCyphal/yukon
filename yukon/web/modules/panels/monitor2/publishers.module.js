@@ -76,9 +76,12 @@ async function createPublisherFrame(publisher, yukon_state) {
 
     frame.appendChild(closeButton);
     let isInitialized = false;
-    const possibleTypes = await (yukon_state.zubax_apij.get_known_datatypes_from_dsdl());
-    const variableIdMessages = possibleTypes["variable_id_messages"];
-    const chooseTypeField = await createAutocompleteField(variableIdMessages, [async function (chosenType) {
+    const possibleTypes = await (yukon_state.zubax_apij.get_known_datatypes_from_dsdl_for_publishers());
+    // Take all the values from dictionary possibleTypes["fixed_id_messages"] and extend them with the array elements from possibleTypes["variable_id_messages"]
+    const fixedMessagesArray = Object.values(possibleTypes["fixed_id_messages"]);
+    const variableMessagesArray = possibleTypes["variable_id_messages"];
+    const allMessagesArray = fixedMessagesArray.concat(variableMessagesArray);
+    const chooseTypeField = await createAutocompleteField(allMessagesArray, [async function (chosenType) {
         yukon_state.zubax_apij.set_publisher_datatype(publisher.id, chosenType);
         publisher.possiblePaths = await yukon_state.zubax_apij.get_publisher_possible_paths_for_autocomplete(publisher.id);
         if (!isInitialized) { isInitialized = true; } else { return; }
@@ -130,6 +133,26 @@ async function createPublisherFrame(publisher, yukon_state) {
         enableCheckbox.checked = false;
         enableCheckbox.addEventListener('change', async () => {
             await yukon_state.zubax_apij.set_publisher_enabled(publisher.id, enableCheckbox.checked);
+            if (enableCheckbox.checked) {
+                if (yukon_state.publish_intervals[publisher.id]) {
+                    try {
+                        clearInterval(yukon_state.publish_intervals[publisher.id]);
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }
+                yukon_state.publish_intervals[publisher.id] = setInterval(async function () {
+                    await yukon_state.zubax_apij.publish(publisher.id);
+                }, 1 / refreshRateInput);
+            } else {
+                if (yukon_state.publish_intervals[publisher.id]) {
+                    try {
+                        clearInterval(yukon_state.publish_intervals[publisher.id]);
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }
+            }
         });
         refreshRateRow.appendChild(enableCheckbox);
         // Add a text saying, "Enable"
@@ -141,12 +164,22 @@ async function createPublisherFrame(publisher, yukon_state) {
         const nameInput = document.createElement('input');
         nameInput.type = "text";
         nameInput.classList.add("publisher-name-input");
-        nameInput.placeholder = "Publisher name";
+        nameInput.placeholder = "Publisher name (optional)";
         nameInput.value = publisher.name;
         nameInput.addEventListener('input', async () => {
             await yukon_state.zubax_apij.set_publisher_name(publisher.id, nameInput.value);
         });
         refreshRateRow.appendChild(nameInput);
+        const portIdInput = document.createElement('input');
+        portIdInput.type = "number";
+        portIdInput.classList.add("port-id-input");
+        portIdInput.placeholder = "Port ID";
+        // TODO: Get the port id value in case the datatype of the publisher
+        // uses a fixed port id
+        portIdInput.addEventListener('input', async () => {
+            await yukon_state.zubax_apij.set_publisher_port_id(publisher.id, portIdInput.value);
+        });
+        refreshRateRow.appendChild(portIdInput);
         // Add a separator box between the refresh rate row and the next row
         const separator = document.createElement('div');
         separator.classList.add("separator");

@@ -57,8 +57,9 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                 "id": o.id,
                 "name": o.name,
                 "port_id": o.port_id,
-                "datatype": o.datatype,
+                "datatype": o._datatype,
                 "fields": o.fields,
+                "port_id": o.port_id,
             }
         if isinstance(o, SimplifiedFieldDTO):
             return {"name": o.field_name, "type": o.field_type.name, "full_name": o.field_name}

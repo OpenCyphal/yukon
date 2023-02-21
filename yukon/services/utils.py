@@ -5,11 +5,13 @@ import inspect
 import os
 import random
 import sys
+import time
 import typing
 from pathlib import Path
 from queue import Queue, Empty
 import logging
 from typing import TypeVar
+from uuid import uuid4
 
 import pydsdl
 import pycyphal
@@ -103,8 +105,14 @@ def scan_package_look_for_classes(
     queue: Queue = Queue()
     queue.put((package, None))  # No previous class
     counter = 0
+    # for debugging only
+    loop_unique_id = uuid4()
+    loop_start = time.monotonic()
     try:
         while True:
+            if time.monotonic() - loop_start > 5:
+                logger.error("Loop %s took more than 5 seconds", loop_unique_id)
+                break
             counter += 1
             module_or_class, previous_module_or_class = queue.get_nowait()
             # Get all modules and classes that are seen in the imported module
@@ -119,12 +127,16 @@ def scan_package_look_for_classes(
                     continue
                 try:
                     model = pycyphal.dsdl.get_model(_class)
+                    # for debugging
+                    # if "uavcan.node.port.List" in model.full_name:
+                    #     print("here")
                 except Exception:
                     logger.exception("Failed to get model for %s", _class)
                     continue
                 classes.append(Datatype(hasattr(_class, "_FIXED_PORT_ID_"), model.full_name, _class))
     except Empty:
         pass
+    # logger.debug(f"Loop {loop_unique_id} took {time.time() - loop_start} seconds")
     return classes
 
 

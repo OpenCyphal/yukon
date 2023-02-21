@@ -17,6 +17,73 @@ logger = logging.getLogger(__name__)
 from yukon.domain.publisher_field import PublisherField
 
 
+class SimplePublisher:
+    def __init__(self, _id: str, state: "GodState"):
+        self.id = _id
+        self.name = ""
+        self._datatype = ""
+        self.fields: typing.Dict[str, PublisherField] = {}
+        self.rate_per_second = 1
+        self.enabled = False
+        self.state = state
+        self.publisher: typing.Optional[pycyphal.presentation.Publisher] = None
+        self.port_id: typing.Optional[int] = None
+
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, value: bool) -> None:
+        self._enabled = value
+
+    @property
+    def datatype(self) -> str:
+        return self._datatype
+
+    @datatype.setter
+    def datatype(self, value: str) -> None:
+        self._datatype = value
+        loaded_temporary_type = pycyphal.dsdl.get_model(load_dtype(value))
+        print(loaded_temporary_type)
+        if loaded_temporary_type.has_fixed_port_id:
+            self.port_id = loaded_temporary_type.fixed_port_id
+            print("Assigned fixed port id: " + str(self.port_id))
+
+    def assemble_publish_object(self):
+        # First create an empty object of the correct type
+        actual_datatype_class = load_dtype(self._datatype)
+        publish_object = actual_datatype_class()
+
+        return publish_object
+
+    def publish(self) -> None:
+        if not self.port_id:
+            logger.warning("Cannot publish without a port id")
+            return
+        if not self.publisher:
+
+            async def do_on_cyphal_thread():
+                self.publisher = self.state.cyphal.local_node.make_publisher(load_dtype(self._datatype), self.port_id)
+
+            self.state.cyphal_worker_asyncio_loop.create_task(do_on_cyphal_thread())
+        publish_object = self.assemble_publish_object()
+        # for field in self.fields.values():
+        #     modify(publish_object, field.path, field.value)
+        if self.publisher:
+            self.publisher.publish(publish_object)
+
+    def add_field(self, id: str) -> PublisherField:
+        self.fields[id] = PublisherField(id)
+        return self.fields[id]
+
+    def get_field(self, id: str) -> PublisherField:
+        return self.fields[id]
+
+    def delete_field(self, id: str) -> None:
+        del self.fields[id]
+
+
 def modify(obj, path, value):
     split_path = path.split(".")
     objects = [obj]
@@ -116,59 +183,3 @@ def modify(obj, path, value):
         set_on_object(objects[-2], split_path[-1], value)
 
     return obj
-
-
-class SimplePublisher:
-    def __init__(self, _id: str, state: "GodState"):
-        self.id = _id
-        self.name = ""
-        self.datatype = ""
-        self.fields: typing.Dict[str, PublisherField] = {}
-        self.rate_per_second = 1
-        self.enabled = False
-        self.state = state
-        self.publisher: typing.Optional[pycyphal.presentation.Publisher] = None
-        self.port_id: typing.Optional[int] = None
-
-    @property
-    def enabled(self) -> bool:
-        return self._enabled
-
-    @enabled.setter
-    def enabled(self, value: bool) -> None:
-        self._enabled = value
-
-    def assemble_publish_object(self):
-        # First create an empty object of the correct type
-        actual_datatype_class = load_dtype(self.datatype)
-        publish_object = actual_datatype_class()
-
-        return publish_object
-
-    def publish(self) -> None:
-        if not self.publsiher:
-            self.publisher = self.state.cyphal.local_node.make_publisher(load_dtype(self.datatype), self.name)
-
-        async def publish_loop() -> None:
-            while self.enabled:
-                publish_object = self.assemble_publish_object()
-                for field in self.fields.values():
-                    modify(publish_object, field.path, field.value)
-                self.state.cyphal.local_node.publish(self.id, publish_object)
-                await asyncio.sleep(1 / self.rate_per_second)
-
-        try:
-            self.state.cyphal_worker_asyncio_loop.create_task(publish_loop())
-        except Exception as e:
-            tb = traceback.format_exc()
-            logger.error(tb)
-
-    def add_field(self, id: str) -> PublisherField:
-        self.fields[id] = PublisherField(id)
-        return self.fields[id]
-
-    def get_field(self, id: str) -> PublisherField:
-        return self.fields[id]
-
-    def delete_field(self, id: str) -> None:
-        del self.fields[id]
