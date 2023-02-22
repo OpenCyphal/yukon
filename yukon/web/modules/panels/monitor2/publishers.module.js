@@ -141,9 +141,13 @@ async function createPublisherFrame(publisher, yukon_state) {
                         console.log(e);
                     }
                 }
-                yukon_state.publish_intervals[publisher.id] = setInterval(async function () {
+                const publishFunction = async function () {
                     await yukon_state.zubax_apij.publish(publisher.id);
-                }, 1 / refreshRateInput.value * 1000);
+                    if (enableCheckbox.checked) {
+                        yukon_state.publish_intervals[publisher.id] = setTimeout(publishFunction, 1 / refreshRateInput.value * 1000);
+                    }
+                }
+                publishFunction();
             } else {
                 if (yukon_state.publish_intervals[publisher.id]) {
                     try {
