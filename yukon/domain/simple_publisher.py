@@ -58,6 +58,7 @@ class SimplePublisher:
         return publish_object
 
     def publish(self) -> None:
+        logger.info("Publishing")
         if not self.port_id:
             logger.warning("Cannot publish without a port id")
             return

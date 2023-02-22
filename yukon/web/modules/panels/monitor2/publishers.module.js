@@ -124,7 +124,7 @@ async function createPublisherFrame(publisher, yukon_state) {
         const refreshRateInput = refreshRateSpinner;
         refreshRateInput.addEventListener("input", async () => {
             const newRefreshRate = refreshRateInput.value;
-            await yukon_state.zubax_apij.set_publisher_refresh_rate(publisher.id, newRefreshRate);
+            await yukon_state.zubax_apij.set_publisher_rate(publisher.id, newRefreshRate);
         });
         // Create a checkbox for enabling the publisher
         const enableCheckbox = document.createElement('input');
@@ -143,7 +143,7 @@ async function createPublisherFrame(publisher, yukon_state) {
                 }
                 yukon_state.publish_intervals[publisher.id] = setInterval(async function () {
                     await yukon_state.zubax_apij.publish(publisher.id);
-                }, 1 / refreshRateInput);
+                }, 1 / refreshRateInput.value * 1000);
             } else {
                 if (yukon_state.publish_intervals[publisher.id]) {
                     try {
