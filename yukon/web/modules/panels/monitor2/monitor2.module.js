@@ -277,13 +277,21 @@ function addMissingPorts(avatar, yukon_state) {
         }
     }
 }
-async function update_monitor2(containerElement, monitor2Div, yukon_state) {
-    if (!areThereAnyNewOrMissingHashes("monitor2_hash", yukon_state)) {
+async function update_monitor2(containerElement, monitor2Div, yukon_state, forced_update) {
+    if (!forced_update && !areThereAnyNewOrMissingHashes("monitor2_hash", yukon_state)) {
         updateLastHashes("monitor2_hash", yukon_state);
         // If there are any elements in my_graph.elements() then we can return, otherwise we need to make a graph (below)
         if (isContainerPopulated(monitor2Div)) {
             return;
         }
+    }
+    if (yukon_state.is_monitor2_update_in_progress) {
+        setTimeout(() => {
+            update_monitor2(containerElement, monitor2Div, yukon_state, true);
+        }, 100);
+        return;
+    } else {
+        yukon_state.is_monitor2_update_in_progress = true;
     }
     updateLastHashes("monitor2_hash", yukon_state);
     yukon_state.monitor2LastScrollTop = monitor2Div.parentElement.scrollTop;
@@ -357,6 +365,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
         const node = createElementForNode(avatar, "", monitor2Div, fieldsObject, get_up_to_date_avatar, yukon_state);
         nodesToBePositioned.push([node, avatar]);
     }
+    console.log("There are " + nodesToBePositioned.length + " nodes to be positioned")
     for (const [node, avatar] of nodesToBePositioned) {
         let total_empty_ports = getUnassignedPortsForNode(avatar.node_id, yukon_state).length;
         if (total_empty_ports > 0) {
@@ -437,6 +446,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state) {
     }
     addVerticalLines(monitor2Div, ports, y_counter, containerElement, settings, yukon_state);
     monitor2Div.parentElement.scrollTop = yukon_state.monitor2LastScrollTop;
+    yukon_state.is_monitor2_update_in_progress = false;
 }
 function isPortOkForAssignment(port_nr, yukon_state) {
     return port_nr < 65535 && port_nr > 0;
