@@ -295,8 +295,12 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
     }
     updateLastHashes("monitor2_hash", yukon_state);
     yukon_state.monitor2LastScrollTop = monitor2Div.parentElement.scrollTop;
-    // Clear the container
-    monitor2Div.innerHTML = "";
+    let listOfNewChildren = {
+        nodes: [],
+        appendChild(child) {
+            this.nodes.push(child);
+        },
+    };
     for (const color of settings.HighlightColors) {
         color.taken = false;
     }
@@ -362,7 +366,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
             "Disappeared": avatar.disappeared,
             "Disappeared since": avatar.disappeared_since,
         };
-        const node = createElementForNode(avatar, "", monitor2Div, fieldsObject, get_up_to_date_avatar, yukon_state);
+        const node = createElementForNode(avatar, "", listOfNewChildren, fieldsObject, get_up_to_date_avatar, yukon_state);
         nodesToBePositioned.push([node, avatar]);
     }
     console.log("There are " + nodesToBePositioned.length + " nodes to be positioned")
@@ -417,7 +421,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
             if (port === avatar_ports_all_in_one[avatar_ports_all_in_one.length - 1]) {
                 isLast = true;
             }
-            addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state);
+            addHorizontalElements(listOfNewChildren, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state);
 
             avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
         }
@@ -444,7 +448,11 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
 
         node.style.height = avatar_y_counter.value + "px";
     }
-    addVerticalLines(monitor2Div, ports, y_counter, containerElement, settings, yukon_state);
+    addVerticalLines(listOfNewChildren, ports, y_counter, containerElement, settings, yukon_state);
+    monitor2Div.innerHTML = "";
+    for (const child of listOfNewChildren.nodes) {
+        monitor2Div.appendChild(child);
+    }
     monitor2Div.parentElement.scrollTop = yukon_state.monitor2LastScrollTop;
     yukon_state.is_monitor2_update_in_progress = false;
 }
