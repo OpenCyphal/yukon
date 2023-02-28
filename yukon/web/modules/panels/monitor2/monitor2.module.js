@@ -383,7 +383,11 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
         let avatar_ports_all_in_one = [];
         for (const portType of portOrder2) {
             if (avatar.ports[portType]) {
-                for (const port of avatar.ports[portType]) {
+                const portsForType = avatar.ports[portType];
+                // If there are more than 256 ports of that type then, show only the first 256
+                // Attempt to limit
+                const ports = portsForType.slice(0, 6);
+                for (const port of ports) {
                     avatar_ports_all_in_one.push({ "port": port, "type": portType });
                 }
             }

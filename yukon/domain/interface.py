@@ -11,6 +11,7 @@ class Interface:
         self.udp_iface = ""
         self.udp_mtu = 0
         self.is_udp = False
+        self.node_id = 0
 
     iface: str
     mtu: int

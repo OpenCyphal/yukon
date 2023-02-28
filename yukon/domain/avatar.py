@@ -2,6 +2,7 @@ from atexit import register
 import json
 import logging
 import math
+import time
 import typing
 from typing import Optional, Any, Callable
 
@@ -118,12 +119,23 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     def _on_port_list(self, ts: float, obj: Any) -> None:
         import uavcan.node.port
 
+        start_of_action = time.time()
         assert isinstance(obj, uavcan.node.port.List_0_1)
         self._ports.pub = expand_subjects(obj.publishers)
+        if time.time() - start_of_action > 0.1:
+            logger.warning("Expanding publishers took %f seconds", time.time() - start_of_action)
         self._ports.sub = expand_subjects(obj.subscribers)
+        if time.time() - start_of_action > 0.1:
+            logger.warning("Expanding subscribers took %f seconds", time.time() - start_of_action)
         self._ports.cln = expand_mask(obj.clients.mask)
+        if time.time() - start_of_action > 0.1:
+            logger.warning("Expanding clients took %f seconds", time.time() - start_of_action)
         self._ports.srv = expand_mask(obj.servers.mask)
+        if time.time() - start_of_action > 0.1:
+            logger.warning("Expanding servers took %f seconds", time.time() - start_of_action)
         self._ts_port_list = ts
+        logger.info("Port list updated for node %d", self._node_id)
+        logger.info("It took %f seconds to expand the port list", time.time() - start_of_action)
 
     def _on_heartbeat(self, ts: float, obj: Any) -> None:
         from uavcan.node import Heartbeat_1_0 as Heartbeat, GetInfo_1_0 as GetInfo

@@ -168,6 +168,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             return {
                 "iface": o.iface,
                 "mtu": o.mtu,
+                "node_id": o.node_id,
                 "rate_data": o.rate_data,
                 "rate_arb": o.rate_arb,
                 "is_udp": o.is_udp,

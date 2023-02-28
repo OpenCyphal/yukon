@@ -1,5 +1,5 @@
 import logging
-
+import asyncio
 import typing
 
 import uavcan
@@ -19,12 +19,18 @@ async def get_register_value(
     current_avatar = state.avatar.avatars_by_node_id.get(node_id)
     if not current_avatar:
         logger.error("No avatar for %d", node_id)
+    action_start_time = asyncio.get_event_loop().time()
+    max_allowed_time = 5  # seconds
     while not state.avatar.disappeared_nodes.get(node_id):
+        if asyncio.get_event_loop().time() - action_start_time > max_allowed_time:
+            logger.error("Timed out getting register value for %s", register_name)
+            return
         service_client = state.cyphal.local_node.make_client(uavcan.register.Access_1_0, node_id)
         # service_client.response_timeout = 0.5
         msg = uavcan.register.Access_1_0.Request()
         msg.name.name = register_name
         logger.debug("Getting register value for %s", register_name)
+        # TODO: I don't think this is very time limited, or is it limited by a timeout on the side of pycyphal?
         response = await service_client.call(msg)
         if response is not None:
             if is_reread:

@@ -190,8 +190,8 @@ async function refreshKnownDatatypes(iSelectFixedIdMessageType, iSelectAny, iSel
     for (const datatype of response["variable_id_messages"]) {
         // Add a new option to the select
         const option = document.createElement('option');
-        option.value = datatype;
-        option.innerHTML = datatype;
+        option.value = datatype.name;
+        option.innerHTML = datatype.name;
         iSelectAny.appendChild(option);
     }
     btns.forEach(btn => {
@@ -448,6 +448,8 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
         createSyncSubscriptionElement(specifiersString, subscriptionsDiv, settings, yukon_state);
     }
     let list_of_subscription_getters = [];
+    // Subscriptions that are not ready yet, preparing subscriptions
+    // This includes preparing synchronized subscriptions
     for (const subscription of yukon_state.subscriptions_being_set_up) {
         if (subscription.element) {
             continue;
@@ -472,11 +474,12 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
         }
         for (const subject1Nr of subjectsForSubscription) {
             // Create a h3 for subject1Nr
-            const subject_id_display = document.createElement("h3");
-            subject_id_display.innerText = subject1Nr;
+            const subject_id_display = document.createElement("input");
+            subject_id_display.placeholder = "Subject ID";
+            subject_id_display.value = subject1Nr;
             subscriptionElement.appendChild(subject_id_display);
             const select = document.createElement("select");
-            const datatypesOfPort = await getDatatypesForPort(subject1Nr, yukon_state);
+            const datatypesOfPort = await getDatatypesForPort(subject_id_display.value, yukon_state);
             for (const datatype of datatypesOfPort) {
                 const option = document.createElement("option");
                 option.value = datatype;
@@ -494,7 +497,7 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
             inputUseComplexSelection.type = 'checkbox';
             inputUseComplexSelection.checked = false;
             // I hope the ID isn't too long if I ever need to use it
-            inputUseComplexSelection.id = "inputUseComplexSelection:" + subject1Nr;
+            inputUseComplexSelection.id = "inputUseComplexSelection:" + subject_id_display.value;
             divUseComplexSelection.appendChild(inputUseComplexSelection);
             const labelUseComplexSelection = document.createElement('label');
             labelUseComplexSelection.classList.add('form-check-label');
@@ -506,11 +509,12 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
             const divComplexSelection = document.createElement('div');
             divComplexSelection.classList.add('complex-selection');
             divComplexSelection.style.display = 'none';
-            divComplexSelection.id = "divComplexSelection:" + subject1Nr;
+            divComplexSelection.id = "divComplexSelection:" + subject_id_display.value;
             subscriptionElement.appendChild(divComplexSelection);
 
+            // The subject_id that is sent to addComplexSelectionComponents is only used for the IDs of different HTML elements, it should perhaps be replaced with a guid
             let [rbUseManualDatatypeEntry, rbUseSelectAny, rbUseSelectFixedId, rbUseSelectAdvertised, iSelectDatatype, iSelectFixedIdMessageType,
-                iSelectAny, iManualDatatypeEntry, btnRefresh1, btnRefresh2, btnRefresh3] = addComplexSelectionComponents({ subject1Nr }, divComplexSelection);
+                iSelectAny, iManualDatatypeEntry, btnRefresh1, btnRefresh2, btnRefresh3] = addComplexSelectionComponents({ subject_id: subject_id_display.value }, divComplexSelection);
 
 
             inputUseComplexSelection.addEventListener('change', () => {
@@ -526,7 +530,7 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
             const btns = [btnRefresh1, btnRefresh2, btnRefresh3];
             btns.forEach(btn => {
                 btn.addEventListener('click', async () => {
-                    await refreshKnownDatatypes();
+                    await refreshKnownDatatypes(iSelectFixedIdMessageType, iSelectAny, iSelectDatatype, btns, yukon_state);
                 });
             });
 
@@ -534,16 +538,16 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
             setTimeout(() => refreshKnownDatatypes(iSelectFixedIdMessageType, iSelectAny, iSelectDatatype, btns, yukon_state), 3000);
             function getCurrentDesiredDatatypeAndSubjectId() {
                 if (inputUseComplexSelection.checked === false) {
-                    return { "subject_id": subject1Nr, "datatype": select.value };
+                    return { "subject_id": subject_id_display.value, "datatype": select.value };
                 } else if (rbUseSelectAdvertised.checked) {
-                    return { "subject_id": subject1Nr, "datatype": iSelectDatatype.value };
+                    return { "subject_id": subject_id_display.value, "datatype": iSelectDatatype.value };
                 } else if (rbUseSelectFixedId.checked) {
-                    return { "subject_id": subject1Nr, "datatype": iSelectFixedIdMessageType.value };
+                    return { "subject_id": subject_id_display.value, "datatype": iSelectFixedIdMessageType.value };
                 } else if (rbUseSelectAny.checked) {
-                    return { "subject_id": subject1Nr, "datatype": iSelectAny.value };
+                    return { "subject_id": subject_id_display.value, "datatype": iSelectAny.value };
                 } else if (rbUseManualDatatypeEntry.checked) {
                     return {
-                        "subject_id": subject1Nr, "datatype": iManualDatatypeEntry.value
+                        "subject_id": subject_id_display.value, "datatype": iManualDatatypeEntry.value
                     };
                 } else {
                     return null;

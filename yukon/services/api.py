@@ -373,10 +373,13 @@ class Api:
         try:
             logger.info(f"Attaching UDP transport to {udp_iface}")
             interface = Interface()
+            interface.node_id = int(node_id)
             interface.is_udp = True
             interface.udp_iface = udp_iface
             interface.udp_mtu = int(udp_mtu)
             interface.is_udp = True
+            # Once one of these requests has been made, look for the continuation of code flow in
+            # the cyphal_worker.py folder in services.
             atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
             self.state.queues.god_queue.put_nowait(atr)
             try:
@@ -395,6 +398,7 @@ class Api:
         try:
             logger.info(f"Attach transport request: {interface_string}, {arb_rate}, {data_rate}, {node_id}, {mtu}")
             interface = Interface()
+            interface.node_id = node_id
             interface.rate_arb = int(arb_rate)
             interface.rate_data = int(data_rate)
             interface.mtu = int(mtu)

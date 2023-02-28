@@ -83,6 +83,21 @@ export function setUpTransportsListComponent(yukon_state) {
                 transport_interface.appendChild(can_mtu);
                 transport_interface.appendChild(can_arbitration_rate);
                 transport_interface.appendChild(can_data_rate);
+
+            }
+            // Add a div and title, and body for the node_id
+            const node_id = document.createElement('div');
+            node_id.classList.add("card-body");
+            const node_id_title = document.createElement('h5');
+            node_id_title.classList.add("card-title");
+            node_id_title.innerText = "Node ID";
+            node_id.appendChild(node_id_title);
+            const node_id_text = document.createElement('p');
+            node_id_text.classList.add("card-text");
+            node_id_text.innerText = _interface.node_id;
+            node_id.appendChild(node_id_text);
+            transport_interface.appendChild(node_id);
+            if (!_interface.is_udp) {
                 // Add a button for copying the can_iface to the clipboard
                 const copy_button = document.createElement('button');
                 copy_button.classList.add("btn", "btn-sm", "btn-primary");
