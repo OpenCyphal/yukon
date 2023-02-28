@@ -17,7 +17,7 @@ import uavcan
 from yukon.services.value_utils import explode_value
 
 logger = logging.getLogger(__name__)
-logger.setLevel("ERROR")
+logger.setLevel(logging.ERROR)
 
 
 class Avatar:  # pylint: disable=too-many-instance-attributes
@@ -119,23 +119,18 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     def _on_port_list(self, ts: float, obj: Any) -> None:
         import uavcan.node.port
 
-        start_of_action = time.time()
+        start_of_action = time.monotonic()
+        logger.info("Got obj %r", obj)
         assert isinstance(obj, uavcan.node.port.List_0_1)
         self._ports.pub = expand_subjects(obj.publishers)
-        if time.time() - start_of_action > 0.1:
-            logger.warning("Expanding publishers took %f seconds", time.time() - start_of_action)
         self._ports.sub = expand_subjects(obj.subscribers)
-        if time.time() - start_of_action > 0.1:
-            logger.warning("Expanding subscribers took %f seconds", time.time() - start_of_action)
         self._ports.cln = expand_mask(obj.clients.mask)
-        if time.time() - start_of_action > 0.1:
-            logger.warning("Expanding clients took %f seconds", time.time() - start_of_action)
         self._ports.srv = expand_mask(obj.servers.mask)
-        if time.time() - start_of_action > 0.1:
-            logger.warning("Expanding servers took %f seconds", time.time() - start_of_action)
         self._ts_port_list = ts
         logger.info("Port list updated for node %d", self._node_id)
-        logger.info("It took %f seconds to expand the port list", time.time() - start_of_action)
+        port_list_consumed_time = time.monotonic() - start_of_action
+        if port_list_consumed_time > 0.1:
+            logger.info("It took %f seconds to expand the port list", port_list_consumed_time)
 
     def _on_heartbeat(self, ts: float, obj: Any) -> None:
         from uavcan.node import Heartbeat_1_0 as Heartbeat, GetInfo_1_0 as GetInfo
@@ -194,7 +189,10 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                     if handler == self._on_access_request:
                         logger.debug("%r: Received access request", self)
                     rr = getattr(type, role.name.capitalize())
+                    d_st = time.monotonic()
                     deserialized_object = pycyphal.dsdl.deserialize(rr, tr.fragmented_payload)
+                    if time.monotonic() - d_st > 0.1:
+                        logger.warning("Deserializing %r took %f seconds", type, time.monotonic() - d_st)
                     logger.debug("%r: Service snoop: %r from %r", self, deserialized_object, tr)
                     if deserialized_object is not None:
                         # These handlers take an additional argument, the transfer ID.
@@ -268,6 +266,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             timestamp_value = self._ts_heartbeat
         else:
             timestamp_value = "No value"  # type: ignore
+        # if len(list(self._ports.sub)) > 10:
+        #     logger.warning("%r: Too many subscriptions", self)
         json_object: Any = {
             "node_id": self._node_id,
             "hash": self.__hash__(),

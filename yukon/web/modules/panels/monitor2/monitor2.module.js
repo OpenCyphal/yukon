@@ -21,6 +21,14 @@ const portOrder2 = ["pub", "sub", "srv", "cli"]
 
 function comparePorts(a, b) {
     // Compare ports by type and port number (port) for sorting
+    if (a === "all") {
+        return -1;
+    } else if (b === "all") {
+        return 1;
+    } else if (a === "all" && b === "all") {
+        console.error("This is bad, both a and b are 'all'");
+        return 0;
+    }
     const aPortOrder = portOrder[a.type];
     const bPortOrder = portOrder[b.type];
     if (aPortOrder < bPortOrder) {
@@ -313,6 +321,12 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
     for (const avatar of yukon_state.current_avatars) {
         addMissingPorts(avatar, yukon_state);
         for (const port_type of Object.keys(avatar.ports)) {
+            // TODO: If the maximum amount of 8192 changes, then this needs to be changed too.
+            if (avatar.ports[port_type].length === 8192) {
+                // Just going to create a port entry titled all
+                ports.push({ "type": port_type, "port": "all", "x_offset": 0 });
+                continue;
+            }
             for (const port of avatar.ports[port_type]) {
                 if (port === "") {
                     continue;
@@ -384,10 +398,12 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
         for (const portType of portOrder2) {
             if (avatar.ports[portType]) {
                 const portsForType = avatar.ports[portType];
-                // If there are more than 256 ports of that type then, show only the first 256
-                // Attempt to limit
-                const ports = portsForType.slice(0, 6);
-                for (const port of ports) {
+                if (portsForType.length === 8192) {
+                    // Just going to create a port entry titled all
+                    avatar_ports_all_in_one.push({ "port": "all", "type": portType });
+                    continue;
+                }
+                for (const port of portsForType) {
                     avatar_ports_all_in_one.push({ "port": port, "type": portType });
                 }
             }

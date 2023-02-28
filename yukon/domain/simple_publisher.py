@@ -1,4 +1,5 @@
 import asyncio
+import time
 import traceback
 import typing
 import logging
@@ -68,8 +69,9 @@ class SimplePublisher:
 
             self.state.cyphal_worker_asyncio_loop.create_task(do_on_cyphal_thread())
         publish_object = self.assemble_publish_object()
-        # for field in self.fields.values():
-        #     modify(publish_object, field.path, field.value)
+        for field in self.fields.values():
+            modify(publish_object, field.field_specifier, field.value)
+
         async def do_on_cyphal_thread() -> None:
             await self.publisher.publish(publish_object)
 
@@ -87,6 +89,9 @@ class SimplePublisher:
 
 
 def modify(obj: typing.Any, path: str, value: str) -> typing.Any:
+    if path == "":
+        return obj
+    start_time = time.monotonic()
     split_path = path.split(".")
     objects = [obj]
     current_object = obj
@@ -138,27 +143,34 @@ def modify(obj: typing.Any, path: str, value: str) -> typing.Any:
 
     def access_on_object(current, access_string, history_tracking=False):
         nonlocal current_object, previous_object, objects
-        if "[" in access_string:
-            index = get_index(access_string)
-            _id = get_id(access_string)
-            check_and_potentially_fill_model(current, _id, index)
-            _array = getattr(current, _id)
+        try:
+            if "[" in access_string:
+                index = get_index(access_string)
+                _id = get_id(access_string)
+                check_and_potentially_fill_model(current, _id, index)
+                _array = getattr(current, _id)
 
-            _current_object = _array[index]
-            if history_tracking:
-                previous_object = current_object
-                current_object = _current_object
-                objects.append(current_object)
-            return _current_object
-        else:
-            _current_object = getattr(current, access_string)
-            if _current_object is None:
-                check_and_potentially_fill_model(current, access_string, None)
-            if history_tracking:
-                previous_object = current_object
-                current_object = _current_object
-                objects.append(current_object)
-            return _current_object
+                _current_object = _array[index]
+                if history_tracking:
+                    previous_object = current_object
+                    current_object = _current_object
+                    objects.append(current_object)
+                return _current_object
+            else:
+                try:
+                    _current_object = getattr(current, access_string)
+                except AttributeError:
+                    print(f"Could not access {access_string} on {current}")
+                if _current_object is None:
+                    check_and_potentially_fill_model(current, access_string, None)
+                if history_tracking:
+                    previous_object = current_object
+                    current_object = _current_object
+                    objects.append(current_object)
+                return _current_object
+        except AttributeError:
+            print(f"Could not access {access_string} on {current}")
+            raise
 
     def set_on_object(current, access_string, value):
         if "[" in access_string:

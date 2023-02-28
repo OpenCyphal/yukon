@@ -225,7 +225,7 @@ export function make_context_menus(yukon_state) {
     });
     table_cell_context_menu.init();
     function getHeaderCellFromElement(elementOpenedOn) {
-        if(elementOpenedOn.classList.contains("table_header_cell_collider")) {
+        if (elementOpenedOn.classList.contains("table_header_cell_collider")) {
             return elementOpenedOn.parentElement;
         } else {
             return elementOpenedOn;
@@ -565,6 +565,15 @@ export function make_context_menus(yukon_state) {
                             console.log("Added a publisher with ID " + response.id);
                         }
                         // yukon_state.publishers.push({ id: guid() });
+                    }
+                }
+            },
+            {
+                content: "Add a subscriber",
+                events: {
+                    click: async (e, elementOpenedOn) => {
+                        yukon_state.subscriptions_being_set_up.push({ subject_id: 0 });
+                        yukon_state.monitor2shouldScrollWhenNewSubscribeFrame = true;
                     }
                 }
             },

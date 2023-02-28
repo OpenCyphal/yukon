@@ -1,3 +1,4 @@
+import traceback
 import uavcan
 import logging
 
@@ -74,6 +75,8 @@ async def do_send_command_work(state: GodState, send_command_request: CommandSen
                             message += " (success)"
                 was_command_success = response is not None and response.status == 0
             except Exception as e:
+                tb = traceback.format_exc()
+                logger.error(str(tb))
                 logger.exception("Failure sending command %s on try %d", send_command_request, count)
 
         if not was_command_success:

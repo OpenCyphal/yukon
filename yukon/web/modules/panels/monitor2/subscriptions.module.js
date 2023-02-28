@@ -479,13 +479,29 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
             subject_id_display.value = subject1Nr;
             subscriptionElement.appendChild(subject_id_display);
             const select = document.createElement("select");
-            const datatypesOfPort = await getDatatypesForPort(subject_id_display.value, yukon_state);
-            for (const datatype of datatypesOfPort) {
-                const option = document.createElement("option");
-                option.value = datatype;
-                option.innerText = datatype;
-                select.appendChild(option);
+            async function updateSelectElements() {
+                select.innerHTML = "";
+                const datatypesOfPort = await getDatatypesForPort(subject_id_display.value, yukon_state);
+                for (const datatype of datatypesOfPort) {
+                    const option = document.createElement("option");
+                    option.value = datatype;
+                    option.innerText = datatype;
+                    select.appendChild(option);
+                }
             }
+            if (subject_id_display.value && parseInt(subject_id_display.value) !== 0) {
+                await updateSelectElements();
+            }
+            // When the subject_id_display changes, update the select, only 1.5 seconds after typing has ended
+            let timeoutId = null;
+            subject_id_display.addEventListener("input", async () => {
+                if (timeoutId !== null) {
+                    clearTimeout(timeoutId);
+                }
+                timeoutId = setTimeout(async () => {
+                    await updateSelectElements();
+                }, 1500);
+            });
             subscriptionElement.appendChild(select);
 
             // A checkbox on whether to use complex selection for datatypes
