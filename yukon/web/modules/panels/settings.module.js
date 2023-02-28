@@ -293,6 +293,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
                     checkbox.checked = value;
                     checkbox.addEventListener("change", async function () {
                         settings[key] = checkbox.checked;
+                        yukon_state.zubax_apij.setting_was_changed(innerId, checkbox.checked)
                     });
                     formGroupDiv.appendChild(checkbox);
                 } else {
