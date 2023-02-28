@@ -141,7 +141,7 @@ def scan_package_look_for_classes(
 
 
 def get_datatype_return_dto(all_classes: typing.List[Datatype]) -> typing.Any:
-    return_object = {
+    return_object: typing.Any = {
         "fixed_id_messages": {},
         "variable_id_messages": [],
     }
@@ -164,7 +164,7 @@ def get_datatype_return_dto(all_classes: typing.List[Datatype]) -> typing.Any:
             logger.error(str(e))
             logger.exception("Failed to get datatype for %s", datatype)
     # Sort return_object.variable_id_messages by name
-    return_object["variable_id_messages"] = sorted(return_object["variable_id_messages"], key=lambda x: x["name"])
+    return_object["variable_id_messages"] = sorted(return_object["variable_id_messages"], key=lambda x: x["name"])  # type: ignore
     return return_object
 
 

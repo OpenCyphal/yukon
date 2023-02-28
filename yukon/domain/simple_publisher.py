@@ -10,10 +10,9 @@ import pycyphal
 
 from yukon.domain.god_state import GodState
 
-from yukon.services.dtype_loader import load_dtype
+from yukon.services.dtype_loader import FormatError, load_dtype
 
 logger = logging.getLogger(__name__)
-
 
 from yukon.domain.publisher_field import PublisherField
 
@@ -51,7 +50,7 @@ class SimplePublisher:
             self.port_id = loaded_temporary_type.fixed_port_id
             print("Assigned fixed port id: " + str(self.port_id))
 
-    def assemble_publish_object(self):
+    def assemble_publish_object(self) -> typing.Any:
         # First create an empty object of the correct type
         actual_datatype_class = load_dtype(self._datatype)
         publish_object = actual_datatype_class()
@@ -64,16 +63,18 @@ class SimplePublisher:
             return
         if not self.publisher:
 
-            async def do_on_cyphal_thread() -> None:
+            async def _do_on_cyphal_thread() -> None:
                 self.publisher = self.state.cyphal.local_node.make_publisher(load_dtype(self._datatype), self.port_id)
 
-            self.state.cyphal_worker_asyncio_loop.create_task(do_on_cyphal_thread())
+            self.state.cyphal_worker_asyncio_loop.create_task(_do_on_cyphal_thread())
         publish_object = self.assemble_publish_object()
         for field in self.fields.values():
             modify(publish_object, field.field_specifier, field.value)
 
         async def do_on_cyphal_thread() -> None:
-            await self.publisher.publish(publish_object)
+            logger.debug("Publishing %r", publish_object)
+            if self.publisher:
+                await self.publisher.publish(publish_object)
 
         self.state.cyphal_worker_asyncio_loop.create_task(do_on_cyphal_thread())
 
@@ -103,7 +104,7 @@ def modify(obj: typing.Any, path: str, value: str) -> typing.Any:
     def get_id(string: str) -> str:
         return string.split("[")[0]
 
-    def get_type_of_primitive(type_string):
+    def get_type_of_primitive(type_string: str) -> typing.Any:
         if type_string == "saturated bool":
             return bool
         elif "int" in type_string:
@@ -114,9 +115,11 @@ def modify(obj: typing.Any, path: str, value: str) -> typing.Any:
             print(f"Unknown type {type_string}")
             assert False
 
-    def check_and_potentially_fill_model(current: typing.Any, _id, index: typing.Optional[int]):
+    def check_and_potentially_fill_model(current: typing.Any, _id: str, index: typing.Optional[int]) -> typing.Any:
         model: pydsdl.CompositeType = pycyphal.dsdl.get_model(current)[_id]
         if isinstance(model.data_type, (pydsdl.VariableLengthArrayType, pydsdl.FixedLengthArrayType)):
+            if not index:
+                index = 0
             array_type = typing.cast(pydsdl.ArrayType, model.data_type)
             try:
                 # This doesn't work for primitive types, only works for CompositeTypes
@@ -129,7 +132,7 @@ def modify(obj: typing.Any, path: str, value: str) -> typing.Any:
             if getattr(current, _id) is None:
                 array_filled_with_correct_datatype = np.array([element_type() for i in range(index + 1)], dtype=object)
                 setattr(current, _id, array_filled_with_correct_datatype)
-            elif len(getattr(current, _id)) <= index:  # type: ignore
+            elif len(getattr(current, _id)) <= index:
                 # Fill the missing indices with instances of the element type
                 array = getattr(current, _id)
                 array_filled_with_correct_datatype = np.array(
@@ -138,15 +141,22 @@ def modify(obj: typing.Any, path: str, value: str) -> typing.Any:
                 setattr(current, _id, np.append(array, array_filled_with_correct_datatype))
         else:
             data_type_name = model.data_type.TYPE_NAME
-            data_type = load_dtype(data_type_name)
+            try:
+                data_type = load_dtype(data_type_name)
+            except FormatError as e:
+                # model.data_type is most likely a primtive datatype and what it contains needs no instantiation, it is not expected to contain a null value.
+                tb = traceback.format_exc()
+                logger.error("There was a FormatError, %s", tb)
+                pass
             setattr(current, _id, data_type())
 
-    def access_on_object(current, access_string, history_tracking=False):
+    def access_on_object(current: typing.Any, access_string: str, history_tracking: bool = False) -> typing.Any:
         nonlocal current_object, previous_object, objects
         try:
             if "[" in access_string:
                 index = get_index(access_string)
                 _id = get_id(access_string)
+
                 check_and_potentially_fill_model(current, _id, index)
                 _array = getattr(current, _id)
 
@@ -172,7 +182,7 @@ def modify(obj: typing.Any, path: str, value: str) -> typing.Any:
             print(f"Could not access {access_string} on {current}")
             raise
 
-    def set_on_object(current, access_string, value):
+    def set_on_object(current: typing.Any, access_string: str, value: typing.Any) -> None:
         if "[" in access_string:
             index = get_index(access_string)
             _id = get_id(access_string)

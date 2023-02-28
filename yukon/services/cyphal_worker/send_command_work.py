@@ -36,6 +36,7 @@ async def do_send_command_work(state: GodState, send_command_request: CommandSen
                         real_url = real_url[1:]
                     if real_url.startswith("\\"):
                         real_url = real_url[1:]
+
                     send_command_request.text_argument = real_url
 
                 if len(state.cyphal.already_used_transport_interfaces.keys()) == 0:

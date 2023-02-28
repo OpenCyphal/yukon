@@ -1016,7 +1016,7 @@ class Api:
                 if ".compiled" in path:
                     dsdl_folders.append(Path(path))
                     break
-            final_return_object = {}
+            final_return_object: typing.Any = {}
             for dsdl_folder in dsdl_folders:
                 final_return_object = {**final_return_object, **get_datatype_return_dto(get_all_datatypes(dsdl_folder))}
             # logger.debug(f"get_known_datatypes_from_dsdl took {monotonic() - start_time} seconds.")
