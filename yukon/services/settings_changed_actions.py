@@ -105,6 +105,7 @@ def set_file_server_handler(state: "yukon.domain.god_state.GodState") -> None:
 
     def _handle_enabled_change(should_be_enabled: bool) -> None:
         is_already_running = state.cyphal.file_server is not None
+        logger.info("File server is set to be" + ("enabled" if should_be_enabled else "disabled"))
         if is_already_running:
             if not should_be_enabled:
                 state.cyphal.file_server.close()
@@ -113,11 +114,13 @@ def set_file_server_handler(state: "yukon.domain.god_state.GodState") -> None:
             if should_be_enabled:
 
                 def _run_file_server() -> None:
+                    logger.info("File server created and started.")
                     state.cyphal.file_server = FileServer(
-                        state.cyphal.local_node, [state.settings["Firmware updates"]["File path"]["value"].value]
+                        state.cyphal.local_node, [state.settings["Firmware updates"]["Directory path"]["value"].value]
                     )
                     logger.info(
-                        "File server started on path " + state.settings["Firmware updates"]["File path"]["value"].value
+                        "File server started on path "
+                        + state.settings["Firmware updates"]["Directory path"]["value"].value
                     )
                     state.cyphal.file_server.start()
 
@@ -129,7 +132,7 @@ def set_file_server_handler(state: "yukon.domain.god_state.GodState") -> None:
                     assert state.cyphal.local_node.id
                     state.cyphal_worker_asyncio_loop.call_soon_threadsafe(_run_file_server)
 
-    state.settings["Firmware updates"]["File path"]["value"].connect(_handle_path_change)
+    state.settings["Firmware updates"]["Directory path"]["value"].connect(_handle_path_change)
     state.settings["Firmware updates"]["Enabled"].connect(_handle_enabled_change)
     _handle_enabled_change(state.settings["Firmware updates"]["Enabled"].value)
 

@@ -183,7 +183,8 @@ class GodState:
             },
             "Firmware updates": {
                 "Enabled": ReactiveValue(False),
-                "File path": {"__type__": "dirpath", "value": ReactiveValue("")},
+                "Directory path": {"__type__": "dirpath", "value": ReactiveValue("")},
+                "File path": "__deleted__",
             },
             "Monitor view": {
                 "Show link name on another line": ReactiveValue(True),
