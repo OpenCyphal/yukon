@@ -141,7 +141,7 @@ def scan_package_look_for_classes(
 
 
 def get_datatype_return_dto(all_classes: typing.List[Datatype]) -> typing.Any:
-    return_object: typing.Any = {
+    return_object = {
         "fixed_id_messages": {},
         "variable_id_messages": [],
     }

@@ -369,7 +369,6 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
         const node = createElementForNode(avatar, "", listOfNewChildren, fieldsObject, get_up_to_date_avatar, yukon_state);
         nodesToBePositioned.push([node, avatar]);
     }
-    console.log("There are " + nodesToBePositioned.length + " nodes to be positioned")
     for (const [node, avatar] of nodesToBePositioned) {
         let total_empty_ports = getUnassignedPortsForNode(avatar.node_id, yukon_state).length;
         if (total_empty_ports > 0) {

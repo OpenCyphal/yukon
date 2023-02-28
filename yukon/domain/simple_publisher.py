@@ -58,21 +58,22 @@ class SimplePublisher:
         return publish_object
 
     def publish(self) -> None:
-        logger.info("Publishing")
         if not self.port_id:
             logger.warning("Cannot publish without a port id")
             return
         if not self.publisher:
 
-            async def do_on_cyphal_thread():
+            async def do_on_cyphal_thread() -> None:
                 self.publisher = self.state.cyphal.local_node.make_publisher(load_dtype(self._datatype), self.port_id)
 
             self.state.cyphal_worker_asyncio_loop.create_task(do_on_cyphal_thread())
         publish_object = self.assemble_publish_object()
         # for field in self.fields.values():
         #     modify(publish_object, field.path, field.value)
-        if self.publisher:
-            self.publisher.publish(publish_object)
+        async def do_on_cyphal_thread() -> None:
+            await self.publisher.publish(publish_object)
+
+        self.state.cyphal_worker_asyncio_loop.create_task(do_on_cyphal_thread())
 
     def add_field(self, id: str) -> PublisherField:
         self.fields[id] = PublisherField(id)
@@ -85,7 +86,7 @@ class SimplePublisher:
         del self.fields[id]
 
 
-def modify(obj, path, value):
+def modify(obj: typing.Any, path: str, value: str) -> typing.Any:
     split_path = path.split(".")
     objects = [obj]
     current_object = obj
@@ -123,7 +124,7 @@ def modify(obj, path, value):
             if getattr(current, _id) is None:
                 array_filled_with_correct_datatype = np.array([element_type() for i in range(index + 1)], dtype=object)
                 setattr(current, _id, array_filled_with_correct_datatype)
-            elif len(getattr(current, _id)) <= index:
+            elif len(getattr(current, _id)) <= index:  # type: ignore
                 # Fill the missing indices with instances of the element type
                 array = getattr(current, _id)
                 array_filled_with_correct_datatype = np.array(
@@ -179,7 +180,7 @@ def modify(obj, path, value):
         access_on_object(current_object, split_path[i], True)
 
     if isinstance(objects[-2], np.ndarray):
-        set_on_object(objects[-3], split_path[-2])
+        set_on_object(objects[-3], split_path[-2], value)
     else:
         set_on_object(objects[-2], split_path[-1], value)
 

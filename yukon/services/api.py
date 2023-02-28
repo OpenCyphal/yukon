@@ -599,7 +599,7 @@ class Api:
         else:
             return jsonify({"success": True, "id": new_publisher.id})
 
-    def publish(self, publisher_id) -> Response:
+    def publish(self, publisher_id: str) -> Response:
         publisher = self.state.cyphal.publishers_by_id.get(publisher_id)
         if publisher is None:
             return jsonify({"success": False, "message": "Publisher %s not found." % publisher_id})
