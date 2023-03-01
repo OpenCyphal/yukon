@@ -66,11 +66,17 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
     row.appendChild(numberField2);
     // Add a number field for value
     valueField.type = "number";
+    valueField.step = "any";
     valueField.classList.add("value-field");
     valueField.style.width = "100px";
-    valueField.addEventListener('input', async () => {
-        yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
-        spinner.setValue(parseFloat(valueField.value));
+    valueField.addEventListener('change', async (event) => {
+        console.log("Change event was fired");
+        if (toString(valueField.value).endsWith(".")) {
+            console.log("Did not parseFloat the value")
+        } else {
+            yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
+            spinner.setValue(parseFloat(valueField.value));
+        }
     });
     spinner.setValue(parseFloat(field.value));
     valueField.value = field.value;
