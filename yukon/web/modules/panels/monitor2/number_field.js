@@ -48,7 +48,10 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
     numberField2.classList.add("number-field");
     numberField2.style.width = "50px";
     numberField2.value = field.max;
-    numberField2.addEventListener('input', async () => {
+    numberField2.addEventListener('change', async () => {
+        if (parseFloat(numberField1.value) > parseFloat(numberField2.value)) {
+            numberField1.value = numberField2.value;
+        }
         if (parseFloat(valueField.value) > parseFloat(numberField2.value)) {
             spinner.setValue(parseFloat(numberField2.value));
         }
@@ -57,7 +60,10 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
         //     bubbles: true,
         // }));
     });
-    numberField1.addEventListener('input', async () => {
+    numberField1.addEventListener('change', async () => {
+        if (parseFloat(numberField1.value) > parseFloat(numberField2.value)) {
+            numberField2.value = numberField1.value;
+        }
         if (parseFloat(valueField.value) < parseFloat(numberField1.value)) {
             spinner.setValue(parseFloat(numberField1.value));
         }
@@ -70,13 +76,8 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
     valueField.classList.add("value-field");
     valueField.style.width = "100px";
     valueField.addEventListener('change', async (event) => {
-        console.log("Change event was fired");
-        if (toString(valueField.value).endsWith(".")) {
-            console.log("Did not parseFloat the value")
-        } else {
-            yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
-            spinner.setValue(parseFloat(valueField.value));
-        }
+        yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
+        spinner.setValue(parseFloat(valueField.value));
     });
     spinner.setValue(parseFloat(field.value));
     valueField.value = field.value;

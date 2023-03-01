@@ -203,19 +203,35 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
     // Also highlight the matching part of the datatype
     textField.addEventListener('input', async () => {
         const text = textField.value;
-        const matchingDatatypes = choices.filter((datatype) => {
+        var matchingDatatypes = choices.filter((datatype) => {
             if (typeof datatype === "object") {
                 return datatype.name.startsWith(text)
             } else if (typeof datatype.name === "string") {
                 return datatype.startsWith(text)
             }
         });
-        if (matchingDatatypes.length === 0) {
+        // The first round of getting matching texts from the choices list was unsuccesful but the next round will perform
+        // A different kind of search where it is seen if text is contained in the very last parts of the datatypes, the short names
+
+        var matchingDatatypes2 = choices.filter((datatype) => {
+            var actualDatatypeText = null;
+            if (typeof datatype === "object") {
+                actualDatatypeText = datatype.name
+            } else if (typeof datatype.name === "string") {
+                actualDatatypeText = datatype
+            }
+            return actualDatatypeText.toLowerCase().search(text.toLowerCase()) !== -1
+        });
+
+        if (matchingDatatypes.length === 0 && matchingDatatypes2.length === 0) {
             if (state_holder.dropdown) {
                 state_holder.dropdown.remove();
                 state_holder.dropdown = null;
             }
             return;
+        }
+        if (matchingDatatypes.length === 0) {
+            matchingDatatypes = matchingDatatypes2;
         }
         if (state_holder.dropdown) {
             state_holder.dropdown.remove();
