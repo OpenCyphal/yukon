@@ -528,6 +528,27 @@ export function make_context_menus(yukon_state) {
                 }
             },
             {
+                content: "Add publisher",
+                events: {
+                    adjust: async (contextMenuContext, element, button) => {
+                        const portType = contextMenuContext.elementOpenedOn.getAttribute("data-port-type");
+                        if (portType !== "pub" && portType !== "sub") {
+                            element.parentElement.removeChild(element);
+                        }
+                        button.innerHTML = "Publish to " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
+                    },
+                    click: async (e, elementOpenedOn) => {
+                        const response = await yukon_state.zubax_apij.make_simple_publisher();
+                        if (response && response.success) {
+                            // yukon_state.publishers.push({ id: response.id });
+                            console.log("Added a publisher with ID " + response.id);
+                            await yukon_state.zubax_apij.set_publisher_datatype(response.id, elementOpenedOn.getAttribute("data-port-type"));
+                            await yukon_state.zubax_apij.set_publisher_port_id(response.id, parseInt(elementOpenedOn.getAttribute("data-port")));
+                        }
+                    }
+                }
+            },
+            {
                 content: "Remove all subscribers",
                 events: {
                     adjust: async (contextMenuContext, element, button) => {

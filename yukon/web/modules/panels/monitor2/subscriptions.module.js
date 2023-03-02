@@ -32,7 +32,7 @@ function addLatestMessageCopyActions(pLatestMessage) {
         navigator.clipboard.writeText(pLatestMessage.innerText);
     });
 }
-async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchIntervalId, lastCurrentMessagesLength, yukon_state) {
+async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchTimeoutId, lastCurrentMessagesLength, yukon_state) {
     const current_messages = yukon_state.subscriptions[specifier];
     const full_specifiers = [specifier + ":" + yukon_state.subscriptions[specifier].length];
     const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
@@ -47,22 +47,22 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
             yukon_state.missed_messages[specifier] = 1;
         }
         if (yukon_state.missed_messages[specifier] > 10) {
-            clearInterval(fetchIntervalId.value);
+            clearTimeout(fetchTimeoutId.value);
             if (typeof pLatestMessage !== undefined && pLatestMessage.parentElement) {
                 pLatestMessage.innerText = "This subscription has been terminated by the server";
             }
         }
-        return;
+        return false;
     }
     if (lastCurrentMessagesLength.value === current_messages.length + messages.length) {
-        return;
+        return false;
     } else {
         lastCurrentMessagesLength.value = current_messages.length + messages.length;
     }
     if (!messages) {
-        clearInterval(fetchIntervalId.value);
+        clearTimeout(fetchTimeoutId.value);
         header2.innerText = "This subscription has been terminated by the server";
-        return;
+        return false;
     }
     for (const message of messages) {
         if (inputLogToConsole.checked) {
@@ -72,7 +72,7 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
     }
     const lastMessageObject = current_messages[current_messages.length - 1];
     if (!lastMessageObject) {
-        return;
+        return false;
     }
     const yaml_text = await yukon_state.zubax_api.json_to_yaml(JSON.stringify(lastMessageObject));
     // If yaml_text contains a newline, it will be split into multiple lines
@@ -89,27 +89,29 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchInterval
             p.innerHTML = line;
             pLatestMessage.appendChild(p);
         }
+        return true;
     } else {
         pLatestMessage.innerHTML = yaml_text;
+        return true;
     }
 }
-async function fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, lastCurrentMessagesLength, settings, yukon_state) {
+async function fetchForSync(specifiersString, pLatestMessage, fetchTimeoutId, lastCurrentMessagesLength, settings, yukon_state) {
     const result = await yukon_state.zubax_apij.fetch_synchronized_messages_for_specifiers(specifiersString, lastCurrentMessagesLength.value);
     if (!result || result.error) {
-        clearInterval(fetchIntervalId.value);
+        clearTimeout(fetchTimeoutId.value);
         pLatestMessage.innerText = "This subscription has been terminated by the server";
-        return;
+        return false;
     }
     let current_messages = yukon_state.subscriptions[specifiersString];
     let messages = result;
     if (lastCurrentMessagesLength.value === current_messages.length + messages.length) {
-        return;
+        return false;
     } else {
         lastCurrentMessagesLength.value = current_messages.length + messages.length;
     }
     const json_object = result[result.length - 1];
     if (!json_object) {
-        return;
+        return false;
     }
     const json_text = JSON.stringify(json_object);
     const yaml_text = await yukon_state.zubax_api.json_to_yaml(json_text);
@@ -126,8 +128,10 @@ async function fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, l
             p.innerHTML = line;
             pLatestMessage.appendChild(p);
         }
+        return true;
     } else {
         pLatestMessage.innerHTML = yaml_text;
+        return true;
     }
 }
 function fillExistingDivs(existing_divs, existing_specifiers, subscriptionsDiv, yukon_state) {
@@ -286,6 +290,29 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
         async () =>
             await yukon_state.zubax_apij.set_message_store_capacity(subject_id + ":" + datatype, inputCapacity.value)
     );
+    // Add an input element for the delay between every fetch of new subscription messages
+    // Also a label before it
+    const divFetchDelay = document.createElement('div');
+    divFetchDelay.classList.add('form-group');
+    const labelFetchDelay = document.createElement('label');
+    labelFetchDelay.htmlFor = "inputFetchDelay" + subject_id + ":" + datatype;
+    labelFetchDelay.innerHTML = "Fetch delay (ms)";
+    divFetchDelay.appendChild(labelFetchDelay);
+    const inputFetchDelay = document.createElement('input');
+    inputFetchDelay.classList.add('form-control');
+    inputFetchDelay.type = 'number';
+    inputFetchDelay.id = "inputFetchDelay" + subject_id + ":" + datatype;
+    inputFetchDelay.value = 300;
+    inputFetchDelay.min = 5;
+    inputFetchDelay.max = 400;
+    divFetchDelay.appendChild(inputFetchDelay);
+    subscriptionElement.appendChild(divFetchDelay);
+
+    let fetchDelayValue = 300;
+    inputFetchDelay.value = fetchDelayValue;
+    inputFetchDelay.addEventListener('change', () => {
+        fetchDelayValue = inputFetchDelay.value;
+    });
 
 
     // Add a button for opening logs
@@ -336,9 +363,20 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
         yukon_state.subscriptions[specifier] = [];
     }
     const current_messages = yukon_state.subscriptions[specifier];
-    let fetchIntervalId = { value: null };
     let lastCurrentMessagesLength = { value: 0 };
-    fetchIntervalId.value = setInterval(() => fetch(specifier, pLatestMessage, inputLogToConsole, fetchIntervalId, lastCurrentMessagesLength, yukon_state), 300);
+    let fetchTimeoutId = { value: null };
+    let setTimeoutFunction = null;
+    setTimeoutFunction = () => {
+        // Flash the inputFetchDelay element with a yellow color for half of the fetchDelayValue
+        inputFetchDelay.style.backgroundColor = "yellow";
+        setTimeout(() => inputFetchDelay.style.removeProperty("background-color"), fetchDelayValue / 2);
+        let wasFetchSuccess = fetch(specifier, pLatestMessage, inputLogToConsole, fetchTimeoutId, lastCurrentMessagesLength, yukon_state)
+        if (wasFetchSuccess) {
+            inputFetchDelay.style.backgroundColor = "green";
+        }
+        fetchTimeoutId.value = setTimeout(setTimeoutFunction, fetchDelayValue)
+    }
+    setTimeoutFunction();
     subscriptionElementsToBePlaced.push([subscriptionElement, specifier]);
     subscriptionsDiv.appendChild(subscriptionElement);
 }
@@ -360,7 +398,7 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     pLatestMessage.innerText = "Yet to receive messages...";
     subscriptionElement.appendChild(pLatestMessage);
     subscriptionsDiv.appendChild(subscriptionElement);
-    let fetchIntervalId = { value: null };
+    let fetchTimeoutId = { value: null };
     const unsubscribeHandler = async () => {
         const response = await yukon_state.zubax_apij.unsubscribe_synchronized(specifiersString);
         if (response.success) {
@@ -368,7 +406,7 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
             yukon_state.sync_subscription_specifiers.specifiers = yukon_state.sync_subscription_specifiers.specifiers.filter((specifier_) => { return specifier_ !== specifiersString; });
             // Make sure that something was actually removed
             console.assert(specifiers_length === yukon_state.sync_subscription_specifiers.specifiers.length + 1);
-            clearInterval(fetchIntervalId.value);
+            clearTimeout(fetchTimeoutId.value);
             await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
         } else {
             console.error("Failed to unsubscribe: " + response.message);
@@ -401,6 +439,29 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
         async () =>
             await yukon_state.zubax_apij.set_sync_store_capacity(specifiersString, inputCapacity.value)
     );
+    // Add an input element for the delay between every fetch of new subscription messages
+    // Also a label before it
+    const divFetchDelay = document.createElement('div');
+    divFetchDelay.classList.add('form-group');
+    const labelFetchDelay = document.createElement('label');
+    labelFetchDelay.htmlFor = "inputFetchDelay" + subject_id + ":" + datatype;
+    labelFetchDelay.innerHTML = "Fetch delay (ms)";
+    divFetchDelay.appendChild(labelFetchDelay);
+    const inputFetchDelay = document.createElement('input');
+    inputFetchDelay.classList.add('form-control');
+    inputFetchDelay.type = 'number';
+    inputFetchDelay.id = "inputFetchDelay" + subject_id + ":" + datatype;
+    inputFetchDelay.value = 300;
+    inputFetchDelay.min = 5;
+    inputFetchDelay.max = 400;
+    divFetchDelay.appendChild(inputFetchDelay);
+    subscriptionElement.appendChild(divFetchDelay);
+
+    let fetchDelayValue = 300;
+    inputFetchDelay.value = fetchDelayValue;
+    inputFetchDelay.addEventListener('change', () => {
+        fetchDelayValue = inputFetchDelay.value;
+    });
 
     const closeButton = createCloseButton();
     closeButton.addEventListener("click", unsubscribeHandler);
@@ -410,7 +471,17 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     }
 
     let lastCurrentMessagesLength = { value: 0 };
-    fetchIntervalId.value = setInterval(() => fetchForSync(specifiersString, pLatestMessage, fetchIntervalId, lastCurrentMessagesLength, settings, yukon_state), 300);
+    let setTimeoutFunction = null;
+    setTimeoutFunction = () => {
+        inputFetchDelay.style.backgroundColor = "yellow";
+        setTimeout(() => inputFetchDelay.style.removeProperty("background-color"), fetchDelayValue / 2);
+        let wasFetchSuccess = fetchForSync(specifiersString, pLatestMessage, fetchTimeoutId, lastCurrentMessagesLength, settings, yukon_state)
+        if (wasFetchSuccess) {
+            inputFetchDelay.style.backgroundColor = "green";
+        }
+        fetchTimeoutId.value = setTimeout(setTimeoutFunction, fetchDelayValue)
+    }
+    setTimeoutFunction();
 }
 export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state) {
     if (settings.SubscriptionsOffset === null) {

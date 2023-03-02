@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from datetime import datetime
 import json
@@ -370,27 +371,39 @@ class Api:
         return jsonify(self.state.cyphal.register_update_log)
 
     def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> typing.Any:
-        try:
-            logger.info(f"Attaching UDP transport to {udp_iface}")
-            interface = Interface()
-            interface.node_id = int(node_id)
-            interface.is_udp = True
-            interface.udp_iface = udp_iface
-            interface.udp_mtu = int(udp_mtu)
-            interface.is_udp = True
-            # Once one of these requests has been made, look for the continuation of code flow in
-            # the cyphal_worker.py folder in services.
-            atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-            self.state.queues.god_queue.put_nowait(atr)
+        result_ready_event = threading.Event()
+        attach_response = False
+
+        def attach_task():
+            nonlocal attach_response, result_ready_event, self
             try:
-                response = self.state.queues.attach_transport_response.get(timeout=5)
-            except Empty:
-                raise Exception("Failed to receive a response for attached CAN transport.")
-            return jsonify(response)
-        except Exception as e:
-            tb = traceback.format_exc()
-            logger.error(f"Failed to attach UDP transport: {e}\n{tb}")
-            return jsonify({"is_success": False, "message": "Failed to attach UDP transport."})
+                logger.info(f"Attaching UDP transport to {udp_iface}")
+                interface = Interface()
+                interface.node_id = int(node_id)
+                interface.is_udp = True
+                interface.udp_iface = udp_iface
+                interface.udp_mtu = int(udp_mtu)
+                interface.is_udp = True
+                # Once one of these requests has been made, look for the continuation of code flow in
+                # the cyphal_worker.py folder in services.
+                atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
+                self.state.queues.god_queue.put_nowait(atr)
+
+                try:
+                    response = self.state.queues.attach_transport_response.get(timeout=10)
+                except Empty:
+                    raise Exception("Failed to receive a response for attached UDP transport.")
+                attach_response = jsonify(response)
+                result_ready_event.set()
+            except Exception as e:
+                tb = traceback.format_exc()
+                logger.error(f"Failed to attach UDP transport: {e}\n{tb}")
+                attach_response = jsonify({"is_success": False, "message": "Failed to attach UDP transport."})
+                result_ready_event.set()
+
+        self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(attach_task)
+        result_ready_event.wait(timeout=5)
+        return attach_response
 
     def attach_transport(
         self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str

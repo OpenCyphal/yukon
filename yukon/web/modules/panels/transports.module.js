@@ -503,6 +503,10 @@ export function initTransports(container, yukon_state) {
         }
     });
     const btnCopyToYakut = containerElem.querySelector("#btnCopyToYakut");
+    let exportWord = "export";
+    if (navigator.platform == "Win32") {
+        exportWord = "set";
+    }
     btnCopyToYakut.addEventListener('click', async function () {
         if (currentSelectedTransportType[1] == transports.UDP.UDP) {
             console.log("UDP");
@@ -510,9 +514,9 @@ export function initTransports(container, yukon_state) {
             const udp_mtu = containerElem.querySelector('#iUdpMtu').value;
             const node_id = containerElem.querySelector('#iNodeId').value;
             let text = "";
-            text += "export UAVCAN__UDP__IFACE=" + udp_iface + "\n";
-            text += "export UAVCAN__UDP__MTU=" + udp_mtu + "\n";
-            text += "export UAVCAN__NODE__ID=$(yakut accommodate)\n";
+            text += exportWord + " UAVCAN__UDP__IFACE=" + udp_iface + "\n";
+            text += exportWord + " UAVCAN__UDP__MTU=" + udp_mtu + "\n";
+            text += exportWord + " UAVCAN__NODE__ID=$(yakut accommodate)\n";
             navigator.clipboard.writeText(text);
         } else {
             console.log("CAN");
@@ -534,10 +538,10 @@ export function initTransports(container, yukon_state) {
             const node_id = containerElem.querySelector('#iNodeId').value;
             const mtu = containerElem.querySelector('#iMtu').value;
             let text = "";
-            text += "export UAVCAN__CAN__IFACE=" + port + "\n";
-            text += "export UAVCAN__CAN__MTU=" + mtu + "\n";
-            text += `export UAVCAN__CAN__BITRATE="${arb_rate} ${data_rate}"\n`;
-            text += "export UAVCAN__NODE__ID=$(yakut accommodate)\n";
+            text += exportWord + " UAVCAN__CAN__IFACE=" + port + "\n";
+            text += exportWord + " UAVCAN__CAN__MTU=" + mtu + "\n";
+            text += exportWord + ` UAVCAN__CAN__BITRATE="${arb_rate} ${data_rate}"\n`;
+            text += exportWord + " UAVCAN__NODE__ID=$(yakut accommodate)\n";
             navigator.clipboard.writeText(text);
         }
     });

@@ -215,3 +215,4 @@ class GodState:
         self.cyphal_worker_asyncio_loop = None
         self.api = None
         self.log_file = None
+        self.main_loop = None

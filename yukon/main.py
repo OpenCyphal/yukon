@@ -345,6 +345,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         else:
             start_electron_thread = threading.Thread(target=run_electron, args=[state], daemon=True)
             start_electron_thread.start()
+
             # Make a thread that will check if state.is_target_client_known is True
             # and state.is_running_in_browser is False after 10 seconds
             # If it isn't then try opening a web browser
@@ -415,6 +416,7 @@ async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arg
         auto_exit_thread = threading.Thread(target=auto_exit_task)
         auto_exit_thread.start()
     state: GodState = GodState()
+    state.main_loop = asyncio.get_event_loop()
     args = None
     if should_look_at_arguments:
         parser: argparse.ArgumentParser = argparse.ArgumentParser("Yukon")
