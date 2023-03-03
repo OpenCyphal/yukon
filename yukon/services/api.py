@@ -374,7 +374,7 @@ class Api:
         result_ready_event = threading.Event()
         attach_response = False
 
-        def attach_task():
+        def attach_task() -> None:
             nonlocal attach_response, result_ready_event, self
             try:
                 logger.info(f"Attaching UDP transport to {udp_iface}")
@@ -1021,7 +1021,11 @@ class Api:
 
     def get_known_datatypes_from_dsdl(self) -> Response:
         start_time = monotonic()
-        if self.state.known_datatypes and self.state.last_known_datatypes_fetch_time and self.state.allowed_datatypes_validity_time + self.state.last_known_datatypes_fetch_time > monotonic():
+        if (
+            self.state.known_datatypes
+            and self.state.last_known_datatypes_fetch_time
+            and self.state.allowed_datatypes_validity_time + self.state.last_known_datatypes_fetch_time > monotonic()
+        ):
             logger.info("Returned quick")
             return self.state.known_datatypes
         try:

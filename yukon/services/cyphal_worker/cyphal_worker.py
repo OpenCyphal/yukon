@@ -72,7 +72,6 @@ def cyphal_worker(state: GodState) -> None:
                     logger.error(tb)
                 logger.warn("DroneCAN forwarding done")
 
-            
             # task = asyncio.create_task(forward_dronecan_loop())
 
             state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
