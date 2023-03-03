@@ -19,13 +19,19 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
         return wrapper;
     }
     let savedScroll = 0;
-    textField.addEventListener('change', async () => {
+    const datatype_was_changed = async () => {
         console.log("Changing datatype to " + textField.value)
         textField.scrollLeft = textField.scrollWidth;
         const new_value = textField.value;
         for (const callback of changed_callbacks) {
             await callback(new_value);
         }
+    }
+    textField.addEventListener('change', async () => {
+        if(state_holder.dropdown) {
+            return;
+        }
+        await datatype_was_changed();
     });
     textField.addEventListener("scroll", () => {
         savedScroll = textField.scrollLeft;
@@ -86,8 +92,11 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
             // }
             listItem.addEventListener('click', () => {
                 textField.value = textOfSomething;
-                textField.dispatchEvent(new Event("change"));
-                state_holder.dropdown.remove();
+                setTimeout(async () => {
+                    state_holder.dropdown.remove();
+                    state_holder.dropdown = null;
+                    await datatype_was_changed();
+                }, 50);
             });
             list.appendChild(listItem);
         }
@@ -160,44 +169,47 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
 
     textField.addEventListener('click', async () => {
         if (state_holder.dropdown) {
-            state_holder.dropdown.remove();
-            state_holder.dropdown = null;
+            // state_holder.dropdown.remove();
+            // state_holder.dropdown = null;
             return;
         }
         await showDropdown(choices);
     });
     // On enter, select the highlighted item
-    textField.addEventListener('keydown', (event) => {
-        if (event.key === "Enter") {
+    textField.addEventListener('keydown', async (event) => {
+        if (event.key === "Enter" || event.key === "Tab") {
             const highlightedItem = state_holder.dropdown.querySelector(".highlighted");
             if (highlightedItem === null) {
+                if(textField.value !== "") {
+                    await datatype_was_changed();
+                }
                 return;
             }
             textField.value = highlightedItem.innerText;
-            textField.dispatchEvent(new Event("change"));
+            await datatype_was_changed();
             state_holder.dropdown.remove();
             state_holder.dropdown = null;
         }
     });
 
-    // On tab, add one segment from the highlighted element to textField.value, a segment is separated by a full stop
-    // If textfield.value is currently at a full stop then add the next segment
-    // Otherwise add the remaining part that is missing until the next full stop
-    textField.addEventListener('keydown', (event) => {
-        if (event.key === "Tab") {
-            event.preventDefault();
-            const highlightedItem = state_holder.dropdown.querySelector(".highlighted");
-            if (highlightedItem === null) {
-                return;
-            }
-            const highlightedItemText = highlightedItem.innerText;
-            const textFieldValue = textField.value;
-            const textFieldValueSegments = textFieldValue.split(".");
-            const highlightedItemTextSegments = highlightedItemText.split(".");
-            textField.value = highlightedItemTextSegments.splice(0, textFieldValueSegments.length).join(".");
-            textField.dispatchEvent(new Event("change"));
-        }
-    });
+    // // On tab, add one segment from the highlighted element to textField.value, a segment is separated by a full stop
+    // // If textfield.value is currently at a full stop then add the next segment
+    // // Otherwise add the remaining part that is missing until the next full stop
+    // textField.addEventListener('keydown', (event) => {
+    //     if (event.key === "Tab") {
+    //         event.preventDefault();
+    //         const highlightedItem = state_holder.dropdown.querySelector(".highlighted");
+    //         if (highlightedItem === null) {
+    //             return;
+    //         }
+    //         const highlightedItemText = highlightedItem.innerText;
+    //         const textFieldValue = textField.value;
+    //         const textFieldValueSegments = textFieldValue.split(".");
+    //         const highlightedItemTextSegments = highlightedItemText.split(".");
+    //         textField.value = highlightedItemTextSegments.splice(0, textFieldValueSegments.length).join(".");
+    //         textField.dispatchEvent(new Event("change"));
+    //     }
+    // });
 
     // If the user starts typing something that matches a start of a datatype, show the dropdown menu
     // Also highlight the matching part of the datatype

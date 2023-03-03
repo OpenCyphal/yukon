@@ -621,7 +621,8 @@ class Api:
         if publisher is None:
             return jsonify({"success": False, "message": "Publisher %s not found." % publisher_id})
         try:
-            publisher.publish()
+            # print(monotonic(), "API told to publish")
+            self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(publisher.publish)
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to publish.")
@@ -1013,12 +1014,17 @@ class Api:
             return jsonify({"success": False, "message": tb})
 
     def get_known_datatypes_from_dsdl_for_publishers(self) -> Response:
+        start = monotonic()
         return_object = self.get_known_datatypes_from_dsdl()
+        logger.info(f"get_known_datatypes_from_dsdl_for_publishers took {monotonic() - start} seconds.")
         return return_object
 
     def get_known_datatypes_from_dsdl(self) -> Response:
+        start_time = monotonic()
+        if self.state.known_datatypes and self.state.last_known_datatypes_fetch_time and self.state.allowed_datatypes_validity_time + self.state.last_known_datatypes_fetch_time > monotonic():
+            logger.info("Returned quick")
+            return self.state.known_datatypes
         try:
-            start_time = monotonic()
             # iterate through the paths in PYTHONPATH
             dsdl_folders = []
             # If the CYPHAL_PATH environment variable is set, add the value of that to the list of dsdl_folders
@@ -1032,8 +1038,11 @@ class Api:
             final_return_object: typing.Any = {}
             for dsdl_folder in dsdl_folders:
                 final_return_object = {**final_return_object, **get_datatype_return_dto(get_all_datatypes(dsdl_folder))}
-            # logger.debug(f"get_known_datatypes_from_dsdl took {monotonic() - start_time} seconds.")
-            return jsonify(final_return_object)
+            logger.info(f"get_known_datatypes_from_dsdl took {monotonic() - start_time} seconds.")
+            final_json = jsonify(final_return_object)
+            self.state.known_datatypes = final_json
+            self.state.last_known_datatypes_fetch_time = monotonic()
+            return final_json
         except Exception as e:
             logger.error("Failed to get known datatypes from dsdl.")
             tb = traceback.format_exc()

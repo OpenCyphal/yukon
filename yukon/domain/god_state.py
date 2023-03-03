@@ -216,3 +216,6 @@ class GodState:
         self.api = None
         self.log_file = None
         self.main_loop = None
+        self.known_datatypes = None
+        self.last_known_datatypes_fetch_time = None
+        self.allowed_datatypes_validity_time = 10

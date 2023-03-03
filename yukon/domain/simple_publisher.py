@@ -62,15 +62,26 @@ class SimplePublisher:
             logger.warning("Cannot publish without a port id")
             return
         if not self.publisher:
-            def _do_on_cyphal_thread() -> None:
+
+            async def _do_on_cyphal_thread() -> None:
+                print(time.monotonic(), "Told to create publisher")
                 self.publisher = self.state.cyphal.local_node.make_publisher(load_dtype(self._datatype), self.port_id)
 
-            self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(_do_on_cyphal_thread())
+            self.state.cyphal_worker_asyncio_loop.create_task(_do_on_cyphal_thread())
+        start = time.monotonic()
         publish_object = self.assemble_publish_object()
         for field in self.fields.values():
             modify(publish_object, field.field_specifier, field.value)
 
-        self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(self.publisher.publish_soon, publish_object)
+        async def do_on_cyphal_thread() -> None:
+            if self.publisher:
+                # print(time.monotonic(), "Told to publish")
+                result = await self.publisher.publish(publish_object)
+                if not result:
+                    logger.error("Publish failed")
+
+        task = self.state.cyphal_worker_asyncio_loop.create_task(do_on_cyphal_thread())
+        self.state.cyphal_worker_asyncio_loop.run_until_complete(task)
 
     def add_field(self, id: str) -> PublisherField:
         self.fields[id] = PublisherField(id)
