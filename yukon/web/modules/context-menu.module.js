@@ -17,6 +17,7 @@ import {
     moreThanOneSelectedConstraint,
     oneSelectedConstraint,
 } from "./panels/registers.selection.module.js";
+import { getDatatypesForPort } from "./utilities.module.js";
 import { updateRegistersTableColors, showCellValue, editSelectedCellValues } from "./panels/registers.module.js";
 import { rereadNode, rereadPairs } from "./panels/registers.data.module.js";
 import { downloadIcon, copyIcon, pasteIcon } from "./icons.module.js";
@@ -538,12 +539,13 @@ export function make_context_menus(yukon_state) {
                         button.innerHTML = "Publish to " + contextMenuContext.elementOpenedOn.getAttribute("data-port");
                     },
                     click: async (e, elementOpenedOn) => {
-                        const response = await yukon_state.zubax_apij.make_simple_publisher();
+                        const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
+                        const datatypes = await getDatatypesForPort(portNr, yukon_state);
+                        const response = await yukon_state.zubax_apij.make_simple_publisher_with_datatype_and_port_id(datatypes[0], portNr);
+                        const portType = elementOpenedOn.getAttribute("data-port-type"); // sub or pub or cln or srv
                         if (response && response.success) {
                             // yukon_state.publishers.push({ id: response.id });
                             console.log("Added a publisher with ID " + response.id);
-                            await yukon_state.zubax_apij.set_publisher_datatype(response.id, elementOpenedOn.getAttribute("data-port-type"));
-                            await yukon_state.zubax_apij.set_publisher_port_id(response.id, parseInt(elementOpenedOn.getAttribute("data-port")));
                         }
                     }
                 }

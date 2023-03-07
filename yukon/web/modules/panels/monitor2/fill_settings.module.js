@@ -1,4 +1,5 @@
 export function fillSettings(settings, yukon_state) {
+    // This layer of indirection is not actually compulsory and settings can be directly accessed from yukon_state.all_settings, missing settings and error handling can be done here, however
     settings.VerticalLineMarginTop = 3;
     settings.PageMarginTop = 20;
     settings.NodeXOffset = 5;
@@ -22,12 +23,12 @@ export function fillSettings(settings, yukon_state) {
     settings.LinkLabelTextColor = "black";
     settings.LinkLabelHighlightColor = "black";
     settings.LinkLabelHighlightTextColor = "white";
-    settings.ServicePortLabelBgColor = "lightblue";
-    settings.ServicePortLabelColor = "black";
-    settings.PublisherPortLabelBgColor = "lightgreen";
-    settings.PublisherPortLabelColor = "black";
-    settings.SubscriberPortLabelBgColor = "pink";
-    settings.SubscriberPortLabelColor = "black";
+    settings.ServicePortLabelBgColor = yukon_state.all_settings["Monitor view"]["Colors"]["Service color"];
+    settings.ServicePortLabelColor = yukon_state.all_settings["Monitor view"]["Colors"]["Service text color"];
+    settings.PublisherPortLabelBgColor = yukon_state.all_settings["Monitor view"]["Colors"]["Publisher color"];
+    settings.PublisherPortLabelColor = yukon_state.all_settings["Monitor view"]["Colors"]["Publisher text color"];
+    settings.SubscriberPortLabelBgColor = yukon_state.all_settings["Monitor view"]["Colors"]["Subscriber color"];
+    settings.SubscriberPortLabelColor = yukon_state.all_settings["Monitor view"]["Colors"]["Subscriber text color"];
     settings.ServiceColor = "lightblue";
     settings.ServiceForegroundColor = "black";
     // Add random shades of orange to the list
@@ -45,6 +46,10 @@ export function fillSettings(settings, yukon_state) {
             settings.ShowNameAboveDatatype = true;
         }
     }
+    settings.BlinkSubscriptionOption = yukon_state.all_settings["Monitor view"]["Subscriptions"]["Blink mode"]["chosen_value"]
+    settings.ShowStreamToPlotJugglerOption = yukon_state.all_settings["Monitor view"]["Subscriptions"]["Show Stream to PlotJuggler option"]
+    settings.ShowLogToConsoleOption = yukon_state.all_settings["Monitor view"]["Subscriptions"]["Show log to console option"]
+    settings.DefaultFetchDelay = yukon_state.all_settings["Monitor view"]["Subscriptions"]["Default fetch delay (ms)"]
     // Use a for loop to generate the structure
     let counter = 0;
     for (const color of settings.HighlightColorsRaw) {

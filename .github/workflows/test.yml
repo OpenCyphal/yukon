@@ -27,7 +27,6 @@ jobs:
           PYTHONPATH="." nox -s black
           PYTHONPATH="." nox -s pylint
           PYTHONPATH="." nox -s pytest
-
   build-release-linux:
     name: Yukon Ubuntu 20.04 Build
     runs-on: ubuntu-20.04

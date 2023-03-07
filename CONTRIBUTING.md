@@ -10,6 +10,8 @@
       source venv/bin/activate
       pip install -r requirements.txt -r dev-requirements.txt
 
+* On Debian systems you may also require ```sudo apt install clang clang-format build-essentials python3.10-venv python3.10-dev python3.10-tk```.
+
 * Only on Arch Linux: additional step when using systems where Tk is missing by default
 
       sudo pacman -S tk

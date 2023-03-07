@@ -231,44 +231,48 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     pLatestMessage.style.marginBottom = "0";
     pLatestMessage.innerText = "Yet to receive messages...";
     subscriptionElement.appendChild(pLatestMessage);
+    if (settings.ShowLogToConsoleOption) {
+        const divLogToConsole = document.createElement('div');
+        divLogToConsole.classList.add('form-check');
+        const inputLogToConsole = document.createElement('input');
+        inputLogToConsole.classList.add('form-check-input');
+        inputLogToConsole.classList.add('checkbox');
+        inputLogToConsole.type = 'checkbox';
+        inputLogToConsole.id = "inputLogToConsole" + subject_id + ":" + datatype;
+        divLogToConsole.appendChild(inputLogToConsole);
+        const labelLogToConsole = document.createElement('label');
+        labelLogToConsole.classList.add('form-check-label');
+        labelLogToConsole.htmlFor = inputLogToConsole.id;
+        labelLogToConsole.innerHTML = "Log to console";
+        divLogToConsole.appendChild(labelLogToConsole);
+        subscriptionElement.appendChild(divLogToConsole);
+    }
 
-    const divLogToConsole = document.createElement('div');
-    divLogToConsole.classList.add('form-check');
-    const inputLogToConsole = document.createElement('input');
-    inputLogToConsole.classList.add('form-check-input');
-    inputLogToConsole.classList.add('checkbox');
-    inputLogToConsole.type = 'checkbox';
-    inputLogToConsole.id = "inputLogToConsole" + subject_id + ":" + datatype;
-    divLogToConsole.appendChild(inputLogToConsole);
-    const labelLogToConsole = document.createElement('label');
-    labelLogToConsole.classList.add('form-check-label');
-    labelLogToConsole.htmlFor = inputLogToConsole.id;
-    labelLogToConsole.innerHTML = "Log to console";
-    divLogToConsole.appendChild(labelLogToConsole);
-    subscriptionElement.appendChild(divLogToConsole);
+    if (settings.ShowStreamToPlotJugglerOption) {
+        const divStreamToPlotJuggler = document.createElement('div');
+        divStreamToPlotJuggler.classList.add('form-check');
+        const streamToPlotJuggler = document.createElement('input');
+        streamToPlotJuggler.classList.add('form-check-input');
+        streamToPlotJuggler.classList.add('checkbox');
+        streamToPlotJuggler.type = 'checkbox';
+        streamToPlotJuggler.id = "streamToPlotJuggler" + subject_id + ":" + datatype;
+        divStreamToPlotJuggler.appendChild(streamToPlotJuggler);
+        const labelStreamToPlotJuggler = document.createElement('label');
+        labelStreamToPlotJuggler.classList.add('form-check-label');
+        labelStreamToPlotJuggler.htmlFor = streamToPlotJuggler.id;
+        labelStreamToPlotJuggler.innerHTML = "Stream to PlotJuggler";
+        divStreamToPlotJuggler.appendChild(labelStreamToPlotJuggler);
+        subscriptionElement.appendChild(divStreamToPlotJuggler);
 
-    const divStreamToPlotJuggler = document.createElement('div');
-    divStreamToPlotJuggler.classList.add('form-check');
-    const streamToPlotJuggler = document.createElement('input');
-    streamToPlotJuggler.classList.add('form-check-input');
-    streamToPlotJuggler.classList.add('checkbox');
-    streamToPlotJuggler.type = 'checkbox';
-    streamToPlotJuggler.id = "streamToPlotJuggler" + subject_id + ":" + datatype;
-    divStreamToPlotJuggler.appendChild(streamToPlotJuggler);
-    const labelStreamToPlotJuggler = document.createElement('label');
-    labelStreamToPlotJuggler.classList.add('form-check-label');
-    labelStreamToPlotJuggler.htmlFor = streamToPlotJuggler.id;
-    labelStreamToPlotJuggler.innerHTML = "Stream to PlotJuggler";
-    divStreamToPlotJuggler.appendChild(labelStreamToPlotJuggler);
-    subscriptionElement.appendChild(divStreamToPlotJuggler);
+        streamToPlotJuggler.addEventListener('change', async (event) => {
+            if (event.target.checked) {
+                await yukon_state.zubax_apij.enable_udp_output_from(specifier);
+            } else {
+                await yukon_state.zubax_apij.disable_udp_output_from(specifier);
+            }
+        });
+    }
 
-    streamToPlotJuggler.addEventListener('change', async (event) => {
-        if (event.target.checked) {
-            await yukon_state.zubax_apij.enable_udp_output_from(specifier);
-        } else {
-            await yukon_state.zubax_apij.disable_udp_output_from(specifier);
-        }
-    });
 
     // Add an input number field for capacity of the stored messages
     // Also a label before it
@@ -302,13 +306,12 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     inputFetchDelay.classList.add('form-control');
     inputFetchDelay.type = 'number';
     inputFetchDelay.id = "inputFetchDelay" + subject_id + ":" + datatype;
-    inputFetchDelay.value = 300;
     inputFetchDelay.min = 5;
     inputFetchDelay.max = 400;
     divFetchDelay.appendChild(inputFetchDelay);
     subscriptionElement.appendChild(divFetchDelay);
 
-    let fetchDelayValue = 300;
+    let fetchDelayValue = settings.DefaultFetchDelay;
     inputFetchDelay.value = fetchDelayValue;
     inputFetchDelay.addEventListener('change', () => {
         fetchDelayValue = inputFetchDelay.value;
@@ -365,18 +368,19 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     const current_messages = yukon_state.subscriptions[specifier];
     let lastCurrentMessagesLength = { value: 0 };
     let fetchTimeoutId = { value: null };
-    let setTimeoutFunction = null;
-    setTimeoutFunction = () => {
-        // Flash the inputFetchDelay element with a yellow color for half of the fetchDelayValue
-        inputFetchDelay.style.backgroundColor = "yellow";
-        setTimeout(() => inputFetchDelay.style.removeProperty("background-color"), fetchDelayValue / 2);
-        let wasFetchSuccess = fetch(specifier, pLatestMessage, inputLogToConsole, fetchTimeoutId, lastCurrentMessagesLength, yukon_state)
-        if (wasFetchSuccess) {
-            inputFetchDelay.style.backgroundColor = "green";
+    if (settings.BlinkSubscriptionOption === "Blink at backend fetch rate" || settings.BlinkSubscriptionOption === "Blink at new received messages") {
+        let setTimeoutFunction = null;
+        setTimeoutFunction = () => {
+            // Flash the inputFetchDelay element with a yellow color for half of the fetchDelayValue
+            setTimeout(() => inputFetchDelay.style.removeProperty("background-color"), fetchDelayValue / 2);
+            let fetchHadNewMessages = fetch(specifier, pLatestMessage, inputLogToConsole, fetchTimeoutId, lastCurrentMessagesLength, yukon_state)
+            if (fetchHadNewMessages || settings.BlinkSubscriptionOption === "Blink at backend fetch rate") {
+                inputFetchDelay.style.backgroundColor = "green";
+            }
+            fetchTimeoutId.value = setTimeout(setTimeoutFunction, fetchDelayValue)
         }
-        fetchTimeoutId.value = setTimeout(setTimeoutFunction, fetchDelayValue)
+        setTimeoutFunction();
     }
-    setTimeoutFunction();
     subscriptionElementsToBePlaced.push([subscriptionElement, specifier]);
     subscriptionsDiv.appendChild(subscriptionElement);
 }
@@ -444,13 +448,11 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     const divFetchDelay = document.createElement('div');
     divFetchDelay.classList.add('form-group');
     const labelFetchDelay = document.createElement('label');
-    labelFetchDelay.htmlFor = "inputFetchDelay" + subject_id + ":" + datatype;
     labelFetchDelay.innerHTML = "Fetch delay (ms)";
     divFetchDelay.appendChild(labelFetchDelay);
     const inputFetchDelay = document.createElement('input');
     inputFetchDelay.classList.add('form-control');
     inputFetchDelay.type = 'number';
-    inputFetchDelay.id = "inputFetchDelay" + subject_id + ":" + datatype;
     inputFetchDelay.value = 300;
     inputFetchDelay.min = 5;
     inputFetchDelay.max = 400;
@@ -735,7 +737,7 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     rbUseManualDatatypeEntry.type = 'radio';
     rbUseManualDatatypeEntry.value = '';
     rbUseManualDatatypeEntry.id = "rbUseManualDatatypeEntry:" + subscription.subject_id;
-    rbUseManualDatatypeEntry.name = "rbUseSelect";
+    rbUseManualDatatypeEntry.name = "rbUseSelect" + subscription.subject_id;
     divUseManualDatatypeEntryText.appendChild(rbUseManualDatatypeEntry);
     divUseManualDatatypeEntry.appendChild(divUseManualDatatypeEntryText);
 
@@ -762,7 +764,7 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     rbUseSelectAdvertised.type = 'radio';
     rbUseSelectAdvertised.value = '';
     rbUseSelectAdvertised.id = "rbUseSelectAdvertised:" + subscription.subject_id;
-    rbUseSelectAdvertised.name = "rbUseSelect";
+    rbUseSelectAdvertised.name = "rbUseSelect" + subscription.subject_id;
     divUseSelectAdvertisedText.appendChild(rbUseSelectAdvertised);
     divUseSelectAdvertised.appendChild(divUseSelectAdvertisedText);
 
@@ -796,7 +798,7 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     rbUseSelectFixedId.type = 'radio';
     rbUseSelectFixedId.value = '';
     rbUseSelectFixedId.id = "rbUseSelectFixedId:" + subscription.subject_id;
-    rbUseSelectFixedId.name = "rbUseSelect";
+    rbUseSelectFixedId.name = "rbUseSelect" + subscription.subject_id;
     divUseSelectFixedIdText.appendChild(rbUseSelectFixedId);
     divUseSelectFixedId.appendChild(divUseSelectFixedIdText);
 
@@ -827,7 +829,7 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     rbUseSelectAny.type = 'radio';
     rbUseSelectAny.value = '';
     rbUseSelectAny.id = "rbUseSelectAny:" + subscription.subject_id;
-    rbUseSelectAny.name = "rbUseSelect";
+    rbUseSelectAny.name = "rbUseSelect" + subscription.subject_id;
     divUseSelectAnyText.appendChild(rbUseSelectAny);
     divUseSelectAny.appendChild(divUseSelectAnyText);
 

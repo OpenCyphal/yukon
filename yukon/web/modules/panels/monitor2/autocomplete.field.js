@@ -28,7 +28,7 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
         }
     }
     textField.addEventListener('change', async () => {
-        if(state_holder.dropdown) {
+        if (state_holder.dropdown) {
             return;
         }
         await datatype_was_changed();
@@ -80,6 +80,9 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
             let textOfSomething = "";
             if (typeof something === "object") {
                 textOfSomething = something.name;
+                if (something.is_array) {
+                    textOfSomething += "[0]";
+                }
             } else {
                 textOfSomething = something;
             }
@@ -180,7 +183,7 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
         if (event.key === "Enter" || event.key === "Tab") {
             const highlightedItem = state_holder.dropdown.querySelector(".highlighted");
             if (highlightedItem === null) {
-                if(textField.value !== "") {
+                if (textField.value !== "") {
                     await datatype_was_changed();
                 }
                 return;

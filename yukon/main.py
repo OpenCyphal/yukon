@@ -16,8 +16,6 @@ import subprocess
 import mimetypes
 
 import psutil
-import sentry_sdk
-
 from yukon.version import __version__
 
 from yukon.custom_tk_dialog import launch_yes_no_dialog
@@ -43,7 +41,6 @@ mimetypes.add_type("text/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
 mimetypes.add_type("text/html", ".html")
 
-setup_sentry(sentry_sdk)
 paths = sys.path
 
 logger = logging.getLogger()

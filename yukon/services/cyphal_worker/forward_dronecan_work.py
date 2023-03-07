@@ -64,6 +64,7 @@ async def do_forward_dronecan_work(state: GodState) -> None:
             frames_to_send.append(dataframe)
         except Empty:
             break
+
     # Get the current monotonic time in this event loop, add one second to it
     # and send the envelopes
     async def send_these_frames() -> None:

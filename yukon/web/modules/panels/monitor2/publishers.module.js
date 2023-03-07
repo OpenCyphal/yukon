@@ -46,7 +46,7 @@ export async function updatePublishers(publishersOuterArea, yukon_state) {
         // frame.style.left = 200 + "px";
         // Add a text saying, "Publisher"
         const publisherText = document.createElement('span');
-        publisherText.innerText = "Publisher (id: " + publisher.id + ")";
+        publisherText.innerText = "Publisher";
         frame.prepend(publisherText);
 
         publishersOuterArea.appendChild(frame);
@@ -95,6 +95,8 @@ async function createPublisherFrame(publisher, yukon_state) {
         chooseTypeField.value = publisher.datatype;
         // This is not actually implemented yet because switching the type of the publisher
         // after it's been created is not a priority, the user could just create a new publisher and delete the old one
+        publisher.possiblePaths = await yukon_state.zubax_apij.get_publisher_possible_paths_for_autocomplete(publisher.id);
+        isInitialized = true;
         typeWasChosen();
     } else {
         console.log("publisher doesn't have a datatype yet")
@@ -176,6 +178,7 @@ async function createPublisherFrame(publisher, yukon_state) {
         nameInput.addEventListener('input', async () => {
             await yukon_state.zubax_apij.set_publisher_name(publisher.id, nameInput.value);
         });
+        nameInput.style.display = "none";
         refreshRateRow.appendChild(nameInput);
         const portIdInput = document.createElement('input');
         portIdInput.type = "number";

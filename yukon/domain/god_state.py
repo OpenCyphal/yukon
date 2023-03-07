@@ -41,6 +41,8 @@ from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.command_send_response import CommandSendResponse
 from yukon.domain.registers.reread_register_names_request import RereadRegisterNamesRequest
 
+from yukon.domain.transport.attach_transport_response import AttachTransportResponse
+
 logger = logging.getLogger(__name__)
 
 
@@ -63,7 +65,7 @@ class QueuesState:
 
     message_queue_counter: int = 0
     messages: Queue[Message] = field(default_factory=Queue)
-    attach_transport_response: Queue[str] = field(default_factory=Queue)
+    attach_transport_response: Queue[AttachTransportResponse] = field(default_factory=Queue)
     update_registers_response: Dict[UUID, UpdateRegisterResponse] = field(default_factory=dict)
     subscribe_requests_responses: Queue[SubscribeResponse] = field(default_factory=Queue)
     unsubscribe_requests_responses: Queue[str] = field(default_factory=Queue)
@@ -197,6 +199,38 @@ class GodState:
                 "Show name above datatype": ReactiveValue(True),
                 "Highlight colors": ["red", "green", "yellow", "orange", "purple", "brown", "aquamarine", "deeppink"],
                 "Default saved subscription messages capacity": ReactiveValue(50),
+                "Subscriptions": {
+                    "Blink mode": {
+                        "__type__": "radio",
+                        "values": [
+                            {
+                                "value": "Blink at backend fetch rate",
+                                "description": "Shows the frequency of backend fetch visually.",
+                            },
+                            {
+                                "value": "Blink at new received messages",
+                                "description": "Shows the frequency of received messages.",
+                            },
+                            {
+                                "value": "Don't blink",
+                                "description": "No flashes.",
+                            },
+                        ],
+                        "chosen_value": ReactiveValue("Don't blink"),
+                        "name": "Blink mode",
+                    },
+                    "Show Stream to PlotJuggler option": ReactiveValue(True),
+                    "Show log to console option": ReactiveValue(False),
+                    "Default fetch delay (ms)": ReactiveValue(300),
+                },
+                "Colors": {
+                    "Publisher color": ReactiveValue("lightgreen"),
+                    "Publisher text color": ReactiveValue("black"),
+                    "Subscriber color": ReactiveValue("pink"),
+                    "Subscriber text color": ReactiveValue("black"),
+                    "Service color": ReactiveValue("lightblue"),
+                    "Service text color": ReactiveValue("black"),
+                },
             },
             "UDP subscription output": {
                 "Enabled": ReactiveValue(False),

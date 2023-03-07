@@ -46,7 +46,7 @@ class SimplePublisher:
         self._datatype = value
         loaded_temporary_type = pycyphal.dsdl.get_model(load_dtype(value))
         print(loaded_temporary_type)
-        if loaded_temporary_type.has_fixed_port_id:
+        if loaded_temporary_type.has_fixed_port_id and loaded_temporary_type.fixed_port_id:
             self.port_id = loaded_temporary_type.fixed_port_id
             print("Assigned fixed port id: " + str(self.port_id))
 
@@ -64,7 +64,6 @@ class SimplePublisher:
         if not self.publisher:
 
             async def _do_on_cyphal_thread() -> None:
-                print(time.monotonic(), "Told to create publisher")
                 self.publisher = self.state.cyphal.local_node.make_publisher(load_dtype(self._datatype), self.port_id)
 
             self.state.cyphal_worker_asyncio_loop.create_task(_do_on_cyphal_thread())

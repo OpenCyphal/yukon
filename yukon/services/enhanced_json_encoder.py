@@ -62,7 +62,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
                 "port_id": o.port_id,
             }
         if isinstance(o, SimplifiedFieldDTO):
-            return {"name": o.field_name, "type": o.field_type.name, "full_name": o.field_name}
+            return {"name": o.field_name, "type": o.field_type.name, "full_name": o.field_name, "is_array": o.is_array}
         if isinstance(o, PublisherField):
             return {
                 "id": o.id,

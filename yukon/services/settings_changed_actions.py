@@ -189,6 +189,7 @@ def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
     def _handle_mode_change(new_mode: str) -> None:
         if (new_mode in ["Automatic", "Automatic persistent allocation"]) and not state.cyphal.centralized_allocator:
             logger.info("Some kind of automatic allocator is now enabled")
+
             # For the current thread, the same event loop is used
             def _run_allocator() -> None:
                 def _run_allocator_inner() -> None:

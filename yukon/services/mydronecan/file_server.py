@@ -20,6 +20,7 @@ import errno
 
 logger = logging.getLogger(__name__)
 
+
 # noinspection PyBroadException
 class SimpleFileServer(object):
     def __init__(self, node: dronecan.node.Node, _file_path: str) -> None:

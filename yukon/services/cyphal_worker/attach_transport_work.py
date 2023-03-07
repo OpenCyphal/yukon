@@ -45,7 +45,7 @@ async def do_attach_transport_work(state: GodState, atr: AttachTransportRequest)
         attach_transport_response = AttachTransportResponse(True, atr.requested_interface.iface)
         state.cyphal.transports_list.append(atr.requested_interface)
         new_transport.begin_capture(make_handler_for_transmit(state))
-        state.queues.attach_transport_response.put(attach_transport_response)
+        state.queues.attach_transport_response.put_nowait(attach_transport_response)
         if isinstance(state.callbacks.get("yukon_node_attached"), typing.List):
             for callback in state.callbacks["yukon_node_attached"]:
                 if callable(callback):

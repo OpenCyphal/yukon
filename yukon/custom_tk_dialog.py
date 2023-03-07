@@ -4,7 +4,6 @@ import tkinter as tk
 
 class MyDialog(tk.Toplevel):
     def __init__(self, parent: tk.Tk, text: str) -> None:
-
         tk.Toplevel.__init__(self, parent)
         tk.Label(self, text=text).grid(row=0, column=0, columnspan=2, padx=50, pady=10)
 

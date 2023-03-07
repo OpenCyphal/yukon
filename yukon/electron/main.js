@@ -103,75 +103,81 @@ let menuTemplate = [
         // Create a menu item that will open the %HOME%/.yukon folder
         submenu: [
             {
-                label: "Open Yukon logs folder",
-                click: async () => {
-                    const home_dir = app.getPath('home');
-                    const yukon_home_dir = path.join(home_dir, ".yukon");
-                    const yukon_home_dir_exists = fs.existsSync(yukon_home_dir);
-                    if (yukon_home_dir_exists) {
-                        // Open the folder
-                        await shell.showItemInFolder(yukon_home_dir)
-                    }
-                }
-            },
-            {
-                label: "Open Cyphal DSDL source folder",
-                click: async () => {
-                    const home_dir = app.getPath('home');
-                    const yukon_home_dir = path.join(home_dir, ".cyphal");
-                    const yukon_home_dir_exists = fs.existsSync(yukon_home_dir);
-                    if (yukon_home_dir_exists) {
-                        // Open the folder
-                        await shell.showItemInFolder(yukon_home_dir)
-                    }
-                }
-            },
-            {
-                label: "Open compiled DSDL folder",
-                click: async () => {
-                    const home_dir = app.getPath('home');
-                    const yukon_home_dir = path.join(home_dir, ".pycyphal");
-                    const yukon_home_dir_exists = fs.existsSync(yukon_home_dir);
-                    if (yukon_home_dir_exists) {
-                        // Open the folder
-                        await shell.showItemInFolder(yukon_home_dir)
-                    }
-                }
-            },
-            // Create a menu item that will print the version number of Yukon from ../version.py
-            {
-                label: "Browse application directory of Yukon",
-                click: async () => {
-                    await shell.showItemInFolder(app.getAppPath())
-                }
-            },
-            {
-                label: "Open Yukon in a web browser",
-                click: async () => {
-                    const url = `http://127.0.0.1:${yukon_server_port}/main/main.html?port=${yukon_server_port}`
-                    shell.openExternal(url);
-                }
-            },
-            {
-                label: "Open Yukon download webpage",
-                click: async () => {
-                    const url = `https://files.zubax.com/products/org.opencyphal.yukon/releases/`
-                    shell.openExternal(url);
-                }
-            },
-            {
-                label: "Open OpenCyphal forum",
-                click: async () => {
-                    const url = `https://forum.opencyphal.org/`
-                    shell.openExternal(url);
-                }
-            },
-            {
-                label: "Open the Yukon category in the OpenCyphal forum",
-                click: async () => {
-                    const url = `https://forum.opencyphal.org/c/app/yukon/14`
-                    shell.openExternal(url);
-                }
+                label: "Links, directories",
+                // Create a menu item that will open the %HOME%/.yukon folder
+                submenu: [
+                    {
+                        label: "Open Yukon logs folder",
+                        click: async () => {
+                            const home_dir = app.getPath('home');
+                            const yukon_home_dir = path.join(home_dir, ".yukon");
+                            const yukon_home_dir_exists = fs.existsSync(yukon_home_dir);
+                            if (yukon_home_dir_exists) {
+                                // Open the folder
+                                await shell.showItemInFolder(yukon_home_dir)
+                            }
+                        }
+                    },
+                    {
+                        label: "Open Cyphal DSDL source folder",
+                        click: async () => {
+                            const home_dir = app.getPath('home');
+                            const yukon_home_dir = path.join(home_dir, ".cyphal");
+                            const yukon_home_dir_exists = fs.existsSync(yukon_home_dir);
+                            if (yukon_home_dir_exists) {
+                                // Open the folder
+                                await shell.showItemInFolder(yukon_home_dir)
+                            }
+                        }
+                    },
+                    {
+                        label: "Open compiled DSDL folder",
+                        click: async () => {
+                            const home_dir = app.getPath('home');
+                            const yukon_home_dir = path.join(home_dir, ".pycyphal");
+                            const yukon_home_dir_exists = fs.existsSync(yukon_home_dir);
+                            if (yukon_home_dir_exists) {
+                                // Open the folder
+                                await shell.showItemInFolder(yukon_home_dir)
+                            }
+                        }
+                    },
+                    // Create a menu item that will print the version number of Yukon from ../version.py
+                    {
+                        label: "Browse application directory of Yukon",
+                        click: async () => {
+                            await shell.showItemInFolder(app.getAppPath())
+                        }
+                    },
+                    {
+                        label: "Open Yukon in a web browser",
+                        click: async () => {
+                            const url = `http://127.0.0.1:${yukon_server_port}/main/main.html?port=${yukon_server_port}`
+                            shell.openExternal(url);
+                        }
+                    },
+                    {
+                        label: "Open Yukon download webpage",
+                        click: async () => {
+                            const url = `https://files.zubax.com/products/org.opencyphal.yukon/releases/`
+                            shell.openExternal(url);
+                        }
+                    },
+                    {
+                        label: "Open OpenCyphal forum",
+                        click: async () => {
+                            const url = `https://forum.opencyphal.org/`
+                            shell.openExternal(url);
+                        }
+                    },
+                    {
+                        label: "Open the Yukon category in the OpenCyphal forum",
+                        click: async () => {
+                            const url = `https://forum.opencyphal.org/c/app/yukon/14`
+                            shell.openExternal(url);
+                        }
+                    },
+                ]
             },
             {
                 label: "About",
@@ -187,6 +193,7 @@ let menuTemplate = [
             },
         ]
     },
+    
 ]
 app.whenReady().then(() => {
     // Send a GET request to http://locahost:5000/api/announce_running_in_electron
@@ -204,6 +211,11 @@ app.whenReady().then(() => {
             removeAllRecoverButtons();
         }
     })
+    menuTemplate.push(
+        {
+            label: 'Press CTRL+SPACE to maximize the panel under your mouse',
+        },
+    )
     console.log("Setting up IPC handlers")
     const menu = Menu.buildFromTemplate(menuTemplate)
     ipcMain.handle('panels:addRecovery', function (_, panelName, panelText) {

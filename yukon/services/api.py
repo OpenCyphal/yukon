@@ -371,39 +371,27 @@ class Api:
         return jsonify(self.state.cyphal.register_update_log)
 
     def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> typing.Any:
-        result_ready_event = threading.Event()
-        attach_response = False
-
-        def attach_task() -> None:
-            nonlocal attach_response, result_ready_event, self
+        try:
+            logger.info(f"Attaching UDP transport to {udp_iface}")
+            interface = Interface()
+            interface.node_id = int(node_id)
+            interface.is_udp = True
+            interface.udp_iface = udp_iface
+            interface.udp_mtu = int(udp_mtu)
+            interface.is_udp = True
+            # Once one of these requests has been made, look for the continuation of code flow in
+            # the cyphal_worker.py folder in services.
+            atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
+            self.state.queues.god_queue.put_nowait(atr)
             try:
-                logger.info(f"Attaching UDP transport to {udp_iface}")
-                interface = Interface()
-                interface.node_id = int(node_id)
-                interface.is_udp = True
-                interface.udp_iface = udp_iface
-                interface.udp_mtu = int(udp_mtu)
-                interface.is_udp = True
-                # Once one of these requests has been made, look for the continuation of code flow in
-                # the cyphal_worker.py folder in services.
-                atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-                self.state.queues.god_queue.put_nowait(atr)
-
-                try:
-                    response = self.state.queues.attach_transport_response.get(timeout=10)
-                except Empty:
-                    raise Exception("Failed to receive a response for attached UDP transport.")
-                attach_response = jsonify(response)
-                result_ready_event.set()
-            except Exception as e:
-                tb = traceback.format_exc()
-                logger.error(f"Failed to attach UDP transport: {e}\n{tb}")
-                attach_response = jsonify({"is_success": False, "message": "Failed to attach UDP transport."})
-                result_ready_event.set()
-
-        self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(attach_task)
-        result_ready_event.wait(timeout=5)
-        return attach_response
+                response = self.state.queues.attach_transport_response.get(timeout=5)
+            except Empty:
+                raise Exception("Failed to receive a response for attached CAN transport.")
+            return jsonify(response)
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error(f"Failed to attach UDP transport: {e}\n{tb}")
+            return jsonify({"is_success": False, "message": "Failed to attach UDP transport."})
 
     def attach_transport(
         self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
@@ -420,7 +408,7 @@ class Api:
             atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
             self.state.queues.god_queue.put_nowait(atr)
             try:
-                response = self.state.queues.attach_transport_response.get(timeout=5)
+                response = self.state.queues.attach_transport_response.get(timeout=7)
             except Empty:
                 raise Exception("Failed to receive a response for attached CAN transport.")
             return jsonify(response)
@@ -607,6 +595,20 @@ class Api:
     def make_simple_publisher(self) -> Response:
         try:
             new_publisher = SimplePublisher(str(uuid4()), self.state)
+            self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
+        except Exception as e:
+            tb = traceback.format_exc()
+            logger.error("Failed to make simple publisher.")
+            logger.error(str(tb))
+            return jsonify({"success": False, "message": traceback.format_exc()})
+        else:
+            return jsonify({"success": True, "id": new_publisher.id})
+
+    def make_simple_publisher_with_datatype_and_port_id(self, datatype: str, port_id: int) -> Response:
+        try:
+            new_publisher = SimplePublisher(str(uuid4()), self.state)
+            new_publisher.datatype = datatype
+            new_publisher.port_id = int(port_id)
             self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
         except Exception as e:
             tb = traceback.format_exc()
@@ -1026,7 +1028,6 @@ class Api:
             and self.state.last_known_datatypes_fetch_time
             and self.state.allowed_datatypes_validity_time + self.state.last_known_datatypes_fetch_time > monotonic()
         ):
-            logger.info("Returned quick")
             return self.state.known_datatypes
         try:
             # iterate through the paths in PYTHONPATH
@@ -1042,7 +1043,6 @@ class Api:
             final_return_object: typing.Any = {}
             for dsdl_folder in dsdl_folders:
                 final_return_object = {**final_return_object, **get_datatype_return_dto(get_all_datatypes(dsdl_folder))}
-            logger.info(f"get_known_datatypes_from_dsdl took {monotonic() - start_time} seconds.")
             final_json = jsonify(final_return_object)
             self.state.known_datatypes = final_json
             self.state.last_known_datatypes_fetch_time = monotonic()
