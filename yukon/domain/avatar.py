@@ -44,6 +44,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self._num_info_requests = 0
         self.disappeared = False
         self.disappeared_since = 0
+        self.is_being_queried = False
 
         self._ts_activity = -math.inf
         self._ts_heartbeat = -math.inf
@@ -294,6 +295,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             "registers_hash": hash(json.dumps(self.registers_exploded_values, sort_keys=True)),
             "disappeared": self.disappeared,
             "disappeared_since": self.disappeared_since,
+            "is_being_queried": self.is_being_queried,
         }
         json_object["monitor_view_hash"] = (
             hash(frozenset(self._ports.pub))
@@ -303,6 +305,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
             ^ hash(self.disappeared)
             ^ hash(self.disappeared_since)
+            ^ hash(self.is_being_queried)
             ^ json_object["registers_hash"]
         )
         json_object["monitor2_hash"] = json_object["monitor_view_hash"]

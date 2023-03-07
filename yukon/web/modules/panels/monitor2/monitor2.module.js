@@ -603,12 +603,18 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     if (avatar.disappeared) {
         node.classList.add("disappeared");
     }
+    if (avatar.is_being_queried) {
+        node.classList.add("is_being_queried");
+    }
     node.style.left = settings.NodeXOffset + "px";
     // Delay the setting of height until its contents are loaded
     node.style.setProperty("border-sizing", "border-box");
     node.style.width = settings.NodeWidth + "px";
     // node.style.backgroundColor = avatar.color;
     node.innerText = text;
+    if (avatar.is_being_queried) {
+        node.innerText += " (querying...)";
+    }
     container.appendChild(node);
     // Make a div for each: health, software_version, hardware_version, uptime
     for (const field of Object.keys(fieldsObject)) {

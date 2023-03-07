@@ -36,6 +36,11 @@
     color: #FF6392;
 }
 
+#monitor2>.node.is_being_queried {
+    background-color: tomato;
+    color: white;
+}
+
 #monitor2 .line {
     position: absolute;
     background-color: black;
