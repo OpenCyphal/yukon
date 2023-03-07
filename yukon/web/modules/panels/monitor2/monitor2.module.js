@@ -523,13 +523,19 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         // align it 50px to the left from the left side of the horizontal line
         emptyPortDiv.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] + "px");
         // When hovered over emptyPortDiv, replace the innerText with portInfo.datatype
-        emptyPortDiv.onmouseover = function () {
-            emptyPortDiv.innerText = portInfo.datatype;
-        };
-        // When mouse leaves emptyPortDiv, replace the innerText with portInfo.link_name
-        emptyPortDiv.onmouseout = function () {
-            emptyPortDiv.innerText = portInfo.link_name;
-        };
+        if(yukon_state.all_settings["Monitor view"]["Display unassigned port name and datatype on two lines"]) {
+            emptyPortDiv.innerText = portInfo.link_name + "\n" + portInfo.datatype;
+        } else {
+            emptyPortDiv.onmouseover = function () {
+                emptyPortDiv.innerText = portInfo.datatype;
+            };
+            // When mouse leaves emptyPortDiv, replace the innerText with portInfo.link_name
+            emptyPortDiv.onmouseout = function () {
+                emptyPortDiv.innerText = portInfo.link_name;
+            };
+        }
+        
+
         emptyPortDiv.style.width = settings.LinkInfoWidth + "px";
         node.appendChild(emptyPortDiv);
 

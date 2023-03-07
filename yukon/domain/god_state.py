@@ -199,6 +199,7 @@ class GodState:
                 "Show name above datatype": ReactiveValue(True),
                 "Highlight colors": ["red", "green", "yellow", "orange", "purple", "brown", "aquamarine", "deeppink"],
                 "Default saved subscription messages capacity": ReactiveValue(50),
+                "Display unassigned port name and datatype on two lines": ReactiveValue(True),
                 "Subscriptions": {
                     "Blink mode": {
                         "__type__": "radio",
