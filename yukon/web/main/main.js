@@ -522,7 +522,7 @@ window.console = new Proxy(old_console, {
                 yukon_state.myLayout.updateSize();
             }, 50);
         });
-        if (isRunningInElectron(yukon_state)) {
+        if (isRunningInElectron(yukon_state) && window.electronAPI && window.electronAPI.onRestoreDefaultLayout) {
             window.electronAPI.onRestoreDefaultLayout(function () {
                 console.log("Restore default layout requested");
                 yukon_state.is_currently_restoring_default_layout = true;
