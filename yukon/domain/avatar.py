@@ -255,10 +255,14 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             hardware_major_version = None
             hardware_minor_version = None
         heartbeat = getattr(self, "_heartbeat")
+        mode_value = None
         if heartbeat:
             uptime = getattr(heartbeat, "uptime")
             health_value = getattr(getattr(self._heartbeat, "health"), "value", 4) if self._heartbeat else 4
             health_text = health_meanings.get(health_value, "Unknown")
+            mode = getattr(self._heartbeat, "_mode") if self._heartbeat else None
+            if mode:
+                mode_value = getattr(mode, "value", None)
         else:
             uptime = None
             health_value = None
@@ -278,6 +282,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
                 "health_text": health_text,
                 "uptime": uptime,
                 "timestamp": timestamp_value,
+                "mode": mode_value,
             },
             "versions": {
                 "software_version": f"{software_major_version}.{software_minor_version}.{software_vcs_revision_id}",

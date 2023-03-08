@@ -375,12 +375,35 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
         const get_up_to_date_avatar = () => { return yukon_state.current_avatars.find(a => a.node_id === node_id); };
         // Add the sizes of ports.cln, ports.srv, ports.pub, ports.sub
         const fieldsObject = {
-            "Name": avatar.name, "Health": avatar.last_heartbeat.health_text,
+            "Name": avatar.name,
             "Software Version": avatar.versions.software_version,
             "Hardware Version": avatar.versions.hardware_version,
-            "Uptime": secondsToColonSeparatedString(avatar.last_heartbeat.uptime),
+            "――――――――――――――――――――": "",
             "Node ID": avatar.node_id,
+            "Uptime": secondsToColonSeparatedString(avatar.last_heartbeat.uptime),
+            "Health": avatar.last_heartbeat.health_text,
         };
+        if(avatar.last_heartbeat) {
+            try {
+                fieldsObject["Mode"] = avatar.last_heartbeat.mode;
+                switch (avatar.last_heartbeat.mode) {
+                    case 0:
+                        fieldsObject["Mode"] = "OPERATIONAL";
+                        break;
+                    case 1:
+                        fieldsObject["Mode"] = "INITIALIZATION";
+                        break;
+                    case 2:
+                        fieldsObject["Mode"] = "MAINTENANCE";
+                        break;
+                    case 3:
+                        fieldsObject["Mode"] = "SOFTWARE UPDATE";
+                        break;
+                }
+            } catch (e) {
+                logger.error("Error while trying to get mode from last_heartbeat", e);
+            }
+        }
         if(avatar.disappeared) {
             fieldsObject["Disappeared since"] =  avatar.disappeared_since.toFixed(1);
         }
@@ -620,7 +643,6 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         node.innerText += " (querying...)";
     }
     container.appendChild(node);
-    // Make a div for each: health, software_version, hardware_version, uptime
     for (const field of Object.keys(fieldsObject)) {
         const fieldDiv = document.createElement("div");
         fieldDiv.classList.add("field");
@@ -630,6 +652,23 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         const valueDiv = document.createElement("div");
         valueDiv.classList.add("value");
         valueDiv.innerHTML = fieldsObject[field];
+        // This is for Health status
+        if(fieldsObject[field] === "CAUTION") {
+            valueDiv.style.backgroundColor = "orange";
+        } else if (fieldsObject[field] === "WARNING") {
+            valueDiv.style.backgroundColor = "red";
+        } else if (fieldsObject[field] === "ADVISORY") {
+            valueDiv.style.backgroundColor = "yellow";
+        }
+        if(fieldsObject[field] === "OPERATIONAL") {
+            valueDiv.style.backgroundColor = "green";
+        } else if (fieldsObject[field] === "INITIALIZATION") {
+            valueDiv.style.backgroundColor = "pink";
+        } else if (fieldsObject[field] === "MAINTENANCE") {
+            valueDiv.style.backgroundColor = "yellow";
+        } else if (fieldsObject[field] === "SOFTWARE_UPDATE") {
+            valueDiv.style.backgroundColor = "blue";
+        }
         if (field === "Uptime") {
             let intervalId = null;
             intervalId = setInterval(() => {
