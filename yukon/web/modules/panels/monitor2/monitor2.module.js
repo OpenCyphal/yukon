@@ -271,15 +271,18 @@ function addMissingPorts(avatar, yukon_state) {
     // This is needed because sometimes a node will not publish its status on its ports to the port list subject
     // Iterate through all registers in the avatar
     for (const [name, value] of Object.entries(avatar.registers_values)) {
-        if (parseInt(value) === 65535) {
-            continue;
-        }
+        
         const regex = /uavcan\.(pub|sub|cln|srv)\.(.+?)\.id/;
         // Use regex to extract the first and second ground, first group is link_type and second group is link_name from register_name
         const results = name.match(regex);
         if (!results) continue;
         const link_type = results[1];
         const link_name = results[2];
+        if((link_type === "pub" || link_type === "sub") && parseInt(value) > 8191) {
+            continue;
+        } else if ((link_type === "srv" || link_type === "cln") && parseInt(value) > 511) {
+            continue;
+        }
         if (avatar.ports[link_type] && avatar.ports[link_type].indexOf(parseInt(value)) === -1) {
             avatar.ports[link_type].push(parseInt(value));
         }
@@ -651,15 +654,15 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     feedbackMessage.classList.add("feedback_message");
     feedbackMessage.style.display = "none";
     node.appendChild(feedbackMessage);
+
     // Make an input-group for the buttons
     const inputGroup = document.createElement("div");
     inputGroup.classList.add("input-group");
     inputGroup.style.setProperty("backgroundColor", "transparent", "important");
-
     const neededButtons = [{ "name": "Restart", "command": "65535", "title": "Restart device" }, { "name": "Save", "command": "65530", "title": "Save persistent states" }, { "name": "Estop", "command": "65531", "title": "Emergency stop" }];
     for (const button of neededButtons) {
         const btnButton = document.createElement("button");
-        btnButton.style.fontSize = "0.6rem";
+        btnButton.style.fontSize = "12px";
         btnButton.id = "btn" + avatar.node_id + "_" + button.name;
         btnButton.classList.add("btn_button");
         btnButton.classList.add("btn");
@@ -674,13 +677,14 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         inputGroup.appendChild(btnButton);
     }
     node.appendChild(inputGroup);
+
     const inputGroup2 = document.createElement("div");
     inputGroup2.classList.add("input-group");
-    inputGroup2.style.fontSize = "0.6rem";
+    inputGroup2.style.fontSize = "12px";
     inputGroup2.style.setProperty("backgroundColor", "transparent", "important");
     // Add a button for firmware update
     const btnFirmwareUpdate = document.createElement("button");
-    btnFirmwareUpdate.style.fontSize = "0.7rem";
+    btnFirmwareUpdate.style.fontSize = "12px";
     btnFirmwareUpdate.classList.add("btn_button", "btn", "btn-secondary", "btn-sm");
     btnFirmwareUpdate.innerHTML = "Choose firmware";
     btnFirmwareUpdate.addEventListener("click", async function () {
@@ -697,7 +701,8 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     // Add a more button
     const btnMore = document.createElement("button");
     btnMore.classList.add("btn_button", "btn", "btn-secondary", "btn-sm");
-    btnMore.innerHTML = "More";
+    btnMore.innerHTML = "...";
+    btnMore.title = "More commands"
 
     btnMore.addEventListener("click", async function () {
         yukon_state.commandsComponent.parent.parent.setActiveContentItem(yukon_state.commandsComponent.parent);

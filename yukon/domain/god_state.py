@@ -184,7 +184,7 @@ class GodState:
                 "name": "Node allocation",
             },
             "Firmware updates": {
-                "Enabled": ReactiveValue(False),
+                "Enabled": ReactiveValue(True),
                 "Directory path": {"__type__": "dirpath", "value": ReactiveValue("")},
                 "File path": "__deleted__",
             },

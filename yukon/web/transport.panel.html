@@ -1,7 +1,7 @@
 <form id="transport-selection-form">
     <div id="maybe-tabs" class="noselect">
     </div>
-    <h1 id="TransportType"></h1>
+    <p id="TransportType"></p>
     <a id="pythoncanlink" target="_blank"
         href="https://pycyphal.readthedocs.io/en/stable/api/pycyphal.transport.can.media.pythoncan.html">Link to the
         documentation</a>
@@ -9,14 +9,14 @@
         <label for="iTransport">Transport interface</label>
         <input type="text" id="iTransport" placeholder="Transport" value="socketcan:slcan0">
     </div>
-    <div id="divUdpIface" title="Whitespace-separated list of /16 IP subnet addresses">
-        <label for="iUdpIface">UDP interface</label>
-        <input type="text" id="iUdpIface" placeholder="Whitespace-separated list of /16 IP subnet addresses"
+    <div class="input-group" id="divUdpIface" title="Whitespace-separated list of /16 IP subnet addresses">
+        <label class="input-group-text" for="iUdpIface">UDP interface</label>
+        <input class="form-control" type="text" id="iUdpIface" placeholder="Whitespace-separated list of /16 IP subnet addresses"
             value="127.0.0.0">
     </div>
-    <div id="divUdpMtu">
-        <label for="iUdpMtu">UDP MTU</label>
-        <input type="number" id="iUdpMtu" placeholder="UDP MTU" value="1200">
+    <div id="divUdpMtu" class="input-group">
+        <label class="input-group-text" for="iUdpMtu">UDP MTU</label>
+        <input class="form-control" type="number" id="iUdpMtu" placeholder="UDP MTU" value="1200">
     </div>
     <div id="divCandump">
         <button id="btnOpenCandumpFile">Open candump file</button>
@@ -25,25 +25,25 @@
         <label for="sTransport">Select transport</label>
         <select id="sTransport"></select>
     </div>
-    <div class="" id="divMtu">
-        <label for="iMtu">MTU</label>
-        <input type="number" id="iMtu" value="8" min="8" max="1500" class="form-control">
+    <div class="input-group" id="divMtu">
+        <label class="input-group-text" for="iMtu">MTU</label>
+        <input class="form-control" type="number" id="iMtu" value="8" min="8" max="1500">
     </div>
-    <div class="" id="divArbRate">
-        <label for="iArbRate">Arbitration rate</label>
-        <input type="number" id="iArbRate" value="1000000" min="1000000" max="2000000">
+    <div class="input-group" id="divArbRate">
+        <label class="input-group-text" for="iArbRate">Arbitration rate</label>
+        <input class="form-control" type="number" id="iArbRate" value="1000000" min="1000000" max="2000000">
     </div>
-    <div class="" id="divDataRate">
-        <label for="iDataRate">Data rate</label>
-        <input type="number" id="iDataRate" value="1000000" min="1000000" max="2000000">
+    <div class="input-group" id="divDataRate">
+        <label class="input-group-text" for="iDataRate">Data rate</label>
+        <input class="form-control" type="number" id="iDataRate" value="1000000" min="1000000" max="2000000">
     </div>
-    <div class="" id="divNodeId">
-        <label for="iNodeId">Node ID</label>
-        <input type="number" id="iNodeId" value="127" min="1" max="255" class="form-control">
+    <div class="input-group" id="divNodeId">
+        <label class="input-group-text" for="iNodeId">Node ID</label>
+        <input class="form-control" type="number" id="iNodeId" value="127" min="1" max="255">
     </div>
-    <div id="divServiceTransferMultiplier">
-        <label for="iServiceTransferMultiplier">Service transfer multiplier</label>
-        <input type="number" id="iServiceTransferMultiplier" placeholder="Service transfer multiplier" value="1">
+    <div class="input-group" id="divServiceTransferMultiplier">
+        <label class="input-group-text" for="iServiceTransferMultiplier">Service transfer multiplier</label>
+        <input class="form-control" type="number" id="iServiceTransferMultiplier" placeholder="Service transfer multiplier" value="1" width="2ch" maxlength="1">
     </div>
     <div id="UDPLinuxWarning">
         <p>On GNU/Linux systems, the command for fixing UDP packet sniffing permissions is: </p>

@@ -95,9 +95,14 @@ export function initTransports(container, yukon_state) {
     function addLocalMessage(message, severity) {
         zubax_api.add_local_message(message, severity)
     }
-
+    function showElement(element) {
+        element.style.removeProperty("display");
+    }
+    function hideElement(element) {
+        element.style.display = "none";
+    }
     async function doTheTabSwitching() {
-        const h1TransportType = containerElem.querySelector("h1#TransportType");
+        const h1TransportType = containerElem.querySelector("#TransportType");
         const pythoncanlink = containerElem.querySelector("#pythoncanlink");
         const iTransport = containerElem.querySelector("#iTransport");
         const sTransport = containerElem.querySelector("#sTransport");
@@ -113,18 +118,18 @@ export function initTransports(container, yukon_state) {
         const divServiceTransferMultiplier = containerElem.querySelector("#divServiceTransferMultiplier");
         const divUdpMtu = containerElem.querySelector("#divUdpMtu");
         const UDPLinuxWarning = containerElem.querySelector("#UDPLinuxWarning");
-        divTypeTransport.style.display = "block";
-        divSelectTransport.style.display = "block";
-        divMtu.style.display = "block";
-        divArbRate.style.display = "block";
-        divDataRate.style.display = "block";
-        divNodeId.style.display = "block";
-        divServiceTransferMultiplier.style.display = "none";
-        divUdpIface.style.display = "none";
-        divCandump.style.display = "none";
-        divUdpMtu.style.display = "none";
-        UDPLinuxWarning.style.display = "none";
-        pythoncanlink.style.display = "none";
+        showElement(divTypeTransport);
+        showElement(divSelectTransport)
+        showElement(divMtu);
+        showElement(divArbRate);
+        showElement(divDataRate);
+        showElement(divNodeId);
+        showElement(divServiceTransferMultiplier);
+        hideElement(divUdpIface);
+        hideElement(divCandump);
+        hideElement(divUdpMtu);
+        hideElement(UDPLinuxWarning);
+        hideElement(pythoncanlink);
         const iArbRate = containerElem.querySelector("#iArbRate");
         const iDataRate = containerElem.querySelector("#iDataRate");
         const iNodeId = containerElem.querySelector("#iNodeId");
@@ -141,24 +146,23 @@ export function initTransports(container, yukon_state) {
             case transports.CAN.MANUAL:
                 h1TransportType.innerHTML = "Connection string";
                 divSelectTransport.style.display = "none";
-                pythoncanlink.style.display = "block";
+                showElement(pythoncanlink);
                 break;
             case transports.UDP.UDP:
                 h1TransportType.innerHTML = "UDP";
-                divTypeTransport.style.display = "none";
-                divSelectTransport.style.display = "none";
-                divArbRate.style.display = "none";
-                divDataRate.style.display = "none";
-                divUdpIface.style.display = "block";
-                divServiceTransferMultiplier.style.display = "block";
-                divUdpMtu.style.display = "block";
-                divMtu.style.display = "none";
-                UDPLinuxWarning.style.display = "block";
-
+                hideElement(divTypeTransport);
+                hideElement(divSelectTransport);
+                hideElement(divArbRate);
+                hideElement(divDataRate);
+                showElement(divUdpIface);
+                showElement(divServiceTransferMultiplier);
+                showElement(divUdpMtu);
+                hideElement(divMtu);
+                showElement(UDPLinuxWarning);
                 break;
             case transports.CAN.SLCAN: {
                 h1TransportType.innerHTML = "SLCAN";
-                divTypeTransport.style.display = "none";
+                hideElement(divTypeTransport);
                 iMtu.value = 8;
                 await fillSelectionWithSlcan();
                 let thisInterval;
@@ -173,9 +177,9 @@ export function initTransports(container, yukon_state) {
                 break;
             case transports.CAN.SOCKETCAN: {
                 h1TransportType.innerHTML = "SocketCAN";
-                divTypeTransport.style.display = "none";
-                divArbRate.style.display = "none";
-                divDataRate.style.display = "none";
+                hideElement(divTypeTransport);
+                hideElement(divArbRate);
+                hideElement(divDataRate);
                 iMtu.value = 64;
                 await fillSelectionWithSocketcan();
                 let thisInterval;
@@ -190,17 +194,17 @@ export function initTransports(container, yukon_state) {
                 break;
             case transports.CAN.CANDUMP:
                 h1TransportType.innerHTML = "CANDUMP";
-                divTypeTransport.style.display = "none";
-                divSelectTransport.style.display = "none";
-                divMtu.style.display = "none";
-                divArbRate.style.display = "none";
-                divDataRate.style.display = "none";
-                divNodeId.style.display = "none";
-                divCandump.style.display = "block";
+                hideElement(divTypeTransport);
+                hideElement(divSelectTransport);
+                hideElement(divArbRate);
+                hideElement(divDataRate);
+                hideElement(divMtu);
+                hideElement(divNodeId);
+                showElement(divCandump);
                 break;
             case transports.CAN["P-CAN"]:
                 h1TransportType.innerHTML = "P-CAN";
-                divTypeTransport.style.display = "none";
+                hideElement(divTypeTransport);
                 break;
         }
     }

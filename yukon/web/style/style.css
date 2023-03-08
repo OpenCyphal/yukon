@@ -1,5 +1,6 @@
 * {
     box-sizing: border-box;
+    font-size: 12px;
 }
 
 .lm_controls .lm_close {
@@ -13,7 +14,10 @@
     background: url(../../images/X_dark.png) no-repeat center center !important;
     background-size: 80% !important;
 }
-
+input.port_number_label {
+    border: none;
+    border-left: 6px solid SlateBlue;
+}
 #messages-list textarea {
     display: block;
     list-style: none;
@@ -325,7 +329,8 @@ button#btnShowHideToolbar:active {
     align-items: stretch;
     height: 100%;
     width: 100%;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     position: relative;
     padding: 0.2vw;
 }

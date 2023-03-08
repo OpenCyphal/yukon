@@ -1,5 +1,6 @@
 * {
     box-sizing: border-box;
+    font-size: 12px;
 }
 
 body {
@@ -35,22 +36,22 @@ form#transport-selection-form>div {
     margin-bottom: 0.5em;
 }
 
-form#transport-selection-form>div>label {
+/* form#transport-selection-form>div>label {
     display: block;
     margin-bottom: 0.5em;
-}
+} */
 
 form#transport-selection-form>div>label.inline {
     display: inline-block;
     margin-bottom: 0.5em;
 }
 
-form#transport-selection-form>div>input[type=number],
+/* form#transport-selection-form>div>input[type=number],
 input[type=text] {
     display: block;
     width: 100%;
     padding: 4px;
-}
+} */
 
 #sTransport {
     display: block;

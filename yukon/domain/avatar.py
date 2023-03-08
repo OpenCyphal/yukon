@@ -303,9 +303,9 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(frozenset(self._ports.cln))
             ^ hash(frozenset(self._ports.srv))
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
-            ^ hash(self.disappeared)
+            ^ self.disappeared
             ^ hash(self.disappeared_since)
-            ^ hash(self.is_being_queried)
+            ^ self.is_being_queried
             ^ json_object["registers_hash"]
         )
         json_object["monitor2_hash"] = json_object["monitor_view_hash"]

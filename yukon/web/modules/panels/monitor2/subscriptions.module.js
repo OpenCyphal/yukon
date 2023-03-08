@@ -231,16 +231,17 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     pLatestMessage.style.marginBottom = "0";
     pLatestMessage.innerText = "Yet to receive messages...";
     subscriptionElement.appendChild(pLatestMessage);
+    let inputLogToConsole = {"checked": false};
     if (settings.ShowLogToConsoleOption) {
         const divLogToConsole = document.createElement('div');
         divLogToConsole.classList.add('form-check');
-        const inputLogToConsole = document.createElement('input');
+        inputLogToConsole = document.createElement('input');
         inputLogToConsole.classList.add('form-check-input');
         inputLogToConsole.classList.add('checkbox');
         inputLogToConsole.type = 'checkbox';
         inputLogToConsole.id = "inputLogToConsole" + subject_id + ":" + datatype;
         divLogToConsole.appendChild(inputLogToConsole);
-        const labelLogToConsole = document.createElement('label');
+        labelLogToConsole = document.createElement('label');
         labelLogToConsole.classList.add('form-check-label');
         labelLogToConsole.htmlFor = inputLogToConsole.id;
         labelLogToConsole.innerHTML = "Log to console";
@@ -368,19 +369,19 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     const current_messages = yukon_state.subscriptions[specifier];
     let lastCurrentMessagesLength = { value: 0 };
     let fetchTimeoutId = { value: null };
-    if (settings.BlinkSubscriptionOption === "Blink at backend fetch rate" || settings.BlinkSubscriptionOption === "Blink at new received messages") {
-        let setTimeoutFunction = null;
-        setTimeoutFunction = () => {
-            // Flash the inputFetchDelay element with a yellow color for half of the fetchDelayValue
-            setTimeout(() => inputFetchDelay.style.removeProperty("background-color"), fetchDelayValue / 2);
-            let fetchHadNewMessages = fetch(specifier, pLatestMessage, inputLogToConsole, fetchTimeoutId, lastCurrentMessagesLength, yukon_state)
+    let setTimeoutFunction = null;
+    setTimeoutFunction = () => {
+        // Flash the inputFetchDelay element with a yellow color for half of the fetchDelayValue
+        setTimeout(() => inputFetchDelay.style.removeProperty("background-color"), fetchDelayValue / 2);
+        let fetchHadNewMessages = fetch(specifier, pLatestMessage, inputLogToConsole, fetchTimeoutId, lastCurrentMessagesLength, yukon_state)
+        if (settings.BlinkSubscriptionOption === "Blink at backend fetch rate" || settings.BlinkSubscriptionOption === "Blink at new received messages") {
             if (fetchHadNewMessages || settings.BlinkSubscriptionOption === "Blink at backend fetch rate") {
                 inputFetchDelay.style.backgroundColor = "green";
             }
-            fetchTimeoutId.value = setTimeout(setTimeoutFunction, fetchDelayValue)
         }
-        setTimeoutFunction();
+        fetchTimeoutId.value = setTimeout(setTimeoutFunction, fetchDelayValue)
     }
+    setTimeoutFunction();
     subscriptionElementsToBePlaced.push([subscriptionElement, specifier]);
     subscriptionsDiv.appendChild(subscriptionElement);
 }
