@@ -182,6 +182,7 @@ async function createPublisherFrame(publisher, yukon_state) {
         refreshRateRow.appendChild(nameInput);
         const portIdInput = document.createElement('input');
         portIdInput.type = "number";
+        portIdInput.value = publisher.port_id;
         portIdInput.classList.add("port-id-input");
         portIdInput.placeholder = "Port ID";
         // TODO: Get the port id value in case the datatype of the publisher

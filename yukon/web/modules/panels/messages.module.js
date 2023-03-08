@@ -45,6 +45,9 @@ export async function setUpMessagesComponent(container, yukon_state) {
     sLogLevel.addEventListener("change", async () => {
         await yukon_state.zubax_api.set_log_level(sLogLevel.value);
     });
+    setTimeout(async function(){
+        sLogLevel.value = (await yukon_state.zubax_apij.get_log_level()).severity;
+    }, 0)
     cbShowTimestamp.addEventListener('change', function () {
         if (cbShowTimestamp.checked) {
             // For every message, add a timestamp to the message, use a for each loop

@@ -210,20 +210,20 @@ app.whenReady().then(() => {
             await window.webContents.send('restore_default_layout')
             removeAllRecoverButtons();
         }
-    })
+    });
     menuTemplate.push(
         {
             label: 'Press CTRL+SPACE to maximize the panel under your mouse',
         },
-    )
-    console.log("Setting up IPC handlers")
-    const menu = Menu.buildFromTemplate(menuTemplate)
+    );
+    console.log("Setting up IPC handlers");
+    const menu = Menu.buildFromTemplate(menuTemplate);
     ipcMain.handle('panels:addRecovery', function (_, panelName, panelText) {
-        console.log("Adding recoverable panel: " + panelName + " " + panelText)
+        console.log("Adding recoverable panel: " + panelName + " " + panelText);
         addRecoverablePanel(panelName, panelText, window, menu);
     }, window);
     ipcMain.handle('panels:removeRecovery', function (_, panelText) {
-        console.log("Removing recoverable panel: " + panelText)
+        console.log("Removing recoverable panel: " + panelText);
         removeRecoverButton(panelText);
     });
     Menu.setApplicationMenu(menu)
@@ -279,7 +279,7 @@ function removeAllRecoverButtons() {
         menuTemplate.splice(menuTemplate.indexOf(panelsMenuTemplate), 1);
     } catch (e) {
     }
-    const new_menu = Menu.buildFromTemplate(menuTemplate)
+    const new_menu = Menu.buildFromTemplate(menuTemplate);
     Menu.setApplicationMenu(new_menu);
 }
 

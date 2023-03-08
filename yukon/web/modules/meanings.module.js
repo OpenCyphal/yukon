@@ -58,7 +58,7 @@ export function getRelatedLinks(port, yukon_state) {
             if (parseInt(value) === parseInt(port) && register_name.endsWith(".id")) {
                 const datatype_key = registersKeys.find((a) => a.endsWith(link_name + ".type"));
                 const datatype = avatar.registers_values[datatype_key];
-                links.push({ name: link_name, node_id: avatar.node_id, "port": port, type: link_type, "name": register_name, "datatype": datatype });
+                links.push({ name: link_name, node_id: avatar.node_id, "port": port, type: link_type, "register_name": register_name, "datatype": datatype });
             }
         }
     }
