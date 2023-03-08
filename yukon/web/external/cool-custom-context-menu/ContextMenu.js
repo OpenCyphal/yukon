@@ -111,7 +111,14 @@ class ContextMenu {
         });
         document.addEventListener("contextmenu", (e) => {
             const targetObject = e.target;
-            const doesTargetMatchCriteria = targetObject.matches(this.target);
+            let doesTargetMatchCriteria = false;
+            try {
+                doesTargetMatchCriteria = targetObject.matches(this.target);
+            } catch (e) {
+                console.error("This browser doesn't support a css selector that we use.");
+                console.error(e);
+            }
+            
             if (doesTargetMatchCriteria) {
                 // Close the previous Menu (no more than one context menu can be open at a time)
                 this.closeMenu(this.renderedMenu)

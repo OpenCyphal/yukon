@@ -449,8 +449,9 @@ class Api:
         avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
         return jsonify(avatar_dto)
 
-    def get_log_level(self) -> None:
+    def get_log_level(self) -> Response:
         return jsonify({"severity": self.state.gui.message_severity})
+
     def set_log_level(self, severity: str) -> None:
         self.state.gui.message_severity = severity
 

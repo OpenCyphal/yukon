@@ -19,3 +19,5 @@ It is designed to run on GNU/Linux, Windows, and macOS.
 <p align="center"><img src="/docs/screenshot2.png" width="100%"></p>
 <p align="center"><img src="/docs/screenshot3.png" width="100%"></p>
 <p align="center"><img src="/docs/screenshot4.png" width="100%"></p>
+
+We recommend that Yukon is used with a computer screen that is at least of Full HD resolution.

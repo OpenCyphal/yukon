@@ -380,9 +380,10 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
             "Hardware Version": avatar.versions.hardware_version,
             "Uptime": secondsToColonSeparatedString(avatar.last_heartbeat.uptime),
             "Node ID": avatar.node_id,
-            "Disappeared": avatar.disappeared,
-            "Disappeared since": avatar.disappeared_since,
         };
+        if(avatar.disappeared) {
+            fieldsObject["Disappeared since"] =  avatar.disappeared_since.toFixed(1);
+        }
         const node = createElementForNode(avatar, "", listOfNewChildren, fieldsObject, get_up_to_date_avatar, yukon_state);
         nodesToBePositioned.push([node, avatar]);
     }
