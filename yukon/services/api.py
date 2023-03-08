@@ -19,6 +19,7 @@ from yukon.domain.publisher import YukonPublisher
 from yukon.custom_tk_dialog import launch_yes_no_dialog
 from yukon.domain.simple_publisher import SimplePublisher
 from yukon.services.snoop_registers import get_register_names
+from yukon.services.messages_publisher import get_level_no
 
 from yukon.services.utils import get_all_datatypes, get_all_field_dtos, get_datatype_return_dto, quit_application
 
@@ -277,7 +278,8 @@ class Api:
         }
 
     def add_local_message(self, message: str, severity: int) -> None:
-        add_local_message(self.state, message, severity, "Frontend")
+        if severity is None or (int(severity) >= get_level_no(self.state.gui.message_severity)):
+            add_local_message(self.state, message, severity, "Frontend")
 
     def import_all_of_register_configuration(self) -> str:
         return import_candump_file_contents()

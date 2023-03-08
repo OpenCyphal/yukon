@@ -84,7 +84,7 @@ class GuiState:
     last_poll_received: float = 0.0
     time_allowed_between_polls: float = 6.5
     # logging level / log level / message severity
-    message_severity: str = "INFO"
+    message_severity: str = "WARNING"
     server_port: int = 5000
     is_port_decided: bool = False
     forced_port: Optional[int] = None

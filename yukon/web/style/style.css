@@ -14,10 +14,19 @@
     background: url(../../images/X_dark.png) no-repeat center center !important;
     background-size: 80% !important;
 }
+
+label.port_number_label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+textarea.port_number_label,
 input.port_number_label {
     border: none;
     border-left: 6px solid SlateBlue;
 }
+
 #messages-list textarea {
     display: block;
     list-style: none;

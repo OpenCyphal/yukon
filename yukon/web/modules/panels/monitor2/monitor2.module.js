@@ -271,14 +271,14 @@ function addMissingPorts(avatar, yukon_state) {
     // This is needed because sometimes a node will not publish its status on its ports to the port list subject
     // Iterate through all registers in the avatar
     for (const [name, value] of Object.entries(avatar.registers_values)) {
-        
+
         const regex = /uavcan\.(pub|sub|cln|srv)\.(.+?)\.id/;
         // Use regex to extract the first and second ground, first group is link_type and second group is link_name from register_name
         const results = name.match(regex);
         if (!results) continue;
         const link_type = results[1];
         const link_name = results[2];
-        if((link_type === "pub" || link_type === "sub") && parseInt(value) > 8191) {
+        if ((link_type === "pub" || link_type === "sub") && parseInt(value) > 8191) {
             continue;
         } else if ((link_type === "srv" || link_type === "cln") && parseInt(value) > 511) {
             continue;
@@ -287,6 +287,17 @@ function addMissingPorts(avatar, yukon_state) {
             avatar.ports[link_type].push(parseInt(value));
         }
     }
+}
+function validateNewPortId(type, id) {
+    if(parseInt(id) === 65535) { return true; }
+    if(type === "pub" || type === "srv") {
+        for(const port of yukon_state.monitor2.ports) {
+            if(port.type === type && parseInt(port.port) === parseInt(id)) {
+                return false
+            }
+        }
+    }
+    return true;
 }
 async function update_monitor2(containerElement, monitor2Div, yukon_state, forced_update) {
     if (!forced_update && !areThereAnyNewOrMissingHashes("monitor2_hash", yukon_state)) {
@@ -383,7 +394,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
             "Uptime": secondsToColonSeparatedString(avatar.last_heartbeat.uptime),
             "Health": avatar.last_heartbeat.health_text,
         };
-        if(avatar.last_heartbeat) {
+        if (avatar.last_heartbeat) {
             try {
                 fieldsObject["Mode"] = avatar.last_heartbeat.mode;
                 switch (avatar.last_heartbeat.mode) {
@@ -404,8 +415,8 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
                 logger.error("Error while trying to get mode from last_heartbeat", e);
             }
         }
-        if(avatar.disappeared) {
-            fieldsObject["Disappeared since"] =  avatar.disappeared_since.toFixed(1);
+        if (avatar.disappeared) {
+            fieldsObject["Disappeared since"] = avatar.disappeared_since.toFixed(1);
         }
         const node = createElementForNode(avatar, "", listOfNewChildren, fieldsObject, get_up_to_date_avatar, yukon_state);
         nodesToBePositioned.push([node, avatar]);
@@ -479,13 +490,13 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
                 height = child.offsetTop + child.offsetHeight;
             }
         }
-        let marginBetween = 8;
+        let marginBetween = 6;
         if (avatar_y_counter.value < height + marginBetween) {
             avatar_y_counter.value = height + marginBetween;
         }
-        if (avatar_y_counter.value < 300) {
-            avatar_y_counter.value = 300;
-        }
+        // if (avatar_y_counter.value < 300) {
+        //     avatar_y_counter.value = 300;
+        // }
         if (avatar_height < avatar_y_counter.value) {
             avatar_height = avatar_y_counter.value;
         }
@@ -525,7 +536,7 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
 
     // Create a new div for each empty port, align it and style it just like port_number_label below in code
     for (const portInfo of emptyPortInfo) {
-        const designatedHeight = settings["DistancePerHorizontalConnection"] - 4;
+        const designatedHeight = settings["DistancePerHorizontalConnection"] - 0;
         const emptyPortDiv = document.createElement("div");
         emptyPortDiv.classList.add("port_number_label");
         emptyPortDiv.classList.add("empty_port");
@@ -550,7 +561,7 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         // align it 50px to the left from the left side of the horizontal line
         emptyPortDiv.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] + "px");
         // When hovered over emptyPortDiv, replace the innerText with portInfo.datatype
-        if(yukon_state.all_settings["Monitor view"]["Display unassigned port name and datatype on two lines"]) {
+        if (yukon_state.all_settings["Monitor view"]["Display unassigned port name and datatype on two lines"]) {
             emptyPortDiv.innerText = portInfo.link_name + "\n" + portInfo.datatype;
         } else {
             emptyPortDiv.onmouseover = function () {
@@ -561,30 +572,13 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
                 emptyPortDiv.innerText = portInfo.link_name;
             };
         }
-        
+
 
         emptyPortDiv.style.width = settings.LinkInfoWidth + "px";
         node.appendChild(emptyPortDiv);
 
 
-        // Add a button that says "Assign" and has a click event listener that calls assignPortToLink
-        const assign_button = document.createElement("button");
-        assign_button.classList.add("btn", "btn-sm", "btn-primary");
-        assign_button.innerText = "Assign";
-        assign_button.style.position = "absolute";
-        assign_button.style.height = designatedHeight + "px";
-        assign_button.style.top = avatar_y_counter.value + "px";
-        const assignButtonLeftOffset = 3 + "px";
-        assign_button.style.setProperty("left", assignButtonLeftOffset);
-        const assignButtonWidth = 100;
-        assign_button.style.width = assignButtonWidth + "px";
-        assign_button.style.display = "flex";
-        assign_button.style.alignItems = "center";
-        assign_button.style.justifyContent = "center";
-        // Align text to the top
-        // assign_button.style.setProperty()
 
-        node.appendChild(assign_button);
 
         // Also create a number input that has left set to settings["NodeXOffset"] + settings["NodeWidth"] - 190 + "px", the text input should have a placeholder of "Enter new port number"
         // The width of the text input should be 170px
@@ -592,10 +586,11 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         number_input.type = "number";
         number_input.style.position = "absolute";
         number_input.style.top = avatar_y_counter.value + "px";
-        number_input.style.left = assignButtonWidth + 12 + "px";
+        number_input.style.right = "0px";
         number_input.style.width = "130px";
         number_input.style.height = designatedHeight + "px";;
         number_input.placeholder = "New subject id";
+        number_input.classList.add("port_number_label");
         number_input.title = "Enter a new subject id";
         if (portInfo.link_type === "srv") {
             number_input.style.setProperty("background-color", settings["ServicePortLabelBgColor"], "important");
@@ -607,17 +602,23 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
             number_input.style.setProperty("background-color", settings["SubscriberPortLabelBgColor"], "important");
             number_input.style.setProperty("color", settings["SubscriberPortLabelColor"], "important");
         }
-        node.appendChild(number_input);
-
-        assign_button.addEventListener("click", async function () {
-            const response = await zubax_apij.update_register_value(portInfo.name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
+        number_input.addEventListener("change", async function () {
+            if(number_input.value === "") {
+                number_input.value = 65535;
+            }
+            if(!validateNewPortId(portInfo.link_type, number_input.value)) {
+                number_input.style.textDecoration = "underline";
+                return;
+            }
+            number_input.style.textDecoration = "none;"
+            // Assign value
+            const response = await zubax_apij.update_register_value(portInfo.register_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
             if (response.success) {
                 console.log("The port identifier for " + portInfo.name + " was successfully updated to " + number_input.value);
                 console.log("Usually it is the case that you should now restart the node before changes are applied.")
             }
         });
-
-
+        node.appendChild(number_input);
         avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
     }
     avatar_y_counter.value += 3;
@@ -653,14 +654,14 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         valueDiv.classList.add("value");
         valueDiv.innerHTML = fieldsObject[field];
         // This is for Health status
-        if(fieldsObject[field] === "CAUTION") {
+        if (fieldsObject[field] === "CAUTION") {
             valueDiv.style.backgroundColor = "orange";
         } else if (fieldsObject[field] === "WARNING") {
             valueDiv.style.backgroundColor = "red";
         } else if (fieldsObject[field] === "ADVISORY") {
             valueDiv.style.backgroundColor = "yellow";
         }
-        if(fieldsObject[field] === "OPERATIONAL") {
+        if (fieldsObject[field] === "OPERATIONAL") {
             valueDiv.style.backgroundColor = "green";
         } else if (fieldsObject[field] === "INITIALIZATION") {
             valueDiv.style.backgroundColor = "pink";
@@ -830,7 +831,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     let arrowhead = null;
     horizontal_line = document.createElement("div");
     horizontal_line.classList.add("horizontal_line");
-    horizontal_line.style.top = y_counter.value + avatar_y_counter.value + "px";
+    horizontal_line.style.top = y_counter.value + avatar_y_counter.value + settings.HorizontalLineYOffset + "px";
     horizontal_line.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + "px";
     horizontal_line.style.width = matchingPort.x_offset - settings["NodeXOffset"] - settings["NodeWidth"] + "px";
     horizontal_line.style.height = settings.HorizontalLineWidth + "px";
@@ -840,7 +841,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     horizontal_line_collider.classList.add("horizontal_line_collider");
     horizontal_line_collider.setAttribute("data-port", matchingPort.port);
     horizontal_line_collider.setAttribute("data-port-type", matchingPort.type);
-    horizontal_line_collider.style.top = y_counter.value + avatar_y_counter.value - settings["HorizontalColliderOffsetY"] + "px";
+    horizontal_line_collider.style.top = y_counter.value + avatar_y_counter.value + settings.HorizontalLineYOffset - settings["HorizontalColliderOffsetY"] + "px";
     horizontal_line_collider.style.left = horizontal_line.style.left;
     horizontal_line_collider.style.width = horizontal_line.style.width;
     horizontal_line_collider.style.height = settings["HorizontalColliderHeight"] + "px";
@@ -853,7 +854,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     if (settings.ShowLinkNameOnSeparateLine && typeof currentLinkObject === "object" && currentLinkObject.name) {
         link_name_label = document.createElement("label");
         link_name_label.classList.add("link_name_label");
-        link_name_label.style.top = y_counter.value + avatar_y_counter.value - settings.LinkNameOffset + "px";
+        link_name_label.style.top = y_counter.value + avatar_y_counter.value + settings.HorizontalLineYOffset - settings.LinkNameOffset + "px";
         link_name_label.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + settings.LabelLeftMargin + "px";
         link_name_label.style.width = "fit-content";
         link_name_label.style.zIndex = "0";
@@ -866,7 +867,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     // Place a label above the horizontal line at the left side
     const horizontal_line_label = document.createElement("label");
     horizontal_line_label.classList.add("horizontal_line_label");
-    horizontal_line_label.style.top = y_counter.value + avatar_y_counter.value - settings["HorizontalLabelOffsetY"] + "px";
+    horizontal_line_label.style.top = y_counter.value + avatar_y_counter.value + settings.HorizontalLineYOffset - settings["HorizontalLabelOffsetY"] + "px";
     horizontal_line_label.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + settings.LabelLeftMargin + "px";
     horizontal_line_label.style.width = "fit-content"; // settings.LinkInfoWidth  - settings.LabelLeftMargin + "px";
     horizontal_line_label.style.height = "fit-content";
@@ -900,6 +901,10 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
         portLabelElement = "input"
     }
     const port_number_label = document.createElement(portLabelElement);
+    if (portLabelElement === "textarea") {
+        port_number_label.style.resize = "none";
+        port_number_label.rows = "1";
+    }
     if (typeof currentLinkObject === "object") {
         port_number_label.setAttribute("type", "number");
     }
@@ -916,15 +921,16 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     port_number_label.classList.add("port_number_label");
     port_number_label.style.top = y_counter.value + avatar_y_counter.value - settings.HorizontalPortLabelOffsetY + "px";
     // align it 50px to the left from the left side of the horizontal line
-    port_number_label.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 50 + "px");
+    port_number_label.style.setProperty("left", settings["NodeXOffset"] + settings["NodeWidth"] - 45 + "px");
     port_number_label.style.width = "45px";
     port_number_label.style.paddingTop = "2px";
     port_number_label.style.paddingRight = "2px";
-    if (!isLast) {
-        port_number_label.style.height = settings.DistancePerHorizontalConnection + "px";
-    } else {
-        port_number_label.style.height = "calc(fit-content + 2px)";
-    }
+    // if (!isLast) {
+    port_number_label.style.height = settings.DistancePerHorizontalConnection + "px";
+    // }
+    //  else {
+    //     port_number_label.style.height = "calc(fit-content + 2px)";
+    // }
     port_number_label.style.position = "absolute";
     if (typeof currentLinkObject === "object") {
         port_number_label.value = currentLinkObject.port;
@@ -935,7 +941,14 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
                 clearTimeout(timeout);
             }
             timeout = setTimeout(async () => {
-                const response = await zubax_apij.update_register_value(currentLinkObject.name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${port_number_label.value}]}}`), currentLinkObject.node_id);
+                if(port_number_label.value === "") {
+                    port_number_label.value = 65535;
+                }
+                if(!validateNewPortId(matchingPort.type, port_number_label.value)) {
+                    port_number_label.style.textDecoration = "underline";
+                    return;
+                }
+                const response = await zubax_apij.update_register_value(currentLinkObject.register_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${port_number_label.value}]}}`), currentLinkObject.node_id);
                 let restartButton = document.querySelector("#btn" + currentLinkObject.node_id + "_Restart");
                 if (restartButton) {
                     // Previous background color
@@ -973,7 +986,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     arrowhead = document.createElement("div");
     arrowhead.classList.add("arrowhead");
     arrowhead.style.position = "absolute";
-    arrowhead.style.left = matchingPort.x_offset - 15 + "px";
+    arrowhead.style.left = matchingPort.x_offset - 13 + "px";
     arrowhead.style.width = "0px";
     arrowhead.style.height = "0px";
     arrowhead.style.setProperty("border-left-width", "9px");
@@ -1013,21 +1026,21 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     }, 1000);
 
     const right_end_of_edge = matchingPort.x_offset;
-    const left_end_of_edge = settings["NodeXOffset"] + settings["NodeWidth"] - 7 + "px"
+    const left_end_of_edge = settings["NodeXOffset"] + settings["NodeWidth"] - 6 + "px"
     if (matchingPort.type === "pub" || matchingPort.type === "cln") {
         // Arrowhead for the line
         arrowhead.style.transform = "rotate(270deg)";
         arrowhead.style.left = right_end_of_edge - 12 + "px";
-        arrowhead.style.top = y_counter.value + avatar_y_counter.value - 4 + settings.HorizontalLineWidth / 2 + "px";
+        arrowhead.style.top = y_counter.value + avatar_y_counter.value + settings.HorizontalLineYOffset - 4 + settings.HorizontalLineWidth / 2 + "px";
     } else if (matchingPort.type === "sub" || matchingPort.type === "srv") {
-        arrowhead.style.top = y_counter.value + avatar_y_counter.value - 4 + settings.HorizontalLineWidth / 2 + "px";
+        arrowhead.style.top = y_counter.value + avatar_y_counter.value + settings.HorizontalLineYOffset - 4 + settings.HorizontalLineWidth / 2 + "px";
         arrowhead.style.transform = "rotate(90deg)";
         arrowhead.style.left = left_end_of_edge;
         // Make a circle and position it at right_end_of_edge
         const circle = document.createElement("div");
         circle.classList.add("circle");
         circle.style.position = "absolute";
-        circle.style.top = y_counter.value + avatar_y_counter.value - 7 + "px";
+        circle.style.top = y_counter.value + avatar_y_counter.value + settings.HorizontalLineYOffset - 7 + "px";
         circle.style.left = right_end_of_edge - 7 + "px";
         circle.style.width = "15px";
         circle.style.height = "15px";

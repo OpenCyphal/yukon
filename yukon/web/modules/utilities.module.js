@@ -161,7 +161,7 @@ export function getUnassignedPortsForNode(node_id, yukon_state) {
                 // If for whatever reason the port is not in the pub, sub, cln, srv lists of node.ports, then it should be displayed still in the unassigned ports list
                 const isPortNotDisplayed = node.ports[link_type] && node.ports[link_type].indexOf(subject_id) === -1;
                 if (isPortNotDisplayed || subject_id === 65535) {
-                    emptyPorts.push({ "link_name": link_name, "link_type": link_type, "full_name": register_name, "name": register_name, "datatype": detected_datatype });
+                    emptyPorts.push({ "link_name": link_name, "link_type": link_type, "full_name": register_name, "register_name": register_name, "name": link_name, "datatype": detected_datatype });
                 }
             }
         }

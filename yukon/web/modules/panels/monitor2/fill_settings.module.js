@@ -4,10 +4,11 @@ export function fillSettings(settings, yukon_state) {
     settings.PageMarginTop = 20;
     settings.NodeXOffset = 5;
     settings.DistancePerHorizontalConnection = yukon_state.all_settings["Monitor view"]["Distance per horizontal connection"];
-    settings.DistanceBetweenNodes = 2;
+    settings.DistanceBetweenNodes = 5;
     settings.NodeWidth = yukon_state.all_settings["Monitor view"]["Node width"];
     settings.AvatarMinHeight = 50;
-    settings.AvatarConnectionPadding = 20;
+    settings.AvatarConnectionPadding = 10;
+    settings.HorizontalLineYOffset = 10
     settings.LinkInfoWidth = yukon_state.all_settings["Monitor view"]["Link info width"];
     settings.PubLineXOffset = settings.NodeXOffset + settings.NodeWidth + settings.LinkInfoWidth + 20;
     settings.DistanceBetweenLines = yukon_state.all_settings["Monitor view"]["Distance between vertical lines"];
