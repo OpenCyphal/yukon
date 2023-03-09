@@ -114,6 +114,7 @@ window.console = new Proxy(old_console, {
     yukon_state.addLocalMessage = function (message, severity) {
         zubax_api.add_local_message(message, severity);
     }
+    yukon_state.addLocalMessage("Press CTRL+SPACE to maximize the panel under your mouse", 30);
     window.addEventListener("error", function (error, url, line) {
         console.log("There was an actual error!")
         yukon_state.addLocalMessage("Error: " + error.message + " at " + error.filename + ":" + error.lineno, 40);

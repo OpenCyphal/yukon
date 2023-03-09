@@ -77,6 +77,9 @@ function createWindow() {
 }
 
 const isMac = process.platform === 'darwin'
+const restoreDefaultLayoutItem = {
+    label: "Restore default layout",
+};
 let menuTemplate = [
     {
         label: 'File',
@@ -95,7 +98,8 @@ let menuTemplate = [
             { role: 'zoomIn' },
             { role: 'zoomOut' },
             { type: 'separator' },
-            { role: 'togglefullscreen' }
+            { role: 'togglefullscreen' },
+            restoreDefaultLayoutItem
         ]
     },
     {
@@ -204,18 +208,10 @@ app.whenReady().then(() => {
     ipcMain.handle('dialog:openPath', handlePathOpen);
     ipcMain.handle('dialog:saveFile', handleFileSave);
     const window = createWindow();
-    menuTemplate.push({
-        label: "Restore default layout",
-        click: async () => {
-            await window.webContents.send('restore_default_layout')
-            removeAllRecoverButtons();
-        }
-    });
-    menuTemplate.push(
-        {
-            label: 'Press CTRL+SPACE to maximize the panel under your mouse',
-        },
-    );
+    restoreDefaultLayoutItem.click = async () => {
+        await window.webContents.send('restore_default_layout')
+        removeAllRecoverButtons();
+    }
     console.log("Setting up IPC handlers");
     const menu = Menu.buildFromTemplate(menuTemplate);
     ipcMain.handle('panels:addRecovery', function (_, panelName, panelText) {

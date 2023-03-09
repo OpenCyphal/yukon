@@ -21,10 +21,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
         });
         pathInput.style.width = "calc(100% - 148px)";
         const pathButton = document.createElement("button");
-        pathButton.classList.add("path-button");
-        pathButton.classList.add("btn");
-        pathButton.classList.add("btn-danger");
-        pathButton.classList.add("btn-sm");
+        pathButton.classList.add("path-button", "btn", "btn-danger");
         pathButton.innerText = "Browse";
         pathButton.addEventListener("click", async function () {
             let path = "";
@@ -48,10 +45,7 @@ export async function setUpSettingsComponent(container, yukon_state) {
         pathDiv.appendChild(pathButton);
         // Add a button for removing
         const removeButton = document.createElement("button");
-        removeButton.classList.add("remove-button");
-        removeButton.classList.add("btn");
-        removeButton.classList.add("btn-danger");
-        removeButton.classList.add("btn-sm");
+        removeButton.classList.add("remove-button", "btn", "btn-danger");
         removeButton.innerText = "Remove";
         removeButton.addEventListener("click", async function () {
             // Delete the settings object

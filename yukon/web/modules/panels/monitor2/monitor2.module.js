@@ -1174,6 +1174,6 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
         monitor2Div.appendChild(line);
     }
     if (publishers_and_services.length > 0) {
-        settings.SubscriptionsOffset = publishers_and_services[publishers_and_services.length - 1].x_offset + settings.DistanceBetweenLines + 10;
+        settings.SubscriptionsOffset = publishers_and_services[publishers_and_services.length - 1].x_offset + settings.DistanceBetweenLines - 40;
     }
 }
