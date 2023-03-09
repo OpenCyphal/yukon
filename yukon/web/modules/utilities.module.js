@@ -247,9 +247,9 @@ export function doCommandFeedbackResult(result, feedbackMessageElement) {
         }
     }
     // Tween feedbackMessage.style.backgroundColor from sepia to green
-    const starting_color_rgb = [50, 50, 50];
+    const starting_color_rgb = [150, 150, 150];
     const increments_to_take = 144;
-    const ending_color_rgb = [0, 50, 0];
+    const ending_color_rgb = [0, 150, 0];
     let increment_counter = 0;
     let tweenFunction = null;
     tweenFunction = () => {

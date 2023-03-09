@@ -389,7 +389,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
             "Name": avatar.name,
             "Software Version": avatar.versions.software_version,
             "Hardware Version": avatar.versions.hardware_version,
-            "――――――――――――――――――――": "",
+            // "――――――――――――――――――――": "",
             "Node ID": avatar.node_id,
             "Uptime": secondsToColonSeparatedString(avatar.last_heartbeat.uptime),
             "Health": avatar.last_heartbeat.health_text,
@@ -711,6 +711,38 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         inputGroup.appendChild(btnButton);
     }
     node.appendChild(inputGroup);
+
+    // Add an input-group input-group-text for command id and command text argument, both should have inputs. Then add a send command button
+    const customCommandInputGroup = document.createElement("div");
+    customCommandInputGroup.classList.add("input-group");
+    customCommandInputGroup.style.setProperty("backgroundColor", "transparent", "important");
+    const customCommandIdInput = document.createElement("input");
+    customCommandIdInput.classList.add("form-control");
+    customCommandIdInput.style.fontSize = "12px";
+    customCommandIdInput.style.width = "40%";
+    customCommandIdInput.placeholder = "Command ID";
+    customCommandInputGroup.appendChild(customCommandIdInput);
+    const customCommandTextInput = document.createElement("input");
+    customCommandTextInput.classList.add("form-control");
+    customCommandTextInput.style.fontSize = "12px";
+    customCommandTextInput.style.width = "60%";
+    customCommandTextInput.placeholder = "Command text";
+    customCommandInputGroup.appendChild(customCommandTextInput);
+    const customCommandSendButton = document.createElement("button");
+    customCommandSendButton.classList.add("btn_button");
+    customCommandSendButton.classList.add("btn");
+    customCommandSendButton.classList.add("btn-primary");
+    customCommandSendButton.classList.add("btn-sm");
+    customCommandSendButton.style.fontSize = "12px";
+    customCommandSendButton.style.width = "100%";
+    customCommandSendButton.innerHTML = "Send command";
+    customCommandSendButton.onclick = async () => {
+        const result = await yukon_state.zubax_apij.send_command(avatar.node_id, customCommandIdInput.value, customCommandTextInput.value);
+        doCommandFeedbackResult(result, feedbackMessage);
+    };
+
+    customCommandInputGroup.appendChild(customCommandSendButton);
+    node.appendChild(customCommandInputGroup);
 
     const inputGroup2 = document.createElement("div");
     inputGroup2.classList.add("input-group");

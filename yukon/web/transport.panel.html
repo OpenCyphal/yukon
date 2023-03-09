@@ -1,7 +1,7 @@
 <form id="transport-selection-form">
     <div id="maybe-tabs" class="noselect">
     </div>
-    <p id="TransportType"></p>
+    <p id="TransportType" style="display: none"></p>
     <a id="pythoncanlink" target="_blank"
         href="https://pycyphal.readthedocs.io/en/stable/api/pycyphal.transport.can.media.pythoncan.html">Link to the
         documentation</a>
@@ -46,7 +46,7 @@
         <input class="form-control" type="number" id="iServiceTransferMultiplier" placeholder="Service transfer multiplier" value="1" width="2ch" maxlength="1">
     </div>
     <div id="UDPLinuxWarning">
-        <p>On GNU/Linux systems, the command for fixing UDP packet sniffing permissions is: </p>
+        <p>On GNU/Linux systems, for fixing UDP packet sniffing permissions: </p>
         <pre>sudo setcap cap_net_raw+eip "$(readlink -f PATH_TO_YOUR_PYTHON_OR_YUKON_EXECUTABLE)"</pre>
     </div>
     <button type="button" id="btnStart" class="btn btn-sm btn-primary btn-block">Start this transport</button>

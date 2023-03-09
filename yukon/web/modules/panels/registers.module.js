@@ -386,7 +386,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             label.style.height = '0px';
             label.style.position = 'absolute';
             label.style.bottom = '13px';
-            label.style.fontSize = '10px';
+            label.style.fontSize = '8px';
             // label.style.color = '#000000';
             label.style.backgroundColor = 'transparent !important';
             label.style.padding = '0px';
