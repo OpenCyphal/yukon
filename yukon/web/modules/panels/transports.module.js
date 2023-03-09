@@ -457,7 +457,8 @@ export function initTransports(container, yukon_state) {
     }
 
     const btnStart = containerElem.querySelector("#btnStart");
-    btnStart.addEventListener('click', async function () {
+    const startTransportFunction = async function (event) {
+        event.preventDefault();
         if (!verifyInputs()) {
             console.error("Invalid input values.");
             return;
@@ -505,7 +506,10 @@ export function initTransports(container, yukon_state) {
             feedbackMessageDiv.style.display = "block";
             feedbackMessageDiv.innerHTML = resultObject.message_short;
         }
-    });
+    }
+    const form = containerElem.querySelector("#transport-selection-form");
+    form.addEventListener("submit", startTransportFunction);
+    btnStart.addEventListener('click', startTransportFunction);
     const btnCopyToYakut = containerElem.querySelector("#btnCopyToYakut");
     let exportWord = "export";
     if (navigator.platform == "Win32") {
