@@ -289,10 +289,10 @@ function addMissingPorts(avatar, yukon_state) {
     }
 }
 function validateNewPortId(type, id) {
-    if(parseInt(id) === 65535) { return true; }
-    if(type === "pub" || type === "srv") {
-        for(const port of yukon_state.monitor2.ports) {
-            if(port.type === type && parseInt(port.port) === parseInt(id)) {
+    if (parseInt(id) === 65535) { return true; }
+    if (type === "pub" || type === "srv") {
+        for (const port of yukon_state.monitor2.ports) {
+            if (port.type === type && parseInt(port.port) === parseInt(id)) {
                 return false
             }
         }
@@ -456,31 +456,33 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
             }
             // Getting info about more links than necessary for later highlighting purposes
             const relatedLinks = getRelatedLinks(port.port, yukon_state);
-            const currentLinkObject = relatedLinks.find(link => link.port === port.port && link.type === matchingPort.type && link.node_id === avatar.node_id);
-            let toggledOn = { value: false };
-            let currentLinkDsdlDatatype = null;
-            let fixed_datatype_short = null;
-            let fixed_datatype_full = null;
-            if (datatypes_response["fixed_id_messages"] && datatypes_response["fixed_id_messages"][port.port] !== undefined) {
-                fixed_datatype_short = datatypes_response["fixed_id_messages"][port.port]["short_name"];
-                fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["name"];
-            }
-            if (currentLinkObject !== undefined) {
-                currentLinkDsdlDatatype = currentLinkObject.datatype || "";
-                if (currentLinkObject.name && !settings.ShowLinkNameOnSeparateLine) {
-                    currentLinkDsdlDatatype = currentLinkObject.name + ":" + currentLinkDsdlDatatype;
+            const currentLinkObjects = relatedLinks.filter(link => link.port === port.port && link.type === matchingPort.type && link.node_id === avatar.node_id);
+            for (const currentLinkObject of currentLinkObjects) {
+                let toggledOn = { value: false };
+                let currentLinkDsdlDatatype = null;
+                let fixed_datatype_short = null;
+                let fixed_datatype_full = null;
+                if (datatypes_response["fixed_id_messages"] && datatypes_response["fixed_id_messages"][port.port] !== undefined) {
+                    fixed_datatype_short = datatypes_response["fixed_id_messages"][port.port]["short_name"];
+                    fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["name"];
                 }
-            } else {
-                currentLinkDsdlDatatype = fixed_datatype_full || "There is no info about this link";
-            }
-            let isLast = false;
-            // If this is the last iteration of the loop, set a variable to true
-            if (port === avatar_ports_all_in_one[avatar_ports_all_in_one.length - 1]) {
-                isLast = true;
-            }
-            addHorizontalElements(listOfNewChildren, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state);
+                if (currentLinkObject !== undefined) {
+                    currentLinkDsdlDatatype = currentLinkObject.datatype || "";
+                    if (currentLinkObject.name && !settings.ShowLinkNameOnSeparateLine) {
+                        currentLinkDsdlDatatype = currentLinkObject.name + ":" + currentLinkDsdlDatatype;
+                    }
+                } else {
+                    currentLinkDsdlDatatype = fixed_datatype_full || "There is no info about this link";
+                }
+                let isLast = false;
+                // If this is the last iteration of the loop, set a variable to true
+                if (port === avatar_ports_all_in_one[avatar_ports_all_in_one.length - 1]) {
+                    isLast = true;
+                }
+                addHorizontalElements(listOfNewChildren, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state);
 
-            avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
+                avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
+            }
         }
         if (avatar_y_counter.value < 400) {
             avatar_y_counter.value = 400;
@@ -557,13 +559,8 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
                 emptyPortDiv.innerText = portInfo.link_name;
             };
         }
-
-
         emptyPortDiv.style.width = settings.LinkInfoWidth + "px";
         node.appendChild(emptyPortDiv);
-
-
-
 
         // Also create a number input that has left set to settings["NodeXOffset"] + settings["NodeWidth"] - 190 + "px", the text input should have a placeholder of "Enter new port number"
         // The width of the text input should be 170px
@@ -588,10 +585,10 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
             number_input.style.setProperty("color", settings["SubscriberPortLabelColor"], "important");
         }
         number_input.addEventListener("change", async function () {
-            if(number_input.value === "") {
+            if (number_input.value === "") {
                 number_input.value = 65535;
             }
-            if(!validateNewPortId(portInfo.link_type, number_input.value)) {
+            if (!validateNewPortId(portInfo.link_type, number_input.value)) {
                 number_input.style.textDecoration = "underline";
                 return;
             }
@@ -600,7 +597,21 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
             const response = await zubax_apij.update_register_value(portInfo.register_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
             if (response.success) {
                 console.log("The port identifier for " + portInfo.name + " was successfully updated to " + number_input.value);
-                console.log("Usually it is the case that you should now restart the node before changes are applied.")
+                yukon_state.addLocalMessage("Usually it is the case that you should now restart the node before the device applies its changes", 30)
+                let restartButton = document.querySelector("#btn" + node_id + "_Restart");
+                if (restartButton) {
+                    // Previous background color
+                    const previousBackgroundColor = restartButton.style.backgroundColor;
+                    // Flash it 3 times
+                    for (let i = 0; i < 3; i++) {
+                        restartButton = document.querySelector("#btn" + node_id + "_Restart");
+                        restartButton.title = "You should restart this node to apply the changes to port identifiers."
+                        restartButton.style.setProperty("background-color", "red", "important");
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        restartButton.style.setProperty("background-color", previousBackgroundColor, "important");
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
             }
         });
         node.appendChild(number_input);
@@ -643,6 +654,10 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         valueDiv.classList.add("d-inline-flex", "value");
         valueDiv.style.setProperty("margin-left", "5px");
         valueDiv.innerHTML = fieldsObject[field];
+        // If it's the last field then set a margin-bottom
+        if (field == Object.keys(fieldsObject)[Object.keys(fieldsObject).length - 1]) {
+            containerDiv.style.marginBottom = "6px";
+        }
         // This is for Health status
         if (fieldsObject[field] === "CAUTION") {
             valueDiv.style.backgroundColor = "orange";
@@ -690,8 +705,8 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     inputGroup.classList.add("input-group");
     inputGroup.style.setProperty("backgroundColor", "transparent", "important");
     let neededButtons = [{ "name": "Restart", "command": "65535", "title": "Restart device" }, { "name": "Save", "command": "65530", "title": "Save persistent states" }, { "name": "Estop", "command": "65531", "title": "Emergency stop" }];
-    const telegaButtons = [{"name": "Cancel", "command": "0", "title": "Cancel"}, {"name": "SelfTest", "command": "1", "title": "SelfTest"}, {"name": "MotorID", "command": "2", "title": "MotorID"}];
-    if(fieldsObject && fieldsObject["Name"] && fieldsObject["Name"].includes("telega")) {
+    const telegaButtons = [{ "name": "Cancel", "command": "0", "title": "Cancel" }, { "name": "SelfTest", "command": "1", "title": "SelfTest" }, { "name": "MotorID", "command": "2", "title": "MotorID" }];
+    if (fieldsObject && fieldsObject["Name"] && fieldsObject["Name"].includes("telega")) {
         neededButtons.push(...telegaButtons);
     }
     for (const button of neededButtons) {
@@ -966,10 +981,10 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
                 clearTimeout(timeout);
             }
             timeout = setTimeout(async () => {
-                if(port_number_label.value === "") {
+                if (port_number_label.value === "") {
                     port_number_label.value = 65535;
                 }
-                if(!validateNewPortId(matchingPort.type, port_number_label.value)) {
+                if (!validateNewPortId(matchingPort.type, port_number_label.value)) {
                     port_number_label.style.textDecoration = "underline";
                     return;
                 }
@@ -988,6 +1003,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
                         await new Promise(resolve => setTimeout(resolve, 1000));
                     }
                 }
+                yukon_state.addLocalMessage("Usually it is the case that you should now restart the node before the device applies its changes.", 30)
             }, 2000);
         });
     } else {
