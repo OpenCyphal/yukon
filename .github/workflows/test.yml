@@ -5,6 +5,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   python-quality-check:
+    timeout-minutes: 5
     runs-on: ubuntu-22.04
     steps:
       - name: checking out

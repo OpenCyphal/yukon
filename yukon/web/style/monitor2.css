@@ -26,7 +26,7 @@
     align-items: flex-start;
     position: absolute;
     border-radius: 0;
-    word-break: normal;
+    word-break: break-all;
     min-height: fit-content !important;
 }
 
