@@ -56,15 +56,13 @@ def eprint(*args: typing.Any, **kwargs: typing.Any) -> None:
 
 def log_message(state: "yukon.domain.god_state.GodState", new_message: str) -> None:
     # Check if the directory .yukon exists in the home directory, if it doesn't then create it
-    if not os.path.exists(os.path.join(os.path.expanduser("~"), ".yukon")):
-        os.mkdir(os.path.join(os.path.expanduser("~"), ".yukon"))
+    desired_parent_path = os.path.join(os.path.expanduser("~"), ".zubax", "yukon", "logs")
+    if not os.path.exists(desired_parent_path):
+        os.makedirs(desired_parent_path)
     # Check if state.log_file is set, if it is then write the message to the log file
     if not state.log_file:
         state.log_file = (
-            os.path.join(
-                os.path.expanduser("~"), ".yukon", "yukon-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-            )
-            + ".log"
+            os.path.join(desired_parent_path, "yukon-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")) + ".log"
         )
     with open(state.log_file, "a", encoding="utf-8") as log_file:
         log_file.write(new_message)

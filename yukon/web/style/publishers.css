@@ -26,7 +26,7 @@
     align-items: center;
     aspect-ratio: 1 / 1;
     background-color: green;
-    border-radius: 50%;
+    border-radius: 50% !important;
 }
 
 .knob-dot {

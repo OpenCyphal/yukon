@@ -1127,7 +1127,7 @@ class Api:
 
     def save_settings(self) -> None:
         try:
-            save_settings(self.state.settings, Path.home() / "yukon_settings.yaml", self.state)
+            save_settings(self.state.settings, Path.home() / ".zubax" / "yukon" / "yukon_settings.yaml", self.state)
         except Exception as e:
             logger.error("Failed to save settings.")
             tb = traceback.format_exc()

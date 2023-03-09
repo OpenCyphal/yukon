@@ -1,6 +1,12 @@
 * {
     box-sizing: border-box;
     font-size: 12px;
+    border-radius: 0 !important;
+    border: none;
+}
+
+.input-group> :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+    margin-left: 0px !important;
 }
 
 .lm_controls .lm_close {

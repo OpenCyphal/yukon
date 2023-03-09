@@ -457,7 +457,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
             // Getting info about more links than necessary for later highlighting purposes
             const relatedLinks = getRelatedLinks(port.port, yukon_state);
             const currentLinkObjects = relatedLinks.filter(link => link.port === port.port && link.type === matchingPort.type && link.node_id === avatar.node_id);
-            for (const currentLinkObject of currentLinkObjects) {
+            function doStuff(currentLinkObject) {
                 let toggledOn = { value: false };
                 let currentLinkDsdlDatatype = null;
                 let fixed_datatype_short = null;
@@ -466,7 +466,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
                     fixed_datatype_short = datatypes_response["fixed_id_messages"][port.port]["short_name"];
                     fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["name"];
                 }
-                if (currentLinkObject !== undefined) {
+                if (!fixed_datatype_full) {
                     currentLinkDsdlDatatype = currentLinkObject.datatype || "";
                     if (currentLinkObject.name && !settings.ShowLinkNameOnSeparateLine) {
                         currentLinkDsdlDatatype = currentLinkObject.name + ":" + currentLinkDsdlDatatype;
@@ -482,6 +482,12 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
                 addHorizontalElements(listOfNewChildren, matchingPort, currentLinkDsdlDatatype, toggledOn, y_counter, avatar_y_counter, currentLinkObject, isLast, settings, yukon_state);
 
                 avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
+            }
+            if (currentLinkObjects.length === 0) {
+                doStuff(null);
+            }
+            for (const currentLinkObject of currentLinkObjects) {
+                doStuff(currentLinkObject);
             }
         }
         if (avatar_y_counter.value < 400) {
@@ -617,7 +623,7 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         node.appendChild(number_input);
         avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
     }
-    avatar_y_counter.value += 3;
+    avatar_y_counter.value += 0;
 }
 function createElementForNode(avatar, text, container, fieldsObject, get_up_to_date_avatar, yukon_state) {
     // Verify that the avatar is not undefined
@@ -891,23 +897,24 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     horizontal_line_collider.style.cursor = "pointer";
     monitor2Div.appendChild(horizontal_line_collider);
     let link_name_label = null;
-    if (settings.ShowLinkNameOnSeparateLine && typeof currentLinkObject === "object" && currentLinkObject.name) {
-        link_name_label = document.createElement("label");
-        link_name_label.classList.add("link_name_label");
-        link_name_label.style.top = y_counter.value + avatar_y_counter.value + settings.HorizontalLineYOffset - settings.LinkNameOffset + "px";
-        link_name_label.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + settings.LabelLeftMargin + "px";
-        link_name_label.style.width = "fit-content";
-        link_name_label.style.zIndex = "0";
-        link_name_label.style.position = "absolute";
-        link_name_label.style.backgroundColor = "transparent";
-        link_name_label.style.cursor = "pointer";
+
+    link_name_label = document.createElement("label");
+    link_name_label.classList.add("link_name_label");
+    link_name_label.style.top = y_counter.value + avatar_y_counter.value + settings.HorizontalLineYOffset - settings.LinkNameOffset + "px";
+    link_name_label.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + settings.LabelLeftMargin + "px";
+    link_name_label.style.width = "fit-content";
+    link_name_label.style.zIndex = "0";
+    link_name_label.style.position = "absolute";
+    link_name_label.style.backgroundColor = "transparent";
+    link_name_label.style.cursor = "pointer";
+    if (settings.ShowLinkNameOnSeparateLine && currentLinkObject && typeof currentLinkObject === "object" && currentLinkObject.name) {
         link_name_label.innerHTML = currentLinkObject.name || "";
-        monitor2Div.appendChild(link_name_label);
     }
+    monitor2Div.appendChild(link_name_label);
     // Place a label above the horizontal line at the left side
     const horizontal_line_label = document.createElement("label");
     horizontal_line_label.classList.add("horizontal_line_label");
-    horizontal_line_label.style.top = y_counter.value + avatar_y_counter.value + settings.HorizontalLineYOffset - settings["HorizontalLabelOffsetY"] + "px";
+    horizontal_line_label.style.top = y_counter.value + avatar_y_counter.value + settings.HorizontalLineYOffset - settings["HorizontalLabelOffsetY"] + 5 + "px";
     horizontal_line_label.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + settings.LabelLeftMargin + "px";
     horizontal_line_label.style.width = "fit-content"; // settings.LinkInfoWidth  - settings.LabelLeftMargin + "px";
     horizontal_line_label.style.height = "fit-content";
@@ -937,7 +944,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     }
     // Create a label for the port number on the left side of the horizontal line
     let portLabelElement = "label"
-    if (typeof currentLinkObject === "object") {
+    if (currentLinkObject && typeof currentLinkObject === "object") {
         portLabelElement = "input"
     }
     const port_number_label = document.createElement(portLabelElement);
@@ -972,7 +979,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     //     port_number_label.style.height = "calc(fit-content + 2px)";
     // }
     port_number_label.style.position = "absolute";
-    if (typeof currentLinkObject === "object") {
+    if (currentLinkObject && typeof currentLinkObject === "object") {
         port_number_label.value = currentLinkObject.port;
         // If 2 seconds is gone past the last change, then save the value
         let timeout = null;
@@ -1008,6 +1015,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
         });
     } else {
         port_number_label.innerHTML = matchingPort.port;
+        link_name_label.innerHTML = matchingPort.port;
     }
     port_number_label.style.zIndex = "4";
     port_number_label.style.textAlign = "right";
@@ -1063,7 +1071,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
         circle.style.left = right_end_of_edge - 7 + "px";
         circle.style.width = "15px";
         circle.style.height = "15px";
-        circle.style.borderRadius = "50%";
+        circle.style.setProperty("border-radius", "50%", "important");
         circle.style.zIndex = "4";
         monitor2Div.appendChild(circle);
         linesByPortAndPortType.push({ "element": circle, "port": matchingPort.port, "type": matchingPort.type, "toggledOn": toggledOn });

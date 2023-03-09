@@ -11,7 +11,7 @@ function createCloseButton() {
     closeButton.style.position = "absolute";
     closeButton.style.display = "flex";
     // Align text to the baseline
-    closeButton.style.alignItems = "flex-end";
+    closeButton.style.alignItems = "baseline";
     closeButton.style.justifyContent = "center";
     // closeButton.style.right = "1px";
     // closeButton.style.top = "1px";
@@ -21,7 +21,7 @@ function createCloseButton() {
     // Make sure the button has a 1x1 aspect ratio and a width of 14px
     closeButton.style.width = "20px";
     closeButton.style.height = "20px";
-    closeButton.style.padding = "0px";
+    // closeButton.style.padding = "0px";
     return closeButton;
 }
 export async function updatePublishers(publishersOuterArea, yukon_state) {

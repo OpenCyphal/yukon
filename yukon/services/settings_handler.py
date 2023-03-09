@@ -33,6 +33,9 @@ class IncorrectConfigurationException(Exception):
 
 
 def save_settings(settings_: typing.Dict, save_location: Path, state: GodState) -> None:
+    # If the save_location parent directory doesn't exist then create it
+    if not save_location.parent.exists():
+        os.makedirs(save_location.parent)
     serialized_settings = json.dumps(settings_, cls=EnhancedJSONEncoderForSavingSettings)
     # Compute a hash of json_traversed_settings
     # If the hash is the same as the previous hash, don't save the settings
@@ -208,7 +211,7 @@ def loading_settings_into_yukon(state: GodState) -> None:
     This function makes sure that new settings that Yukon developers add end up in the settings file.
 
     Overridden values from configuration do of course take effect over the default values in code."""
-    settings_file_path = Path.home() / "yukon_settings.yaml"
+    settings_file_path = Path.home() / ".zubax" / "yukon_settings.yaml"
     loaded_settings = None
     try:
         loaded_settings = load_settings(settings_file_path)

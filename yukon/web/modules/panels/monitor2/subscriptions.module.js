@@ -231,7 +231,7 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     pLatestMessage.style.marginBottom = "0";
     pLatestMessage.innerText = "Yet to receive messages...";
     subscriptionElement.appendChild(pLatestMessage);
-    let inputLogToConsole = {"checked": false};
+    let inputLogToConsole = { "checked": false };
     if (settings.ShowLogToConsoleOption) {
         const divLogToConsole = document.createElement('div');
         divLogToConsole.classList.add('form-check');
@@ -241,7 +241,7 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
         inputLogToConsole.type = 'checkbox';
         inputLogToConsole.id = "inputLogToConsole" + subject_id + ":" + datatype;
         divLogToConsole.appendChild(inputLogToConsole);
-        labelLogToConsole = document.createElement('label');
+        const labelLogToConsole = document.createElement('label');
         labelLogToConsole.classList.add('form-check-label');
         labelLogToConsole.htmlFor = inputLogToConsole.id;
         labelLogToConsole.innerHTML = "Log to console";

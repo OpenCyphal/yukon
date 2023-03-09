@@ -110,7 +110,7 @@ let menuTemplate = [
                         label: "Open Yukon logs folder",
                         click: async () => {
                             const home_dir = app.getPath('home');
-                            const yukon_home_dir = path.join(home_dir, ".yukon");
+                            const yukon_home_dir = path.join(home_dir, ".zubax", "yukon", "logs");
                             const yukon_home_dir_exists = fs.existsSync(yukon_home_dir);
                             if (yukon_home_dir_exists) {
                                 // Open the folder
@@ -193,7 +193,7 @@ let menuTemplate = [
             },
         ]
     },
-    
+
 ]
 app.whenReady().then(() => {
     // Send a GET request to http://locahost:5000/api/announce_running_in_electron
