@@ -482,23 +482,8 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
 
             avatar_y_counter.value += settings["DistancePerHorizontalConnection"];
         }
-        // Iterate over every element in node and find the lowest positioned element
-        // Save the height based on that
-        let height = 0;
-        for (const child of node.children) {
-            if (child.offsetTop + child.offsetHeight > height) {
-                height = child.offsetTop + child.offsetHeight;
-            }
-        }
-        let marginBetween = 6;
-        if (avatar_y_counter.value < height + marginBetween) {
-            avatar_y_counter.value = height + marginBetween;
-        }
-        // if (avatar_y_counter.value < 300) {
-        //     avatar_y_counter.value = 300;
-        // }
-        if (avatar_height < avatar_y_counter.value) {
-            avatar_height = avatar_y_counter.value;
+        if (avatar_y_counter.value < 400) {
+            avatar_y_counter.value = 400;
         }
         addEmptyPorts(node, avatar_y_counter, avatar.node_id, yukon_state);
         y_counter.value += avatar_y_counter.value + settings["DistanceBetweenNodes"];
@@ -645,13 +630,18 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     }
     container.appendChild(node);
     for (const field of Object.keys(fieldsObject)) {
+        const containerDiv = document.createElement("div");
+        containerDiv.classList.add("flex-row");
         const fieldDiv = document.createElement("div");
-        fieldDiv.classList.add("field");
+        containerDiv.appendChild(fieldDiv);
+        fieldDiv.classList.add("d-inline-flex", "field");
         fieldDiv.innerHTML = field;
         fieldDiv.style.fontWeight = "bold";
-        node.appendChild(fieldDiv);
         const valueDiv = document.createElement("div");
-        valueDiv.classList.add("value");
+        containerDiv.appendChild(valueDiv);
+        node.appendChild(containerDiv);
+        valueDiv.classList.add("d-inline-flex", "value");
+        valueDiv.style.setProperty("margin-left", "5px");
         valueDiv.innerHTML = fieldsObject[field];
         // This is for Health status
         if (fieldsObject[field] === "CAUTION") {
@@ -688,7 +678,6 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
                 }
             }, 1000);
         }
-        node.appendChild(valueDiv);
     }
     // Add an empty label in a variable called feedbackMessage
     const feedbackMessage = document.createElement("div");
@@ -700,7 +689,11 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     const inputGroup = document.createElement("div");
     inputGroup.classList.add("input-group");
     inputGroup.style.setProperty("backgroundColor", "transparent", "important");
-    const neededButtons = [{ "name": "Restart", "command": "65535", "title": "Restart device" }, { "name": "Save", "command": "65530", "title": "Save persistent states" }, { "name": "Estop", "command": "65531", "title": "Emergency stop" }];
+    let neededButtons = [{ "name": "Restart", "command": "65535", "title": "Restart device" }, { "name": "Save", "command": "65530", "title": "Save persistent states" }, { "name": "Estop", "command": "65531", "title": "Emergency stop" }];
+    const telegaButtons = [{"name": "Cancel", "command": "0", "title": "Cancel"}, {"name": "SelfTest", "command": "1", "title": "SelfTest"}, {"name": "MotorID", "command": "2", "title": "MotorID"}];
+    if(fieldsObject["Name"].includes("telega")) {
+        neededButtons.push(...telegaButtons);
+    }
     for (const button of neededButtons) {
         const btnButton = document.createElement("button");
         btnButton.style.fontSize = "12px";
@@ -969,14 +962,6 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
         port_number_label.innerHTML = matchingPort.port;
     }
     port_number_label.style.zIndex = "4";
-    // if (matchingPort.type === "srv") {
-    //     port_number_label.style.backgroundColor = settings["ServicePortLabelBgColor"];
-    //     port_number_label.style.setProperty("color", settings["ServicePortLabelColor"], "important");
-    // } else {
-    //     port_number_label.style.backgroundColor = settings["LinkLabelHighlightColor"];
-    //     port_number_label.style.color = settings["LinkLabelHighlightTextColor"];
-    // }
-    // Align text right
     port_number_label.style.textAlign = "right";
     monitor2Div.appendChild(port_number_label);
 
@@ -996,20 +981,6 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     linesByPortAndPortType.push({ "element": horizontal_line, "port": matchingPort.port, "type": matchingPort.type, "toggledOn": toggledOn });
     linesByPortAndPortType.push({ "element": arrowhead, "port": matchingPort.port, "type": matchingPort.type, "toggledOn": toggledOn });
     linesByPortAndPortType.push({ "element": horizontal_line_label, "port": matchingPort.port, "type": matchingPort.type, "toggledOn": toggledOn });
-    // horizontal_line_collider.addEventListener("mouseover", () => {
-    //     if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
-    //         highlightElement(horizontal_line, "red", settings, yukon_state);
-    //         highlightElement(arrowhead, "red", settings, yukon_state);
-    //         highlightElement(horizontal_line_label, "none", settings, yukon_state);
-    //     }
-    // });
-    // horizontal_line_collider.addEventListener("mouseout", () => {
-    //     if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
-    //         removeHighlightFromElement(horizontal_line, settings, yukon_state);
-    //         removeHighlightFromElement(arrowhead, settings, yukon_state);
-    //         removeHighlightFromElement(horizontal_line_label, settings, yukon_state);
-    //     }
-    // });
 
     horizontal_line_collider.addEventListener("click", () => {
         toggledOn.value = !toggledOn.value;
@@ -1139,16 +1110,6 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
         line_collider.style.zIndex = "2";
         line_collider.style.backgroundColor = "transparent";
         line_collider.style.cursor = "pointer";
-        // line_collider.addEventListener("mouseover", () => {
-        //     if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
-        //         line.style.setProperty("background-color", "red");
-        //     }
-        // });
-        // line_collider.addEventListener("mouseout", () => {
-        //     if (!toggledOn.value && !yukon_state.grabbing_in_monitor_view) {
-        //         line.style.removeProperty("background-color");
-        //     }
-        // });
         line_collider.addEventListener("click", () => {
             toggledOn.value = !toggledOn.value;
             changeStateOfElement(port.port, toggledOn.value, false, yukon_state);
