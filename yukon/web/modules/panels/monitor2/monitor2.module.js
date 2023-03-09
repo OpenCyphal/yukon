@@ -691,7 +691,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     inputGroup.style.setProperty("backgroundColor", "transparent", "important");
     let neededButtons = [{ "name": "Restart", "command": "65535", "title": "Restart device" }, { "name": "Save", "command": "65530", "title": "Save persistent states" }, { "name": "Estop", "command": "65531", "title": "Emergency stop" }];
     const telegaButtons = [{"name": "Cancel", "command": "0", "title": "Cancel"}, {"name": "SelfTest", "command": "1", "title": "SelfTest"}, {"name": "MotorID", "command": "2", "title": "MotorID"}];
-    if(fieldsObject["Name"].includes("telega")) {
+    if(fieldsObject && fieldsObject["Name"] && fieldsObject["Name"].includes("telega")) {
         neededButtons.push(...telegaButtons);
     }
     for (const button of neededButtons) {
