@@ -50,12 +50,11 @@ export async function setUpMonitor2Component(container, yukon_state) {
     const containerElement = container.getElement()[0];
     yukon_state.monitor2ContainerElement = containerElement;
     const monitor2Div = await waitForElm("#monitor2", 7000, this);
-    console.log("Past monitor2Div found")
+    monitor2Div.parentElement.classList.add("monitor2-parent");
     if (monitor2Div === null) {
         console.error("monitor2Div is null");
         return;
     } else {
-        console.log("monitor2Div is not null");
     }
     fillSettings(settings, yukon_state);
     const subscriptionsOuterArea = containerElement.querySelector("#subscriptions-outer-area");

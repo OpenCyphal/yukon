@@ -170,9 +170,31 @@ export function make_context_menus(yukon_state) {
                         "get_everything": false,
                         "only_of_register_name": null
                     }, yukon_state);
+                    const selectedCells = document.querySelectorAll(".selected-cell .input")
+                    for (let i = 0; i < selectedCells.length; i++) {
+                        const selectedCell = selectedCells[i];
+                        const previousText = selectedCell.innerHTML;
+                        selectedCell.innerHTML = "Generating yaml!";
+                        setTimeout(function () {
+                            if (selectedCell.innerHTML === "Copied!" || selectedCell.innerHTML === "Generating yaml!" || selectedCell.innerHTML === "Copy failed!") {
+                                selectedCell.innerHTML = previousText;
+                            }
+                        }, 1000);
+                    }
                     const yaml_text = await return_all_selected_registers_as_yaml(pairs, yukon_state);
-                    await copyTextToClipboard(yaml_text);
-                    e.stopPropagation();
+
+                    const didCopySucceed = await copyTextToClipboard(yaml_text, e);
+                    if (!didCopySucceed) {
+                        for (let i = 0; i < selectedCells.length; i++) {
+                            const selectedCell = selectedCells[i];
+                            selectedCell.innerHTML = "Copy failed!";
+                        }
+                        addLocalMessage("Please make sure to click on the Yukon window somewhere to focus the window when a copy fails.", 40)
+                    }
+                    for (let i = 0; i < selectedCells.length; i++) {
+                        const selectedCell = selectedCells[i];
+                        selectedCell.innerHTML = "Copied!";
+                    }
                 }
             },
             shouldBeDisplayed: moreThanOneSelectedConstraint
@@ -573,7 +595,7 @@ export function make_context_menus(yukon_state) {
     });
     monitor2_vertical_line_context_menu.init();
     const monitor2_general_context_menu = new ContextMenu({
-        target: ".lm_content:has(>#monitor2)",
+        target: ".monitor2-parent",
         mode: "dark",
         menuItems: [
             subscriber_menu_items[0],
