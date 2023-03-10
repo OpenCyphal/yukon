@@ -38,6 +38,12 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
     });
     textField.addEventListener("focusout", () => {
         textField.scrollLeft = savedScroll;
+        setTimeout(() => {
+            if(state_holder.dropdown) {
+                state_holder.dropdown.remove();
+                state_holder.dropdown = null;
+            }
+        }, 300)
     });
     textField.style.position = "relative";
     textField.style.display = "flex";

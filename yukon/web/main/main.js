@@ -717,6 +717,9 @@ window.console = new Proxy(old_console, {
         document.addEventListener('keydown', function (e) {
             if (e.code === "Escape") {
                 const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
+                if(!returnArray) {
+                    return;
+                }
                 const hoveredContainerObject = returnArray[1];
                 if (!hoveredContainerObject || hoveredContainerObject.title !== "registersComponent") {
                     return;

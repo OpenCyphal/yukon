@@ -80,6 +80,7 @@
     background-color: black;
     color: white;
     cursor: pointer;
+    font-size: 10px;
 }
 
 #monitor2 input.port_number_label::-webkit-outer-spin-button,

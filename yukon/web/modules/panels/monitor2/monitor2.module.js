@@ -95,6 +95,7 @@ export async function setUpMonitor2Component(container, yukon_state) {
     document.addEventListener('keydown', function (e) {
         if (e.code === "Escape") {
             const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
+            if(!returnArray) { return; }
             const hoveredContainerObject = returnArray[1];
             if (!hoveredContainerObject || hoveredContainerObject.title !== "monitor2Component") {
                 return;
@@ -466,7 +467,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
                     fixed_datatype_short = datatypes_response["fixed_id_messages"][port.port]["short_name"];
                     fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["name"];
                 }
-                if (!fixed_datatype_full) {
+                if (currentLinkObject && !fixed_datatype_full) {
                     currentLinkDsdlDatatype = currentLinkObject.datatype || "";
                     if (currentLinkObject.name && !settings.ShowLinkNameOnSeparateLine) {
                         currentLinkDsdlDatatype = currentLinkObject.name + ":" + currentLinkDsdlDatatype;
@@ -490,9 +491,10 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
                 doStuff(currentLinkObject);
             }
         }
-        if (avatar_y_counter.value < 400) {
-            avatar_y_counter.value = 400;
+        if (avatar_y_counter.value < settings.AvatarMinHeight) {
+            avatar_y_counter.value = settings.AvatarMinHeight;
         }
+        avatar_y_counter.value += settings.EmptyPortsDistanceAboveUnassignedPorts;
         addEmptyPorts(node, avatar_y_counter, avatar.node_id, yukon_state);
         y_counter.value += avatar_y_counter.value + settings["DistanceBetweenNodes"];
 
@@ -903,7 +905,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     link_name_label.style.top = y_counter.value + avatar_y_counter.value + settings.HorizontalLineYOffset - settings.LinkNameOffset + "px";
     link_name_label.style.left = settings["NodeXOffset"] + settings["NodeWidth"] + settings.LabelLeftMargin + "px";
     link_name_label.style.width = "fit-content";
-    link_name_label.style.zIndex = "0";
+    link_name_label.style.zIndex = "3";
     link_name_label.style.position = "absolute";
     link_name_label.style.backgroundColor = "transparent";
     link_name_label.style.cursor = "pointer";
@@ -923,7 +925,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
         currentLinkDsdlDatatype = currentLinkDsdlDatatype.replace(".Response", "");
     }
     horizontal_line_label.innerHTML = currentLinkDsdlDatatype;
-    horizontal_line_label.style.zIndex = "0";
+    horizontal_line_label.style.zIndex = "3";
     horizontal_line_label.style.backgroundColor = settings["LinkLabelColor"];
     horizontal_line_label.style.color = settings["LinkLabelTextColor"];
     horizontal_line_label.addEventListener("mouseover", () => {

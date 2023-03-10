@@ -30,13 +30,18 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
     const numberField2 = document.createElement('input');
     const spinner = createSpinner("100%",
         (x) => { // Value changed callback
+            console.log("spinner value changed")
             valueField.value = x;
             yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
         },
         () => parseFloat(numberField1.value), // Get minimum value
         () => parseFloat(numberField2.value) // Get maximum value
     );
-
+    const recalculateStep = () => {
+        const minMaxRange = parseFloat(numberField2.value) - parseFloat(numberField1.value);
+        let desiredStep = minMaxRange / 100;
+        valueField.step = desiredStep;
+    }
     const spinnerElement = spinner.spinnerElement;
     spinnerElement.style.marginLeft = "2px";
     spinnerElement.style.marginRight = "2px";
@@ -54,8 +59,10 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
         }
         if (parseFloat(valueField.value) > parseFloat(numberField2.value)) {
             spinner.setValue(parseFloat(numberField2.value));
+            valueField.value = parseFloat(numberField2.value)
         }
         await yukon_state.zubax_apij.set_field_min_max(publisher.id, field.id, parseFloat(numberField1.value), parseFloat(numberField2.value));
+        recalculateStep();
         // numberField2.dispatchEvent(new CustomEvent('maxChanged', {
         //     bubbles: true,
         // }));
@@ -66,17 +73,21 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
         }
         if (parseFloat(valueField.value) < parseFloat(numberField1.value)) {
             spinner.setValue(parseFloat(numberField1.value));
+            valueField.value = parseFloat(numberField1.value)
         }
         await yukon_state.zubax_apij.set_field_min_max(publisher.id, field.id, parseFloat(numberField1.value), parseFloat(numberField2.value));
+        recalculateStep();
     });
     row.appendChild(numberField2);
     // Add a number field for value
     valueField.type = "number";
     valueField.step = "any";
+    recalculateStep();
     valueField.classList.add("value-field");
     valueField.style.width = "100px";
     valueField.addEventListener('change', async (event) => {
         yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
+        console.log("value changed to " + valueField.value);
         spinner.setValue(parseFloat(valueField.value));
     });
     spinner.setValue(parseFloat(field.value));

@@ -143,7 +143,7 @@ export function createSpinner(spinnerSizePx = "50px", valueChangedCallback = nul
             let isClamped = false;
             if (getMinValue) {
                 const minValue = getMinValue();
-                if (newValue <= minValue) {
+                if (newValue < minValue) {
                     newValue = minValue;
                     isClamped = true;
                     // Set the angle to the corresponding clamped angle
@@ -152,7 +152,7 @@ export function createSpinner(spinnerSizePx = "50px", valueChangedCallback = nul
             }
             if (getMaxValue) {
                 const maxValue = getMaxValue();
-                if (newValue >= maxValue) {
+                if (newValue > maxValue) {
                     newValue = maxValue;
                     isClamped = true;
                     // Set the angle to the corresponding clamped angle
@@ -180,25 +180,29 @@ export function createSpinner(spinnerSizePx = "50px", valueChangedCallback = nul
         "spinnerElement": spinner,
         "setValue": (newValue) => {
             const circle = Math.PI * 2;
-            spinnerValue = newValue / multiplier();
+            spinnerValue = newValue // / multiplier();
             spinnerAngle = spinnerValue - Math.floor(spinnerValue / circle) * circle;
             if (getMinValue) {
                 const minValue = getMinValue();
-                if (spinnerValue <= minValue) {
+                if (spinnerValue < minValue) {
                     spinnerValue = minValue;
                     valueChangedCallback(spinnerValue);
                     // Set the angle to the corresponding clamped angle
                     spinnerAngle = minAngle;
                 }
+            } else {
+                console.error("no minvalue function")
             }
             if (getMaxValue) {
                 const maxValue = getMaxValue();
-                if (spinnerValue >= maxValue) {
+                if (spinnerValue > maxValue) {
                     spinnerValue = maxValue;
                     valueChangedCallback(spinnerValue);
                     // Set the angle to the corresponding clamped angle
                     spinnerAngle = maxAngle();
                 }
+            } else {
+                console.error("no maxvalue function");
             }
             spinner.style.transform = `rotate(${spinnerAngle}rad)`;
             previousSpinnerAngle = spinnerAngle;

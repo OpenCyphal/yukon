@@ -1,12 +1,13 @@
 export function fillSettings(settings, yukon_state) {
     // This layer of indirection is not actually compulsory and settings can be directly accessed from yukon_state.all_settings, missing settings and error handling can be done here, however
     settings.VerticalLineMarginTop = 3;
-    settings.PageMarginTop = 20;
+    settings.PageMarginTop = 5;
     settings.NodeXOffset = 5;
     settings.DistancePerHorizontalConnection = yukon_state.all_settings["Monitor view"]["Distance per horizontal connection"];
     settings.DistanceBetweenNodes = 5;
     settings.NodeWidth = yukon_state.all_settings["Monitor view"]["Node width"];
-    settings.AvatarMinHeight = 50;
+    settings.AvatarMinHeight = 350;
+    settings.EmptyPortsDistanceAboveUnassignedPorts = 8;
     settings.AvatarConnectionPadding = 10;
     settings.HorizontalLineYOffset = 10
     settings.LinkInfoWidth = yukon_state.all_settings["Monitor view"]["Link info width"];
@@ -14,8 +15,8 @@ export function fillSettings(settings, yukon_state) {
     settings.DistanceBetweenLines = yukon_state.all_settings["Monitor view"]["Distance between vertical lines"];
     settings.HorizontalColliderHeight = 17;
     settings.HorizontalColliderOffsetY = (settings.HorizontalColliderHeight - 1) / 2
-    settings.HorizontalLabelOffsetY = 20;
-    settings.HorizontalPortLabelOffsetY = 10;
+    settings.HorizontalLabelOffsetY = 20; // The label that is above the line
+    settings.HorizontalPortLabelOffsetY = 6; // Offset of the lines compared to port label (left side) texts
     settings.HorizontalLineWidth = yukon_state.all_settings["Monitor view"]["Horizontal line width"];
     settings.VerticalLineWidth = yukon_state.all_settings["Monitor view"]["Vertical line width"];
     settings.LabelLeftMargin = 12;
