@@ -444,7 +444,7 @@ button#btnShowHideToolbar:active {
 
 .my-modal-content {
     margin-top: 10vh;
-    padding: 20px;
+    padding: 20px 10px;
     border-radius: 10px;
     width: 80%;
     background-color: white;

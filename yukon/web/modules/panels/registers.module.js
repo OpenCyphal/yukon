@@ -613,8 +613,9 @@ export function showCellValue(node_id, register_name, yukon_state) {
     document.body.appendChild(modal);
     let modal_content = returnObject.modal_content;
     document.body.appendChild(modal);
-    let modal_title = document.createElement("h2");
-    modal_title.innerHTML = "Value of " + register_name;
+    let modal_title = document.createElement("p");
+    // Value of
+    modal_title.innerHTML = register_name;
     modal_content.appendChild(modal_title);
 
     let modal_value = document.createElement("textarea");
@@ -646,6 +647,7 @@ export function showCellValue(node_id, register_name, yukon_state) {
     let modal_submit = document.createElement("button");
     modal_submit.classList.add("btn");
     modal_submit.classList.add("btn-primary");
+    modal_submit.style.marginTop = "4px";
     modal_submit.innerHTML = "Submit";
     if (!isMutable) {
         modal_submit.disabled = true;
@@ -664,8 +666,12 @@ export function showCellValue(node_id, register_name, yukon_state) {
     document.addEventListener("keydown", enterListener);
     modal_content.appendChild(modal_submit);
 
-    let modal_type = document.createElement("p");
+    let modal_type = document.createElement("span");
     modal_type.innerHTML = type_string;
+    // Position modal_type in the bottom right corner
+    modal_type.style.position = "absolute";
+    modal_type.style.bottom = "2px";
+    modal_type.style.right = "2px";
     modal_content.appendChild(modal_type);
     setTimeout(() => modal_value.focus(), 100);
 }

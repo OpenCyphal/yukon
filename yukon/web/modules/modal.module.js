@@ -4,8 +4,14 @@ export function createGenericModal(escapeCallback) {
     modal.classList.add("my-modal");
     let modal_content = document.createElement("div");
     modal_content.classList.add("my-modal-content");
+    modal_content.style.position = "relative";
     modal.appendChild(modal_content);
     let modal_close = document.createElement("button");
+    // Position the modal_close in the top right corner
+    modal_close.style.position = "absolute";
+    modal_close.style.top = "0";
+    modal_close.style.right = "0";
+    modal_close.style.margin = "10px";
     modal_close.classList.add("btn");
     modal_close.classList.add("btn-danger");
     let escapeListener = null;

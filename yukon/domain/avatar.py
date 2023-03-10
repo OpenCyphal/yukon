@@ -120,6 +120,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
     def _on_port_list(self, ts: float, obj: Any) -> None:
         import uavcan.node.port
+
         start_of_action = time.monotonic()
         logger.info("Got obj %r", obj)
         assert isinstance(obj, uavcan.node.port.List_0_1)
@@ -302,7 +303,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             "disappeared": self.disappeared,
             "disappeared_since": self.disappeared_since,
             "is_being_queried": self.is_being_queried,
-            "has_port_list": self.has_port_list
+            "has_port_list": self.has_port_list,
         }
         json_object["monitor_view_hash"] = (
             hash(frozenset(self._ports.pub))
