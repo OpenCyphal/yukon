@@ -95,7 +95,7 @@ export async function setUpMonitor2Component(container, yukon_state) {
     document.addEventListener('keydown', function (e) {
         if (e.code === "Escape") {
             const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
-            if(!returnArray) { return; }
+            if (!returnArray) { return; }
             const hoveredContainerObject = returnArray[1];
             if (!hoveredContainerObject || hoveredContainerObject.title !== "monitor2Component") {
                 return;
@@ -1152,10 +1152,10 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
                 }
                 port_label.appendChild(potentialPopup);
                 if (yukon_state && yukon_state.monitor2) {
-                    
+
                 }
             }
-            
+
         });
         monitor2Div.appendChild(port_label);
         let toggledOn = { value: false };

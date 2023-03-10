@@ -532,7 +532,7 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
         const subscriptionElement = document.createElement("div");
         subscription.element = subscriptionElement;
         const header = document.createElement("h3");
-        header.innerText = "This is a pending subscription, confirm it by selecting a datatype and clicking the button below";
+        header.innerText = "Pending subscription";
         subscriptionElement.appendChild(header);
         subscriptionElement.classList.add("subscription");
         subscriptionElement.style.position = "relative";
@@ -550,6 +550,7 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
             // Create a h3 for subject1Nr
             const subject_id_display = document.createElement("input");
             subject_id_display.placeholder = "Subject ID";
+            subject_id_display.style.width = "50px";
             subject_id_display.value = subject1Nr;
             subscriptionElement.appendChild(subject_id_display);
             const select = document.createElement("select");
@@ -775,8 +776,7 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     divUseSelectAdvertised.appendChild(iSelectDatatype);
 
     const btnRefresh1 = document.createElement('button');
-    btnRefresh1.classList.add('btn');
-    btnRefresh1.classList.add('btn-outline-secondary');
+    btnRefresh1.classList.add('btn', "btn-secondary");
     btnRefresh1.type = 'button';
     btnRefresh1.id = "btnRefresh1:" + subscription.subject_id;
     btnRefresh1.innerHTML = "Refresh";
@@ -809,8 +809,7 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     divUseSelectFixedId.appendChild(iSelectFixedIdMessageType);
 
     const btnRefresh2 = document.createElement('button');
-    btnRefresh2.classList.add('btn');
-    btnRefresh2.classList.add('btn-outline-secondary');
+    btnRefresh2.classList.add('btn', "btn-secondary");
     btnRefresh2.type = 'button';
     btnRefresh2.id = "btnRefresh2:" + subscription.subject_id;
     btnRefresh2.innerHTML = "Refresh";
@@ -840,8 +839,7 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     divUseSelectAny.appendChild(iSelectAny);
 
     const btnRefresh3 = document.createElement('button');
-    btnRefresh3.classList.add('btn');
-    btnRefresh3.classList.add('btn-outline-secondary');
+    btnRefresh3.classList.add('btn', "btn-secondary");
     btnRefresh3.type = 'button';
     btnRefresh3.id = "btnRefresh3:" + subscription.subject_id;
     btnRefresh3.innerHTML = "Refresh";

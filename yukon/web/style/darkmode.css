@@ -2,9 +2,11 @@
     #monitor2 .port_label {
         color: white;
     }
+
     #monitor2 .port_label.service {
         color: lightblue !important;
     }
+
     .lm_controls .lm_close {
         padding-top: 0.5px;
         background: url(../../images/X_light.png) no-repeat center center !important;
@@ -49,7 +51,6 @@
 
     #maybe-tabs label.selected-tab {
         background-color: #700000 !important;
-        border-bottom: 5px solid #700000 !important
     }
 
     #maybe-tabs label {

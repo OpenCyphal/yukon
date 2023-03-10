@@ -1,12 +1,12 @@
 * {
     box-sizing: border-box;
     font-size: 12px;
-    border-radius: 0 !important;
+    font-family: monospace !important;
     border: none;
 }
 
 *:not(input[type="radio"]) {
-    border-radius: 0 !important;
+    border-radius: 0;
 }
 
 .input-group> :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
@@ -26,6 +26,7 @@
 }
 
 label.port_number_label {
+    font-weight: 500;
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -33,6 +34,7 @@ label.port_number_label {
 
 textarea.port_number_label,
 input.port_number_label {
+    font-weight: 500;
     border: none;
     border-left: 6px solid SlateBlue;
 }

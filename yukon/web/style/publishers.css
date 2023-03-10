@@ -57,7 +57,7 @@
     height: 1.5em;
 }
 
-.publisher-row>* {
+.publisher-row>:not(:first-child) {
     margin-left: 0.5em;
 }
 

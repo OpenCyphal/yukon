@@ -106,17 +106,17 @@ form#transport-selection-form>#maybe-tabs>div.tab-row {
 }
 
 form#transport-selection-form>#maybe-tabs label {
-    display: inline !important;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     height: 100%;
     flex-grow: 3;
-    padding: 0.5em;
     background-color: #cfcfcf;
-    text-align: center;
 }
 
 form#transport-selection-form>#maybe-tabs label.selected-tab {
     background-color: #ee0000;
-    border-bottom: 5px solid #ee0000;
     color: #fff;
     z-index: 0;
 }

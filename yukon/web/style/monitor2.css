@@ -83,6 +83,10 @@
     font-size: 10px;
 }
 
+#monitor2 .port_label.service {
+    color: darkblue;
+}
+
 #monitor2 input.port_number_label::-webkit-outer-spin-button,
 .port_number_label::-webkit-inner-spin-button {
     -webkit-appearance: none;
@@ -117,12 +121,11 @@
 
 #subscriptions-inner-area>div.subscription>* {
     margin-top: 2px;
+    margin-right: 2px;
 }
 
 #subscriptions-inner-area>div.subscription>h3 {
     font-size: 0.9rem;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #d3d3d3;
 }
 
 #subscriptions-inner-area>div.subscription p {
