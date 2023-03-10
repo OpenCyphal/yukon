@@ -1,4 +1,10 @@
 @media (prefers-color-scheme: dark) {
+    #monitor2 .port_label {
+        color: white;
+    }
+    #monitor2 .port_label.service {
+        color: lightblue !important;
+    }
     .lm_controls .lm_close {
         padding-top: 0.5px;
         background: url(../../images/X_light.png) no-repeat center center !important;

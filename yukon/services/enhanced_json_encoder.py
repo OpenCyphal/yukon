@@ -147,15 +147,15 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         if isinstance(o, SynchronizedMessageGroup):
             return o.carriers
         if isinstance(o, SynchronizedMessageCarrier):
-            metadata = None
-            if o.metadata:
-                metadata = o.metadata
-                metadata["counter"] = o.counter
-                metadata["subject_id"] = o.subject_id
+            # metadata = None
+            # if o.metadata:
+            # metadata = o.metadata
+            # metadata["counter"] = o.counter
+            # metadata["subject_id"] = o.subject_id
             return {
                 o.subject_id: {
-                    "message": o.message,
-                    "_meta_": metadata,
+                    "message": o.message | {"_meta_": "empty"},
+                    "_meta_": o.metadata,
                 }
             }
         if isinstance(o, DetachTransportResponse):

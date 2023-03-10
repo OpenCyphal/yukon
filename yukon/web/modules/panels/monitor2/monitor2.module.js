@@ -756,7 +756,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     customCommandTextInput.classList.add("form-control");
     customCommandTextInput.style.fontSize = "12px";
     customCommandTextInput.style.width = "60%";
-    customCommandTextInput.placeholder = "Command text";
+    customCommandTextInput.placeholder = "Parameters";
     customCommandInputGroup.appendChild(customCommandTextInput);
     const customCommandSendButton = document.createElement("button");
     customCommandSendButton.classList.add("btn_button");
@@ -1103,10 +1103,8 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
         port_label.style.position = "absolute";
         const isPortService = portOrder[port.type] == portOrder.srv || portOrder[port.type] == portOrder.cli;
         if (isPortService) {
-            port_label.style.backgroundColor = settings["ServiceColor"];
-            port_label.style.setProperty("color", settings["ServiceForegroundColor"], "important");
+            port_label.classList.add("service");
         }
-
         function update_port_label_position() {
             if (port_label) {
                 port_label.style.top = containerElement.scrollTop + settings["VerticalLineMarginTop"] + "px";
@@ -1154,10 +1152,10 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
                 }
                 port_label.appendChild(potentialPopup);
                 if (yukon_state && yukon_state.monitor2) {
-
+                    
                 }
             }
-
+            
         });
         monitor2Div.appendChild(port_label);
         let toggledOn = { value: false };

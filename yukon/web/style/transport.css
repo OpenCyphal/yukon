@@ -111,6 +111,7 @@ form#transport-selection-form>#maybe-tabs label {
     flex-grow: 3;
     padding: 0.5em;
     background-color: #cfcfcf;
+    text-align: center;
 }
 
 form#transport-selection-form>#maybe-tabs label.selected-tab {

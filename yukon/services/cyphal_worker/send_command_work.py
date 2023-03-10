@@ -54,6 +54,7 @@ async def do_send_command_work(state: GodState, send_command_request: CommandSen
                 msg.command = int(send_command_request.command_id)
                 msg.parameter = send_command_request.text_argument
                 response_tuple = await service_client.call(msg)
+                response = None
                 if response_tuple:
                     stop_retry = True
                     response = response_tuple[0]

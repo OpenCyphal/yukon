@@ -31,7 +31,7 @@ export function fillSettings(settings, yukon_state) {
     settings.PublisherPortLabelColor = yukon_state.all_settings["Monitor view"]["Colors"]["Publisher text color"];
     settings.SubscriberPortLabelBgColor = yukon_state.all_settings["Monitor view"]["Colors"]["Subscriber color"];
     settings.SubscriberPortLabelColor = yukon_state.all_settings["Monitor view"]["Colors"]["Subscriber text color"];
-    settings.ServiceColor = "lightblue";
+    settings.ServiceColor = "darkblue";
     settings.ServiceForegroundColor = "black";
     // Add random shades of orange to the list
     settings.HighlightColorsRaw = yukon_state.all_settings["Monitor view"]["Highlight colors"];

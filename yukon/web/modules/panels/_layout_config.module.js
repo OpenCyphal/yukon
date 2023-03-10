@@ -64,7 +64,7 @@ export const layout_config = {
                 },
                 {
                     type: 'column',
-                    width: 30,
+                    width: 20,
                     content: [
                         {
                             type: 'stack',
@@ -75,12 +75,6 @@ export const layout_config = {
                                     componentName: "transportsComponent",
                                     isClosable: true,
                                     title: "Transports",
-                                },
-                                {
-                                    type: "component",
-                                    componentName: "commandsComponent",
-                                    isClosable: true,
-                                    title: "Commands",
                                 },
                                 {
                                     type: "component",

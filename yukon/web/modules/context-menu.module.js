@@ -603,4 +603,27 @@ export function make_context_menus(yukon_state) {
         ],
     });
     monitor2_general_context_menu.init();
+    // For .port_number_label
+    const monitor2_port_number_label_context_menu = new ContextMenu({
+        target: ".port_number_label",
+        mode: "dark",
+        menuItems: [
+            {
+                content: "Disable",
+                events: {
+                    "click": async (e, elementOpenedOn) => {
+                        elementOpenedOn.value = 65535;
+                        if ("createEvent" in document) {
+                            var evt = document.createEvent("HTMLEvents");
+                            evt.initEvent("change", false, true);
+                            elementOpenedOn.dispatchEvent(evt);
+                        }
+                        else
+                        elementOpenedOn.fireEvent("onchange");
+                    }
+                }
+            }
+        ]
+    });
+    monitor2_port_number_label_context_menu.init();
 }
