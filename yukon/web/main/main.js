@@ -243,6 +243,9 @@ window.console = new Proxy(old_console, {
                 myLayout.registerComponent('registersComponent', function (container, componentState) {
                     registerComponentAction("../registers.panel.html", "registersComponent", container, async () => {
                         const containerElement = container.getElement()[0];
+                        container.on("show", function () {
+                            yukon_state.registersUpdateLogComponent.parent.parent.setActiveContentItem(yukon_state.registersUpdateLogComponent.parent);
+                        });
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         await setUpRegistersComponent.bind(outsideContext)(container, true, yukon_state);
                     });
@@ -293,6 +296,7 @@ window.console = new Proxy(old_console, {
                 myLayout.registerComponent("registerUpdateLogComponent", function (container, componentState) {
                     registerComponentAction("../register_update_log.html", "registerUpdateLogComponent", container, async () => {
                         const containerElement = container.getElement()[0];
+                        yukon_state.registersUpdateLogComponent = container;
                         yukon_state.containerElementToContainerObjectMap.set(containerElement, container);
                         await setUpRegisterUpdateLogComponent.bind(outsideContext)(container, yukon_state);
                     });
@@ -717,7 +721,7 @@ window.console = new Proxy(old_console, {
         document.addEventListener('keydown', function (e) {
             if (e.code === "Escape") {
                 const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
-                if(!returnArray) {
+                if (!returnArray) {
                     return;
                 }
                 const hoveredContainerObject = returnArray[1];
