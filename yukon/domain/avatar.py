@@ -45,6 +45,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self.disappeared = False
         self.disappeared_since = 0
         self.is_being_queried = False
+        self.has_port_list = False
 
         self._ts_activity = -math.inf
         self._ts_heartbeat = -math.inf
@@ -119,7 +120,6 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
 
     def _on_port_list(self, ts: float, obj: Any) -> None:
         import uavcan.node.port
-
         start_of_action = time.monotonic()
         logger.info("Got obj %r", obj)
         assert isinstance(obj, uavcan.node.port.List_0_1)
@@ -132,6 +132,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         port_list_consumed_time = time.monotonic() - start_of_action
         if port_list_consumed_time > 0.1:
             logger.info("It took %f seconds to expand the port list", port_list_consumed_time)
+        self.has_port_list = True
 
     def _on_heartbeat(self, ts: float, obj: Any) -> None:
         from uavcan.node import Heartbeat_1_0 as Heartbeat, GetInfo_1_0 as GetInfo
@@ -301,6 +302,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             "disappeared": self.disappeared,
             "disappeared_since": self.disappeared_since,
             "is_being_queried": self.is_being_queried,
+            "has_port_list": self.has_port_list
         }
         json_object["monitor_view_hash"] = (
             hash(frozenset(self._ports.pub))
@@ -311,6 +313,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ self.disappeared
             ^ hash(self.disappeared_since)
             ^ self.is_being_queried
+            ^ self.has_port_list
             ^ json_object["registers_hash"]
         )
         json_object["monitor2_hash"] = json_object["monitor_view_hash"]

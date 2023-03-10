@@ -68,7 +68,7 @@ def decide_logging_severity(state: "GodState") -> None:
     # We don't need to show debug info to the user by default,
     # this is only enabled by the user or enabled by default in dev mode
     if is_built_executable:
-        state.gui.message_severity = "INFO"
+        state.gui.message_severity = "WARNING"
 
 
 def run_electron(state: GodState) -> None:

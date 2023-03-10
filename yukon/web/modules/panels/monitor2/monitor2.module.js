@@ -642,7 +642,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     if (avatar.disappeared) {
         node.classList.add("disappeared");
     }
-    if (avatar.is_being_queried) {
+    if (avatar.is_being_queried || !avatar.has_port_list) {
         node.classList.add("is_being_queried");
     }
     node.style.left = settings.NodeXOffset + "px";
@@ -653,6 +653,8 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     node.innerText = text;
     if (avatar.is_being_queried) {
         node.innerText += " (querying...)";
+    } else if (!avatar.has_port_list) {
+        node.innerText += " (no port list)";
     }
     container.appendChild(node);
     for (const field of Object.keys(fieldsObject)) {
