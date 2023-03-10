@@ -750,6 +750,10 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     divUseManualDatatypeEntry.appendChild(iManualDatatypeEntry);
     divComplexSelection.appendChild(divUseManualDatatypeEntry);
     labelUseManualDatatypeEntry.htmlFor = rbUseManualDatatypeEntry.id;
+    iManualDatatypeEntry.addEventListener("click", function()
+    {
+        rbUseManualDatatypeEntry.checked = true;
+    });
 
     const labelUseSelectAdvertised = document.createElement('label');
     labelUseSelectAdvertised.innerHTML = "Select a datatype from the list of advertised datatypes";
@@ -774,6 +778,10 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     iSelectDatatype.id = "iSelectAdvertised:" + subscription.subject_id;
     iSelectDatatype.classList.add('form-select');
     divUseSelectAdvertised.appendChild(iSelectDatatype);
+    iSelectDatatype.addEventListener("click", function()
+    {
+        rbUseSelectAdvertised.checked = true;
+    });
 
     const btnRefresh1 = document.createElement('button');
     btnRefresh1.classList.add('btn', "btn-secondary");
@@ -807,6 +815,10 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     iSelectFixedIdMessageType.id = "iSelectFixedId:" + subscription.subject_id;
     iSelectFixedIdMessageType.classList.add('form-select');
     divUseSelectFixedId.appendChild(iSelectFixedIdMessageType);
+    iSelectFixedIdMessageType.addEventListener("click", function()
+    {
+        rbUseSelectFixedId.checked = true;
+    });
 
     const btnRefresh2 = document.createElement('button');
     btnRefresh2.classList.add('btn', "btn-secondary");
@@ -837,6 +849,10 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     iSelectAny.id = "iSelectAny:" + subscription.subject_id;
     iSelectAny.classList.add('form-select');
     divUseSelectAny.appendChild(iSelectAny);
+    iSelectAny.addEventListener("click", function()
+    {
+        rbUseSelectAny.checked = true;
+    });
 
     const btnRefresh3 = document.createElement('button');
     btnRefresh3.classList.add('btn', "btn-secondary");
@@ -844,10 +860,11 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     btnRefresh3.id = "btnRefresh3:" + subscription.subject_id;
     btnRefresh3.innerHTML = "Refresh";
     divUseSelectAny.appendChild(btnRefresh3);
-    divComplexSelection.appendChild(divUseSelectAny);
     const labelUseSelectAny = document.createElement('label');
     labelUseSelectAny.htmlFor = rbUseSelectAny.id;
     labelUseSelectAny.innerHTML = "Select any found DSDL datatype";
     divComplexSelection.appendChild(labelUseSelectAny);
+    divComplexSelection.appendChild(divUseSelectAny);
+    
     return [rbUseManualDatatypeEntry, rbUseSelectAny, rbUseSelectFixedId, rbUseSelectAdvertised, iSelectDatatype, iSelectFixedIdMessageType, iSelectAny, iManualDatatypeEntry, btnRefresh1, btnRefresh2, btnRefresh3]
 }

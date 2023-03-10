@@ -749,9 +749,10 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     customCommandInputGroup.style.setProperty("backgroundColor", "transparent", "important");
     const customCommandIdInput = document.createElement("input");
     customCommandIdInput.classList.add("form-control");
+    customCommandIdInput.type = "number";
     customCommandIdInput.style.fontSize = "12px";
     customCommandIdInput.style.width = "40%";
-    customCommandIdInput.placeholder = "Command ID";
+    customCommandIdInput.placeholder = "Cmd";
     customCommandInputGroup.appendChild(customCommandIdInput);
     const customCommandTextInput = document.createElement("input");
     customCommandTextInput.classList.add("form-control");

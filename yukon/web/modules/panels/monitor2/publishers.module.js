@@ -90,6 +90,7 @@ async function createPublisherFrame(publisher, yukon_state) {
     frame.append(chooseTypeFieldWrapper);
     const chooseTypeField = chooseTypeFieldWrapper.querySelector(".autocomplete-field");
     chooseTypeField.style.width = "100%";
+    chooseTypeField.placeholder = "Select a type";
     if (publisher.datatype) {
         console.log("Publisher already has a datatype.")
         chooseTypeField.value = publisher.datatype;
@@ -107,10 +108,31 @@ async function createPublisherFrame(publisher, yukon_state) {
         const content = document.createElement('div');
         content.classList.add("publisher-content");
         frame.appendChild(content);
+        // Create a pixel sized absolute positioned div into the corner of the frame
+        const pixel = document.createElement('div');
+        pixel.style.position = "absolute";
+        pixel.style.top = "-1px";
+        pixel.style.left = "0";
+        pixel.style.width = "2px";
+        pixel.style.height = "2px";
+        frame.appendChild(pixel);
+
         // Create a row for holding refresh rate spinner and checkbox for enabling
         const refreshRateRow = document.createElement('div');
         refreshRateRow.classList.add("publisher-row");
         content.appendChild(refreshRateRow);
+        const portIdInput = document.createElement('input');
+        portIdInput.type = "number";
+        portIdInput.value = publisher.port_id;
+        portIdInput.classList.add("port-id-input");
+        portIdInput.placeholder = "Port ID";
+        portIdInput.title = "Port ID"
+        // TODO: Get the port id value in case the datatype of the publisher
+        // uses a fixed port id
+        portIdInput.addEventListener('input', async () => {
+            await yukon_state.zubax_apij.set_publisher_port_id(publisher.id, portIdInput.value);
+        });
+        refreshRateRow.appendChild(portIdInput);
         // Create a spinner for setting the refresh rate, it should be a number input element
         const refreshRateSpinner = document.createElement('input');
         refreshRateSpinner.type = "number";
@@ -131,14 +153,10 @@ async function createPublisherFrame(publisher, yukon_state) {
             const newRefreshRate = refreshRateInput.value;
             await yukon_state.zubax_apij.set_publisher_rate(publisher.id, newRefreshRate);
         });
-        // Create a checkbox for enabling the publisher
-        const enableCheckbox = document.createElement('input');
-        enableCheckbox.type = "checkbox";
-        enableCheckbox.classList.add("enable-checkbox");
-        enableCheckbox.checked = false;
-        enableCheckbox.addEventListener('change', async () => {
-            await yukon_state.zubax_apij.set_publisher_enabled(publisher.id, enableCheckbox.checked);
-            if (enableCheckbox.checked) {
+        let enabledState = false;
+        let enabledStateChangedFunction = async () => {
+            await yukon_state.zubax_apij.set_publisher_enabled(publisher.id, enabledState);
+            if (enabledState) {
                 if (yukon_state.publish_intervals[publisher.id]) {
                     try {
                         clearInterval(yukon_state.publish_intervals[publisher.id]);
@@ -147,8 +165,16 @@ async function createPublisherFrame(publisher, yukon_state) {
                     }
                 }
                 const publishFunction = async function () {
+                    try {
+                        pixel.style.backgroundColor = "yellow";
+                        setTimeout(() => {
+                            pixel.style.backgroundColor = "transparent";
+                        }, 100);
+                    } catch (e) {
+                        console.log(e)
+                    }
                     await yukon_state.zubax_apij.publish(publisher.id);
-                    if (enableCheckbox.checked) {
+                    if (enabledState) {
                         yukon_state.publish_intervals[publisher.id] = setTimeout(publishFunction, 1 / parseFloat(refreshRateInput.value) * 1000);
                     }
                 }
@@ -162,13 +188,23 @@ async function createPublisherFrame(publisher, yukon_state) {
                     }
                 }
             }
+        };
+        const enabledButton = document.createElement('button');
+        enabledButton.innerHTML = "Enable";
+        enabledButton.style.width = "65px";
+        enabledButton.addEventListener('click', async () => {
+            enabledState = !enabledState;
+            if (enabledState) {
+                enabledButton.innerHTML = "Disable";
+                enabledButton.classList.remove("disabled");
+            } else {
+                enabledButton.innerHTML = "Enable";
+                enabledButton.classList.add("disabled");
+            }
+            enabledStateChangedFunction();
         });
-        refreshRateRow.appendChild(enableCheckbox);
-        // Add a text saying, "Enable"
-        const enableText = document.createElement('span');
-        enableText.innerText = "Enable";
-        enableText.style.marginLeft = "2px";
-        refreshRateRow.appendChild(enableText);
+        enabledButton.style.marginLeft = "2px";
+        refreshRateRow.appendChild(enabledButton);
         // Add an input box for entering a name for the publisher
         const nameInput = document.createElement('input');
         nameInput.type = "text";
@@ -180,17 +216,7 @@ async function createPublisherFrame(publisher, yukon_state) {
         });
         nameInput.style.display = "none";
         refreshRateRow.appendChild(nameInput);
-        const portIdInput = document.createElement('input');
-        portIdInput.type = "number";
-        portIdInput.value = publisher.port_id;
-        portIdInput.classList.add("port-id-input");
-        portIdInput.placeholder = "Port ID";
-        // TODO: Get the port id value in case the datatype of the publisher
-        // uses a fixed port id
-        portIdInput.addEventListener('input', async () => {
-            await yukon_state.zubax_apij.set_publisher_port_id(publisher.id, portIdInput.value);
-        });
-        refreshRateRow.appendChild(portIdInput);
+        
         // Add a separator box between the refresh rate row and the next row
         const separator = document.createElement('div');
         separator.classList.add("separator");

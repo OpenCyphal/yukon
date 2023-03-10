@@ -119,6 +119,7 @@ export function createSpinner(spinnerSizePx = "50px", valueChangedCallback = nul
     });
     // When mouse is scrolled while it is hovering spinner, rotate it
     spinner.addEventListener('wheel', (e) => {
+        e.preventDefault();
         // Get the mouse position
         // Get the spinner's absolute position relative to the window
         const spinnerPos = {
