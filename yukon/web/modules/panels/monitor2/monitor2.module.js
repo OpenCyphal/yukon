@@ -538,6 +538,7 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
         emptyPortDiv.style.height = designatedHeight + "px";
         emptyPortDiv.style.position = "absolute";
         emptyPortDiv.style.top = avatar_y_counter.value + "px";
+        emptyPortDiv.style.zIndex = 4;
         emptyPortDiv.innerText = portInfo.link_name;
         emptyPortDiv.title = portTypeToLongTypeExplanation[portInfo.link_type] || "";
 
@@ -568,6 +569,12 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
             };
         }
         emptyPortDiv.style.width = settings.LinkInfoWidth + "px";
+        emptyPortDiv.addEventListener("mouseover", function () {
+            emptyPortDiv.style.width = settings.LinkInfoWidth * 3 + "px";
+        });
+        emptyPortDiv.addEventListener("mouseout", function () {
+            emptyPortDiv.style.width = settings.LinkInfoWidth + "px";
+        });
         node.appendChild(emptyPortDiv);
 
         // Also create a number input that has left set to settings["NodeXOffset"] + settings["NodeWidth"] - 190 + "px", the text input should have a placeholder of "Enter new port number"

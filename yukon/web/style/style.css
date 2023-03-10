@@ -23,7 +23,7 @@
 
 label.port_number_label {
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
 }
 
