@@ -119,7 +119,7 @@ export function add_node_id_headers(table_header_row, yukon_state) {
         table_header_cell.style.setProperty("max-width", widthFromSettings + "px", "important");
         // Add a listener to the hover event of table_header_cell
         table_header_cell.addEventListener('mouseover', function () {
-            // console.log("Mouse over node id header");
+            console.log("Mouse over node id header");
             isMouseOverLoopRunning = true;
             let myInterval = null;
             myInterval = setInterval(function () {
@@ -385,7 +385,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
         function styleLabel(label) {
             label.style.height = '0px';
             label.style.position = 'absolute';
-            label.style.bottom = '13px';
+            label.style.bottom = '10px';
             label.style.fontSize = '8px';
             // label.style.color = '#000000';
             label.style.backgroundColor = 'transparent !important';
@@ -432,10 +432,9 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             label.style.textAlign = 'left';
             label.style.verticalAlign = 'bottom';
             label.style.right = '2px';
-            label.style.left = '2px';
+            label.style.left = '0px';
             label.style.zIndex = '1';
             table_cell.style.position = 'relative';
-            ``
             label.innerHTML = "";
             if (isMutable) {
                 label.innerHTML += "M";

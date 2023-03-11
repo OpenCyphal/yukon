@@ -1,4 +1,15 @@
 export const layout_config = {
+    settings:{
+        hasHeaders: true,
+    },
+    dimensions: {
+        borderWidth: 3,
+        minItemHeight: 10,
+        minItemWidth: 10,
+        headerHeight: 19,
+        dragProxyWidth: 300,
+        dragProxyHeight: 200
+    },
     content: [
         {
             type: 'row',

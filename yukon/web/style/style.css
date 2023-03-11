@@ -13,6 +13,12 @@
     margin-left: 0px !important;
 }
 
+.lm_header .lm_controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
 .lm_controls .lm_close {
     padding-top: 0.5px;
     background: url(../../images/X_dark.png) no-repeat center center !important;
