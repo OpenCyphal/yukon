@@ -648,4 +648,25 @@ export function make_context_menus(yukon_state) {
         ]
     });
     monitor2_port_number_label_context_menu.init();
+    const node_context_menu = new ContextMenu({
+        target: ".node.disappeared",
+        mode: "dark",
+        menuItems: [
+            {
+                content: "Remove node from monitor",
+                events: {
+                    click: async (e, elementOpenedOn) => {
+                        const node_id = elementOpenedOn.getAttribute("data-node-id");
+                        const response = await yukon_state.zubax_apij.remove_avatar(node_id);
+                        if(response && response.success) {
+                            addLocalMessage("Node " + node_id + " was removed from the monitor.", undefined)
+                        } else {
+                            addLocalMessage("Node " + node_id + " was not removed from the monitor.", 30)
+                        }
+                    }
+                }
+            }
+        ]
+    });
+    node_context_menu.init()
 }

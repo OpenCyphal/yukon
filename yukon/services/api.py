@@ -451,6 +451,13 @@ class Api:
         avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
         return jsonify(avatar_dto)
 
+    def remove_avatar(self, node_id: int) -> Response:
+        if self.state.avatar.avatars_by_node_id.get(int(node_id)):
+            del self.state.avatar.avatars_by_node_id[int(node_id)]
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False})
+
     def get_log_level(self) -> Response:
         return jsonify({"severity": self.state.gui.message_severity})
 

@@ -637,6 +637,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     // Verify that the avatar is not undefined
     console.assert(avatar !== undefined);
     let node = document.createElement("div");
+    node.setAttribute("data-node-id", avatar.node_id)
     node.classList.add("node");
     if (avatar.disappeared) {
         node.classList.add("disappeared");
