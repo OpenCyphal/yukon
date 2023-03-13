@@ -393,6 +393,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
             "Node ID": avatar.node_id,
             "Uptime": secondsToColonSeparatedString(avatar.last_heartbeat.uptime),
             "Health": avatar.last_heartbeat.health_text,
+            "VSSC": avatar.last_heartbeat.vendor_specific_status_code
         };
         if (avatar.last_heartbeat) {
             try {
