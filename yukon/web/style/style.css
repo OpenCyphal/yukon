@@ -9,6 +9,17 @@
     border-radius: 0;
 }
 
+.maximized {
+    position: fixed !important;
+    top: 5px !important;
+    left: 5px !important;
+    width: 95% !important;
+    height: 95% !important;
+    max-width: 95% !important;
+    max-height: 95% !important;
+    z-index: 1000 !important;
+}
+
 .input-group> :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
     margin-left: 0px !important;
 }

@@ -3,7 +3,8 @@ import { create_directed_graph, update_directed_graph } from '../modules/panels/
 import {
     isRunningInElectron,
     areThereAnyActiveModals,
-    getHoveredContainerElementAndContainerObject
+    getHoveredContainerElementAndContainerObject,
+    getHoveredClass
 } from "../modules/utilities.module.js";
 import {
     loadConfigurationFromOpenDialog,
@@ -53,7 +54,7 @@ window.console = new Proxy(old_console, {
                 yukon_state.addLocalMessage(args[0], 20);
                 return result;
             } else if (propKey === "log") {
-                yukon_state.addLocalMessage(args[0], 10);
+                yukon_state.addLocalMessage(args[0], undefined);
                 return result;
             }
         };
@@ -239,7 +240,6 @@ window.console = new Proxy(old_console, {
         }
 
         function initalizeLayout() {
-            console.log("Initializing layout");
             let hadPreviousLayout = false;
             if (typeof yukon_state.myLayout !== 'undefined') {
                 try {
@@ -488,7 +488,6 @@ window.console = new Proxy(old_console, {
                     });
                 });
                 myLayout.init();
-                console.log("Initialized layout");
             }, requiredTimeout);
         } // initializeLayout
         initalizeLayout();
@@ -714,9 +713,17 @@ window.console = new Proxy(old_console, {
             }
             // If ctrl space was pressed, toggle maximize-minimize of the currently hovered over ContentItem
             if (yukon_state.pressedKeys[17] && yukon_state.pressedKeys[32]) {
-                const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
-                const containerObject = returnArray[1];
-                containerObject.parent.parent.toggleMaximise();
+                const potentialSubscriptionFrame = getHoveredClass("subscription");
+                const potentialPublisherFrame = getHoveredClass("publisher-frame");
+                if (potentialSubscriptionFrame) {
+                    potentialSubscriptionFrame.classList.toggle("maximized")
+                } else if (potentialPublisherFrame) {
+                    potentialPublisherFrame.classList.toggle("maximized")
+                } else {
+                    const returnArray = getHoveredContainerElementAndContainerObject(yukon_state);
+                    const containerObject = returnArray[1];
+                    containerObject.parent.parent.toggleMaximise();
+                }
                 e.preventDefault();
             }
             // If F5 is pressed, reread registers

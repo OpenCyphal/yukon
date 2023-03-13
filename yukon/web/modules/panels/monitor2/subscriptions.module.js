@@ -212,7 +212,6 @@ async function refreshKnownDatatypes(iSelectFixedIdMessageType, iSelectAny, iSel
 async function createSubscriptionElement(specifier, subscriptionsDiv, subscriptionElementsToBePlaced, settings, yukon_state) {
     const subject_id = specifier.split(":")[0];
     const datatype = specifier.split(":")[1];
-    console.log("Drawing subscription specifier", specifier);
     const subscriptionElement = document.createElement("div");
     const header1 = document.createElement("h3");
     header1.innerText = specifier;

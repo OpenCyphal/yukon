@@ -66,7 +66,7 @@ export function getKnownDatatypes(yukon_state) {
                 const regex = /uavcan\.(pub|sub|cln|srv)\.(.+?)\.id/;
                 // Use regex to extract the first and second ground, first group is link_type and second group is link_name from register_name
                 const results = register_name.match(regex);
-                if(!results) continue;
+                if (!results) continue;
                 const link_type = results[1];
                 const link_name = results[2];
                 const datatype_register_name = Object.keys(avatar.registers_values).find((a) => a.endsWith(link_name + ".type"));
@@ -148,7 +148,7 @@ export function getUnassignedPortsForNode(node_id, yukon_state) {
                 const regex = /uavcan\.(pub|sub|cln|srv)\.(.+?)\.id/;
                 // Use regex to extract the first and second ground, first group is link_type and second group is link_name from register_name
                 const results = register_name.match(regex);
-                if(!results) continue;
+                if (!results) continue;
                 const link_type = results[1];
                 const link_name = results[2];
 
@@ -207,6 +207,28 @@ export function waitForElm(selector, timeOutMilliSeconds, context) {
         });
 
     });
+}
+
+export function getHoveredClass(neededClass) {
+    // See if the mouse is hovering over an element that has the class neededClass or one of its parents has the class neededClass
+    // Return the element
+    const elementOn = document.elementFromPoint(yukon_state.mousePos.x, yukon_state.mousePos.y);
+    if (elementOn == null) {
+        return;
+    }
+    // Start navigating up through parents (ancestors) of elementOn, until one of the parents has the class neededClass
+    let currentElement = elementOn
+    while (elementOn !== document.body) {
+        if (currentElement.parentElement == null) {
+            return;
+        }
+        if (currentElement.classList.contains(neededClass)) {
+            break;
+        } else {
+            currentElement = currentElement.parentElement;
+        }
+    }
+    return currentElement;
 }
 
 export function getHoveredContainerElementAndContainerObject(yukon_state) {
