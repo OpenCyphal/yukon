@@ -1,4 +1,8 @@
 @media (prefers-color-scheme: dark) {
+    input[type="checkbox"] {
+        accent-color: rgb(166, 188, 206);
+    }
+
     #monitor2 .port_label {
         color: white;
     }
@@ -20,25 +24,31 @@
     }
 
     .lm_content {
+        background-color: rgb(26, 28, 29);
         color: #ffffff
     }
 
     #maybe-tabs label.selected-tab {
         background-color: #700000 !important;
     }
+
     #maybe-tabs label {
         background-color: #5e5e5e !important
     }
+
     .feedback-message {
         color: #ffffff
     }
+
     .is-danger {
         background-color: #793200
     }
+
     thead {
         background-color: #1709b3;
         color: #ffffff
     }
+
     .cell-highlight {
         background-color: #5e5000
     }

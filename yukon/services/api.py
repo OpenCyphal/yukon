@@ -987,6 +987,8 @@ class Api:
             synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
                 SynchronizedSubjectsSpecifier(specifier_objects)
             )
+            if not synchronized_messages_store:
+                return jsonify({"success": False, "message": "No synchronized messages for this specifier."})
             if synchronized_messages_store.start_index >= counter:
                 return jsonify(synchronized_messages_store.messages[0:])
             else:
