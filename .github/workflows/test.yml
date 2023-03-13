@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: checking out
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Installing Python3
         uses: actions/setup-python@v4
         with:
@@ -28,13 +28,35 @@ jobs:
           PYTHONPATH="." nox -s black
           PYTHONPATH="." nox -s pylint
           PYTHONPATH="." nox -s pytest
+  set-release-tag:
+    name: Set Yukon release tag
+    runs-on: ubuntu-22.04
+    if: contains(github.event.head_commit.message, '#build-gnu-linux') || github.ref == 'refs/heads/main'
+    steps:
+      - name: checking out
+        uses: actions/checkout@v3
+      - name: Installing Python3
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: "pip"
+      - name: Set Yukon version
+        run: echo "YUKON_VERSION=$(python3 -c 'from yukon.version import __version__; print(__version__)')" >> $GITHUB_ENV
+      - name: Create release tag
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.OPENCYPHAL_TOKEN }}
+          custom_tag: ${{ env.YUKON_VERSION }}
+          release_branches: 'issue-200'
+          tag_prefix:
   build-release-linux:
     name: Yukon Ubuntu 20.04 Build
     runs-on: ubuntu-20.04
     if: contains(github.event.head_commit.message, '#build-gnu-linux') || github.ref == 'refs/heads/main'
+    needs: set-release-tag
     steps:
       - name: checking out
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Installing Python3
         uses: actions/setup-python@v4
         with:
@@ -50,6 +72,25 @@ jobs:
           source venv/bin/activate
           pip install nox
           pip install -r requirements.txt -r dev-requirements.txt
+      - name: Build the release using the script, which will call pyinstaller
+        continue-on-error: false
+        run: |
+          source venv/bin/activate
+          python3.10 build_exe.py
+      - name: Save artifact
+        uses: actions/upload-artifact@v2
+        if: contains(github.event.head_commit.message, '#build-gnu-linux')
+        with:
+          name: Yukon-${{github.job}}
+          path: dist/Yukon
+          retention-days: 7
+      - name: Deploy the release to GitHub Releases
+        uses: fnkr/github-action-ghr@v1
+        if: startsWith(github.ref, 'refs/tags/2[0-9][0-9][0-9].[0-9]?[0-9].[0-9]+')
+      #  if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GHR_PATH: dist/Yukon/
+          GITHUB_TOKEN: ${{ secrets.OPENCYPHAL_TOKEN }}
       - name: Configure SSH
         if: github.ref == 'refs/heads/main'
         run: |
@@ -67,49 +108,21 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USERNAME }}
           SSH_KEY: ${{ secrets.SSH_KEY }}
-      - name: Build the release using the script, which will call pyinstaller
-        continue-on-error: false
-        run: |
-          source venv/bin/activate
-          python3.10 build_exe.py
-      # - name: Wait for tests to succeed
-      #   uses: lewagon/wait-on-check-action@v1.2.0
-      #   with:
-      #     ref: ${{ github.ref }}
-      #     check-name: "python-quality-check"
-      #     repo-token: ${{ secrets.GITHUB_TOKEN }}
-      #     wait-interval: 10
-      - name: Deploy the release to GitHub Releases
-        uses: fnkr/github-action-ghr@v1
-      #  if: startsWith(github.ref, 'refs/tags/2[0-9][0-9][0-9].[0-9]?[0-9].[0-9]+')
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GHR_PATH: dist/Yukon/
-          GITHUB_TOKEN: ${{ secrets.OPENCYPHAL_TOKEN }}
       - name: Deploy the release to Zubax files
         if: github.ref == 'refs/heads/main'
         run: |
-          YUKON_VERSION_1=$(python3 -c "from yukon.version import __version__; print(__version__)")
-          YUKON_VERSION=$(python3 -c "from yukon.version import __version__; print(__version__)")
           YUKON_TARGET_DIR="/var/www/files/products/org.opencyphal.yukon/releases/$YUKON_VERSION/linux-x86_64"
           ssh target "mkdir -p \"$YUKON_TARGET_DIR\"; echo $YUKON_TARGET_DIR"
           scp $YUKON_ARTIFACT target:$YUKON_TARGET_DIR
         env:
           YUKON_ARTIFACT: dist/Yukon
-      - name: Save artifact
-        uses: actions/upload-artifact@v2
-        if: contains(github.event.head_commit.message, '#build-gnu-linux')
-        with:
-          name: Yukon-${{github.job}}
-          path: dist/Yukon
-          retention-days: 7
   build-release-linux2:
     name: Yukon Ubuntu 22.04 Build
     runs-on: ubuntu-22.04
     if: contains(github.event.head_commit.message, '#build-gnu-linux') || github.ref == 'refs/heads/main'
     steps:
       - name: checking out
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Installing Python3
         uses: actions/setup-python@v4
         with:
