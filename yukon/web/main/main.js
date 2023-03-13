@@ -61,6 +61,23 @@ window.console = new Proxy(old_console, {
 });
 
 (async function () {
+    try {
+        // Modified bootstrap color mode initialization code
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-bs-theme', 'light');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        })
+    } catch (e) {
+        console.error(e);
+    }
     yukon_state.zubax_api = zubax_api;
     yukon_state.zubax_apij = zubax_apij;
     yukon_state.autosize = autosize;

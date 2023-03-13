@@ -278,6 +278,9 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     // Add an input number field for capacity of the stored messages
     // Also a label before it
     const divCapacity = document.createElement('div');
+    if (!yukon_state.all_settings["Monitor view"]["Subscriptions"]["Show capacity adjust"]) {
+        divCapacity.style.display = "none";
+    }
     divCapacity.classList.add('form-group');
     const labelCapacity = document.createElement('label');
     labelCapacity.htmlFor = "inputCapacity" + subject_id + ":" + datatype;
@@ -298,6 +301,9 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     // Add an input element for the delay between every fetch of new subscription messages
     // Also a label before it
     const divFetchDelay = document.createElement('div');
+    if (!yukon_state.all_settings["Monitor view"]["Subscriptions"]["Show fetch delay adjust"]) {
+        divFetchDelay.style.display = "none";
+    }
     divFetchDelay.classList.add('form-group');
     const labelFetchDelay = document.createElement('label');
     labelFetchDelay.htmlFor = "inputFetchDelay" + subject_id + ":" + datatype;
@@ -427,6 +433,9 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     // Add an input number field for capacity of the stored messages
     // Also a label before it
     const divCapacity = document.createElement('div');
+    if (!yukon_state.all_settings["Monitor view"]["Subscriptions"]["Show capacity adjust"]) {
+        divCapacity.style.display = "none";
+    }
     divCapacity.classList.add('form-group');
     const labelCapacity = document.createElement('label');
     labelCapacity.htmlFor = "inputCapacity" + specifiersString;
@@ -448,6 +457,9 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     // Also a label before it
     const divFetchDelay = document.createElement('div');
     divFetchDelay.classList.add('form-group');
+    if (!yukon_state.all_settings["Monitor view"]["Subscriptions"]["Show fetch delay adjust"]) {
+        divFetchDelay.style.display = "none";
+    }
     const labelFetchDelay = document.createElement('label');
     labelFetchDelay.innerHTML = "Fetch delay (ms)";
     divFetchDelay.appendChild(labelFetchDelay);
@@ -476,12 +488,7 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     let lastCurrentMessagesLength = { value: 0 };
     let setTimeoutFunction = null;
     setTimeoutFunction = () => {
-        inputFetchDelay.style.backgroundColor = "yellow";
-        setTimeout(() => inputFetchDelay.style.removeProperty("background-color"), fetchDelayValue / 2);
         let wasFetchSuccess = fetchForSync(specifiersString, pLatestMessage, fetchTimeoutId, lastCurrentMessagesLength, settings, yukon_state)
-        if (wasFetchSuccess) {
-            inputFetchDelay.style.backgroundColor = "green";
-        }
         fetchTimeoutId.value = setTimeout(setTimeoutFunction, fetchDelayValue)
     }
     setTimeoutFunction();
@@ -750,8 +757,7 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     divUseManualDatatypeEntry.appendChild(iManualDatatypeEntry);
     divComplexSelection.appendChild(divUseManualDatatypeEntry);
     labelUseManualDatatypeEntry.htmlFor = rbUseManualDatatypeEntry.id;
-    iManualDatatypeEntry.addEventListener("click", function()
-    {
+    iManualDatatypeEntry.addEventListener("click", function () {
         rbUseManualDatatypeEntry.checked = true;
     });
 
@@ -778,8 +784,7 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     iSelectDatatype.id = "iSelectAdvertised:" + subscription.subject_id;
     iSelectDatatype.classList.add('form-select');
     divUseSelectAdvertised.appendChild(iSelectDatatype);
-    iSelectDatatype.addEventListener("click", function()
-    {
+    iSelectDatatype.addEventListener("click", function () {
         rbUseSelectAdvertised.checked = true;
     });
 
@@ -815,8 +820,7 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     iSelectFixedIdMessageType.id = "iSelectFixedId:" + subscription.subject_id;
     iSelectFixedIdMessageType.classList.add('form-select');
     divUseSelectFixedId.appendChild(iSelectFixedIdMessageType);
-    iSelectFixedIdMessageType.addEventListener("click", function()
-    {
+    iSelectFixedIdMessageType.addEventListener("click", function () {
         rbUseSelectFixedId.checked = true;
     });
 
@@ -849,8 +853,7 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     iSelectAny.id = "iSelectAny:" + subscription.subject_id;
     iSelectAny.classList.add('form-select');
     divUseSelectAny.appendChild(iSelectAny);
-    iSelectAny.addEventListener("click", function()
-    {
+    iSelectAny.addEventListener("click", function () {
         rbUseSelectAny.checked = true;
     });
 
@@ -865,6 +868,6 @@ function addComplexSelectionComponents(subscription, divComplexSelection) {
     labelUseSelectAny.innerHTML = "Select any found DSDL datatype";
     divComplexSelection.appendChild(labelUseSelectAny);
     divComplexSelection.appendChild(divUseSelectAny);
-    
+
     return [rbUseManualDatatypeEntry, rbUseSelectAny, rbUseSelectFixedId, rbUseSelectAdvertised, iSelectDatatype, iSelectFixedIdMessageType, iSelectAny, iManualDatatypeEntry, btnRefresh1, btnRefresh2, btnRefresh3]
 }

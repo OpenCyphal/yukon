@@ -23,144 +23,22 @@
         color: #ffffff
     }
 
-    #iUdpIface {
-        background: #353535;
-        color: #ffffff
-    }
-
-    #iUdpMtu {
-        background: #353535;
-        color: #ffffff
-    }
-
-    #iNodeId {
-        background: #353535;
-        color: #ffffff
-    }
-
-    #iServiceTransferMultiplier {
-        background: #353535;
-        color: #ffffff
-    }
-
-    #btnStart {
-        background: #353535;
-        border-color: #727272;
-        color: #ffffff
-    }
-
     #maybe-tabs label.selected-tab {
         background-color: #700000 !important;
     }
-
     #maybe-tabs label {
         background-color: #5e5e5e !important
     }
-
-    #iCommandId {
-        background: #353535;
-        color: #ffffff
-    }
-
-    #sCommands {
-        background: #353535;
-        color: #ffffff
-    }
-
-    #btnSendCommand {
-        background: #353535;
-        color: #ffffff
-    }
-
     .feedback-message {
         color: #ffffff
     }
-
     .is-danger {
         background-color: #793200
     }
-
-    #iTransport {
-        background: #353535;
-        color: #ffffff
-    }
-
-    #iMtu {
-        background: #353535;
-        color: #ffffff
-    }
-
-    #iArbRate {
-        background: #353535;
-        color: #ffffff
-    }
-
-    #iDataRate {
-        background: #353535;
-        color: #ffffff
-    }
-
-    #sTransport {
-        background: #353535;
-        color: #ffffff
-    }
-
-    .card.transport_interface {
-        background: #363636;
-        color: #ffffff
-    }
-
-    .btn.btn-danger {
-        background: #700000;
-        border-color: #740000
-    }
-
-    .mb-3 {
-        background: inherit;
-        color: inherit;
-    }
-
-    #divMessagesHere {
-        background: #353535;
-        color: #ffffff
-    }
-
     thead {
         background-color: #1709b3;
         color: #ffffff
     }
-
-    .btn,
-    h2 {
-        background: #353535;
-        color: #ffffff
-    }
-
-    #btnSubscribeToSubject {
-        background-color: #353535;
-        border-color: #727272
-    }
-
-    .btn.btn-primary {
-        background: #353535;
-        color: #ffffff;
-        border-color: #727272
-    }
-
-    .card-body {
-        background: #383838
-    }
-
-    #btnImportRegistersConfig {
-        background: #353535;
-        color: #ffffff
-    }
-
-    #iRegistersFilter {
-        background: #353535;
-        color: #ffffff
-    }
-
     .cell-highlight {
         background-color: #5e5000
     }
@@ -232,22 +110,12 @@
         background-color: #222222;
     }
 
-    button {
-        background-color: #353535 !important;
-        border-color: #727272 !important;
-    }
-
     #btnShowHideToolbar {
         background-color: #646464;
     }
 
     img {
         filter: invert(42%) sepia(93%) saturate(1352%) hue-rotate(87deg) brightness(119%) contrast(119%);
-    }
-
-    .card-header {
-        background: #353535;
-        color: #ffffff
     }
 
     .feedback-message {

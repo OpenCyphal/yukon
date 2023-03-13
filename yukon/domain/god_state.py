@@ -223,6 +223,8 @@ class GodState:
                     "Show Stream to PlotJuggler option": ReactiveValue(True),
                     "Show log to console option": ReactiveValue(False),
                     "Default fetch delay (ms)": ReactiveValue(300),
+                    "Show fetch delay adjust": ReactiveValue(False),
+                    "Show capacity adjust": ReactiveValue(False),
                 },
                 "Colors": {
                     "Publisher color": ReactiveValue("lightgreen"),
