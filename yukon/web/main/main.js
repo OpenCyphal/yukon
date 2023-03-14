@@ -44,18 +44,20 @@ window.console = new Proxy(old_console, {
         var orig_method = target[propKey];
         return function (...args) {
             var result = orig_method.apply(this, args);
-            if (propKey === "error") {
-                yukon_state.addLocalMessage(args[0], 40);
-                return result;
-            } else if (propKey === "warn") {
-                yukon_state.addLocalMessage(args[0], 30);
-                return result;
-            } else if (propKey === "info") {
-                yukon_state.addLocalMessage(args[0], 20);
-                return result;
-            } else if (propKey === "log") {
-                yukon_state.addLocalMessage(args[0], undefined);
-                return result;
+            if(yukon_state && yukon_state.addLocalMessage) {
+                if (propKey === "error") {
+                    yukon_state.addLocalMessage(args[0], 40);
+                    return result;
+                } else if (propKey === "warn") {
+                    yukon_state.addLocalMessage(args[0], 30);
+                    return result;
+                } else if (propKey === "info") {
+                    yukon_state.addLocalMessage(args[0], 20);
+                    return result;
+                } else if (propKey === "log") {
+                    yukon_state.addLocalMessage(args[0], undefined);
+                    return result;
+                }
             }
         };
     }
@@ -81,6 +83,7 @@ window.console = new Proxy(old_console, {
     }
     yukon_state.zubax_api = zubax_api;
     yukon_state.zubax_apij = zubax_apij;
+    yukon_state.zubax_apiws = zubax_apiws;
     yukon_state.autosize = autosize;
     yukon_state.navigator = window.navigator;
     yukon_state.jsyaml = jsyaml;

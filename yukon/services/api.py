@@ -238,35 +238,42 @@ def add_register_update_log_item(
         logger.error(f"Traceback: {str(tb)}")
 
 
-def websocket_response_wrapper(yukon_state: GodState):
+def websocket_response_wrapper(state: GodState, api):
     events_by_id = {}
     responses_by_id = {}
     async def websocket_callback(websocket):
         async for message in websocket:
-            message_object = json.loads(message)
-            if message_object["type"] == "call":
-                found_method = getattr(yukon_state.api, message_object["method"])
-                if found_method:
-                    response = await found_method(message_object["params"])
-                    if response:
-                        websocket.send({"type": "response", "response": response, "id": message_object["id"]})
-                        events_by_id[message_object["id"]] = asyncio.Event()
-                        await events_by_id[message_object["id"]]
-            elif message_object["type"] == "response":
-                responses_by_id[message_object["id"]] = message_object["response"]
-                events_by_id[message_object["id"]].set()
-            else:
-                logger.error(f"Unknown message type: {message_object['type']}")
-                await websocket.send(json.dumps({"type": "error", "message": "Unknown message type", "id": message_object["id"]}))
+            try:
+                if message[0] != "{":
+                    await websocket.send(json.dumps({"type": "error", "message": "Invalid message", "id": None}))
+                    continue
+                message_object = json.loads(message)
+                if message_object["type"] == "call":
+                    found_method = getattr(api, message_object["method"])
+                    if found_method:
+                        response = await found_method(*(message_object["params"]))
+                        if response:
+                            await websocket.send(json.dumps({"type": "response", "response": response, "id": message_object["id"]}, cls=EnhancedJSONEncoder))
+                            # events_by_id[message_object["id"]] = asyncio.Event()
+                            # await events_by_id[message_object["id"]]
+                # elif message_object["type"] == "response":
+                #     responses_by_id[message_object["id"]] = message_object["response"]
+                #     events_by_id[message_object["id"]].set()
+                else:
+                    logger.error(f"Unknown message type: {message_object['type']}")
+                    await websocket.send(json.dumps({"type": "error", "message": "Unknown message type", "id": message_object["id"]}))
+            except Exception as e:
+                tb = traceback.format_exc()
+                logger.error(tb)
     return websocket_callback
 
-async def createWebSocketServer(state: GodState):
+async def createWebSocketServer(state: GodState, api):
     loop = asyncio.get_running_loop()
     stop = loop.create_future()
     loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
     logger.warning("Starting websocket server")
-    async with websockets.serve(websocket_response_wrapper(state), "127.0.0.1", 8001):
-        await asyncio.Future()
+    async with websockets.serve(websocket_response_wrapper(state, api), "127.0.0.1", 8001):
+        await asyncio.sleep(10000)
 
 class SendingApi:
     async def send_message(self, message: typing.Any) -> None:

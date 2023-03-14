@@ -426,9 +426,10 @@ async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arg
             state.gui.is_port_decided = True
     api: Api = Api(state)
     api2: SendingApi = SendingApi()
-    asyncio.get_event_loop().create_task(createWebSocketServer())
+    asyncio.get_event_loop().create_task(createWebSocketServer(state, api))
     # await createWebSocketServer()
     await run_gui_app(state, api, api2)
+    # await asyncio.gather(run_gui_app(state, api, api2), task2)
     if get_stop_after_value():
         auto_exit_thread.join()
     return 0
