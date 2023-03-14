@@ -86,7 +86,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
         const knownDatatypes = getKnownDatatypes(yukon_state);
         // Alphabetically sort knownDatatypes
         knownDatatypes.sort();
-        const response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
+        const response = await yukon_state.zubax_apiws.get_known_datatypes_from_dsdl();
         iSelectDatatype.innerHTML = '';
         iSelectAny.innerHTML = '';
         iSelectFixedIdMessageType.innerHTML = '';
@@ -144,7 +144,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
         if (desiredSubjectIdValue == "") {
             desiredSubjectIdValue = null;
         }
-        const subscription = await zubax_apij.subscribe(desiredSubjectIdValue, selectedDatatype);
+        const subscription = await zubax_apiws.subscribe(desiredSubjectIdValue, selectedDatatype);
         if (!subscription || !subscription.success) {
             // Flash the btnSubscribeToSubject red without using bootstrap
             btnSubscribeToSubject.style.backgroundColor = "red";
@@ -217,7 +217,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
         let fetchIntervalId = null;
         async function fetch() {
             const full_specifiers = [desiredSubjectIdValue + ":" + selectedDatatype + ":" + current_messages.length];
-            const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
+            const result = await yukon_state.zubax_apiws.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
             const messages = result[Object.keys(result)[0]]
             if (!messages) {
                 clearInterval(fetchIntervalId);
@@ -240,7 +240,7 @@ export async function setUpSubscriptionsComponent(container, yukon_state) {
         btnRemoveSubscription.classList.add('btn-danger');
         btnRemoveSubscription.innerHTML = "Remove subscription";
         btnRemoveSubscription.addEventListener('click', async () => {
-            const result = await yukon_state.zubax_apij.unsubscribe(`${subscription.subject_id}${selectedDatatype}`);
+            const result = await yukon_state.zubax_apiws.unsubscribe(`${subscription.subject_id}${selectedDatatype}`);
             if (result.success) {
                 div.remove();
             } else {

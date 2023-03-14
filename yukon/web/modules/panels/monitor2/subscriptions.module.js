@@ -35,7 +35,7 @@ function addLatestMessageCopyActions(pLatestMessage) {
 async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchTimeoutId, lastCurrentMessagesLength, yukon_state) {
     const current_messages = yukon_state.subscriptions[specifier];
     const full_specifiers = [specifier + ":" + yukon_state.subscriptions[specifier].length];
-    const result = await yukon_state.zubax_apij.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
+    const result = await yukon_state.zubax_apiws.fetch_messages_for_subscription_specifiers(JSON.stringify(full_specifiers));
     const messages = result[Object.keys(result)[0]]
     if (!messages) {
         if (!yukon_state.missed_messages) {
@@ -66,7 +66,7 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchTimeoutI
     }
     for (const message of messages) {
         if (inputLogToConsole.checked) {
-            yukon_state.zubax_apij.add_local_message(JSON.stringify(message), 20)
+            yukon_state.zubax_apiws.add_local_message(JSON.stringify(message), 20)
         }
         current_messages.push(message);
     }
@@ -74,7 +74,7 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchTimeoutI
     if (!lastMessageObject) {
         return false;
     }
-    const yaml_text = await yukon_state.zubax_api.json_to_yaml(JSON.stringify(lastMessageObject));
+    const yaml_text = await yukon_state.zubax_apiws.json_to_yaml(JSON.stringify(lastMessageObject));
     // If yaml_text contains a newline, it will be split into multiple lines
     if (yaml_text.includes("\n")) {
         pLatestMessage.innerHTML = "";
@@ -96,7 +96,7 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchTimeoutI
     }
 }
 async function fetchForSync(specifiersString, pLatestMessage, fetchTimeoutId, lastCurrentMessagesLength, settings, yukon_state) {
-    const result = await yukon_state.zubax_apij.fetch_synchronized_messages_for_specifiers(specifiersString, lastCurrentMessagesLength.value);
+    const result = await yukon_state.zubax_apiws.fetch_synchronized_messages_for_specifiers2(specifiersString, lastCurrentMessagesLength.value);
     if (!result || result.error) {
         clearTimeout(fetchTimeoutId.value);
         pLatestMessage.innerText = "This subscription has been terminated by the server";
@@ -114,7 +114,7 @@ async function fetchForSync(specifiersString, pLatestMessage, fetchTimeoutId, la
         return false;
     }
     const json_text = JSON.stringify(json_object);
-    const yaml_text = await yukon_state.zubax_api.json_to_yaml(json_text);
+    const yaml_text = await yukon_state.zubax_apiws.json_to_yaml(json_text);
     if (yaml_text.includes("\n")) {
         pLatestMessage.innerHTML = "";
         const lines_split = yaml_text.split("\n");
@@ -170,7 +170,7 @@ async function refreshKnownDatatypes(iSelectFixedIdMessageType, iSelectAny, iSel
     const knownDatatypes = getKnownDatatypes(yukon_state);
     // Alphabetically sort knownDatatypes
     knownDatatypes.sort();
-    const response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
+    const response = await yukon_state.zubax_apiws.get_known_datatypes_from_dsdl();
     iSelectDatatype.innerHTML = '';
     iSelectAny.innerHTML = '';
     iSelectFixedIdMessageType.innerHTML = '';
@@ -266,9 +266,9 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
 
         streamToPlotJuggler.addEventListener('change', async (event) => {
             if (event.target.checked) {
-                await yukon_state.zubax_apij.enable_udp_output_from(specifier);
+                await yukon_state.zubax_apiws.enable_udp_output_from(specifier);
             } else {
-                await yukon_state.zubax_apij.disable_udp_output_from(specifier);
+                await yukon_state.zubax_apiws.disable_udp_output_from(specifier);
             }
         });
     }
@@ -292,10 +292,10 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     inputCapacity.value = settings.DefaultMessageCapacity;
     divCapacity.appendChild(inputCapacity);
     subscriptionElement.appendChild(divCapacity);
-    setTimeout(async () => await yukon_state.zubax_apij.set_message_store_capacity(subject_id + ":" + datatype, inputCapacity.value), 1000);
+    setTimeout(async () => await yukon_state.zubax_apiws.set_message_store_capacity(subject_id + ":" + datatype, inputCapacity.value), 1000);
     inputCapacity.addEventListener('change',
         async () =>
-            await yukon_state.zubax_apij.set_message_store_capacity(subject_id + ":" + datatype, inputCapacity.value)
+            await yukon_state.zubax_apiws.set_message_store_capacity(subject_id + ":" + datatype, inputCapacity.value)
     );
     // Add an input element for the delay between every fetch of new subscription messages
     // Also a label before it
@@ -348,7 +348,7 @@ async function createSubscriptionElement(specifier, subscriptionsDiv, subscripti
     openLatestMessage.addEventListener("click", openLatestHandler);
     subscriptionElement.appendChild(openLatestMessage);
     const unsubscribeHandler = async () => {
-        const response = await yukon_state.zubax_apij.unsubscribe(specifier);
+        const response = await yukon_state.zubax_apiws.unsubscribe(specifier);
         if (response.success) {
             yukon_state.subscription_specifiers.specifiers = yukon_state.subscription_specifiers.specifiers.filter((specifier_) => { return specifier_ !== specifier; });
             await drawSubscriptions(subscriptionsDiv, settings, yukon_state);
@@ -410,7 +410,7 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     subscriptionsDiv.appendChild(subscriptionElement);
     let fetchTimeoutId = { value: null };
     const unsubscribeHandler = async () => {
-        const response = await yukon_state.zubax_apij.unsubscribe_synchronized(specifiersString);
+        const response = await yukon_state.zubax_apiws.unsubscribe_synchronized(specifiersString);
         if (response.success) {
             const specifiers_length = yukon_state.sync_subscription_specifiers.specifiers.length;
             yukon_state.sync_subscription_specifiers.specifiers = yukon_state.sync_subscription_specifiers.specifiers.filter((specifier_) => { return specifier_ !== specifiersString; });
@@ -447,10 +447,10 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     inputCapacity.value = settings.DefaultMessageCapacity;
     divCapacity.appendChild(inputCapacity);
     subscriptionElement.appendChild(divCapacity);
-    setTimeout(async () => await yukon_state.zubax_apij.set_sync_store_capacity(specifiersString, inputCapacity.value), 1000);
+    setTimeout(async () => await yukon_state.zubax_apiws.set_sync_store_capacity(specifiersString, inputCapacity.value), 1000);
     inputCapacity.addEventListener('change',
         async () =>
-            await yukon_state.zubax_apij.set_sync_store_capacity(specifiersString, inputCapacity.value)
+            await yukon_state.zubax_apiws.set_sync_store_capacity(specifiersString, inputCapacity.value)
     );
     // Add an input element for the delay between every fetch of new subscription messages
     // Also a label before it
@@ -681,7 +681,7 @@ async function subscribeCallback(isSynchronous, subscriptionElement, list_of_sub
             const datatype = infoObject.datatype;
             specifiers.push(subject_id + ":" + datatype);
         }
-        const response = await yukon_state.zubax_apij.subscribe_synchronized(JSON.stringify(specifiers));
+        const response = await yukon_state.zubax_apiws.subscribe_synchronized(JSON.stringify(specifiers));
         if (response.success) {
             if (response.message && response.message.length > 0) {
                 console.log("A message was returned as a response to the subscription request: " + response.message);
@@ -705,7 +705,7 @@ async function subscribeCallback(isSynchronous, subscriptionElement, list_of_sub
             return;
         }
 
-        const response = await yukon_state.zubax_apij.subscribe(subject_id, datatype);
+        const response = await yukon_state.zubax_apiws.subscribe(subject_id, datatype);
         if (response.success) {
             yukon_state.subscription_specifiers.specifiers.push(subject_id + ":" + datatype);
             // Remove subscriptionElement

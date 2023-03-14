@@ -44,7 +44,7 @@ window.console = new Proxy(old_console, {
         var orig_method = target[propKey];
         return function (...args) {
             var result = orig_method.apply(this, args);
-            if(yukon_state && yukon_state.addLocalMessage) {
+            if (yukon_state && yukon_state.addLocalMessage) {
                 if (propKey === "error") {
                     yukon_state.addLocalMessage(args[0], 40);
                     return result;
@@ -114,36 +114,37 @@ window.console = new Proxy(old_console, {
             y: event.pageY
         };
     }
-    yukon_state.all_settings = await yukon_state.zubax_apij.get_settings();
-    let elementPreviousParents = {}; // Component name and the corresponding previous parent element
-    if (!isRunningInElectron(yukon_state)) {
-        zubax_api.announce_running_in_browser();
-        document.title = "Yukon (browser)";
-    }
 
-    function setUpMonitorComponent() {
-        yukon_state.my_graph = create_directed_graph(yukon_state);
 
-        async function display_avatars() {
+    async function doStuffWhenReady() {
+        yukon_state.all_settings = await yukon_state.zubax_apiws.get_settings();
+        let elementPreviousParents = {}; // Component name and the corresponding previous parent element
+        if (!isRunningInElectron(yukon_state)) {
+            zubax_api.announce_running_in_browser();
+            document.title = "Yukon (browser)";
+        }
+
+        function setUpMonitorComponent() {
+            yukon_state.my_graph = create_directed_graph(yukon_state);
+
+            async function display_avatars() {
+                update_directed_graph(yukon_state);
+            }
+
+            setInterval(display_avatars, 3000);
             update_directed_graph(yukon_state);
         }
 
-        setInterval(display_avatars, 3000);
-        update_directed_graph(yukon_state);
-    }
-
-    yukon_state.addLocalMessage = function (message, severity) {
-        zubax_api.add_local_message(message, severity);
-    }
-    yukon_state.addLocalMessage("Press CTRL+SPACE to maximize the panel under your mouse", 30);
-    window.addEventListener("error", function (error, url, line) {
-        console.log("There was an actual error!")
-        yukon_state.addLocalMessage("Error: " + error.message + " at " + error.filename + ":" + error.lineno, 40);
-        return true;
-    });
-    const addLocalMessage = yukon_state.addLocalMessage;
-
-    async function doStuffWhenReady() {
+        yukon_state.addLocalMessage = function (message, severity) {
+            zubax_apiws.add_local_message(message, severity);
+        }
+        yukon_state.addLocalMessage("Press CTRL+SPACE to maximize the panel under your mouse", 30);
+        window.addEventListener("error", function (error, url, line) {
+            console.log("There was an actual error!")
+            yukon_state.addLocalMessage("Error: " + error.message + " at " + error.filename + ":" + error.lineno, 40);
+            return true;
+        });
+        const addLocalMessage = yukon_state.addLocalMessage;
         function dynamicallyLoadHTML(path, container, callback, callback_delay) {
             const xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function () {

@@ -93,7 +93,7 @@ export async function createAutocompleteField(choices, changed_callbacks, state_
                 textOfSomething = something;
             }
             listItem.innerText = textOfSomething;
-            // const response = await yukon_state.zubax_apij.get_number_type_min_max_values(datatype);
+            // const response = await yukon_state.zubax_apiws.get_number_type_min_max_values(datatype);
             // if (response && response.success && response.min && response.max) {
             //     listItem.title = "Min: " + response.min + ", Max: " + response.max;
             // } else if (response && response.success == false) {
@@ -281,7 +281,7 @@ export async function createDatatypeField(publisher, field, yukon_state) {
     const listOfOptions = publisher.possiblePaths;
 
     const wrapper = createAutocompleteField(listOfOptions, [async function (new_value) {
-        await yukon_state.zubax_apij.set_publisher_field_specifier(publisher.id, field.id, new_value);
+        await yukon_state.zubax_apiws.set_publisher_field_specifier(publisher.id, field.id, new_value);
         // await publisher.update_fields();
     }], publisher, yukon_state);
     const textField = (await wrapper).querySelector(".autocomplete-field");

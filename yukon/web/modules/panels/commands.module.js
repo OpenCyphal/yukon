@@ -59,7 +59,7 @@ export function setUpCommandsComponent(container, yukon_state) {
         disableOrEnableArguments();
     });
     btnSendCommand.addEventListener("click", async function (event) {
-        const result = await yukon_state.zubax_apij.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
+        const result = await yukon_state.zubax_apiws.send_command(iNodeId.value, iCommandId.value, iCommandArgument.value);
         if (!result.success) {
             feedbackMessage.classList.remove("success");
             feedbackMessage.style.display = "block";

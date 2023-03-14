@@ -4,7 +4,7 @@ import logging
 from yukon.domain.subscriptions.unsubscribe_request import UnsubscribeRequest
 from yukon.domain.subscriptions.unsubscribe_response import UnsubscribeResponse
 from yukon.domain.subscriptions.subscribe_response import SubscribeResponse
-from yukon.services.messages_publisher import add_local_message
+from yukon.services.messages_publisher import add_local_message2
 from yukon.domain.god_state import GodState
 
 logger = logging.getLogger(__name__)

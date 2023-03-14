@@ -33,7 +33,7 @@ export function initTransports(container, yukon_state) {
     }
 
     async function fillSelectionWithSlcan() {
-        const results = await zubax_apij.get_slcan_ports();
+        const results = await zubax_apiws.get_slcan_ports();
         const ports = results.ports;
         const hash = results.hash;
         if (hash !== yukon_state.last_slcan_list_hash) {
@@ -65,7 +65,7 @@ export function initTransports(container, yukon_state) {
     }
 
     async function fillSelectionWithSocketcan() {
-        const results = await zubax_apij.get_socketcan_ports();
+        const results = await zubax_apiws.get_socketcan_ports();
         const ports = results.ports;
         const hash = results.hash;
         if (hash !== yukon_state.last_socketcan_list_hash) {
@@ -93,7 +93,7 @@ export function initTransports(container, yukon_state) {
     }
 
     function addLocalMessage(message, severity) {
-        zubax_api.add_local_message(message, severity)
+        zubax_apiws.add_local_message(message, severity)
     }
     function showElement(element) {
         element.style.removeProperty("display");
@@ -472,7 +472,7 @@ export function initTransports(container, yukon_state) {
             const udp_iface = containerElem.querySelector('#iUdpIface').value;
             const udp_mtu = containerElem.querySelector('#iUdpMtu').value;
             const node_id = containerElem.querySelector('#iNodeId').value;
-            result = await zubax_apij.attach_udp_transport(udp_iface, udp_mtu, node_id);
+            result = await zubax_apiws.attach_udp_transport(udp_iface, udp_mtu, node_id);
         } else {
             console.log("CAN");
             let port = "";
@@ -492,7 +492,7 @@ export function initTransports(container, yukon_state) {
             const arb_rate = containerElem.querySelector('#iArbRate').value;
             const node_id = containerElem.querySelector('#iNodeId').value;
             const mtu = containerElem.querySelector('#iMtu').value;
-            result = await zubax_apij.attach_transport(port, data_rate, arb_rate, node_id, mtu)
+            result = await zubax_apiws.attach_transport(port, data_rate, arb_rate, node_id, mtu)
         }
 
         addLocalMessage("Going to try to attach.", 20)
@@ -502,7 +502,7 @@ export function initTransports(container, yukon_state) {
             addLocalMessage("Now attached: " + resultObject.message, 20);
         } else {
             console.error("Error: " + resultObject.message);
-            zubax_api.add_local_message(resultObject.message, 40);
+            zubax_apiws.add_local_message(resultObject.message, 40);
             feedbackMessageDiv.style.display = "block";
             feedbackMessageDiv.innerHTML = resultObject.message_short;
         }

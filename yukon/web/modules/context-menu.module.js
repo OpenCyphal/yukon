@@ -344,7 +344,7 @@ export function make_context_menus(yukon_state) {
                 click: async (e, elementOpenedOn) => {
                     let headerCell = getHeaderCellFromElement(elementOpenedOn);
                     const node_id = headerCell.getAttribute("data-node_id");
-                    const response = await yukon_state.zubax_apij.send_command(parseInt(node_id), 65530, "");
+                    const response = await yukon_state.zubax_apiws.send_command(parseInt(node_id), 65530, "");
                     if (response) {
                         if (response.success) {
                             addLocalMessage("Stored persistent states for node " + node_id, 20);
@@ -563,7 +563,7 @@ export function make_context_menus(yukon_state) {
                     click: async (e, elementOpenedOn) => {
                         const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
                         const datatypes = await getDatatypesForPort(portNr, yukon_state);
-                        const response = await yukon_state.zubax_apij.make_simple_publisher_with_datatype_and_port_id(datatypes[0], portNr);
+                        const response = await yukon_state.zubax_apiws.make_simple_publisher_with_datatype_and_port_id(datatypes[0], portNr);
                         const portType = elementOpenedOn.getAttribute("data-port-type"); // sub or pub or cln or srv
                         if (response && response.success) {
                             // yukon_state.publishers.push({ id: response.id });
@@ -604,7 +604,7 @@ export function make_context_menus(yukon_state) {
                 content: "Add a publisher",
                 events: {
                     click: async (e, elementOpenedOn) => {
-                        const response = await yukon_state.zubax_apij.make_simple_publisher();
+                        const response = await yukon_state.zubax_apiws.make_simple_publisher();
                         if (response && response.success) {
                             // yukon_state.publishers.push({ id: response.id });
                             console.log("Added a publisher with ID " + response.id);
@@ -657,7 +657,7 @@ export function make_context_menus(yukon_state) {
                 events: {
                     click: async (e, elementOpenedOn) => {
                         const node_id = elementOpenedOn.getAttribute("data-node-id");
-                        const response = await yukon_state.zubax_apij.remove_avatar(node_id);
+                        const response = await yukon_state.zubax_apiws.remove_avatar(node_id);
                         if(response && response.success) {
                             addLocalMessage("Node " + node_id + " was removed from the monitor.", undefined)
                         } else {

@@ -59,7 +59,7 @@ export async function update_register_value(register_name, register_value, node_
         console.error("Support for this datatype hasn't been implemented in Yukon yet.")
     }
     console.log("Register value updated for " + register_name + " to " + register_value + " for node " + node_id)
-    return await zubax_api.update_register_value(register_name, unprocessed_value, node_id);
+    return await zubax_apiws.update_register_value(register_name, unprocessed_value, node_id);
 }
 
 export function rereadPairs(pairs, yukon_state) {
@@ -89,5 +89,5 @@ export function rereadPairs(pairs, yukon_state) {
 }
 
 export async function rereadNode(integer_node_id, yukon_state) {
-    await yukon_state.zubax_apij.reread_node(integer_node_id)
+    await yukon_state.zubax_apiws.reread_node(integer_node_id)
 }

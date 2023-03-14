@@ -7,7 +7,7 @@ export async function createBooleanFieldRow(publisher, yukon_state, field) {
     row.id = rowId;
     row.classList.add("publisher-row");
     if (!field) {
-        field = (await yukon_state.zubax_apij.make_publisher_field(publisher.id, rowId)).field;
+        field = (await yukon_state.zubax_apiws.make_publisher_field(publisher.id, rowId)).field;
     }
     // Add a text field of 250px width, after that a number field of 50px width and a spinenr and a number field of 50px width
     row.appendChild(await createDatatypeField(publisher, field, yukon_state));

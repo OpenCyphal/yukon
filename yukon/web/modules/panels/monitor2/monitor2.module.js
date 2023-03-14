@@ -70,9 +70,9 @@ export async function setUpMonitor2Component(container, yukon_state) {
         if (settings.SubscriptionsOffset) {
             subscriptionsInnerArea.style.left = settings.SubscriptionsOffset + "px";
             subscriptionsInnerArea.style.top = settings.SubscriptionsVerticalOffset + "px";
-            // yukon_state.publishers = await yukon_state.zubax_apij.get_publishers();
-            yukon_state.subscription_specifiers = await yukon_state.zubax_apij.get_current_available_subscription_specifiers();
-            yukon_state.sync_subscription_specifiers = await yukon_state.zubax_apij.get_current_available_synchronized_subscription_specifiers();
+            // yukon_state.publishers = await yukon_state.zubax_apiws.get_publishers();
+            yukon_state.subscription_specifiers = await yukon_state.zubax_apiws.get_current_available_subscription_specifiers();
+            yukon_state.sync_subscription_specifiers = await yukon_state.zubax_apiws.get_current_available_synchronized_subscription_specifiers();
             if (typeof yukon_state.subscription_specifiers_previous_hash === "undefined" || yukon_state.subscription_specifiers_previous_hash !== yukon_state.subscription_specifiers.hash) {
                 await drawSubscriptions(subscriptionsInnerArea, settings, yukon_state);
             }
@@ -376,7 +376,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
     let x_counter = { value: settings["PubLineXOffset"] };
     positionAndPreparePorts(ports, x_counter, settings, yukon_state);
 
-    const datatypes_response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
+    const datatypes_response = await yukon_state.zubax_apiws.get_known_datatypes_from_dsdl();
     const avatars_copy = Array.from(yukon_state.current_avatars)
     avatars_copy.sort(compareAvatar);
     let nodesToBePositioned = [];
@@ -609,7 +609,7 @@ function addEmptyPorts(node, avatar_y_counter, node_id, yukon_state) {
             }
             number_input.style.textDecoration = "none;"
             // Assign value
-            const response = await zubax_apij.update_register_value(portInfo.register_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
+            const response = await zubax_apiws.update_register_value(portInfo.register_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${number_input.value}]}}`), node_id);
             if (response.success) {
                 console.log("The port identifier for " + portInfo.name + " was successfully updated to " + number_input.value);
                 yukon_state.addLocalMessage("Usually it is the case that you should now restart the node before the device applies its changes", 30)
@@ -738,7 +738,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         btnButton.innerHTML = button.name;
         btnButton.title = button.title;
         btnButton.onclick = async () => {
-            const result = await yukon_state.zubax_apij.send_command(avatar.node_id, button.command, "");
+            const result = await yukon_state.zubax_apiws.send_command(avatar.node_id, button.command, "");
             doCommandFeedbackResult(result, feedbackMessage);
         };
         inputGroup.appendChild(btnButton);
@@ -771,7 +771,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     customCommandSendButton.style.width = "100%";
     customCommandSendButton.innerHTML = "Send command";
     customCommandSendButton.onclick = async () => {
-        const result = await yukon_state.zubax_apij.send_command(avatar.node_id, customCommandIdInput.value, customCommandTextInput.value);
+        const result = await yukon_state.zubax_apiws.send_command(avatar.node_id, customCommandIdInput.value, customCommandTextInput.value);
         doCommandFeedbackResult(result, feedbackMessage);
     };
 
@@ -793,7 +793,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
             properties: ["openFile"],
         });
         if (path) {
-            const result = await yukon_state.zubax_apij.send_command(avatar.node_id, 65533, path);
+            const result = await yukon_state.zubax_apiws.send_command(avatar.node_id, 65533, path);
             doCommandFeedbackResult(result, feedbackMessage);
         }
     });
@@ -1008,7 +1008,7 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
                     port_number_label.style.textDecoration = "underline";
                     return;
                 }
-                const response = await zubax_apij.update_register_value(currentLinkObject.register_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${port_number_label.value}]}}`), currentLinkObject.node_id);
+                const response = await zubax_apiws.update_register_value(currentLinkObject.register_name, JSON.parse(`{"_meta_": {"mutable": true, "persistent": true}, "natural16": {"value": [${port_number_label.value}]}}`), currentLinkObject.node_id);
                 let restartButton = document.querySelector("#btn" + currentLinkObject.node_id + "_Restart");
                 if (restartButton) {
                     // Previous background color

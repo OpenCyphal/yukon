@@ -61,7 +61,7 @@ function createTable(inputArray) {
                     properties: ["openFile"],
                 });
                 if (path) {
-                    const result = await yukon_state.zubax_apij.dronecan_node_fw_update(currentInput.node_id, path);
+                    const result = await yukon_state.zubax_apiws.dronecan_node_fw_update(currentInput.node_id, path);
                     doCommandFeedbackResult(result);
                 }
             });
@@ -84,10 +84,10 @@ export async function setUpDronecanComponent(container, yukon_state) {
     cbDronecanEnabled.parentElement.style.display = "none";
     cbDronecanFWUpdateEnabled.parentElement.style.display = "none";
     cbDronecanFWUpdateEnabled.addEventListener('change', (event) => {
-        yukon_state.zubax_apij.set_dronecan_fw_substitution_enabled(event.target.checked);
+        yukon_state.zubax_apiws.set_dronecan_fw_substitution_enabled(event.target.checked);
     });
     cbDronecanEnabled.addEventListener('change', (event) => {
-        yukon_state.zubax_apij.set_dronecan_enabled(event.target.checked);
+        yukon_state.zubax_apiws.set_dronecan_enabled(event.target.checked);
     });
     const txtFirmwarePath = containerElement.querySelector('#txtFirmwarePath');
     txtFirmwarePath.parentElement.style.display = "none";
@@ -99,16 +99,16 @@ export async function setUpDronecanComponent(container, yukon_state) {
         });
         if (path) {
             txtFirmwarePath.value = path;
-            yukon_state.zubax_apij.set_dronecan_fw_substitution_path(txtFirmwarePath.value);
+            yukon_state.zubax_apiws.set_dronecan_fw_substitution_path(txtFirmwarePath.value);
         }
     });
     const btnSetFirmwarePath = containerElement.querySelector('#btnSetFirmwarePath');
     btnSetFirmwarePath.addEventListener('click', (event) => {
-        yukon_state.zubax_apij.set_dronecan_fw_substitution_path(txtFirmwarePath.value);
+        yukon_state.zubax_apiws.set_dronecan_fw_substitution_path(txtFirmwarePath.value);
     });
     let previous_table = null;
     setInterval(async () => {
-        const entries = await yukon_state.zubax_apij.get_dronecan_node_entries()
+        const entries = await yukon_state.zubax_apiws.get_dronecan_node_entries()
         if (previous_table) {
             try {
                 dronecanPanel.removeChild(previous_table);

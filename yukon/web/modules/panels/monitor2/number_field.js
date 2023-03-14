@@ -11,7 +11,7 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
         row.id = rowId;
     }
     if (!field) {
-        field = (await yukon_state.zubax_apij.make_publisher_field(publisher.id, rowId)).field;
+        field = (await yukon_state.zubax_apiws.make_publisher_field(publisher.id, rowId)).field;
         console.log(field);
     }
     row.classList.add("publisher-row");
@@ -32,7 +32,7 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
         (x) => { // Value changed callback
             console.log("spinner value changed")
             valueField.value = x;
-            yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
+            yukon_state.zubax_apiws.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
         },
         () => parseFloat(numberField1.value), // Get minimum value
         () => parseFloat(numberField2.value) // Get maximum value
@@ -61,7 +61,7 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
             spinner.setValue(parseFloat(numberField2.value));
             valueField.value = parseFloat(numberField2.value)
         }
-        await yukon_state.zubax_apij.set_field_min_max(publisher.id, field.id, parseFloat(numberField1.value), parseFloat(numberField2.value));
+        await yukon_state.zubax_apiws.set_field_min_max(publisher.id, field.id, parseFloat(numberField1.value), parseFloat(numberField2.value));
         recalculateStep();
         // numberField2.dispatchEvent(new CustomEvent('maxChanged', {
         //     bubbles: true,
@@ -75,7 +75,7 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
             spinner.setValue(parseFloat(numberField1.value));
             valueField.value = parseFloat(numberField1.value)
         }
-        await yukon_state.zubax_apij.set_field_min_max(publisher.id, field.id, parseFloat(numberField1.value), parseFloat(numberField2.value));
+        await yukon_state.zubax_apiws.set_field_min_max(publisher.id, field.id, parseFloat(numberField1.value), parseFloat(numberField2.value));
         recalculateStep();
     });
     row.appendChild(numberField2);
@@ -86,7 +86,7 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
     valueField.classList.add("value-field");
     valueField.style.width = "100px";
     valueField.addEventListener('change', async (event) => {
-        yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
+        yukon_state.zubax_apiws.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
         console.log("value changed to " + valueField.value);
         spinner.setValue(parseFloat(valueField.value));
     });

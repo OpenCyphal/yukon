@@ -68,7 +68,7 @@ from yukon.domain.registers.update_register_request import UpdateRegisterRequest
 from yukon.domain.avatar import Avatar
 from yukon.services.value_utils import unexplode_value, explode_value
 from yukon.domain.god_state import GodState
-from yukon.services.messages_publisher import add_local_message
+from yukon.services.messages_publisher import add_local_message2
 from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.registers.reread_register_names_request import RereadRegisterNamesRequest
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
@@ -252,6 +252,8 @@ def websocket_response_wrapper(state: GodState, api):
                     found_method = getattr(api, message_object["method"])
                     if found_method:
                         response = await found_method(*(message_object["params"]))
+                        if isinstance(response, (dict, list)):
+                            response = json.dumps(response, cls=EnhancedJSONEncoder)
                         if response:
                             await websocket.send(json.dumps({"type": "response", "response": response, "id": message_object["id"]}, cls=EnhancedJSONEncoder))
                             # events_by_id[message_object["id"]] = asyncio.Event()
@@ -265,6 +267,7 @@ def websocket_response_wrapper(state: GodState, api):
             except Exception as e:
                 tb = traceback.format_exc()
                 logger.error(tb)
+                raise e
     return websocket_callback
 
 async def createWebSocketServer(state: GodState, api):
@@ -293,21 +296,19 @@ class Api:
         assert self.state is state
         self.last_avatars = []
 
-    def get_socketcan_ports(self) -> Response:
+    async def get_socketcan_ports(self) -> Response:
         socket_can_ports = get_socketcan_ports()
         _list = [{"name": port_name, "already_used": False} for port_name in socket_can_ports]
         for port in _list:
             if self.state.cyphal.already_used_transport_interfaces.get("socketcan:" + port["name"]):
                 port["already_used"] = True
         _list_hash = json.dumps(_list, sort_keys=True)
-        return jsonify(
-            {
+        return {
                 "ports": _list,
                 "hash": _list_hash,
             }
-        )
 
-    def get_slcan_ports(self) -> typing.Dict[str, typing.Any]:
+    async def get_slcan_ports(self) -> typing.Dict[str, typing.Any]:
         _list = get_slcan_ports()
         for port in _list:
             if self.state.cyphal.already_used_transport_interfaces.get("slcan:" + port.get("device")):
@@ -318,32 +319,32 @@ class Api:
             "hash": _list_hash,
         }
 
-    def add_local_message(self, message: str, severity: int) -> None:
+    async def add_local_message(self, message: str, severity: int) -> None:
         if severity is None or (int(severity) >= get_level_no(self.state.gui.message_severity)):
-            add_local_message(self.state, message, severity, "Frontend")
+            add_local_message2(self.state, message, severity, "Frontend")
 
-    def import_all_of_register_configuration(self) -> str:
+    async def import_all_of_register_configuration(self) -> str:
         return import_candump_file_contents()
 
-    def import_node_configuration(self) -> str:
+    async def import_node_configuration(self) -> str:
         return import_candump_file_contents()
 
-    def is_configuration_simplified(self, deserialized_configuration: typing.Any) -> Response:
+    async def is_configuration_simplified(self, deserialized_configuration: typing.Any) -> Response:
         return jsonify(is_configuration_simplified(deserialized_configuration))
 
-    def is_network_configuration(self, deserialized_configuration: typing.Any) -> Response:
+    async def is_network_configuration(self, deserialized_configuration: typing.Any) -> Response:
         value = is_network_configuration(deserialized_configuration)
-        return jsonify(value)
+        return value
 
-    def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
+    async def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
         request = ApplyConfigurationRequest(node_id, configuration, is_network_configuration(configuration))
         self.state.queues.god_queue.put_nowait(request)
 
-    def apply_all_of_configuration(self, configuration: str) -> None:
+    async def apply_all_of_configuration(self, configuration: str) -> None:
         request = ApplyConfigurationRequest(None, configuration, is_network_configuration(configuration))
         self.state.queues.god_queue.put_nowait(request)
 
-    def simplify_configuration(self, configuration: str) -> Response:
+    async def simplify_configuration(self, configuration: str) -> Response:
         if isinstance(configuration, str):
             # if the first character in deserialize_conf is a {, then it is a JSON string.
             if configuration[0] == "{":
@@ -354,9 +355,9 @@ class Api:
             deserialized_conf = configuration
         # I refused to change the API of simplify_configuration, so I have to reparse it in jsonify
         # jsonify uses the correct JSON dumper
-        return jsonify(json.loads(simplify_configuration(deserialized_conf)))
+        return json.loads(simplify_configuration(deserialized_conf))
 
-    def unsimplify_configuration(self, configuration: str) -> Response:
+    async def unsimplify_configuration(self, configuration: str) -> Response:
         if isinstance(configuration, str):
             # if the first character in deserialize_conf is a {, then it is a JSON string.
             if configuration[0] == "{":
@@ -365,7 +366,7 @@ class Api:
                 deserialized_conf = yaml.load(configuration, Loader=Loader)
         else:
             deserialized_conf = configuration
-        return jsonify(json.loads(unsimplify_configuration(self.state.avatar.avatars_by_node_id, deserialized_conf)))
+        return json.loads(unsimplify_configuration(self.state.avatar.avatars_by_node_id, deserialized_conf))
 
     def open_file_dialog(self) -> typing.Any:
         import tkinter as tk
@@ -382,7 +383,7 @@ class Api:
             file_dto["name"] = Path(file_path).name
         return file_dto
 
-    def update_register_value(self, register_name: str, register_value: typing.Any, node_id: str) -> typing.Any:
+    async def update_register_value(self, register_name: str, register_value: typing.Any, node_id: str) -> typing.Any:
         try:
             import uavcan
 
@@ -401,19 +402,19 @@ class Api:
                         logger.info(f"Successfully updated register {register_name} to {register_value}")
                     else:
                         logger.error(f"Failed to update register {register_name} to {register_value}")
-                    return jsonify(response)
+                    return response
             logger.critical("Something is wrong with updating registers.")
             raise Exception(f"Failed to update register {register_name} to {register_value}, critical timeout")
         except Exception as e:
             tb = traceback.format_exc()
             logger.error(f"Failed to update register value.")
             logger.error(tb)
-            return jsonify({"success": False, "message": str(e)})
+            return {"success": False, "message": str(e)}
 
-    def get_register_update_log_items(self) -> Response:
-        return jsonify(self.state.cyphal.register_update_log)
+    async def get_register_update_log_items(self) -> Response:
+        return self.state.cyphal.register_update_log
 
-    def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> typing.Any:
+    async def attach_udp_transport(self, udp_iface: str, udp_mtu: int, node_id: int) -> typing.Any:
         try:
             logger.info(f"Attaching UDP transport to {udp_iface}")
             interface = Interface()
@@ -430,13 +431,13 @@ class Api:
                 response = self.state.queues.attach_transport_response.get(timeout=5)
             except Empty:
                 raise Exception("Failed to receive a response for attached CAN transport.")
-            return jsonify(response)
+            return response
         except Exception as e:
             tb = traceback.format_exc()
             logger.error(f"Failed to attach UDP transport: {e}\n{tb}")
-            return jsonify({"is_success": False, "message": "Failed to attach UDP transport."})
+            return {"is_success": False, "message": "Failed to attach UDP transport."}
 
-    def attach_transport(
+    async def attach_transport(
         self, interface_string: str, arb_rate: str, data_rate: str, node_id: str, mtu: str
     ) -> typing.Any:
         try:
@@ -454,73 +455,64 @@ class Api:
                 response = self.state.queues.attach_transport_response.get(timeout=7)
             except Empty:
                 raise Exception("Failed to receive a response for attached CAN transport.")
-            return jsonify(response)
+            return response
         except Exception as e:
             tb = traceback.format_exc()
             logger.error(f"Failed to attach transport: {e}\n{tb}")
             logger.error(str(tb))
-            return jsonify({"is_success": False, "message": str(e)})
+            return {"is_success": False, "message": str(e)}
 
-    def detach_transport(self, hash: str) -> typing.Any:
+    async def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
         self.state.queues.god_queue.put_nowait(DetachTransportRequest(hash))
         try:
             response = self.state.queues.detach_transport_response.get(timeout=5)
         except Empty:
             raise Exception("Failed to receive a response for detached CAN transport.")
-        return jsonify(response)
+        return response
 
     # def save_registers_of_node(self, node_id: int, registers: typing.Dict["str"]) -> None:
-    def show_yakut(self) -> None:
+    async def show_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = False
 
-    def reread_registers(self, request_contents: typing.Dict[int, typing.Dict[str, bool]]) -> None:
+    async def reread_registers(self, request_contents: typing.Dict[int, typing.Dict[str, bool]]) -> None:
         """yukon/web/modules/registers.data.module.js explains the request_contents structure."""
         request = RereadRegistersRequest(uuid4(), request_contents)
         self.state.queues.god_queue.put_nowait(request)
 
-    def hide_yakut(self) -> None:
+    async def hide_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = True
 
-    def get_messages(self, since_index: int = 0) -> Response:
+    async def get_messages2(self, since_index: int = 0) -> Response:
         my_list = [x for x in list(self.state.queues.messages.queue) if not since_index or x.index_nr >= since_index]
-        return jsonify(my_list)
+        return json.dumps(my_list, cls=EnhancedJSONEncoder)
 
     async def get_avatars2(self) -> None:
         self.state.gui.last_poll_received = monotonic()
         avatar_list = [avatar.to_builtin() for avatar in list(self.state.avatar.avatars_by_node_id.values())]
         avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
-        json_response = json.dumps(avatar_dto, cls=EnhancedJSONEncoder)
-        return json_response
+        return avatar_dto
 
-    def get_avatars(self) -> typing.Any:
-        self.state.gui.last_poll_received = monotonic()
-        avatar_list = [avatar.to_builtin() for avatar in list(self.state.avatar.avatars_by_node_id.values())]
-        avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
-        return jsonify(avatar_dto)
-
-    def remove_avatar(self, node_id: int) -> Response:
+    async def remove_avatar(self, node_id: int) -> Response:
         if self.state.avatar.avatars_by_node_id.get(int(node_id)):
             del self.state.avatar.avatars_by_node_id[int(node_id)]
-            return jsonify({"success": True})
+            return {"success": True}
         else:
-            return jsonify({"success": False})
+            return {"success": False}
 
-    def get_log_level(self) -> Response:
-        return jsonify({"severity": self.state.gui.message_severity})
+    async def get_log_level(self) -> Response:
+        return {"severity": self.state.gui.message_severity}
 
-    def set_log_level(self, severity: str) -> None:
+    async def set_log_level(self, severity: str) -> None:
         self.state.gui.message_severity = severity
 
-    def get_connected_transport_interfaces(self) -> Response:
-        return jsonify(
-            {
+    async def get_connected_transport_interfaces(self) -> Response:
+        return {
                 "interfaces": self.state.cyphal.transports_list,
                 "hash": hash(json.dumps(self.state.cyphal.transports_list, sort_keys=True, cls=EnhancedJSONEncoder)),
             }
-        )
 
-    def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
+    async def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
         send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)
         if int(command) == 65533:
             if not launch_yes_no_dialog(
@@ -528,15 +520,15 @@ class Api:
                 "Confirm firmware update",
                 20000,
             ):
-                return jsonify({"success": False, "message": "User cancelled."})
+                return {"success": False, "message": "User cancelled."}
         self.state.queues.god_queue.put_nowait(send_command_request)
         try:
             response = self.state.queues.command_response.get(timeout=5)
         except Empty:
             raise Exception("Failed to receive a response for sending command.")
-        return jsonify({"success": response.is_success, "message": response.message})
+        return {"success": response.is_success, "message": response.message}
 
-    def reread_node(self, node_id: str) -> Response:
+    async def reread_node(self, node_id: str) -> Response:
         async def get_register_names_helper() -> None:
             await get_register_names(
                 self.state,
@@ -550,18 +542,18 @@ class Api:
         except Exception as e:
             tb = traceback.format_exc()
             logger.error(tb)
-            return jsonify({"success": False, "message": str(e)})
+            return {"success": False, "message": str(e)}
 
-    def announce_running_in_electron(self) -> None:
+    async def announce_running_in_electron(self) -> None:
         logger.info("Announcing running in electron.")
         self.state.gui.is_running_in_browser = False
         self.state.gui.is_target_client_known = True
 
-    def announce_running_in_browser(self) -> None:
+    async def announce_running_in_browser(self) -> None:
         self.state.gui.is_running_in_browser = True
         self.state.gui.is_target_client_known = True
 
-    def close_yukon(self) -> None:
+    async def close_yukon(self) -> None:
         try:
             import pyi_splash
 
@@ -570,19 +562,19 @@ class Api:
             pass
         quit_application(self.state)
 
-    def yaml_to_yaml(self, yaml_in: str) -> Response:
+    async def yaml_to_yaml(self, yaml_in: str) -> Response:
         text_response = Dumper().dumps(yaml.load(yaml_in, Loader))
         return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
 
-    def json_to_yaml(self, json_in: str) -> Response:
+    async def json_to_yaml(self, json_in: str) -> Response:
         text_response = Dumper().dumps(json.loads(json_in))
-        return Response(response=text_response, content_type="text/yaml", mimetype="text/yaml")
+        return text_response
 
-    def add_register_update_log_item(self, register_name: str, register_value: str, node_id: str, success: str) -> None:
+    async def add_register_update_log_item(self, register_name: str, register_value: str, node_id: str, success: str) -> None:
         """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
         add_register_update_log_item(self.state, register_name, register_value, node_id, bool(success))
 
-    def subscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
+    async def subscribe(self, subject_id: typing.Optional[typing.Union[int, str]], datatype: str) -> Response:
         try:
             if subject_id:
                 subject_id = int(subject_id)
@@ -590,26 +582,26 @@ class Api:
         except Exception as e:
             logger.error("Failed to register subscribe intent.", exc_info=True)
             logger.error(str(e))
-            return jsonify({"success": False, "message": "Failed to register subscribe intent."})
+            return {"success": False, "message": "Failed to register subscribe intent."}
         try:
             response = self.state.queues.subscribe_requests_responses.get(timeout=5)
         except Empty:
             raise Exception("Failed to receive a response for subscribing.")
-        return jsonify(response)
+        return response
 
-    def enable_udp_output_from(self, specifier: str) -> None:
+    async def enable_udp_output_from(self, specifier: str) -> None:
         """Get the message store for the specifier and enable UDP output for it."""
         messages_store = self.state.cyphal.message_stores_by_specifier.get(SubjectSpecifier.from_string(specifier))
         if messages_store:
             messages_store.enable_udp_output = True
 
-    def disable_udp_output_from(self, specifier: str) -> None:
+    async def disable_udp_output_from(self, specifier: str) -> None:
         """Get the message store for the specifier and enable UDP output for it."""
         messages_store = self.state.cyphal.message_stores_by_specifier.get(SubjectSpecifier.from_string(specifier))
         if messages_store:
             messages_store.enable_udp_output = False
 
-    def unsubscribe(self, specifier: str) -> Response:
+    async def unsubscribe(self, specifier: str) -> Response:
         try:
             self.state.queues.god_queue.put_nowait(UnsubscribeRequest(SubjectSpecifier.from_string(specifier)))
             try:
@@ -617,19 +609,17 @@ class Api:
             except Empty:
                 logger.error("Failed to receive a confirmation for unsubscribing.")
             else:
-                return jsonify(
-                    {
+                return {
                         "success": response.success,
                         "message": "Unsubscribed from " + specifier,
                     }
-                )
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to register unsubscribe intent.")
             logger.error(str(tb))
-            return jsonify({"success": False, "message": "Failed to register unsubscribe intent."})
+            return {"success": False, "message": "Failed to register unsubscribe intent."}
 
-    def fetch_messages_for_subscription_specifiers(self, specifiers: str) -> Response:
+    async def fetch_messages_for_subscription_specifiers(self, specifiers: str) -> Response:
         """
         A specifier is a subject_id concatenated with a datatype, separated by a colon.
 
@@ -645,14 +635,13 @@ class Api:
                     if dto.does_equal_specifier(specifier):
                         mapping[str(dto)] = messages_store.messages[dto.counter - messages_store.start_index :]
                         break
-            # This jsonify is why I made sure to set up the JSON encoder for dsdl
-            return jsonify(mapping)
+            return mapping
         except Exception as e:
             logger.error("Failed to fetch messages for subscription specifiers.", exc_info=True)
             logger.error(str(e))
-            return jsonify({"success": False, "message": "Failed to fetch messages for subscription specifiers."})
+            return {"success": False, "message": "Failed to fetch messages for subscription specifiers."}
 
-    def make_simple_publisher(self) -> Response:
+    async def make_simple_publisher(self) -> Response:
         try:
             new_publisher = SimplePublisher(str(uuid4()), self.state)
             self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
@@ -660,11 +649,11 @@ class Api:
             tb = traceback.format_exc()
             logger.error("Failed to make simple publisher.")
             logger.error(str(tb))
-            return jsonify({"success": False, "message": traceback.format_exc()})
+            return {"success": False, "message": traceback.format_exc()}
         else:
-            return jsonify({"success": True, "id": new_publisher.id})
+            return {"success": True, "id": new_publisher.id}
 
-    def make_simple_publisher_with_datatype_and_port_id(self, datatype: str, port_id: int) -> Response:
+    async def make_simple_publisher_with_datatype_and_port_id(self, datatype: str, port_id: int) -> Response:
         try:
             new_publisher = SimplePublisher(str(uuid4()), self.state)
             new_publisher.datatype = datatype
@@ -674,14 +663,14 @@ class Api:
             tb = traceback.format_exc()
             logger.error("Failed to make simple publisher.")
             logger.error(str(tb))
-            return jsonify({"success": False, "message": traceback.format_exc()})
+            return {"success": False, "message": traceback.format_exc()}
         else:
-            return jsonify({"success": True, "id": new_publisher.id})
+            return {"success": True, "id": new_publisher.id}
 
-    def publish(self, publisher_id: str) -> Response:
+    async def publish(self, publisher_id: str) -> Response:
         publisher = self.state.cyphal.publishers_by_id.get(publisher_id)
         if publisher is None:
-            return jsonify({"success": False, "message": "Publisher %s not found." % publisher_id})
+            return {"success": False, "message": "Publisher %s not found." % publisher_id}
         try:
             # print(monotonic(), "API told to publish")
             self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(publisher.publish)
@@ -689,199 +678,192 @@ class Api:
             tb = traceback.format_exc()
             logger.error("Failed to publish.")
             logger.error(str(tb))
-            return jsonify({"success": False, "message": traceback.format_exc()})
+            return {"success": False, "message": traceback.format_exc()}
 
-    def remove_publisher(self, id: str) -> Response:
+    async def remove_publisher(self, id: str) -> Response:
         try:
             del self.state.cyphal.publishers_by_id[id]
-            return jsonify({"success": True})
+            return {"success": True}
         except:
-            return jsonify({"success": False, "message": traceback.format_exc()})
+            return {"success": False, "message": traceback.format_exc()}
 
-    def set_publisher_name(self, id: str, new_name: str) -> Response:
+    async def set_publisher_name(self, id: str, new_name: str) -> Response:
         try:
             publisher = self.state.cyphal.publishers_by_id.get(id)
             if publisher is None:
-                return jsonify({"success": False, "message": "Publisher %s not found." % id})
+                return {"success": False, "message": "Publisher %s not found." % id}
             publisher.name = new_name
-            return jsonify({"success": True})
+            return {"success": True}
         except Exception as e:
-            return jsonify({"success": False, "message": str(e)})
+            return {"success": False, "message": str(e)}
 
-    def set_publisher_enabled(self, id: str, enabled: bool) -> Response:
+    async def set_publisher_enabled(self, id: str, enabled: bool) -> Response:
         try:
             publisher = self.state.cyphal.publishers_by_id.get(id)
             if publisher is None:
-                return jsonify({"success": False, "message": "Publisher %s not found." % id})
+                return {"success": False, "message": "Publisher %s not found." % id}
             publisher.enabled = enabled
-            return jsonify({"success": True})
+            return {"success": True}
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to set publisher enabled.")
             logger.error(str(tb))
-            return jsonify({"success": False, "message": str(e)})
+            return {"success": False, "message": str(e)}
 
-    def get_potential_fixed_port_id_of_publisher(self, publisher_id: str) -> Response:
+    async def get_potential_fixed_port_id_of_publisher(self, publisher_id: str) -> Response:
         try:
             publisher = self.state.cyphal.publishers_by_id.get(publisher_id)
             if publisher is None:
-                return jsonify({"success": False, "message": "Publisher %s not found." % publisher_id})
-            return jsonify({"success": True, "port_id": publisher.port_id})
+                return {"success": False, "message": "Publisher %s not found." % publisher_id}
+            return {"success": True, "port_id": publisher.port_id}
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to get potential fixed port id of publisher.")
             logger.error(str(tb))
-            return jsonify({"success": False, "message": str(e)})
+            return {"success": False, "message": str(e)}
 
-    def set_publisher_port_id(self, id: str, port_id: str) -> Response:
+    async def set_publisher_port_id(self, id: str, port_id: str) -> Response:
         try:
             publisher = self.state.cyphal.publishers_by_id.get(id)
             if publisher is None:
-                return jsonify({"success": False, "message": "Publisher %s not found." % id})
+                return {"success": False, "message": "Publisher %s not found." % id}
             publisher.port_id = int(port_id)
-            return jsonify({"success": True})
+            return {"success": True}
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to set publisher port id.")
             logger.error(str(tb))
-            return jsonify({"success": False, "message": str(e)})
+            return {"success": False, "message": str(e)}
 
-    def make_publisher_field(self, publisher_id: str, field_id: str) -> Response:
+    async def make_publisher_field(self, publisher_id: str, field_id: str) -> Response:
         try:
             field = self.state.cyphal.publishers_by_id[publisher_id].add_field(field_id)
-            return jsonify({"success": True, "field": field})
+            return {"success": True, "field": field}
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to make publisher field.")
             logger.error(str(tb))
-            return jsonify({"success": False, "message": "Failed to make publisher field."})
+            return {"success": False, "message": "Failed to make publisher field."}
 
-    def get_publisher_possible_paths_for_autocomplete(self, publisher_id: str) -> Response:
+    async def get_publisher_possible_paths_for_autocomplete(self, publisher_id: str) -> Response:
         """Returns a list of possible paths for the publisher_id."""
         try:
             publisher: SimplePublisher = self.state.cyphal.publishers_by_id[publisher_id]
             result = get_all_field_dtos(load_dtype(publisher.datatype))
-            return jsonify(result)
+            return result
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to get publisher possible paths for autocomplete.")
             logger.error(str(tb))
-            return jsonify({"success": False, "message": "Failed to get publisher possible paths for autocomplete."})
+            return {"success": False, "message": "Failed to get publisher possible paths for autocomplete."}
 
-    def delete_publisher_field(self, publisher_id: str, field_id: str) -> Response:
+    async def delete_publisher_field(self, publisher_id: str, field_id: str) -> Response:
         try:
             self.state.cyphal.publishers_by_id[publisher_id].delete_field(field_id)
-            return jsonify({"success": True})
+            return {"success": True}
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to delete publisher field.")
             logger.error(str(tb))
-            return jsonify({"success": False, "message": "Failed to delete publisher field."})
+            return {"success": False, "message": "Failed to delete publisher field."}
 
-    def set_publisher_field_type_path(self, publisher_id: str, field_id: str, type_path: str) -> Response:
+    async def set_publisher_field_type_path(self, publisher_id: str, field_id: str, type_path: str) -> Response:
         try:
             self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).type_path = type_path
-            return jsonify(
-                {"success": True, "field": self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id)}
-            )
+            return {"success": True, "field": self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id)}
         except:
-            return jsonify({"success": False, "message": traceback.format_exc()})
+            return {"success": False, "message": traceback.format_exc()}
 
-    def set_publisher_datatype(self, publisher_id: str, datatype: str) -> Response:
+    async def set_publisher_datatype(self, publisher_id: str, datatype: str) -> Response:
         try:
             self.state.cyphal.publishers_by_id[publisher_id].datatype = datatype
-            return jsonify({"success": True, "publisher": self.state.cyphal.publishers_by_id[publisher_id]})
+            return {"success": True, "publisher": self.state.cyphal.publishers_by_id[publisher_id]}
         except:
-            return jsonify({"success": False, "message": traceback.format_exc()})
+            return {"success": False, "message": traceback.format_exc()}
 
-    def set_publisher_field_specifier(self, publisher_id: str, field_id: str, datatype: str) -> Response:
+    async def set_publisher_field_specifier(self, publisher_id: str, field_id: str, datatype: str) -> Response:
         try:
             self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).field_specifier = datatype
-            return jsonify(
-                {"success": True, "field": self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id)}
-            )
+            return {"success": True, "field": self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id)}
         except:
-            return jsonify({"success": False, "message": traceback.format_exc()})
+            return {"success": False, "message": traceback.format_exc()}
 
-    def get_publisher_field(self, publisher_id: str, field_id: str) -> Response:
-        return jsonify(self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id))
+    async def get_publisher_field(self, publisher_id: str, field_id: str) -> Response:
+        return self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id)
 
-    def get_publisher_fields(self, publisher_id: str) -> Response:
+    async def get_publisher_fields(self, publisher_id: str) -> Response:
         try:
             fields = self.state.cyphal.publishers_by_id[publisher_id].fields
-            return jsonify({"success": True, "fields": fields})
+            return {"success": True, "fields": fields}
         except:
-            return jsonify({"success": False, "message": traceback.format_exc(), "fields": []})
+            return {"success": False, "message": traceback.format_exc(), "fields": []}
 
-    def set_publisher_field_value(self, publisher_id: str, field_id: str, value: str) -> Response:
+    async def set_publisher_field_value(self, publisher_id: str, field_id: str, value: str) -> Response:
         try:
             self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).value = value
-            return jsonify({"success": True})
+            return {"success": True}
         except:
-            return jsonify({"success": False, "message": traceback.format_exc()})
+            return {"success": False, "message": traceback.format_exc()}
 
-    def get_publisher_field_value(self, publisher_id: str, field_id: str) -> Response:
+    async def get_publisher_field_value(self, publisher_id: str, field_id: str) -> Response:
         try:
             value = self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).value
-            return jsonify({"success": True, "value": value})
+            return {"success": True, "value": value}
         except:
-            return jsonify({"success": False, "message": traceback.format_exc()})
+            return {"success": False, "message": traceback.format_exc()}
 
-    def set_field_min_max(self, publisher_id: str, field_id: str, min: float, max: float) -> Response:
+    async def set_field_min_max(self, publisher_id: str, field_id: str, min: float, max: float) -> Response:
         try:
             self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).min = min
             self.state.cyphal.publishers_by_id[publisher_id].get_field(field_id).max = max
-            return jsonify({"success": True})
+            return {"success": True}
         except:
-            return jsonify({"success": False, "message": traceback.format_exc()})
+            return {"success": False, "message": traceback.format_exc()}
 
-    def set_publisher_rate(self, publisher_id: str, rate: int) -> Response:
+    async def set_publisher_rate(self, publisher_id: str, rate: int) -> Response:
         try:
             self.state.cyphal.publishers_by_id[publisher_id].rate_per_second = rate
-            return jsonify({"success": True})
+            return {"success": True}
         except:
-            return jsonify({"success": False, "message": traceback.format_exc()})
+            return {"success": False, "message": traceback.format_exc()}
 
-    def update_publisher(self, publisher_id: str, specifier: str, data: str) -> Response:
+    async def update_publisher(self, publisher_id: str, specifier: str, data: str) -> Response:
         try:
             specifier_object = SubjectSpecifier.from_string(specifier)
             self.state.cyphal.publishers_by_id[publisher_id].update_value(specifier_object, data)
-            return jsonify({"success": True})
+            return {"success": True}
         except:
-            return jsonify({"success": False, "message": traceback.format_exc()})
+            return {"success": False, "message": traceback.format_exc()}
 
-    def get_publishers(self) -> Response:
+    async def get_publishers(self) -> Response:
         try:
-            return jsonify(self.state.cyphal.publishers_by_id)
+            return self.state.cyphal.publishers_by_id
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to get publishers.")
             logger.error(str(tb))
-            return jsonify({"success": False, "message": "Failed to get publishers."})
+            return {"success": False, "message": "Failed to get publishers."}
 
-    def get_number_type_min_max_values(self, type_name: str) -> Response:
+    async def get_number_type_min_max_values(self, type_name: str) -> Response:
         try:
             _match = re.match(r"uavcan\.primitive\.array\.([A-Za-z]+)([0-9]+)_([0-9]+)_([0-9]+)", type_name)
             if _match:
                 bit_depth = int(_match.group(2))
                 is_signed = _match.group(1) != "Natural"
-                return jsonify(
-                    {
+                return {
                         "success": True,
                         "min": -(2 ** (bit_depth - 1)) if is_signed else 0,
                         "max": 2 ** (bit_depth - 1) - 1 if is_signed else 2**bit_depth - 1,
                     }
-                )
             return {"success": False, "message": "Unknown type name"}
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to get publishers.")
             logger.error(str(tb))
-            return jsonify({"success": False, "message": "Failed to get publishers."})
+            return {"success": False, "message": "Failed to get publishers."}
 
-    def get_publish_type_names(self) -> Response:
-        return jsonify(
-            [
+    async def get_publish_type_names(self) -> Response:
+        return [
                 "uavcan.primitive.array.Real64_1_0",
                 "uavcan.primitive.array.Real32_1_0",
                 "uavcan.primitive.array.Real16_1_0",
@@ -893,14 +875,13 @@ class Api:
                 "uavcan.primitive.array.Natural16_1_0",
                 "uavcan.primitive.array.Natural8_1_0",
             ]
-        )
 
-    def set_message_store_capacity(self, specifier: str, capacity: int) -> None:
+    async def set_message_store_capacity(self, specifier: str, capacity: int) -> None:
         messages_store = self.state.cyphal.message_stores_by_specifier.get(SubjectSpecifier.from_string(specifier))
         if messages_store:
             messages_store.capacity = int(capacity)
 
-    def set_sync_store_capacity(self, specifiers: str, capacity: int) -> None:
+    async def set_sync_store_capacity(self, specifiers: str, capacity: int) -> None:
         try:
             specifiers_object = json.loads(specifiers)
             synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
@@ -912,7 +893,7 @@ class Api:
             logger.error("Failed to set sync store capacity.")
             logger.error(str(tb))
 
-    def subscribe_synchronized(self, specifiers: str) -> Response:
+    async def subscribe_synchronized(self, specifiers: str) -> Response:
         try:
             result_ready_event = threading.Event()
             was_subscription_success: bool = False
@@ -988,30 +969,26 @@ class Api:
 
             self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(subscribe_task)
             if result_ready_event.wait(1.7):
-                return jsonify(
-                    {
+                return {
                         "success": was_subscription_success,
                         "specifiers": specifiers,
                         "message": message,
                         "tolerance": tolerance,
                     }
-                )
             else:
-                return jsonify(
-                    {
+                return {
                         "success": False,
                         "specifiers": specifiers,
                         "message": "Timed out waiting for a response from the Cyphal worker thread.",
                         "tolerance": tolerance,
                     }
-                )
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to subscribe to synchronized messages.")
             logger.error(str(tb))
-            return jsonify({"success": False, "message": tb})
+            return {"success": False, "message": tb}
 
-    def unsubscribe_synchronized(self, specifiers: str) -> Response:
+    async def unsubscribe_synchronized(self, specifiers: str) -> Response:
         try:
             specifiers_object = json.loads(specifiers)
             sync_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
@@ -1019,14 +996,14 @@ class Api:
             synchronizer.close()
             del self.state.cyphal.synchronizers_by_specifier[sync_specifier]
             del self.state.cyphal.synchronized_message_stores[sync_specifier]
-            return jsonify({"success": True, "specifiers": specifiers})
+            return {"success": True, "specifiers": specifiers}
         except:
             logger.error("Failed to unsubscribe from synchronized messages.")
             tb = traceback.format_exc()
             logger.error(str(tb))
-            return jsonify({"success": False, "specifiers": specifiers, "message": tb})
+            return {"success": False, "specifiers": specifiers, "message": tb}
 
-    def fetch_synchronized_messages_for_specifiers(self, specifiers: str, counter: int) -> Response:
+    async def fetch_synchronized_messages_for_specifiers(self, specifiers: str, counter: int) -> Response:
         """Specifiers is a JSON serialized list of specifiers."""
         try:
             specifiers_object = json.loads(specifiers)
@@ -1036,54 +1013,73 @@ class Api:
                 SynchronizedSubjectsSpecifier(specifier_objects)
             )
             if not synchronized_messages_store:
-                return jsonify({"success": False, "message": "No synchronized messages for this specifier."})
+                return {"success": False, "message": "No synchronized messages for this specifier."}
             if synchronized_messages_store.start_index >= counter:
-                return jsonify(synchronized_messages_store.messages[0:])
+                return synchronized_messages_store.messages[0:]
             else:
-                return jsonify(
-                    synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :]
-                )
+                return synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :]
         except Exception as e:
             logger.error("Failed to fetch synchronized messages.")
             tb = traceback.format_exc()
             logger.error(str(tb))
-            return jsonify({"success": False, "message": tb})
+            return {"success": False, "message": tb}
+    
+    async def fetch_synchronized_messages_for_specifiers2(self, specifiers: str, counter: int) -> dict:
+        """Specifiers is a JSON serialized list of specifiers."""
+        try:
+            specifiers_object = json.loads(specifiers)
+            specifier_objects = [SubjectSpecifier.from_string(x) for x in specifiers_object]
+            """An array containing arrays of synchronized messages"""
+            synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
+                SynchronizedSubjectsSpecifier(specifier_objects)
+            )
+            if not synchronized_messages_store:
+                return {"success": False, "message": "No synchronized messages for this specifier."}
+            if synchronized_messages_store.start_index >= counter:
+                return synchronized_messages_store.messages[0:]
+            else:
+                return synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :]
+        except Exception as e:
+            logger.error("Failed to fetch synchronized messages.")
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return {"success": False, "message": tb}
 
-    def get_current_available_subscription_specifiers(self) -> Response:
+    async def get_current_available_subscription_specifiers(self) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
         try:
             specifiers = []
             for specifier, messages_store in self.state.cyphal.message_stores_by_specifier.items():
                 specifiers.append(str(specifier))
             specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
-            return jsonify(specifiers_return_value)
+            return specifiers_return_value
         except Exception as e:
             logger.error("Failed to get current available subscription specifiers.")
             tb = traceback.format_exc()
             logger.error(str(tb))
-            return jsonify({"success": False, "message": tb})
+            return {"success": False, "message": tb}
 
-    def get_current_available_synchronized_subscription_specifiers(self) -> Response:
+    async def get_current_available_synchronized_subscription_specifiers(self) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
         try:
             specifiers = []
             for specifier, messages_store in self.state.cyphal.synchronized_message_stores.items():
                 specifiers.append(str(specifier))
             specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
-            return jsonify(specifiers_return_value)
+            return specifiers_return_value
         except Exception as e:
             logger.error("Failed to get current available synchronized subscription specifiers.")
             tb = traceback.format_exc()
             logger.error(str(tb))
-            return jsonify({"success": False, "message": tb})
+            return {"success": False, "message": tb}
 
-    def get_known_datatypes_from_dsdl_for_publishers(self) -> Response:
+    async def get_known_datatypes_from_dsdl_for_publishers(self) -> Response:
         start = monotonic()
         return_object = self.get_known_datatypes_from_dsdl()
         logger.info(f"get_known_datatypes_from_dsdl_for_publishers took {monotonic() - start} seconds.")
         return return_object
 
-    def get_known_datatypes_from_dsdl(self) -> Response:
+    async def get_known_datatypes_from_dsdl(self) -> Response:
         start_time = monotonic()
         if (
             self.state.known_datatypes
@@ -1105,7 +1101,7 @@ class Api:
             final_return_object: typing.Any = {}
             for dsdl_folder in dsdl_folders:
                 final_return_object = {**final_return_object, **get_datatype_return_dto(get_all_datatypes(dsdl_folder))}
-            final_json = jsonify(final_return_object)
+            final_json = final_return_object
             self.state.known_datatypes = final_json
             self.state.last_known_datatypes_fetch_time = monotonic()
             return final_json
@@ -1113,37 +1109,37 @@ class Api:
             logger.error("Failed to get known datatypes from dsdl.")
             tb = traceback.format_exc()
             logger.error(str(tb))
-            return jsonify({"success": False, "message": tb})
+            return {"success": False, "message": tb}
 
-    def setting_was_removed(self, id: str) -> Response:
+    async def setting_was_removed(self, id: str) -> Response:
         try:
             removed_descendant = self.state.settings.remove_descendant_with_id(id)
             if removed_descendant is not None:
-                return jsonify({"success": True, "id": id, "value": removed_descendant})
+                return {"success": True, "id": id, "value": removed_descendant}
             else:
-                return jsonify({"success": False})
+                return {"success": False}
         except Exception as e:
             logger.error("Failed to remove setting.")
             tb = traceback.format_exc()
             logger.error(str(tb))
-            return jsonify({"success": False, "message": tb})
+            return {"success": False, "message": tb}
 
-    def setting_was_changed(self, id: str, value: str) -> Response:
+    async def setting_was_changed(self, id: str, value: str) -> Response:
         try:
             found_descendant = self.state.settings.get_descendant_with_id(id)
             if found_descendant:
                 found_descendant.value = value
-                return jsonify({"success": True, "id": id, "value": value})
+                return {"success": True, "id": id, "value": value}
             else:
                 logger.error("Could not find descendant with id " + id)
-            return jsonify({"success": False})
+            return {"success": False}
         except Exception as e:
             logger.error("Failed to change setting.")
             tb = traceback.format_exc()
             logger.error(str(tb))
-            return jsonify({"success": False, "message": tb})
+            return {"success": False, "message": tb}
 
-    def array_item_was_added(self, parent_id: str, value: str, own_id: str) -> Response:
+    async def array_item_was_added(self, parent_id: str, value: str, own_id: str) -> Response:
         try:
 
             def append_value_to_parent(_value: str, parent: ReactiveValue) -> None:
@@ -1162,27 +1158,27 @@ class Api:
             found_parent = self.state.settings.get_descendant_with_id(parent_id)
             if found_parent:
                 append_value_to_parent(value, found_parent)
-                return jsonify({"success": True, "parent_id": parent_id, "value": value})
+                return {"success": True, "parent_id": parent_id, "value": value}
             else:
                 logger.error(f"Could not find parent with id {parent_id}")
-            return jsonify({"success": False})
+            return {"success": False}
         except Exception as e:
             logger.error("Failed to add array item.")
             tb = traceback.format_exc()
             logger.error(str(tb))
-            return jsonify({"success": False, "message": tb})
+            return {"success": False, "message": tb}
 
-    def get_settings(self) -> Response:
+    async def get_settings(self) -> Response:
         try:
-            serialized_settings = jsonify(self.state.settings)
+            serialized_settings = self.state.settings
             return serialized_settings
         except Exception as e:
             logger.error("Failed to get settings.")
             tb = traceback.format_exc()
             logger.error(str(tb))
-            return jsonify({"success": False, "message": tb})
+            return {"success": False, "message": tb}
 
-    def save_settings(self) -> None:
+    async def save_settings(self) -> None:
         try:
             save_settings(self.state.settings, Path.home() / ".zubax" / "yukon" / "yukon_settings.yaml", self.state)
         except Exception as e:
@@ -1190,7 +1186,7 @@ class Api:
             tb = traceback.format_exc()
             logger.error(str(tb))
 
-    def load_settings(self) -> None:
+    async def load_settings(self) -> None:
         try:
             loading_settings_into_yukon(self.state)
         except Exception as e:
@@ -1198,19 +1194,19 @@ class Api:
             tb = traceback.format_exc()
             logger.error(str(tb))
 
-    def set_dronecan_fw_substitution_enabled(self, enabled: bool) -> None:
+    async def set_dronecan_fw_substitution_enabled(self, enabled: bool) -> None:
         self.state.dronecan.firmware_update_enabled.value = enabled
 
-    def set_dronecan_fw_substitution_path(self, path: str) -> None:
+    async def set_dronecan_fw_substitution_path(self, path: str) -> None:
         self.state.dronecan.firmware_update_path.value = path
 
-    def set_dronecan_enabled(self, enabled: bool) -> None:
+    async def set_dronecan_enabled(self, enabled: bool) -> None:
         self.state.dronecan.enabled.value = enabled
 
-    def get_dronecan_node_entries(self) -> Response:
-        return jsonify(list(self.state.dronecan.all_entries))
+    async def get_dronecan_node_entries(self) -> Response:
+        return list(self.state.dronecan.all_entries)
 
-    def dronecan_node_fw_update(self, node_id: int, path: str) -> None:
+    async def dronecan_node_fw_update(self, node_id: int, path: str) -> None:
         try:
             self.state.dronecan.firmware_update_path.value = path
             req = dronecan.uavcan.protocol.file.BeginFirmwareUpdate.Request()

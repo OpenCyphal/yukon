@@ -3,7 +3,7 @@ export async function setUpRegisterUpdateLogComponent(container, yukon_state) {
     const registerUpdateLog = document.querySelector("#register-update-log");
 
     async function fetchRegisterUpdateLog() {
-        const items = await yukon_state.zubax_apij.get_register_update_log_items();
+        const items = await yukon_state.zubax_apiws.get_register_update_log_items();
         registerUpdateLog.innerHTML = "";
         // Add a header for the table
         const header = document.createElement('tr');

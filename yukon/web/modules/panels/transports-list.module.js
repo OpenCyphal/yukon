@@ -3,7 +3,7 @@ export function setUpTransportsListComponent(yukon_state) {
 
     async function syncList() {
         const transportsList = document.querySelector('#transports_list');
-        const received_transport_interfaces_object = await yukon_state.zubax_apij.get_connected_transport_interfaces();
+        const received_transport_interfaces_object = await yukon_state.zubax_apiws.get_connected_transport_interfaces();
         if (received_transport_interfaces_object.hash == lastTransportsListHash) {
             return;
         }

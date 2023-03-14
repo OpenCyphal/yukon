@@ -46,7 +46,7 @@ export async function setUpMessagesComponent(container, yukon_state) {
         await yukon_state.zubax_api.set_log_level(sLogLevel.value);
     });
     setTimeout(async function(){
-        sLogLevel.value = (await yukon_state.zubax_apij.get_log_level()).severity;
+        sLogLevel.value = (await yukon_state.zubax_apiws.get_log_level()).severity;
     }, 0)
     cbShowTimestamp.addEventListener('change', function () {
         if (cbShowTimestamp.checked) {
@@ -147,7 +147,7 @@ export async function setUpMessagesComponent(container, yukon_state) {
         if (!messagesList || !cbAutoscroll) {
             return;
         }
-        const messagesObject = await zubax_apij.get_messages(lastIndex + 1);
+        const messagesObject = await zubax_apiws.get_messages2(lastIndex + 1);
         // Clear messages-list
         if (document.getElementById("cDeleteOldMessages").checked) {
             for (const child of messagesList.children) {

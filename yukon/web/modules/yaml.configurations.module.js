@@ -158,7 +158,7 @@ export async function openFile(yukon_state) {
                 }
             }
         } else {
-            return await yukon_state.zubax_apij.open_file_dialog();
+            return await yukon_state.zubax_apiws.open_file_dialog();
         }
     } catch (e) {
         yukon_state.addLocalMessage("Error opening file: " + e, 40);
@@ -188,7 +188,7 @@ export async function return_all_selected_registers_as_yaml(pairs, yukon_state) 
     let json_string = JSON.stringify(pairs_object);
     let yaml_string = await serverFormatYaml(pairs_object);
     if (yukon_state.settings.simplifyRegisters) {
-        let intermediary_structure = await zubax_apij.simplify_configuration(json_string)
+        let intermediary_structure = await zubax_apiws.simplify_configuration(json_string)
         if (contains_single_node && !yukon_state.settings.alwaysSaveAsNetworkConfig) {
             intermediary_structure = intermediary_structure[Object.keys(intermediary_structure)[0]];
         }

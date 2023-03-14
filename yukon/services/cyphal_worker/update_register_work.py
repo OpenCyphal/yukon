@@ -10,7 +10,7 @@ from yukon.domain.registers.update_register_request import UpdateRegisterRequest
 from yukon.domain.registers.update_register_log_item import UpdateRegisterLogItem
 from yukon.domain.registers.update_register_response import UpdateRegisterResponse
 from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
-from yukon.services.messages_publisher import add_local_message
+from yukon.services.messages_publisher import add_local_message2
 from yukon.services.value_utils import explode_value
 from yukon.domain.no_success import NoSuccess
 from yukon.domain.god_state import GodState

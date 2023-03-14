@@ -34,7 +34,7 @@ export async function updatePublishers(publishersOuterArea, yukon_state) {
     if (Array.isArray(yukon_state.publishers) === false) {
         return;
     }
-    for (const [id, publisher] of Object.entries(await yukon_state.zubax_apij.get_publishers())) {
+    for (const [id, publisher] of Object.entries(await yukon_state.zubax_apiws.get_publishers())) {
         if (publishersOuterArea.querySelector(`[id="${publisher.id}"]`)) {
             // This publisher is already in the DOM
             continue;
@@ -58,7 +58,7 @@ export function createRemoveButton(publisher, field, row, yukon_state) {
     removeButton.classList.add("remove-button");
     removeButton.innerText = "X";
     removeButton.addEventListener('click', async () => {
-        await yukon_state.zubax_apij.delete_publisher_field(publisher.id, field.id);
+        await yukon_state.zubax_apiws.delete_publisher_field(publisher.id, field.id);
         row.remove();
     });
     return removeButton;
@@ -70,20 +70,20 @@ async function createPublisherFrame(publisher, yukon_state) {
     frame.classList.add("publisher-frame");
     const closeButton = createCloseButton()
     closeButton.addEventListener('click', () => {
-        yukon_state.zubax_apij.remove_publisher(publisher.id);
+        yukon_state.zubax_apiws.remove_publisher(publisher.id);
         frame.remove();
     });
 
     frame.appendChild(closeButton);
     let isInitialized = false;
-    const possibleTypes = await (yukon_state.zubax_apij.get_known_datatypes_from_dsdl_for_publishers());
+    const possibleTypes = await (yukon_state.zubax_apiws.get_known_datatypes_from_dsdl_for_publishers());
     // Take all the values from dictionary possibleTypes["fixed_id_messages"] and extend them with the array elements from possibleTypes["variable_id_messages"]
     const fixedMessagesArray = Object.values(possibleTypes["fixed_id_messages"]);
     const variableMessagesArray = possibleTypes["variable_id_messages"];
     const allMessagesArray = fixedMessagesArray.concat(variableMessagesArray);
     const chooseTypeFieldWrapper = await createAutocompleteField(allMessagesArray, [async function (chosenType) {
-        yukon_state.zubax_apij.set_publisher_datatype(publisher.id, chosenType);
-        publisher.possiblePaths = await yukon_state.zubax_apij.get_publisher_possible_paths_for_autocomplete(publisher.id);
+        yukon_state.zubax_apiws.set_publisher_datatype(publisher.id, chosenType);
+        publisher.possiblePaths = await yukon_state.zubax_apiws.get_publisher_possible_paths_for_autocomplete(publisher.id);
         if (!isInitialized) { isInitialized = true; } else { return; }
         await typeWasChosen();
     }], {}, yukon_state);
@@ -96,7 +96,7 @@ async function createPublisherFrame(publisher, yukon_state) {
         chooseTypeField.value = publisher.datatype;
         // This is not actually implemented yet because switching the type of the publisher
         // after it's been created is not a priority, the user could just create a new publisher and delete the old one
-        publisher.possiblePaths = await yukon_state.zubax_apij.get_publisher_possible_paths_for_autocomplete(publisher.id);
+        publisher.possiblePaths = await yukon_state.zubax_apiws.get_publisher_possible_paths_for_autocomplete(publisher.id);
         isInitialized = true;
         typeWasChosen();
     } else {
@@ -130,7 +130,7 @@ async function createPublisherFrame(publisher, yukon_state) {
         // TODO: Get the port id value in case the datatype of the publisher
         // uses a fixed port id
         portIdInput.addEventListener('input', async () => {
-            await yukon_state.zubax_apij.set_publisher_port_id(publisher.id, portIdInput.value);
+            await yukon_state.zubax_apiws.set_publisher_port_id(publisher.id, portIdInput.value);
         });
         refreshRateRow.appendChild(portIdInput);
         // Create a spinner for setting the refresh rate, it should be a number input element
@@ -140,7 +140,7 @@ async function createPublisherFrame(publisher, yukon_state) {
         refreshRateSpinner.value = 15;
         refreshRateSpinner.addEventListener('input', () => {
             publisher.refresh_rate = parseFloat(refreshRateSpinner.value);
-            yukon_state.zubax_apij.set_publisher_rate(publisher.id, publisher.refresh_rate)
+            yukon_state.zubax_apiws.set_publisher_rate(publisher.id, publisher.refresh_rate)
         });
         refreshRateRow.appendChild(refreshRateSpinner);
         // Add a text saying, "Hz"
@@ -151,11 +151,11 @@ async function createPublisherFrame(publisher, yukon_state) {
         const refreshRateInput = refreshRateSpinner;
         refreshRateInput.addEventListener("input", async () => {
             const newRefreshRate = refreshRateInput.value;
-            await yukon_state.zubax_apij.set_publisher_rate(publisher.id, newRefreshRate);
+            await yukon_state.zubax_apiws.set_publisher_rate(publisher.id, newRefreshRate);
         });
         let enabledState = false;
         let enabledStateChangedFunction = async () => {
-            await yukon_state.zubax_apij.set_publisher_enabled(publisher.id, enabledState);
+            await yukon_state.zubax_apiws.set_publisher_enabled(publisher.id, enabledState);
             if (enabledState) {
                 if (yukon_state.publish_intervals[publisher.id]) {
                     try {
@@ -173,7 +173,7 @@ async function createPublisherFrame(publisher, yukon_state) {
                     } catch (e) {
                         console.log(e)
                     }
-                    await yukon_state.zubax_apij.publish(publisher.id);
+                    await yukon_state.zubax_apiws.publish(publisher.id);
                     if (enabledState) {
                         yukon_state.publish_intervals[publisher.id] = setTimeout(publishFunction, 1 / parseFloat(refreshRateInput.value) * 1000);
                     }
@@ -212,7 +212,7 @@ async function createPublisherFrame(publisher, yukon_state) {
         nameInput.placeholder = "Publisher name (optional)";
         nameInput.value = publisher.name;
         nameInput.addEventListener('input', async () => {
-            await yukon_state.zubax_apij.set_publisher_name(publisher.id, nameInput.value);
+            await yukon_state.zubax_apiws.set_publisher_name(publisher.id, nameInput.value);
         });
         nameInput.style.display = "none";
         refreshRateRow.appendChild(nameInput);
@@ -221,7 +221,7 @@ async function createPublisherFrame(publisher, yukon_state) {
         const separator = document.createElement('div');
         separator.classList.add("separator");
         content.appendChild(separator);
-        const publisherFieldsResponse = await yukon_state.zubax_apij.get_publisher_fields(publisher.id);
+        const publisherFieldsResponse = await yukon_state.zubax_apiws.get_publisher_fields(publisher.id);
         if (publisherFieldsResponse.success && publisherFieldsResponse.fields) {
             for (const [id, field] of Object.entries(publisherFieldsResponse.fields)) {
                 const fieldRow = await createNumberFieldRow(publisher, yukon_state, field);

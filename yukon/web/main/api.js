@@ -98,6 +98,7 @@ const zubax_apiws = new Proxy(_zubax_ws_api, {
         }
     },
 });
+
 // const zubax_rapi = new Proxy(_zubax_reception_api, {
 //     get(target, prop) {
 //         return {
@@ -125,35 +126,42 @@ const zubax_apiws = new Proxy(_zubax_ws_api, {
 //     console.error(`[error] ${error.message}`);
 // };
 window.addEventListener('load', function () {
-    window.dispatchEvent(new Event('zubax_api_ready'));
-    zubax_api_ready = true;
+    
     const uri = "ws://127.0.0.1:8001";
     console.log("Trying to connect to " + uri);
     zubax_wssocket = new WebSocket(uri);
     zubax_wssocket.addEventListener("open", function () {
         console.log("Connected");
+        zubax_api_ready = true;
+        window.dispatchEvent(new Event('zubax_api_ready'));
     });
     zubax_wssocket.addEventListener("message", function (message) {
         // If the message is a JSON object, parse it
         let parsedJSON = null;
-        if (message.data[0] === "{") {
+        if (message.data[0] === "{" || message.data[0] === "[") {
             parsedJSON = JSON.parse(message.data);
-            if(parsedJSON.id) {
-                const response_promise = response_promises[parsedJSON.id];
-                if (response_promise) {
-                    response_promise.resolve(JSON.parse(parsedJSON.response));
+            if (parsedJSON.id) {
+                if (parsedJSON.type === "call") {
+                    function_name = parsedJSON.method;
+                    console.log("Received a call to " + function_name);
+                } else if (parsedJSON.type === "response") {
+                    const response_promise = response_promises[parsedJSON.id];
+                    if (response_promise) {
+                        let return_value = parsedJSON.response;
+                        if (parsedJSON.response[0] === "{" || parsedJSON.response[0] === "[") {
+                            return_value = JSON.parse(parsedJSON.response);
+                        }
+                        response_promise.resolve(return_value);
+                        delete response_promises[parsedJSON.id];
+                    }
                 }
+
             }
         } else {
             zubax_wssocket.send("{success: \"false\", message: \"Not a JSON object\"")
             return;
         }
-        if (parsedJSON.type === "response") {
-            response_promises[parsedJSON.id].resolve(parsedJSON.result);
-        } else if (parsedJSON.type === "call") {
-            function_name = parsedJSON.method;
-            console.log("Received a call to " + function_name);
-        }
+
     });
     zubax_wssocket.addEventListener("error", function (error) {
         console.error("[error]", error);
