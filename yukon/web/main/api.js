@@ -67,9 +67,37 @@ const zubax_apij = new Proxy(_zubax_api, {
         }
     },
 });
-
-const _zubax_reception_api = { "empty": true }
-const zubax_reception_api = new Proxy(_zubax_reception_api, {
+var lut = []; for (var i = 0; i < 256; i++) { lut[i] = (i < 16 ? '0' : '') + (i).toString(16); }
+export function guid() {
+    var d0 = Math.random() * 0xffffffff | 0;
+    var d1 = Math.random() * 0xffffffff | 0;
+    var d2 = Math.random() * 0xffffffff | 0;
+    var d3 = Math.random() * 0xffffffff | 0;
+    return lut[d0 & 0xff] + lut[d0 >> 8 & 0xff] + lut[d0 >> 16 & 0xff] + lut[d0 >> 24 & 0xff] + '-' +
+        lut[d1 & 0xff] + lut[d1 >> 8 & 0xff] + '-' + lut[d1 >> 16 & 0x0f | 0x40] + lut[d1 >> 24 & 0xff] + '-' +
+        lut[d2 & 0x3f | 0x80] + lut[d2 >> 8 & 0xff] + '-' + lut[d2 >> 16 & 0xff] + lut[d2 >> 24 & 0xff] +
+        lut[d3 & 0xff] + lut[d3 >> 8 & 0xff] + lut[d3 >> 16 & 0xff] + lut[d3 >> 24 & 0xff];
+}
+const _zubax_ws_api = { "empty": true }
+let response_promises = {};
+const zubax_apiws = new Proxy(_zubax_ws_api, {
+    get(target, prop) {
+        let url = `ws://127.0.0.1:8001`;
+        return async function () {
+            let data = {"type": "call", "id": guid(), "method": prop, "params": []};
+            // For each argument in arguments, put it into data.arguments
+            for (let i = 0; i < arguments.length; i++) {
+                data.params.push(arguments[i]);
+            }
+            zubax_wssocket.send(JSON.stringify(data));
+            let promise = new Promise((resolve, reject) => {
+                response_promises[data.id] = { "resolve": resolve, "reject": reject };
+            });
+            return promise;
+        }
+    },
+});
+const zubax_rapi = new Proxy(_zubax_reception_api, {
     get(target, prop) {
         return {
             "connect": function (callback) {
@@ -80,26 +108,45 @@ const zubax_reception_api = new Proxy(_zubax_reception_api, {
         }
     }
 });
+let zubax_wssocket = null;
 window.addEventListener("DOMContentLoaded", () => {
     let websocketConnectionEstablishInterval = null;
-    websocketConnectionEstablishInterval = setInterval(function () {
+    websocketConnectionEstablishInterval = setTimeout(function () {
         const uri = "ws://127.0.0.1:8001";
         console.log("Trying to connect to " + uri);
-        const socket = new WebSocket(uri);
+        zubax_wssocket = new WebSocket(uri);
         socket.addEventListener("open", function () {
-            console.log("Connected to " + prop);
+            console.log("Connected");
             clearInterval(websocketConnectionEstablishInterval);
             websocketConnectionEstablishInterval = null;
         });
         socket.addEventListener("message", function (message) {
-            console.log("Message from " + prop + ": " + message.data);
+            // If the message is a JSON object, parse it
+            let parsedJSON = null;
+            if (message.data[0] === "{") {
+                parsedJSON = JSON.parse(message.data);
+            }
+            if(parsedJSON.type === "response") {
+                response_promises[parsedJSON.id].resolve(parsedJSON.result);
+            }
+            function_name = parsedJSON.name;
+            function_arguments = parsedJSON.arguments;
+            if (function_name === "log") {
+                for(let i = 0; i < function_arguments.length; i++) {
+                    console.log(function_arguments[i]);
+                }
+            }
+            if (parsedJSON !== null) {
+                console.log("JSON message from " + parsedJSON.name + ": " + parsedJSON.data);
+            }
+            console.log("Message from " + message.data);
             callback(message.data);
             socket.send("Yep, it works!");
         });
         socket.addEventListener("error", function (error) {
             console.error("[error]", error);
         });
-    }, 1000);
+    }, 5000);
 });
 
 

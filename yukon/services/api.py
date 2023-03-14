@@ -238,18 +238,44 @@ def add_register_update_log_item(
         logger.error(f"Traceback: {str(tb)}")
 
 
-async def echo(websocket):
-    async for message in websocket:
-        await websocket.send(message)
+def websocket_response_wrapper(yukon_state: GodState):
+    events_by_id = {}
+    responses_by_id = {}
+    async def websocket_callback(websocket):
+        async for message in websocket:
+            message_object = json.loads(message)
+            if message_object["type"] == "call":
+                found_method = getattr(yukon_state.api, message_object["method"])
+                if found_method:
+                    response = await found_method(message_object["params"])
+                    if response:
+                        websocket.send({"type": "response", "response": response, "id": message_object["id"]})
+                        events_by_id[message_object["id"]] = asyncio.Event()
+                        await events_by_id[message_object["id"]]
+            elif message_object["type"] == "response":
+                responses_by_id[message_object["id"]] = message_object["response"]
+                events_by_id[message_object["id"]].set()
+            else:
+                logger.error(f"Unknown message type: {message_object['type']}")
+                await websocket.send(json.dumps({"type": "error", "message": "Unknown message type", "id": message_object["id"]}))
+    return websocket_callback
 
+async def createWebSocketServer(state: GodState):
+    loop = asyncio.get_running_loop()
+    stop = loop.create_future()
+    loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+    logger.warning("Starting websocket server")
+    async with websockets.serve(websocket_response_wrapper(state), "127.0.0.1", 8001):
+        await asyncio.Future()
 
 class SendingApi:
     async def send_message(self, message: typing.Any) -> None:
-        loop = asyncio.get_running_loop()
-        stop = loop.create_future()
-        loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
-        async with websockets.serve(echo, "127.0.0.1", 8001):
-            await asyncio.Future()
+        pass
+        # loop = asyncio.get_running_loop()
+        # stop = loop.create_future()
+        # loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+        # async with websockets.serve(echo, "127.0.0.1", 8001):
+        #     await asyncio.Future()
 
 
 class Api:
@@ -452,6 +478,13 @@ class Api:
     def get_messages(self, since_index: int = 0) -> Response:
         my_list = [x for x in list(self.state.queues.messages.queue) if not since_index or x.index_nr >= since_index]
         return jsonify(my_list)
+
+    async def get_avatars2(self) -> None:
+        self.state.gui.last_poll_received = monotonic()
+        avatar_list = [avatar.to_builtin() for avatar in list(self.state.avatar.avatars_by_node_id.values())]
+        avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
+        json_response = json.dumps(avatar_dto, cls=EnhancedJSONEncoder)
+        return json_response
 
     def get_avatars(self) -> typing.Any:
         self.state.gui.last_poll_received = monotonic()

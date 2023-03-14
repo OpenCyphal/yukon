@@ -29,7 +29,7 @@ from yukon.domain.transport.attach_transport_response import AttachTransportResp
 from yukon.domain.god_state import GodState
 from yukon.services.messages_publisher import MessagesPublisher
 from yukon.services.terminate_handler import make_terminate_handler
-from yukon.services.api import Api, SendingApi
+from yukon.services.api import Api, createWebSocketServer, SendingApi
 from yukon.services.get_electron_path import get_electron_path
 from yukon.sentry_setup import setup_sentry
 from yukon.server import server, make_landing_and_bridge
@@ -298,7 +298,7 @@ def handle_headless_yukon(state: GodState) -> None:
             raise Exception("Failed to attach transport", response.message)
 
 
-def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
+async def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     try:
         from ctypes import windll  # type: ignore
 
@@ -322,14 +322,8 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         state.dronecan_traffic_queues.output_queue.put_nowait(None)  # To stop the get method
         sys.exit(0)
 
-    # dpg.enable_docking(dock_space=False)
     make_terminate_handler(exit_handler)
 
-    async def sendAMessage() -> None:
-        while await asyncio.sleep(1):
-            await api2.send_message("Hello World")
-
-    asyncio.get_event_loop().create_task(sendAMessage())
     start_server_thread = threading.Thread(target=run_server, args=[state], daemon=True)
     start_server_thread.start()
     # if environment variable IS_BROWSER_BASED is set, open the webbrowser
@@ -355,7 +349,7 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
         os.environ.setdefault("IS_DEBUG", "1")
     handle_headless_yukon(state)
     while True:
-        sleep(1)
+        await asyncio.sleep(1)
         time_since_last_poll = monotonic() - state.gui.last_poll_received
         is_running_in_browser = state.gui.is_target_client_known and state.gui.is_running_in_browser
         if (
@@ -432,7 +426,9 @@ async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arg
             state.gui.is_port_decided = True
     api: Api = Api(state)
     api2: SendingApi = SendingApi()
-    run_gui_app(state, api, api2)
+    asyncio.get_event_loop().create_task(createWebSocketServer())
+    # await createWebSocketServer()
+    await run_gui_app(state, api, api2)
     if get_stop_after_value():
         auto_exit_thread.join()
     return 0
