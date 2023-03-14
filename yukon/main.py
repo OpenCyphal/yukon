@@ -326,9 +326,8 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
     make_terminate_handler(exit_handler)
 
     async def sendAMessage() -> None:
-        # while await asyncio.sleep(1):
-        #     await api2.send_message("Hello World")
-        pass
+        while await asyncio.sleep(1):
+            await api2.send_message("Hello World")
 
     asyncio.get_event_loop().create_task(sendAMessage())
     start_server_thread = threading.Thread(target=run_server, args=[state], daemon=True)

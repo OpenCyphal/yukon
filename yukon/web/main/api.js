@@ -74,25 +74,44 @@ const zubax_reception_api = new Proxy(_zubax_reception_api, {
         return {
             "connect": function (callback) {
                 setInterval(function () {
-                    const uri = "ws://localhost:8765/" + prop;
-                    console.log("Trying to connect to " + uri);
-                    const socket = new WebSocket(uri);
-                    socket.onopen = function () {
-                        console.log("Connected to " + prop);
-                    }
-                    socket.onmessage = function (message) {
-                        console.log("Message from " + prop + ": " + message.data);
-                        callback(message.data);
-                        socket.send("Yep, it works!");
-                    }
-                    socket.onerror = function (error) {
-                        console.error(`[error] ${error.message}`);
-                    };
+
                 }, 200);
             }
         }
     }
 });
+window.addEventListener("DOMContentLoaded", () => {
+    let websocketConnectionEstablishInterval = null;
+    websocketConnectionEstablishInterval = setInterval(function () {
+        const uri = "ws://127.0.0.1:8001";
+        console.log("Trying to connect to " + uri);
+        const socket = new WebSocket(uri);
+        socket.addEventListener("open", function () {
+            console.log("Connected to " + prop);
+            clearInterval(websocketConnectionEstablishInterval);
+            websocketConnectionEstablishInterval = null;
+        });
+        socket.addEventListener("message", function (message) {
+            console.log("Message from " + prop + ": " + message.data);
+            callback(message.data);
+            socket.send("Yep, it works!");
+        });
+        socket.addEventListener("error", function (error) {
+            console.error("[error]", error);
+        });
+    }, 1000);
+});
+
+
+
+// socket.onmessage = function (message) {
+//     console.log("Message from " + prop + ": " + message.data);
+//     callback(message.data);
+//     socket.send("Yep, it works!");
+// }
+// socket.onerror = function (error) {
+//     console.error(`[error] ${error.message}`);
+// };
 window.addEventListener('load', function () {
     window.dispatchEvent(new Event('zubax_api_ready'));
     zubax_api_ready = true;

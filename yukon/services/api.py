@@ -1,4 +1,5 @@
 import asyncio
+import signal
 import sys
 from datetime import datetime
 import json
@@ -237,11 +238,18 @@ def add_register_update_log_item(
         logger.error(f"Traceback: {str(tb)}")
 
 
+async def echo(websocket):
+    async for message in websocket:
+        await websocket.send(message)
+
+
 class SendingApi:
     async def send_message(self, message: typing.Any) -> None:
-        async with await websockets.connect("ws://localhost:8765/hello") as websocket:
-            await websocket.send("Hello world!")
-            await websocket.recv()
+        loop = asyncio.get_running_loop()
+        stop = loop.create_future()
+        loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+        async with websockets.serve(echo, "127.0.0.1", 8001):
+            await asyncio.Future()
 
 
 class Api:
