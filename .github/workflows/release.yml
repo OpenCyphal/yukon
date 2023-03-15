@@ -15,13 +15,16 @@ concurrency:
 
 jobs:
   #
-  # Ubuntu 20.04 build
+  # Yukon build
   #
-  ubuntu-focal:
-    name: Build Yukon Ubuntu 20.04
-    runs-on: ubuntu-20.04
+  yukon-build:
+    name: Build Yukon
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-20.04, windows-latest]
+    runs-on: ${{ matrix.os }}
     outputs:
-      yukon-version: ${{ steps.build-release.outputs.version }}
+      yukon-version: ${{ steps.release-version.outputs.version }}
       artifact-name: ${{ steps.set-name.outputs.artifact-name }}
     steps:
       - name: Checking out
@@ -36,7 +39,8 @@ jobs:
       - name: Setting up Node.js
         uses: actions/setup-node@v3
 
-      - name: Installing dependencies
+      - name: Installing Linux dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt install libgfortran5 libquadmath0
           pip install yakut
@@ -48,38 +52,68 @@ jobs:
         env:
           master_path: https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
 
-      - id: build-release
-        name: Building release
-        continue-on-error: false
+      - name: Installing Windows dependencies
+        if: runner.os == 'Windows'
+        run: |
+          python3 -m venv venv
+          venv\Scripts\activate.bat
+          pip install wheel yakut
+          yakut compile -O.compiled $master_path
+          pip install nox
+          python3 --version
+          pip install -r requirements.txt -r dev-requirements.txt
+        env:
+          master_path: https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
+
+      - name: Testing GUI
+        if: runner.os == 'Windows'
+        run: |
+          venv\Scripts\activate.bat
+          $Env:PYTHONPATH = ".:.."
+          nox -s mypy
+          nox -s black
+          nox -s pylint
+
+      - name: Building Linux release
+        if: runner.os == 'Linux'
         run: |
           source venv/bin/activate
           python3.10 build_exe.py
-          echo "version=$(python3 -c 'from yukon.version import __version__; print(__version__)')" >> $GITHUB_OUTPUT
 
-      - name: Saving artifact
+      - name: Building Windows release
+        if: runner.os == 'Windows'
+        run: |
+          venv\Scripts\activate.bat
+          python3 build_exe.py
+
+      - id: release-version
+        name: Extracting release version
+        run: echo "version=$(python3 -c 'from yukon.version import __version__; print(__version__)')" >> $GITHUB_OUTPUT
+
+      - name: Storing artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Yukon-${{ github.job }}
+          name: Yukon-${{ matrix.os }}
           path: dist/Yukon
           retention-days: 1
 
       - id: set-name
-        name: Storing artifact name
+        name: Saving artifact name
         run: |
-          echo "artifact-name=Yukon-${{ github.job }}" >> $GITHUB_OUTPUT
+          echo "artifact-name=Yukon-${{ matrix.os }}" >> $GITHUB_OUTPUT
 
   #
   # Deploy artifacts to files.zubax.com
   #
   deploy-to-zubax:
     name: Deploy
-    needs: ubuntu-focal
+    needs: yukon-build
     uses: ./.github/workflows/deploy-to-zubax.yml
     with:
       product: org.opencyphal.yukon
-      version: ${{ needs.ubuntu-focal.outputs.yukon-version }}
+      version: ${{ needs.yukon-build.outputs.yukon-version }}
       architecture: linux-x86_64
-      artifact-name: ${{ needs.ubuntu-focal.outputs.artifact-name }}
+      artifact-name: ${{ needs.yukon-build.outputs.artifact-name }}
     secrets: inherit
 
   #
@@ -87,5 +121,5 @@ jobs:
   #
   deploy-to-gh-releases:
     name: Deploy
-    needs: ubuntu-focal
+    needs: yukon-build
     uses: ./.github/workflows/deploy-to-gh-releases.yml
