@@ -1,0 +1,17 @@
+name: Deploy artifacts to GitHub Releases
+
+#
+# A reuseable workflow to deploy an artifact to GitHub Releases
+#
+
+on:
+  workflow_call:
+
+jobs:
+  push-to-gh-releases:
+    name: GitHub Releases
+    runs-on: ubuntu-latest
+    steps:
+      # Download the artifacts
+      - name: Download artifact
+        uses: actions/download-artifact@v3
