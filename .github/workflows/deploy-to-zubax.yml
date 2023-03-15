@@ -1,0 +1,59 @@
+name: Deploy artifacts to files.zubax.com
+
+#
+# A reuseable workflow to deploy an artifact to files.zubax.com repository
+#
+
+on:
+  workflow_call:
+    inputs:
+      product:
+        description: The reverse domain name of the product
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      architecture:
+        required: true
+        type: string
+      artifact-name:
+        required: true
+        type: string
+
+jobs:
+  push-to-files:
+    name: Zubax files repository
+    runs-on: ubuntu-latest
+    steps:
+      # Download the artifacts
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.artifact-name }}
+
+      # Set up SSH keys
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/private.key
+          chmod 600 ~/.ssh/private.key
+          cat >>~/.ssh/config <<END
+          Host target
+            HostName $SSH_HOST
+            User $SSH_USER
+            IdentityFile ~/.ssh/private.key
+            StrictHostKeyChecking no
+          END
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USERNAME }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+
+      # Push artifact to files.zubax.com via scp
+      - name: Deploy the release to Zubax files
+        run: |
+          ssh target "mkdir -p $TARGET_DIR; echo $TARGET_DIR"
+          scp -rp ./* target:$TARGET_DIR/
+        env:
+          TARGET_DIR: /var/www/files/products/${{ inputs.product }}/releases/${{ inputs.version }}/${{ inputs.architecture }}

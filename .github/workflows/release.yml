@@ -13,6 +13,9 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  YUKON_ARTIFACT_NAME: ""
+
 jobs:
   #
   # Ubuntu 20.04 build
@@ -51,18 +54,37 @@ jobs:
           source venv/bin/activate
           python3.10 build_exe.py
 
+      - name: Storing artifact name
+        run: |
+          echo "Before: $YUKON_ARTIFACT_NAME"
+          echo "Yukon-${{ github.job }}"
+          cat $(echo "$GITHUB_ENV")
+          echo "YUKON_ARTIFACT_NAME=Yukon-${{ github.job }}" >> $GITHUB_ENV
+          echo "After:  $YUKON_ARTIFACT_NAME"
+          cat $(echo "$GITHUB_ENV")
+          echo "***"
+          cat "$GITHUB_ENV"
+          echo "Context: ${{ env.YUKON_ARTIFACT_NAME }}"
+
+      - name: Next step
+        run: |
+          echo "ENV: $YUKON_ARTIFACT_NAME"
+          echo "Context: ${{ env.YUKON_ARTIFACT_NAME }}"
+
       - name: Saving artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Yukon-${{github.job}}
+          name: Yukon-${{ github.job }}
           path: dist/Yukon
           retention-days: 1
-  deploy:
+
+  deploy-to-zubax:
     name: Deploy
-    runs-on: ubuntu-latest
     needs: ubuntu-focal
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: Yukon-ubuntu-focal
+    uses: ./.github/workflows/deploy-to-zubax.yml
+    with:
+      product: org.opencyphal.yukon
+      version: 2023.3.99
+      architecture: linux-x86_64
+      artifact-name: ${{ env.YUKON_ARTIFACT_NAME }}
+    secrets: inherit
