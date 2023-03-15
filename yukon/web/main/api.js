@@ -81,12 +81,14 @@ function guid() {
 const _zubax_ws_api = { "empty": true }
 let response_promises = {};
 let zubax_wssocket = null;
+const request_send_times = {}
 const zubax_apiws = new Proxy(_zubax_ws_api, {
     get(target, prop) {
         let url = `ws://127.0.0.1:8001`;
         return async function () {
             let data = { "type": "call", "id": guid(), "method": prop, "params": [] };
             // For each argument in arguments, put it into data.arguments
+            request_send_times[data.id] = Date.now();
             for (let i = 0; i < arguments.length; i++) {
                 data.params.push(arguments[i]);
             }
@@ -146,6 +148,11 @@ window.addEventListener('load', function () {
                     console.log("Received a call to " + function_name);
                 } else if (parsedJSON.type === "response") {
                     const response_promise = response_promises[parsedJSON.id];
+                    if(request_send_times[parsedJSON.id]) {
+                        let request_time_taken = Date.now() - request_send_times[parsedJSON.id];
+                        console.log("Request " + parsedJSON.id + " took " + request_time_taken + "ms");
+                        delete request_send_times[parsedJSON.id];
+                    }
                     if (response_promise) {
                         let return_value = parsedJSON.response;
                         if (parsedJSON.response[0] === "{" || parsedJSON.response[0] === "[") {

@@ -30,21 +30,34 @@ function createTable(inputArray) {
     // For every input in inputArray, create a row in the table
     for (let i = 0; i < inputArray.length; i++) {
         const currentInput = inputArray[i];
+        if(!currentInput) {
+            break;
+        }
         let tableFields = [
             currentInput.node_id,
             currentInput.name,
             currentInput.health_text,
             currentInput.mode_text,
             currentInput.uptime_seconds,
-            currentInput.hardware_version.major + "." + currentInput.hardware_version.minor,
-            "0x" + currentInput.hardware_version.unique_id,
-            currentInput.software_version.major + "." + currentInput.software_version.minor,
-            currentInput.software_version.optional_field_flags,
-            currentInput.software_version.vcs_commit,
-            currentInput.software_version.image_crc,
+        ];
+        if(currentInput.hardware_version) {
+            tableFields.push(...[
+                currentInput.hardware_version.major + "." + currentInput.hardware_version.minor,
+                "0x" + currentInput.hardware_version.unique_id,
+            ]);
+        }
+        if(currentInput.software_version) {
+            tableFields.push(...[
+                currentInput.software_version.major + "." + currentInput.software_version.minor,
+                currentInput.software_version.optional_field_flags,
+                currentInput.software_version.vcs_commit,
+                currentInput.software_version.image_crc,
+            ]);
+        }
+        tableFields.push(...[
             currentInput.sub_mode,
             currentInput.vendor_specific_status_code,
-        ];
+        ]);
         let row = table.insertRow();
         let cell1 = row.insertCell();
         let btn = document.createElement("button");

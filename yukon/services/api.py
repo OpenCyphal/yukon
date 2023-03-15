@@ -927,7 +927,7 @@ class Api:
 
                     def message_receiver(*messages: typing.Tuple[typing.Any]) -> None:
                         nonlocal counter, prev_key
-                        timestamp = None
+                        timestamp = monotonic()
                         # Missing a messages list and the timestamp
                         synchronized_message_group = SynchronizedMessageGroup()
                         try:
@@ -954,6 +954,7 @@ class Api:
                         if synchronized_message_store.counter >= synchronized_message_store.capacity:
                             synchronized_message_store.messages.pop(0)
                             synchronized_message_store.start_index += 1
+                        logger.warning("Receiving new synchronized messages took " + str(monotonic() - timestamp) + " seconds.")
 
                     synchronizer.receive_in_background(message_receiver)
                     was_subscription_success = True
@@ -1002,37 +1003,18 @@ class Api:
             tb = traceback.format_exc()
             logger.error(str(tb))
             return {"success": False, "specifiers": specifiers, "message": tb}
-
-    async def fetch_synchronized_messages_for_specifiers(self, specifiers: str, counter: int) -> Response:
-        """Specifiers is a JSON serialized list of specifiers."""
-        try:
-            specifiers_object = json.loads(specifiers)
-            specifier_objects = [SubjectSpecifier.from_string(x) for x in specifiers_object]
-            """An array containing arrays of synchronized messages"""
-            synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
-                SynchronizedSubjectsSpecifier(specifier_objects)
-            )
-            if not synchronized_messages_store:
-                return {"success": False, "message": "No synchronized messages for this specifier."}
-            if synchronized_messages_store.start_index >= counter:
-                return synchronized_messages_store.messages[0:]
-            else:
-                return synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :]
-        except Exception as e:
-            logger.error("Failed to fetch synchronized messages.")
-            tb = traceback.format_exc()
-            logger.error(str(tb))
-            return {"success": False, "message": tb}
     
     async def fetch_synchronized_messages_for_specifiers2(self, specifiers: str, counter: int) -> dict:
         """Specifiers is a JSON serialized list of specifiers."""
         try:
+            timestamp = monotonic()
             specifiers_object = json.loads(specifiers)
             specifier_objects = [SubjectSpecifier.from_string(x) for x in specifiers_object]
             """An array containing arrays of synchronized messages"""
             synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
                 SynchronizedSubjectsSpecifier(specifier_objects)
             )
+            logger.warning("fetch_synchronized_messages_for_specifiers took " + str(monotonic() - timestamp) + " seconds.")
             if not synchronized_messages_store:
                 return {"success": False, "message": "No synchronized messages for this specifier."}
             if synchronized_messages_store.start_index >= counter:
