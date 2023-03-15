@@ -1,5 +1,9 @@
 name: Yukon CI
-on: push
+on:
+  push:
+    branches:
+      - main
+
 concurrency:
   group: "CI"
   cancel-in-progress: true
