@@ -81,3 +81,11 @@ jobs:
       architecture: linux-x86_64
       artifact-name: ${{ needs.ubuntu-focal.outputs.artifact-name }}
     secrets: inherit
+
+  #
+  # Deploy artifacts to GitHub Releases
+  #
+  deploy-to-gh-releases:
+    name: Deploy
+    needs: ubuntu-focal
+    uses: ./.github/workflows/deploy-to-gh-releases.yml
