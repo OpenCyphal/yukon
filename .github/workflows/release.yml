@@ -39,52 +39,44 @@ jobs:
       - name: Setting up Node.js
         uses: actions/setup-node@v3
 
-      - name: Installing Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt install libgfortran5 libquadmath0
-          pip install yakut
-          yakut compile -O.compiled $master_path
-          python3.10 -m venv venv
-          source venv/bin/activate
-          pip install nox
-          pip install -r requirements.txt -r dev-requirements.txt
-        env:
-          master_path: https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
-
-      - name: Installing Windows dependencies
-        if: runner.os == 'Windows'
+      - name: Installing dependencies
         run: |
           python3 -m venv venv
-          venv\Scripts\activate.bat
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt install libgfortran5 libquadmath0
+            source venv/bin/activate
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            venv/Scripts/activate.bat
+          else
+            echo "${{ runner.os }} not supported"
+            exit 1
+          fi
           pip install wheel yakut
-          yakut compile -O.compiled $master_path
+          yakut compile -O.compiled ${{ env.master_path }}
           pip install nox
-          python3 --version
           pip install -r requirements.txt -r dev-requirements.txt
         env:
           master_path: https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
+        shell: bash
 
-      - name: Testing GUI
-        if: runner.os == 'Windows'
+      - name: Building release
         run: |
-          venv\Scripts\activate.bat
-          $Env:PYTHONPATH = ".:.."
-          nox -s mypy
-          nox -s black
-          nox -s pylint
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            source venv/bin/activate
+            python3.10 build_exe.py
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            venv/Scripts/activate.bat
+            python3 build_exe.py
+          else
+            echo "${{ runner.os }} not supported"
+          fi
+        shell: bash
 
-      - name: Building Linux release
+      - id: set-name
         if: runner.os == 'Linux'
+        name: Saving artifact name
         run: |
-          source venv/bin/activate
-          python3.10 build_exe.py
-
-      - name: Building Windows release
-        if: runner.os == 'Windows'
-        run: |
-          venv\Scripts\activate.bat
-          python3 build_exe.py
+          echo "artifact-name=Yukon-${{ matrix.os }}" >> $GITHUB_OUTPUT
 
       - id: release-version
         name: Extracting release version
@@ -94,13 +86,10 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: Yukon-${{ matrix.os }}
-          path: dist/Yukon
+          path: |
+            dist/Yukon
+            dist/Yukon.exe
           retention-days: 1
-
-      - id: set-name
-        name: Saving artifact name
-        run: |
-          echo "artifact-name=Yukon-${{ matrix.os }}" >> $GITHUB_OUTPUT
 
   #
   # Deploy artifacts to files.zubax.com
