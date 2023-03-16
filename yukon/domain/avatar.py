@@ -103,7 +103,10 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         _ = ts
         if isinstance(obj.value, uavcan.primitive.Empty_1):
             return
-        register_name = self.access_requests_names_by_transfer_id[transfer_id]
+        register_name = self.access_requests_names_by_transfer_id.get(transfer_id)
+        if not register_name:
+            logger.error("Access request for transfer ID %d was not observed and the response is ignored.", transfer_id)
+            return
         assert register_name is not None
         if register_name is None:
             logger.error("No register name for transfer ID %d", transfer_id)

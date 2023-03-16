@@ -343,7 +343,7 @@ export function addContentForCells(register_name, table_register_row, yukon_stat
             // table_cell.style.backgroundColor = colors["no_value"];
             table_cell.title = "This register doesn't exist for this node";
             table_cell.innerHTML = "Not available";
-            return;
+            continue;
         }
         let type_string = getDictionaryValueFieldName(register_value);
         let value = register_value[type_string].value;
