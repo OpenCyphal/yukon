@@ -25,7 +25,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     outputs:
       yukon-version: ${{ steps.release-version.outputs.version }}
-      artifact-name: ${{ steps.set-name.outputs.artifact-name }}
     steps:
       - name: Checking out
         uses: actions/checkout@v3
@@ -102,7 +101,6 @@ jobs:
       product: org.opencyphal.yukon
       version: ${{ needs.yukon-build.outputs.yukon-version }}
       architecture: linux-x86_64
-      artifact-name: ${{ needs.yukon-build.outputs.artifact-name }}
     secrets: inherit
 
   #
