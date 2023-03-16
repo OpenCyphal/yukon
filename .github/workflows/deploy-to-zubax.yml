@@ -14,9 +14,6 @@ on:
       version:
         required: true
         type: string
-      architecture:
-        required: true
-        type: string
 
 jobs:
   push-to-files:
@@ -51,4 +48,4 @@ jobs:
           ssh target "mkdir -p $TARGET_DIR; echo $TARGET_DIR"
           scp -rp ./* target:$TARGET_DIR/
         env:
-          TARGET_DIR: /var/www/files/products/${{ inputs.product }}/releases/${{ inputs.version }}/${{ inputs.architecture }}
+          TARGET_DIR: /var/www/files/products/${{ inputs.product }}/releases/${{ inputs.version }}
