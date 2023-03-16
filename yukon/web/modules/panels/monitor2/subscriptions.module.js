@@ -74,7 +74,8 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchTimeoutI
     if (!lastMessageObject) {
         return false;
     }
-    const yaml_text = await yukon_state.zubax_api.json_to_yaml(JSON.stringify(lastMessageObject));
+    let yaml_text = await yukon_state.zubax_api.json_to_yaml(JSON.stringify(lastMessageObject));
+    yaml_text = yaml_text.replaceAll("\"", "").replaceAll("'", "");
     // If yaml_text contains a newline, it will be split into multiple lines
     if (yaml_text.includes("\n")) {
         pLatestMessage.innerHTML = "";
@@ -126,7 +127,8 @@ async function fetchForSync(specifiersString, pLatestMessage, fetchTimeoutId, la
         return false;
     }
     const json_text = JSON.stringify(json_object);
-    const yaml_text = await yukon_state.zubax_api.json_to_yaml(json_text);
+    let yaml_text = await yukon_state.zubax_api.json_to_yaml(json_text);
+    yaml_text = yaml_text.replaceAll("\"", "").replaceAll("'", "");
     if (yaml_text.includes("\n")) {
         pLatestMessage.innerHTML = "";
         const lines_split = yaml_text.split("\n");
@@ -499,7 +501,10 @@ async function createSyncSubscriptionElement(specifiersString, subscriptionsDiv,
     let lastCurrentMessagesLength = { value: 0 };
     let setTimeoutFunction = null;
     setTimeoutFunction = () => {
-        let wasFetchSuccess = fetchForSync(specifiersString, pLatestMessage, fetchTimeoutId, lastCurrentMessagesLength, settings, yukon_state)
+        let didReceiveSomethingNew = fetchForSync(specifiersString, pLatestMessage, fetchTimeoutId, lastCurrentMessagesLength, settings, yukon_state)
+        if(didReceiveSomethingNew) {
+            header2.style.display = "none";
+        }
         fetchTimeoutId.value = setTimeout(setTimeoutFunction, fetchDelayValue)
     }
     setTimeoutFunction();

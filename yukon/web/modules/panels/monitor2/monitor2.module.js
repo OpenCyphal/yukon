@@ -175,7 +175,6 @@ function changeStateOfElement(portNr, value_of_toggledOn, dontTurnOffRelatedObje
             setPortStateAsHiglighted(portNr, yukon_state);
             highlightElements(relatedObjects, settings, yukon_state);
         } else {
-            console.log("Port " + portNr + " is already highlighted");
         }
         relatedObjects.forEach(object => {
             object["toggledOn"].value = true;

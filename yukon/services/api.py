@@ -896,7 +896,7 @@ class Api:
                     counter = 0
                     prev_key: typing.Any = None
 
-                    def message_receiver(*messages: typing.Tuple[typing.Any]) -> None:
+                    def message_receiver(*messages: typing.Tuple[typing.Any, typing.Any]) -> None:
                         nonlocal counter, prev_key, synchronized_message_store
                         synchronized_message_group = SynchronizedMessageGroup()
                         try:
@@ -911,9 +911,17 @@ class Api:
                             tb = traceback.format_exc()
                             logger.error(tb)
                         for index, message in enumerate(messages):
+                            metadata = message[1]
                             synchronized_message_carrier = SynchronizedMessageCarrier(
                                 pycyphal.dsdl.to_builtin(message[0]),
-                                None,
+                                {
+                                    "ts_system": str(metadata.timestamp.system),
+                                    "ts_monotonic": str(metadata.timestamp.monotonic),
+                                    "source_node_id": metadata.source_node_id,
+                                    "priority": metadata.priority,
+                                    "transfer_id": metadata.transfer_id,
+                                    "dtype": message[0].__class__.__module__,
+                                },
                                 counter,
                                 synchronized_subjects_specifier.specifiers[index].subject_id,
                             )
