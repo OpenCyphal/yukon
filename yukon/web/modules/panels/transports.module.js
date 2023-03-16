@@ -54,7 +54,7 @@ export function initTransports(container, yukon_state) {
                 if (port.already_used) {
                     option.disabled = true;
                 }
-                let device_name = detectDeviceFromProductId(port.product_id);
+                let device_name = port.usb_description;
                 if (device_name == null) {
                     device_name = port.description;
                 }

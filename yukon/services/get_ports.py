@@ -19,6 +19,7 @@ def ListPortInfo_to_dict(list_port_info: ListPortInfo) -> typing.Any:
         "serial_number": list_port_info.serial_number,
         "manufacturer": list_port_info.manufacturer,
         "interface": list_port_info.interface,
+        "usb_description": list_port_info.usb_description(),
     }
 
 
