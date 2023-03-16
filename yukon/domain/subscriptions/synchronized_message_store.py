@@ -11,7 +11,7 @@ class SynchronizedMessageStore:
     specifiers: str
     messages: typing.List[SynchronizedMessageGroup] = field(default_factory=list)
     counter: int = 0
-    capacity: int = 50
+    capacity: int = 10
     start_index: int = 0
 
     def __hash__(self) -> int:

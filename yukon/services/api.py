@@ -11,6 +11,7 @@ from time import sleep, monotonic
 import logging
 import threading
 import traceback
+import copy
 
 import yaml
 from uuid import uuid4
@@ -251,7 +252,8 @@ def websocket_response_wrapper(state: GodState, api):
                 if message_object["type"] == "call":
                     found_method = getattr(api, message_object["method"])
                     if found_method:
-                        response = await found_method(*(message_object["params"]))
+                        # TODO: This is a race condition, which finishes first, the copy on this thread or the write to avatar on another
+                        response = copy.deepcopy(await found_method(*(message_object["params"])))
                         if isinstance(response, (dict, list)):
                             response = json.dumps(response, cls=EnhancedJSONEncoder)
                         if response:
@@ -926,9 +928,7 @@ class Api:
                     prev_key: typing.Any = None
 
                     def message_receiver(*messages: typing.Tuple[typing.Any]) -> None:
-                        nonlocal counter, prev_key
-                        timestamp = monotonic()
-                        # Missing a messages list and the timestamp
+                        nonlocal counter, prev_key, synchronized_message_store
                         synchronized_message_group = SynchronizedMessageGroup()
                         try:
                             key = sum(get_local_reception_timestamp(x) for x in messages) / len(messages)
@@ -951,10 +951,10 @@ class Api:
                             counter += 1
                             synchronized_message_group.carriers.append(synchronized_message_carrier)
                         synchronized_message_store.messages.append(synchronized_message_group)
-                        if synchronized_message_store.counter >= synchronized_message_store.capacity:
+                        synchronized_message_store.counter += 1
+                        if (synchronized_message_store.counter - synchronized_message_store.start_index) >= synchronized_message_store.capacity:
                             synchronized_message_store.messages.pop(0)
                             synchronized_message_store.start_index += 1
-                        logger.warning("Receiving new synchronized messages took " + str(monotonic() - timestamp) + " seconds.")
 
                     synchronizer.receive_in_background(message_receiver)
                     was_subscription_success = True
@@ -965,8 +965,6 @@ class Api:
                     tb = traceback.format_exc()
                     logger.error(tb)
                     message = tb
-
-                # synchronizer.receive_in_background
 
             self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(subscribe_task)
             if result_ready_event.wait(1.7):
@@ -1014,13 +1012,12 @@ class Api:
             synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
                 SynchronizedSubjectsSpecifier(specifier_objects)
             )
-            logger.warning("fetch_synchronized_messages_for_specifiers took " + str(monotonic() - timestamp) + " seconds.")
             if not synchronized_messages_store:
-                return {"success": False, "message": "No synchronized messages for this specifier."}
-            if synchronized_messages_store.start_index >= counter:
-                return synchronized_messages_store.messages[0:]
+                return {"success": False, "message": "No synchronized messages for this specifier.", "messages": []}
+            if synchronized_messages_store.start_index > counter:
+                return {"success": True, "bestAvailableCounter": synchronized_messages_store.start_index, "messages": synchronized_messages_store.messages[0:]}
             else:
-                return synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :]
+                return {"success": True, "messages": synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :]}
         except Exception as e:
             logger.error("Failed to fetch synchronized messages.")
             tb = traceback.format_exc()

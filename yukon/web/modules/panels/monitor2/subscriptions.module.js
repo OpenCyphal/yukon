@@ -97,19 +97,31 @@ async function fetch(specifier, pLatestMessage, inputLogToConsole, fetchTimeoutI
 }
 async function fetchForSync(specifiersString, pLatestMessage, fetchTimeoutId, lastCurrentMessagesLength, settings, yukon_state) {
     const result = await yukon_state.zubax_apiws.fetch_synchronized_messages_for_specifiers2(specifiersString, lastCurrentMessagesLength.value);
-    if (!result || result.error) {
+    if(result.bestAvailableCounter) {
+        lastCurrentMessagesLength.value = result.bestAvailableCounter;
+    }
+    if (!result || result.error || !result.success) {
         clearTimeout(fetchTimeoutId.value);
         pLatestMessage.innerText = "This subscription has been terminated by the server";
         return false;
     }
     let current_messages = yukon_state.subscriptions[specifiersString];
-    let messages = result;
-    if (lastCurrentMessagesLength.value === current_messages.length + messages.length) {
+    let messages = result.messages;
+    console.assert(messages.length >= 0);
+    if (messages.length == 0) {
         return false;
     } else {
-        lastCurrentMessagesLength.value = current_messages.length + messages.length;
+        lastCurrentMessagesLength.value += messages.length;
     }
-    const json_object = result[result.length - 1];
+    // Add the messages to the current messages
+    for (const message of messages) {
+        current_messages.push(message);
+    }
+    // If there are more than 5 messages, delete the oldest ones
+    if (current_messages.length > 5) {
+        current_messages.splice(0, current_messages.length - 5);
+    }
+    const json_object = result.messages[result.messages.length - 1];
     if (!json_object) {
         return false;
     }
@@ -525,6 +537,7 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
         if (existing_divs[specifiersString]) {
             continue;
         }
+        console.log("Creating sync subscription element for " + specifiersString);
         createSyncSubscriptionElement(specifiersString, subscriptionsDiv, settings, yukon_state);
     }
     let list_of_subscription_getters = [];
