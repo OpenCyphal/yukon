@@ -71,20 +71,27 @@ jobs:
           fi
         shell: bash
 
-      - id: set-name
-        if: runner.os == 'Linux'
-        name: Saving artifact name
-        run: |
-          echo "artifact-name=Yukon-${{ matrix.os }}" >> $GITHUB_OUTPUT
-
       - id: release-version
         name: Extracting release version
         run: echo "version=$(python3 -c 'from yukon.version import __version__; print(__version__)')" >> $GITHUB_OUTPUT
 
+      - name: Setting artifact name
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
+            echo "architecture=linux-x86_64_ubuntu-22.04-manjaro" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "ubuntu-20.04" ]; then
+            echo "architecture=linux-x86_64" >> $GITHUB_ENV
+          elif
+            echo "architecture=windows-x86_64" >> $GITHUB_ENV
+          else
+            echo "architecture=other" >> $GITHUB_ENV
+          fi
+        shell: bash
+
       - name: Storing artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Yukon-${{ matrix.os }}
+          name: ${{ env.architecture }}
           path: |
             dist/Yukon
             dist/Yukon.exe
@@ -100,7 +107,6 @@ jobs:
     with:
       product: org.opencyphal.yukon
       version: ${{ needs.yukon-build.outputs.yukon-version }}
-      architecture: linux-x86_64
     secrets: inherit
 
   #
