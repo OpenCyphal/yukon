@@ -30,7 +30,6 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
     const numberField2 = document.createElement('input');
     const spinner = createSpinner("100%",
         (x) => { // Value changed callback
-            console.log("spinner value changed")
             valueField.value = x;
             yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
         },
@@ -87,7 +86,6 @@ export async function createNumberFieldRow(publisher, yukon_state, field) {
     valueField.style.width = "100px";
     valueField.addEventListener('change', async (event) => {
         yukon_state.zubax_apij.set_publisher_field_value(publisher.id, field.id, parseFloat(valueField.value));
-        console.log("value changed to " + valueField.value);
         spinner.setValue(parseFloat(valueField.value));
     });
     spinner.setValue(parseFloat(field.value));

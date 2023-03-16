@@ -897,9 +897,7 @@ class Api:
                     prev_key: typing.Any = None
 
                     def message_receiver(*messages: typing.Tuple[typing.Any]) -> None:
-                        nonlocal counter, prev_key
-                        timestamp = None
-                        # Missing a messages list and the timestamp
+                        nonlocal counter, prev_key, synchronized_message_store
                         synchronized_message_group = SynchronizedMessageGroup()
                         try:
                             key = sum(get_local_reception_timestamp(x) for x in messages) / len(messages)
@@ -922,7 +920,10 @@ class Api:
                             counter += 1
                             synchronized_message_group.carriers.append(synchronized_message_carrier)
                         synchronized_message_store.messages.append(synchronized_message_group)
-                        if synchronized_message_store.counter >= synchronized_message_store.capacity:
+                        synchronized_message_store.counter += 1
+                        if (
+                            synchronized_message_store.counter - synchronized_message_store.start_index
+                        ) >= synchronized_message_store.capacity:
                             synchronized_message_store.messages.pop(0)
                             synchronized_message_store.start_index += 1
 
@@ -935,8 +936,6 @@ class Api:
                     tb = traceback.format_exc()
                     logger.error(tb)
                     message = tb
-
-                # synchronizer.receive_in_background
 
             self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(subscribe_task)
             if result_ready_event.wait(1.7):
@@ -981,17 +980,33 @@ class Api:
     def fetch_synchronized_messages_for_specifiers(self, specifiers: str, counter: int) -> Response:
         """Specifiers is a JSON serialized list of specifiers."""
         try:
+            timestamp = monotonic()
             specifiers_object = json.loads(specifiers)
             specifier_objects = [SubjectSpecifier.from_string(x) for x in specifiers_object]
             """An array containing arrays of synchronized messages"""
             synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
                 SynchronizedSubjectsSpecifier(specifier_objects)
             )
-            if synchronized_messages_store.start_index >= counter:
-                return jsonify(synchronized_messages_store.messages[0:])
+            if not synchronized_messages_store:
+                return jsonify(
+                    {"success": False, "message": "No synchronized messages for this specifier.", "messages": []}
+                )
+            if synchronized_messages_store.start_index > counter:
+                return jsonify(
+                    {
+                        "success": True,
+                        "bestAvailableCounter": synchronized_messages_store.start_index,
+                        "messages": synchronized_messages_store.messages[0:],
+                    }
+                )
             else:
                 return jsonify(
-                    synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :]
+                    {
+                        "success": True,
+                        "messages": synchronized_messages_store.messages[
+                            counter - synchronized_messages_store.start_index :
+                        ],
+                    }
                 )
         except Exception as e:
             logger.error("Failed to fetch synchronized messages.")
