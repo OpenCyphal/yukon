@@ -81,14 +81,16 @@ async function createPublisherFrame(publisher, yukon_state) {
     const fixedMessagesArray = Object.values(possibleTypes["fixed_id_messages"]);
     const variableMessagesArray = possibleTypes["variable_id_messages"];
     const allMessagesArray = fixedMessagesArray.concat(variableMessagesArray);
-    const chooseTypeFieldWrapper = await createAutocompleteField(allMessagesArray, [async function (chosenType) {
+    let chooseTypeFieldWrapper = null;
+    let chooseTypeField = null;
+    chooseTypeFieldWrapper = await createAutocompleteField(allMessagesArray, [async function (chosenType) {
         yukon_state.zubax_apij.set_publisher_datatype(publisher.id, chosenType);
         publisher.possiblePaths = await yukon_state.zubax_apij.get_publisher_possible_paths_for_autocomplete(publisher.id);
         if (!isInitialized) { isInitialized = true; } else { return; }
         await typeWasChosen();
     }], {}, yukon_state);
     frame.append(chooseTypeFieldWrapper);
-    const chooseTypeField = chooseTypeFieldWrapper.querySelector(".autocomplete-field");
+    chooseTypeField = chooseTypeFieldWrapper.querySelector(".autocomplete-field");
     chooseTypeField.style.width = "100%";
     chooseTypeField.placeholder = "Select a type";
     if (publisher.datatype) {
@@ -105,6 +107,7 @@ async function createPublisherFrame(publisher, yukon_state) {
 
     async function typeWasChosen() {
         // Create a vertical flexbox for holding rows of content
+        chooseTypeField.disabled = true;
         const content = document.createElement('div');
         content.classList.add("publisher-content");
         frame.appendChild(content);
