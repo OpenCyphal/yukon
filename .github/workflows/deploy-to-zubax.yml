@@ -3,6 +3,13 @@ name: Deploy artifacts to files.zubax.com
 #
 # A reuseable workflow to deploy an artifact to files.zubax.com repository
 #
+# Deploys to:
+#
+#   /var/www/files/products/<product domain>/releases/<version>/
+#
+# Note: The artifact name is used to create a sub-directory in this folder in which
+# the artifact is unpacked and stored.
+#
 
 on:
   workflow_call:
@@ -45,7 +52,15 @@ jobs:
       # Push artifact to files.zubax.com via scp
       - name: Deploy the release to Zubax files
         run: |
-          ssh target "mkdir -p $TARGET_DIR; echo $TARGET_DIR"
+          ssh target "if [ -d $TARGET_DIR ]
+            then
+              echo '$TARGET_DIR'
+              echo 'Release ${{ inputs.version }} already exists'
+              exit 1
+            else
+              mkdir -p $TARGET_DIR
+              echo 'Creating new release directory at $TARGET_DIR'
+            fi"
           scp -rp ./* target:$TARGET_DIR/
         env:
           TARGET_DIR: /var/www/files/products/${{ inputs.product }}/releases/${{ inputs.version }}

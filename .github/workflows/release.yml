@@ -19,6 +19,7 @@ jobs:
   #
   yukon-build:
     name: Build Yukon
+    if: startsWith(github.ref, 'refs/heads/')
     strategy:
       matrix:
         os: [ubuntu-22.04, ubuntu-20.04, windows-latest]
