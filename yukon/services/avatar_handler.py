@@ -37,15 +37,20 @@ def make_handler_for_node_detected(
                 new_avatar = Avatar(iface, node_id=node_id, info=next_entry.info)
                 state.avatar.avatars_by_node_id[node_id] = new_avatar
             else:
-                existing_avatar.disappeared = False
+                existing_avatar.is_disappeared = False
                 existing_avatar.disappeared_since = 0
             state.avatar.disappeared_nodes[node_id] = False
         elif previous_entry is not None and next_entry is None:
             logger.info(f"Node with id {node_id} disappeared.")
             try:
-                state.avatar.avatars_by_node_id[node_id].disappeared = True
                 # Add the time of disappearance to the avatar
-                state.avatar.avatars_by_node_id[node_id].disappeared_since = time.monotonic()
+                logger.warning(
+                    f"Node with id {node_id} disappeared at {time.strftime('%H:%M:%S', time.localtime(time.time()))}"
+                )
+                state.avatar.avatars_by_node_id[node_id].disappeared_since = time.strftime(
+                    "%H:%M:%S", time.localtime(time.time())
+                )
+                state.avatar.avatars_by_node_id[node_id].is_disappeared = True
                 state.avatar.disappeared_nodes[node_id] = True
                 # del state.avatar.avatars_by_node_id[node_id]
             except KeyError:

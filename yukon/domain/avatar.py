@@ -5,6 +5,7 @@ import math
 import time
 import typing
 from typing import Optional, Any, Callable
+from uuid import uuid4
 
 import pycyphal
 from pycyphal.transport import ServiceDataSpecifier, Timestamp, AlienTransfer, MessageDataSpecifier
@@ -42,10 +43,11 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         self.access_requests_names_by_transfer_id: typing.Dict[int, str] = {}
         self._last_register_request_name = ""
         self._num_info_requests = 0
-        self.disappeared = False
+        self._disappeared = False
         self.disappeared_since = 0
-        self.is_being_queried = False
+        self._is_being_queried = False
         self.has_port_list = False
+        self.random_str_for_forced_update = uuid4()
 
         self._ts_activity = -math.inf
         self._ts_heartbeat = -math.inf
@@ -74,6 +76,27 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
     @property
     def node_id(self) -> int:
         return self._node_id
+
+    @property
+    def is_disappeared(self) -> bool:
+        return self._disappeared
+
+    @is_disappeared.setter
+    def is_disappeared(self, value: bool) -> None:
+        self._disappeared = value
+        self.force_update()
+
+    @property
+    def is_being_queried(self) -> bool:
+        return self._is_being_queried
+
+    @is_being_queried.setter
+    def is_being_queried(self, value: bool) -> None:
+        self._is_being_queried = value
+        self.force_update()
+
+    def force_update(self) -> None:
+        self.random_str_for_forced_update = uuid4()
 
     def _restart(self) -> None:
         self._info = None
@@ -306,7 +329,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             "registers_values": self.registers_values,
             "registers_exploded_values": self.registers_exploded_values,
             "registers_hash": hash(json.dumps(self.registers_exploded_values, sort_keys=True)),
-            "disappeared": self.disappeared,
+            "disappeared": self.is_disappeared,
             "disappeared_since": self.disappeared_since,
             "is_being_queried": self.is_being_queried,
             "has_port_list": self.has_port_list,
@@ -317,9 +340,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(frozenset(self._ports.cln))
             ^ hash(frozenset(self._ports.srv))
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
-            ^ self.disappeared
+            ^ hash(self.random_str_for_forced_update)  # This accounts for is_disappeared and is_being_queried
             ^ hash(self.disappeared_since)
-            ^ self.is_being_queried
             ^ self.has_port_list
             ^ json_object["registers_hash"]
         )

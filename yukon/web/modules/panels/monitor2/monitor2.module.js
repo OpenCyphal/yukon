@@ -416,7 +416,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
             }
         }
         if (avatar.disappeared) {
-            fieldsObject["Disappeared since"] = avatar.disappeared_since.toFixed(1);
+            fieldsObject["Disappeared since"] = avatar.disappeared_since;
         }
         const node = createElementForNode(avatar, "", listOfNewChildren, fieldsObject, get_up_to_date_avatar, yukon_state);
         nodesToBePositioned.push([node, avatar]);
