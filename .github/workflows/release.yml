@@ -42,7 +42,6 @@ jobs:
         run: |
           python3 -m venv venv
           if [ "$RUNNER_OS" == "Linux" ]; then
-            sudo apt install libgfortran5 libquadmath0
             source venv/bin/activate
           elif [ "$RUNNER_OS" == "Windows" ]; then
             venv/Scripts/activate.bat
@@ -56,6 +55,24 @@ jobs:
           pip install -r requirements.txt -r dev-requirements.txt
         env:
           master_path: https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
+        shell: bash
+
+      - name: Testing GUI (quality check)
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            source venv/bin/activate
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            venv/Scripts/activate.bat
+          else
+            echo "${{ runner.os }} not supported"
+            exit 1
+          fi
+          nox -s mypy
+          nox -s black
+          nox -s pylint
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            nox -s pytest
+          fi
         shell: bash
 
       - name: Building release
@@ -81,7 +98,7 @@ jobs:
             echo "architecture=linux-x86_64_ubuntu-22.04-manjaro" >> $GITHUB_ENV
           elif [ "${{ matrix.os }}" == "ubuntu-20.04" ]; then
             echo "architecture=linux-x86_64" >> $GITHUB_ENV
-          elif
+          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
             echo "architecture=windows-x86_64" >> $GITHUB_ENV
           else
             echo "architecture=other" >> $GITHUB_ENV
