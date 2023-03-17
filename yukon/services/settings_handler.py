@@ -211,7 +211,7 @@ def loading_settings_into_yukon(state: GodState) -> None:
     This function makes sure that new settings that Yukon developers add end up in the settings file.
 
     Overridden values from configuration do of course take effect over the default values in code."""
-    settings_file_path = Path.home() / ".zubax" / "yukon_settings.yaml"
+    settings_file_path = Path.home() / ".zubax" / "yukon" / "yukon_settings.yaml"
     loaded_settings = None
     try:
         loaded_settings = load_settings(settings_file_path)
