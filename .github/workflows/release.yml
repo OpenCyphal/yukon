@@ -5,13 +5,12 @@ name: 'Yukon application builder'
 on:
   push:
     branches:
-#      - main
-      - issue-200
+      - main
 
-# This ensures that only one workflow is running
+# Ensures that only one workflow is running at a time
 concurrency:
-  group: ${{ github.ref }}
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   #
