@@ -6,6 +6,10 @@ name: Deploy artifacts to GitHub Releases
 
 on:
   workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
 
 jobs:
   push-to-gh-releases:
@@ -15,6 +19,15 @@ jobs:
       # Download the artifacts
       - name: Download artifact
         uses: actions/download-artifact@v3
+
+      # Tag commit with version number
+      - name: Push version tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.OPENCYPHAL_TOKEN }}
+          custom_tag: ${{ inputs.version }}
+          tag_prefix: ''
 
     #
     # - name: Deploy the release to GitHub Releases

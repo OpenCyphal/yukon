@@ -134,3 +134,7 @@ jobs:
     name: Deploy
     needs: yukon-build
     uses: ./.github/workflows/deploy-to-gh-releases.yml
+    with:
+      version: ${{ needs.yukon-build.outputs.yukon-version }}
+    secrets: inherit
+
