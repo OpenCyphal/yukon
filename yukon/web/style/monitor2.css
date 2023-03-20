@@ -153,16 +153,16 @@
     }
 
     #monitor2 .line {
-        background-color: antiquewhite;
+        background-color: rgb(69, 43, 9);
         color: antiquewhite;
     }
 
     #monitor2 .circle {
-        background-color: antiquewhite;
+        background-color: rgb(69, 43, 9);
     }
 
     #monitor2 .horizontal_line {
-        background-color: antiquewhite;
+        background-color: rgb(69, 43, 9);
         color: antiquewhite;
         text-wrap: none;
     }
@@ -172,6 +172,6 @@
     }
 
     #monitor2>.arrowhead {
-        border-top-color: antiquewhite;
+        border-top-color: rgb(69, 43, 9);
     }
 }
