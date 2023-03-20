@@ -1,0 +1,62 @@
+name: Deploy artifacts to GitHub Releases
+
+#
+# A reuseable workflow to deploy an artifact to GitHub Releases
+#
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+
+jobs:
+  push-to-gh-releases:
+    name: GitHub Releases
+    runs-on: ubuntu-latest
+    steps:
+      # Make directories for artifacts
+      - name: Make artifact directories
+        run: mkdir download artifacts
+
+      # Download the artifacts
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: download
+
+      # Tag commit with version number
+      - name: Push version tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.OPENCYPHAL_TOKEN }}
+          custom_tag: ${{ inputs.version }}
+          tag_prefix: ''
+
+      # Gather artifacts in one directory
+      - name: Gather artifacts
+        run: |
+          cd download
+          for artifact in $(find * -type f -print)
+          do
+            arch=$(echo $artifact | cut -d/ -f1)
+            base=$(echo $artifact | cut -d/ -f2 | cut -d. -f1)
+            ext=$(echo $artifact | cut -d/ -f2 | awk -F. '{print $2}')
+            if [[ $ext != '' ]]; then
+              cp -p $artifact ../artifacts/$base-$arch.$ext
+            else
+              cp -p $artifact ../artifacts/$base-$arch
+            fi 
+          done
+
+      # Create a release
+      - name: Create a release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: artifacts/*
+          artifactErrorsFailBuild: true
+          tag: ${{ inputs.version }}
+          token: ${{ secrets.OPENCYPHAL_TOKEN }}
+
