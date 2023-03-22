@@ -4,7 +4,6 @@ import threading
 import typing
 from dataclasses import dataclass, field
 from queue import Queue
-from asyncio import Queue as AsyncQueue
 from typing import Optional, Any, Callable, Dict
 from uuid import UUID
 
@@ -72,7 +71,8 @@ class QueuesState:
     reread_register_names: Queue[RereadRegisterNamesRequest] = field(default_factory=Queue)
     detach_transport_response: Queue[str] = field(default_factory=Queue)
     command_response: Queue[CommandSendResponse] = field(default_factory=Queue)
-    god_queue: AsyncQueue[Any] = field(default_factory=AsyncQueue)
+    create_publisher_response: Queue[str] = field(default_factory=Queue)
+    god_queue: Queue[Any] = field(default_factory=Queue)
 
 
 @dataclass
@@ -249,10 +249,8 @@ class GodState:
         self.last_settings_hash: int = 0
         self.dronecan_traffic_queues = DroneCanTrafficQueues()
         self.messages_publisher: Optional[MessagesPublisher] = field(default_factory=none_factory)
-        self.cyphal_worker_asyncio_loop = None
         self.api = None
         self.log_file = None
-        self.main_loop = None
         self.known_datatypes = None
         self.last_known_datatypes_fetch_time = None
         self.allowed_datatypes_validity_time = 10

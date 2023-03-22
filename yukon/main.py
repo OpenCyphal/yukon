@@ -408,12 +408,11 @@ async def main(is_headless: bool, port: Optional[int] = None, should_look_at_arg
                     child.kill()
     else:
         logger.info("No other Yukon is not running.")
-    asyncio.get_event_loop().slow_callback_duration = 35
+    asyncio.get_running_loop().slow_callback_duration = 35
     if get_stop_after_value():
         auto_exit_thread = threading.Thread(target=auto_exit_task)
         auto_exit_thread.start()
     state: GodState = GodState()
-    state.main_loop = asyncio.get_event_loop()
     args = None
     if should_look_at_arguments:
         parser: argparse.ArgumentParser = argparse.ArgumentParser("Yukon")

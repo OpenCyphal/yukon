@@ -18,7 +18,6 @@ from time import time
 from yukon.domain.publisher import YukonPublisher
 from yukon.custom_tk_dialog import launch_yes_no_dialog
 from yukon.domain.simple_publisher import SimplePublisher
-from yukon.services.snoop_registers import get_register_names
 from yukon.services.messages_publisher import get_level_no
 
 from yukon.services.utils import get_all_datatypes, get_all_field_dtos, get_datatype_return_dto, quit_application
@@ -296,11 +295,11 @@ class Api:
 
     def apply_configuration_to_node(self, node_id: int, configuration: str) -> None:
         request = ApplyConfigurationRequest(node_id, configuration, is_network_configuration(configuration))
-        self.state.queues.god_queue.put_nowait(request)
+        self.state.queues.god_queue.put(request)
 
     def apply_all_of_configuration(self, configuration: str) -> None:
         request = ApplyConfigurationRequest(None, configuration, is_network_configuration(configuration))
-        self.state.queues.god_queue.put_nowait(request)
+        self.state.queues.god_queue.put(request)
 
     def simplify_configuration(self, configuration: str) -> Response:
         if isinstance(configuration, str):
@@ -347,7 +346,7 @@ class Api:
 
             new_value: uavcan.register.Value_1 = unexplode_value(register_value)
             request = UpdateRegisterRequest(uuid4(), register_name, new_value, int(node_id), time())
-            self.state.queues.god_queue.put_nowait(request)
+            self.state.queues.god_queue.put(request)
             timeout = time() + 5
 
             while time() < timeout:
@@ -384,7 +383,7 @@ class Api:
             # Once one of these requests has been made, look for the continuation of code flow in
             # the cyphal_worker.py folder in services.
             atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-            self.state.queues.god_queue.put_nowait(atr)
+            self.state.queues.god_queue.put(atr)
             try:
                 response = self.state.queues.attach_transport_response.get(timeout=5)
             except Empty:
@@ -408,7 +407,7 @@ class Api:
             interface.iface = interface_string
 
             atr: AttachTransportRequest = AttachTransportRequest(interface, int(node_id))
-            self.state.queues.god_queue.put_nowait(atr)
+            self.state.queues.god_queue.put(atr)
             try:
                 response = self.state.queues.attach_transport_response.get(timeout=7)
             except Empty:
@@ -422,7 +421,7 @@ class Api:
 
     def detach_transport(self, hash: str) -> typing.Any:
         logger.info(f"Detaching transport {hash}")
-        self.state.queues.god_queue.put_nowait(DetachTransportRequest(hash))
+        self.state.queues.god_queue.put(DetachTransportRequest(hash))
         try:
             response = self.state.queues.detach_transport_response.get(timeout=5)
         except Empty:
@@ -436,7 +435,7 @@ class Api:
     def reread_registers(self, request_contents: typing.Dict[int, typing.Dict[str, bool]]) -> None:
         """yukon/web/modules/registers.data.module.js explains the request_contents structure."""
         request = RereadRegistersRequest(uuid4(), request_contents)
-        self.state.queues.god_queue.put_nowait(request)
+        self.state.queues.god_queue.put(request)
 
     def hide_yakut(self) -> None:
         self.state.avatar.hide_yakut_avatar = True
@@ -481,7 +480,7 @@ class Api:
                 20000,
             ):
                 return jsonify({"success": False, "message": "User cancelled."})
-        self.state.queues.god_queue.put_nowait(send_command_request)
+        self.state.queues.god_queue.put(send_command_request)
         try:
             response = self.state.queues.command_response.get(timeout=5)
         except Empty:
@@ -489,16 +488,8 @@ class Api:
         return jsonify({"success": response.is_success, "message": response.message})
 
     def reread_node(self, node_id: str) -> Response:
-        async def get_register_names_helper() -> None:
-            await get_register_names(
-                self.state,
-                node_id,
-                self.state.avatar.avatars_by_node_id[node_id],
-                True,
-            )
-
         try:
-            self.state.cyphal_worker_asyncio_loop.create_task(get_register_names_helper())
+            self.state.queues.god_queue.put_nowait(RereadRegisterNamesRequest(int(node_id)))
         except Exception as e:
             tb = traceback.format_exc()
             logger.error(tb)
@@ -538,7 +529,7 @@ class Api:
         try:
             if subject_id:
                 subject_id = int(subject_id)
-            self.state.queues.god_queue.put_nowait(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
+            self.state.queues.god_queue.put(SubscribeRequest(SubjectSpecifier(subject_id, datatype)))
         except Exception as e:
             logger.error("Failed to register subscribe intent.", exc_info=True)
             logger.error(str(e))
@@ -563,7 +554,7 @@ class Api:
 
     def unsubscribe(self, specifier: str) -> Response:
         try:
-            self.state.queues.god_queue.put_nowait(UnsubscribeRequest(SubjectSpecifier.from_string(specifier)))
+            self.state.queues.god_queue.put(UnsubscribeRequest(SubjectSpecifier.from_string(specifier)))
             try:
                 response = self.state.queues.unsubscribe_requests_responses.get(timeout=5)
             except Empty:

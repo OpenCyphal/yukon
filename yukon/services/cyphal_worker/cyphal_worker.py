@@ -39,6 +39,10 @@ from yukon.services.cyphal_worker.update_register_work import do_update_register
 from yukon.domain.god_state import GodState
 from yukon.services.mydronecan.dronecan_stuff import run_dronecan
 from yukon.services.avatar_handler import make_tracers_trackers
+from yukon.services.snoop_registers import get_register_names
+from yukon.domain.publishers.create_publisher_request import CreatePublisherRequest
+from yukon.domain.publishers.publish_request import PublishRequest
+from yukon.services.dtype_loader import FormatError, load_dtype
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +65,6 @@ def cyphal_worker(state: GodState) -> None:
             )
 
             state.cyphal.local_node.start()
-            state.cyphal_worker_asyncio_loop = asyncio.get_running_loop()
 
             async def forward_dronecan_loop() -> None:
                 try:
@@ -77,15 +80,11 @@ def cyphal_worker(state: GodState) -> None:
             state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
 
             make_tracers_trackers(state)
-            # if isinstance(state.callbacks.get("yukon_node_created"), typing.List):
-            #     for callback in state.callbacks["yukon_node_created"]:
-            #         if callable(callback):
-            #             callback(state)
 
             logger.debug("Tracers should have been set up.")
             while state.gui.gui_running:
                 # An empty element is going to be inserted here on application shutdown to get the loop to exit.
-                queue_element = await state.queues.god_queue.get()
+                queue_element = await asyncio.get_running_loop().run_in_executor(None, state.queues.god_queue.get)
                 if isinstance(queue_element, AttachTransportRequest):
                     await do_attach_transport_work(state, queue_element)
                 elif isinstance(queue_element, DetachTransportRequest):
@@ -107,6 +106,20 @@ def cyphal_worker(state: GodState) -> None:
                     state.dronecan.thread = threading.Thread(target=run_dronecan, args=(state,), daemon=True)
                     state.dronecan.thread.start()
                     logger.info("DroneCAN firmware substitution is now " + "enabled")
+                elif isinstance(queue_element, RereadRegisterNamesRequest):
+                    logger.debug("A request to reread the register names was received.")
+                    await get_register_names(
+                        state,
+                        queue_element.node_id,
+                        state.avatar.avatars_by_node_id[queue_element.node_id],
+                        True,
+                    )
+                elif isinstance(queue_element, CreatePublisherRequest):
+                    publisher = state.cyphal.local_node.make_publisher(load_dtype(queue_element.datatype_name), queue_element.port_id)
+                    state.queues.create_publisher_response.put_nowait(publisher)
+                elif isinstance(queue_element, PublishRequest):
+                    state.cyphal.publishers_by_id[queue_element.publisher_id].publish()
+
         except Exception as e:
             logger.exception(e)
             raise e
