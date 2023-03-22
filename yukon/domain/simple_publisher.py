@@ -8,8 +8,7 @@ import numpy as np
 import pydsdl
 import pycyphal
 
-from yukon.domain.god_state import GodState
-
+import yukon
 from yukon.services.dtype_loader import FormatError, load_dtype
 
 logger = logging.getLogger(__name__)
@@ -18,7 +17,7 @@ from yukon.domain.publisher_field import PublisherField
 
 
 class SimplePublisher:
-    def __init__(self, _id: str, state: "GodState"):
+    def __init__(self, _id: str, state: "yukon.domain.god_state.GodState"):
         self.id = _id
         self.name = ""
         self._datatype = ""
@@ -57,30 +56,24 @@ class SimplePublisher:
 
         return publish_object
 
-    def publish(self) -> None:
+    async def publish(self) -> None:
         if not self.port_id:
             logger.warning("Cannot publish without a port id")
             return
+
         if not self.publisher:
-
-            async def _do_on_cyphal_thread() -> None:
-                self.publisher = self.state.cyphal.local_node.make_publisher(load_dtype(self._datatype), self.port_id)
-
-            self.state.cyphal_worker_asyncio_loop.create_task(_do_on_cyphal_thread())
+            logger.warning("Cannot publish without a publisher for port id %d", str(self.port_id))
+            return
         start = time.monotonic()
         publish_object = self.assemble_publish_object()
         for field in self.fields.values():
             modify(publish_object, field.field_specifier, field.value)
 
-        async def do_on_cyphal_thread() -> None:
-            if self.publisher:
-                # print(time.monotonic(), "Told to publish")
-                result = await self.publisher.publish(publish_object)
-                if not result:
-                    logger.error("Publish failed")
-
-        task = self.state.cyphal_worker_asyncio_loop.create_task(do_on_cyphal_thread())
-        self.state.cyphal_worker_asyncio_loop.run_until_complete(task)
+        if self.publisher:
+            # print(time.monotonic(), "Told to publish")
+            result = await self.publisher.publish(publish_object)
+            if not result:
+                logger.error("Publish failed")
 
     def add_field(self, id: str) -> PublisherField:
         self.fields[id] = PublisherField(id)

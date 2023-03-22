@@ -17,6 +17,7 @@ from time import time
 
 from yukon.domain.publisher import YukonPublisher
 from yukon.custom_tk_dialog import launch_yes_no_dialog
+from yukon.domain.publishers.publish_request import PublishRequest
 from yukon.domain.simple_publisher import SimplePublisher
 from yukon.services.messages_publisher import get_level_no
 
@@ -597,8 +598,9 @@ class Api:
 
     def make_simple_publisher(self) -> Response:
         try:
-            new_publisher = SimplePublisher(str(uuid4()), self.state)
-            self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
+            self.state.queues.god_queue.put(CreatePublisherRequest())
+            new_publisher = self.state.queues.create_publisher_response.get(timeout=5)
+
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to make simple publisher.")
@@ -626,8 +628,7 @@ class Api:
         if publisher is None:
             return jsonify({"success": False, "message": "Publisher %s not found." % publisher_id})
         try:
-            # print(monotonic(), "API told to publish")
-            self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(publisher.publish)
+            self.state.queues.god_queue.put(PublishRequest(publisher.publisher_id))
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to publish.")

@@ -4,6 +4,7 @@ import threading
 import traceback
 
 import typing
+from uuid import uuid4
 
 import pycyphal
 from pycyphal.application import make_node, NodeInfo, make_registry
@@ -14,10 +15,12 @@ from pycyphal.transport.udp import UDPCapture
 
 import uavcan
 import uavcan.pnp
+from yukon.domain.fileserver.change_fileserver_path_request import ChangeFileserverPathRequest
 import yukon.domain.god_state
 from yukon.domain.registers.reread_register_names_request import RereadRegisterNamesRequest
 from yukon.domain.request_run_dronecan import RequestRunDronecan
-from yukon.domain.start_fileserver_request import StartFileServerRequest
+from yukon.domain.simple_publisher import SimplePublisher
+from yukon.domain.fileserver.stop_fileserver_request import StopFileserverRequest
 from yukon.services.FileServer import FileServer
 from yukon.domain.transport.detach_transport_request import DetachTransportRequest
 from yukon.domain.subscriptions.subscribe_request import SubscribeRequest
@@ -59,6 +62,7 @@ def set_up_node_id_request_detection(state: "yukon.domain.god_state.GodState") -
 def cyphal_worker(state: GodState) -> None:
     async def _internal_method() -> None:
         try:
+            thread_state = {"publishers_by_id": {}, "allocator_mode": "Automatic persistent allocation"}
             my_registry = make_registry()
             state.cyphal.local_node = make_node(
                 NodeInfo(name="org.opencyphal.yukon"), my_registry, reconfigurable_transport=True
@@ -115,10 +119,19 @@ def cyphal_worker(state: GodState) -> None:
                         True,
                     )
                 elif isinstance(queue_element, CreatePublisherRequest):
-                    publisher = state.cyphal.local_node.make_publisher(load_dtype(queue_element.datatype_name), queue_element.port_id)
-                    state.queues.create_publisher_response.put_nowait(publisher)
+                    simple_publisher = SimplePublisher(str(uuid4()), state)
+                    simple_publisher.publisher = state.cyphal.local_node.make_publisher(
+                        load_dtype(queue_element.datatype_name), queue_element.port_id
+                    )
+                    thread_state["publishers_by_id"][simple_publisher.publisher_id] = simple_publisher
+                    state.queues.create_publisher_response.put_nowait(simple_publisher)
                 elif isinstance(queue_element, PublishRequest):
-                    state.cyphal.publishers_by_id[queue_element.publisher_id].publish()
+                    await thread_state["publishers_by_id"][queue_element.publisher_id].publish()
+                elif isinstance(queue_element, StopFileserverRequest):
+                    state.cyphal.file_server.close()
+                    state.cyphal.file_server = None
+                elif isinstance(queue_element, ChangeFileserverPathRequest):
+                    state.cyphal.file_server.roots = [queue_element.path]
 
         except Exception as e:
             logger.exception(e)

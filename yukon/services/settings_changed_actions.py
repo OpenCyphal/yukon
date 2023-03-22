@@ -13,9 +13,12 @@ from pycyphal.dsdl import install_import_hook
 from pycyphal.dsdl._import_hook import DsdlMetaFinder
 
 import yukon
+from yukon.domain.fileserver.change_fileserver_path_request import ChangeFileserverPathRequest
 from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.domain.request_run_dronecan import RequestRunDronecan
-from yukon.domain.start_fileserver_request import StartFileServerRequest
+from yukon.domain.run_allocator_request import RunAllocatorRequest
+from yukon.domain.fileserver.run_fileserver_request import RunFileserverRequest
+from yukon.domain.fileserver.stop_fileserver_request import StopFileserverRequest
 from yukon.domain.udp_connection import UDPConnection
 from yukon.services.CentralizedAllocator import CentralizedAllocator
 from yukon.services.FileServer import FileServer
@@ -101,36 +104,17 @@ def set_file_server_handler(state: "yukon.domain.god_state.GodState") -> None:
     def _handle_path_change(new_value: str) -> None:
         logger.info("File server path changed to " + new_value)
         if state.cyphal.file_server:
-            state.cyphal.file_server.roots = [new_value]
+            state.queues.god_queue.put_nowait(ChangeFileserverPathRequest(new_value))
 
     def _handle_enabled_change(should_be_enabled: bool) -> None:
         is_already_running = state.cyphal.file_server is not None
         logger.info("File server is set to be" + ("enabled" if should_be_enabled else "disabled"))
         if is_already_running:
             if not should_be_enabled:
-                state.cyphal.file_server.close()
-                state.cyphal.file_server = None
+                state.queues.god_queue.put_nowait(StopFileserverRequest())
         else:
             if should_be_enabled:
-
-                def _run_file_server() -> None:
-                    logger.info("File server created and started.")
-                    state.cyphal.file_server = FileServer(
-                        state.cyphal.local_node, [state.settings["Firmware updates"]["Directory path"]["value"].value]
-                    )
-                    logger.info(
-                        "File server started on path "
-                        + state.settings["Firmware updates"]["Directory path"]["value"].value
-                    )
-                    state.cyphal.file_server.start()
-
-                if not state.cyphal_worker_asyncio_loop:
-                    logger.debug("No asyncio loop, postponing allocator run")
-                    state.callbacks["yukon_node_attached"].append(_run_file_server)
-                else:
-                    assert state.cyphal.local_node
-                    assert state.cyphal.local_node.id
-                    state.cyphal_worker_asyncio_loop.call_soon_threadsafe(_run_file_server)
+                state.queues.god_queue.put_nowait(RunFileserverRequest())
 
     state.settings["Firmware updates"]["Directory path"]["value"].connect(_handle_path_change)
     state.settings["Firmware updates"]["Enabled"].connect(_handle_enabled_change)
@@ -187,54 +171,7 @@ async def send_store_presistent_states_to_node(
 
 def set_allocator_handler(state: "yukon.domain.god_state.GodState") -> None:
     def _handle_mode_change(new_mode: str) -> None:
-        if (new_mode in ["Automatic", "Automatic persistent allocation"]) and not state.cyphal.centralized_allocator:
-            logger.info("Some kind of automatic allocator is now enabled")
-
-            # For the current thread, the same event loop is used
-            def _run_allocator() -> None:
-                def _run_allocator_inner() -> None:
-                    try:
-                        if state.cyphal.local_node:
-                            logger.debug("Now running allocator")
-                            state.cyphal.centralized_allocator = CentralizedAllocator(state.cyphal.local_node)
-                            state.cyphal.centralized_allocator.start()
-
-                            def allocated_hook(allocated_node_id: int) -> None:
-                                logger.debug("Handling allocation of node %d", allocated_node_id)
-                                if new_mode == "Automatic persistent allocation":
-                                    logger.debug("Now sending store persistent states to node %d", allocated_node_id)
-                                    state.cyphal_worker_asyncio_loop.create_task(
-                                        send_store_presistent_states_to_node(state, allocated_node_id, delay=0.5)
-                                    )
-
-                            state.cyphal.centralized_allocator.allocated_node_hooks.append(allocated_hook)
-
-                            logger.info("Allocator is now running")
-                        else:
-                            logger.debug("Scheduled allocator to run when local node is set")
-
-                    except:
-                        logger.exception("Exception while running allocator")
-                        tb = traceback.format_exc()
-                        logger.error(tb)
-
-                if (
-                    not state.cyphal_worker_asyncio_loop
-                    or not state.cyphal.local_node
-                    or not state.cyphal.local_node.id  # This is fine to check because if state.cyphal.local_node was None then this condition wouldn't be checked
-                ):
-                    logger.debug("No asyncio loop, postponing allocator run")
-                    state.callbacks["yukon_node_attached"].append(_run_allocator)
-                else:
-                    assert state.cyphal.local_node
-                    assert state.cyphal.local_node.id
-                    state.cyphal_worker_asyncio_loop.call_soon_threadsafe(_run_allocator_inner)
-
-            _run_allocator()
-        elif new_mode == "Manual" and state.cyphal.centralized_allocator:
-            logger.info("Allocator is now stopped")
-            state.cyphal.centralized_allocator.close()
-            state.cyphal.centralized_allocator = None
+        state.queues.god_queue.put_nowait(RunAllocatorRequest(new_mode))
 
     _handle_mode_change(state.settings["Node allocation"]["chosen_value"].value)
     state.settings["Node allocation"]["chosen_value"].connect(_handle_mode_change)
