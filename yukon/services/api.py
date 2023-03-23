@@ -1,4 +1,5 @@
 import asyncio
+import queue
 import sys
 from datetime import datetime
 import json
@@ -675,11 +676,18 @@ class Api:
 
     def set_publisher_port_id(self, id: str, port_id: str) -> Response:
         try:
-            publisher = self.state.cyphal.publishers_by_id.get(id)
-            if publisher is None:
-                return jsonify({"success": False, "message": "Publisher %s not found." % id})
-            publisher.port_id = int(port_id)
-            return jsonify({"success": True})
+            response_queue = queue.Queue()
+
+            # Putting a closure into the god_queue so that the god_queue will run it on the cyphal_worker_thread
+            def run():
+                publisher = self.state.cyphal.publishers_by_id.get(id)
+                if publisher is None:
+                    return {"success": False, "message": "Publisher %s not found." % id}
+                publisher.port_id = int(port_id)
+                return {"success": True}
+
+            self.state.queues.god_queue.put_nowait(run)
+            return jsonify(response_queue.get())
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to set publisher port id.")
@@ -856,7 +864,7 @@ class Api:
         request = SubscribeSynchronizedRequest(json.loads(specifiers))
         self.state.queues.god_queue.put_nowait(request)
         try:
-            response = self.state.queues.subscribe_requests_responses.get(True, timeout=1.7)
+            response = self.state.queues.subscribe_requests_responses.get(True, timeout=5)
         except Empty as e:
             response = {"success": False, "message": "Timed out waiting for a response from the Cyphal worker thread."}
         return jsonify(response)
@@ -881,7 +889,7 @@ class Api:
         try:
             specifiers_object = json.loads(specifiers)
             self.state.queues.god_queue.put_nowait(GetSyncMessagesRequest(specifiers_object, counter))
-            response = self.state.queues.get_sync_messages_responses.get(True, timeout=1.7)
+            response = self.state.queues.get_sync_messages_responses.get(True, timeout=5)
             return jsonify(response)
         except Exception as e:
             logger.error("Failed to fetch synchronized messages.")
@@ -893,7 +901,7 @@ class Api:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
         try:
             self.state.queues.god_queue.put_nowait(GetSpecifiersRequest())
-            specifiers = self.state.queues.get_specifiers_responses.get(True, timeout=1.7)
+            specifiers = self.state.queues.get_specifiers_responses.get(True, timeout=5)
             return jsonify(specifiers)
         except Exception as e:
             logger.error("Failed to get current available subscription specifiers.")
@@ -905,7 +913,7 @@ class Api:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
         try:
             self.state.queues.god_queue.put_nowait(GetSyncSpecifiersRequest())
-            specifiers_return_value = self.state.queues.get_sync_specifiers_responses.get(True, timeout=1.7)
+            specifiers_return_value = self.state.queues.get_sync_specifiers_responses.get(True, timeout=5)
             return jsonify(specifiers_return_value)
         except Exception as e:
             logger.error("Failed to get current available synchronized subscription specifiers.")

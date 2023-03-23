@@ -57,6 +57,7 @@ class SimplePublisher:
         return publish_object
 
     async def publish(self) -> None:
+        timestamp = time.monotonic()
         if not self.port_id:
             logger.warning("Cannot publish without a port id")
             return
@@ -72,6 +73,9 @@ class SimplePublisher:
         if self.publisher:
             # print(time.monotonic(), "Told to publish")
             result = await self.publisher.publish(publish_object)
+            time_taken = time.monotonic() - timestamp
+            if time_taken > 0.1:
+                logger.warning(f"Publish took {time_taken} seconds")
             if not result:
                 logger.error("Publish failed")
 

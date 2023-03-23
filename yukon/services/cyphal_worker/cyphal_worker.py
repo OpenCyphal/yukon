@@ -77,7 +77,9 @@ def cyphal_worker(state: GodState) -> None:
             state.cyphal.local_node = make_node(
                 NodeInfo(name="org.opencyphal.yukon"), my_registry, reconfigurable_transport=True
             )
-
+            asyncio.get_event_loop().set_debug(True)
+            asyncio.get_event_loop().slow_callback_duration = 0.3
+            logging.getLogger("asyncio").setLevel(logging.DEBUG)
             state.cyphal.local_node.start()
 
             state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
@@ -88,7 +90,12 @@ def cyphal_worker(state: GodState) -> None:
             while state.gui.gui_running:
                 # An empty element is going to be inserted here on application shutdown to get the loop to exit.
                 queue_element = await asyncio.get_running_loop().run_in_executor(None, state.queues.god_queue.get)
-                if isinstance(queue_element, AttachTransportRequest):
+                # If it is a coroutine, we need to run it.
+                if asyncio.iscoroutine(queue_element):
+                    await queue_element
+                elif callable(queue_element):
+                    queue_element()
+                elif isinstance(queue_element, AttachTransportRequest):
                     await do_attach_transport_work(state, queue_element)
                 elif isinstance(queue_element, DetachTransportRequest):
                     await do_detach_transport_work(state, queue_element)

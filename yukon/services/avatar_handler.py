@@ -62,16 +62,21 @@ def make_handler_for_node_detected(
             if is_triggered_by_getinfo_request:
                 logger.debug(f"Node with id {node_id} has info: {next_entry.info}")  # type: ignore
             else:
-                getinfo_client = state.cyphal.local_node.make_client(uavcan.node.GetInfo_1_0, node_id)
-                getinfo_request = uavcan.node.GetInfo_1_0.Request()
-                result = asyncio.create_task(asyncio.wait_for(getinfo_client.call(getinfo_request), timeout=1))
-                # I am not using the result here because it gets snooped by the avatar
-                if result:
-                    logger.debug(f"Node with id {node_id} has info: {result}")
-                else:
-                    logger.debug(f"Node with id {node_id} has no info")
 
-                asyncio.create_task(get_register_names(state, node_id, current_avatar))
+                async def run():
+                    getinfo_client = state.cyphal.local_node.make_client(uavcan.node.GetInfo_1_0, node_id)
+                    getinfo_request = uavcan.node.GetInfo_1_0.Request()
+                    getinfo_client.response_timeout = 1
+                    result = await getinfo_client.call(getinfo_request)
+                    # I am not using the result here because it gets snooped by the avatar
+                    if result:
+                        logger.debug(f"Node with id {node_id} has info: {result}")
+                    else:
+                        logger.debug(f"Node with id {node_id} has no info")
+
+                    asyncio.create_task(get_register_names(state, node_id, current_avatar))
+
+                state.queues.god_queue.put_nowait(run())
 
     return handle_getinfo_handler_format
 
