@@ -13,9 +13,9 @@ from yukon.domain.publisher_field import PublisherField
 from yukon.domain.simple_publisher import SimplePublisher
 from yukon.domain.subscriptions.message_carrier import MessageCarrier
 from yukon.domain.reactive_value_objects import ReactiveValue
-from yukon.domain.subscriptions.synchronized_message_carrier import SynchronizedMessageCarrier
-from yukon.domain.subscriptions.synchronized_message_group import SynchronizedMessageGroup
-from yukon.domain.subscriptions.synchronized_message_store import SynchronizedMessageStore
+from yukon.domain.subscriptions.sync_message_carrier import SynchronizedMessageCarrier
+from yukon.domain.subscriptions.sync_message_group import SynchronizedMessageGroup
+from yukon.domain.subscriptions.sync_message_store import SynchronizedMessageStore
 from yukon.services.utils import SimplifiedFieldDTO
 
 from yukon.services.value_utils import explode_value

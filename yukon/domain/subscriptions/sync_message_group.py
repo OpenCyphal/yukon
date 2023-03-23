@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import typing
 
-from yukon.domain.subscriptions.synchronized_message_carrier import SynchronizedMessageCarrier
+from yukon.domain.subscriptions.sync_message_carrier import SynchronizedMessageCarrier
 from yukon.domain.subject_specifier import SubjectSpecifier
 
 

@@ -22,6 +22,11 @@ from yukon.domain.registers.reread_register_names_request import RereadRegisterN
 from yukon.domain.request_run_dronecan import RequestRunDronecan
 from yukon.domain.simple_publisher import SimplePublisher
 from yukon.domain.fileserver.stop_fileserver_request import StopFileserverRequest
+from yukon.domain.subscriptions.get_messages_request import GetMessagesRequest
+from yukon.domain.subscriptions.get_specifiers_request import GetSpecifiersRequest
+from yukon.domain.subscriptions.get_sync_specifiers_request import GetSyncSpecifiersRequest
+from yukon.domain.subscriptions.subject_specifier_dto import SubjectSpecifierDto
+from yukon.domain.subscriptions.sync_subscribe_request import SubscribeSynchronizedRequest
 from yukon.services.FileServer import FileServer
 from yukon.domain.transport.detach_transport_request import DetachTransportRequest
 from yukon.domain.subscriptions.subscribe_request import SubscribeRequest
@@ -31,9 +36,10 @@ from yukon.domain.transport.attach_transport_request import AttachTransportReque
 from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.registers.reread_registers_request import RereadRegistersRequest
 from yukon.domain.registers.update_register_request import UpdateRegisterRequest
+from yukon.services.cyphal_worker.snyc_subscribe_work import do_sync_subscribe_work
 from yukon.services.cyphal_worker.unsubscribe_requests_work import do_unsubscribe_requests_work
 from yukon.services.cyphal_worker.detach_transport_work import do_detach_transport_work
-from yukon.services.cyphal_worker.subscribe_requests_work import do_subscribe_requests_work
+from yukon.services.cyphal_worker.subscribe_work import do_subscribe_requests_work
 from yukon.services.cyphal_worker.reread_registers_work import do_reread_registers_work
 from yukon.services.cyphal_worker.send_command_work import do_send_command_work
 from yukon.services.cyphal_worker.attach_transport_work import do_attach_transport_work
@@ -92,6 +98,31 @@ def cyphal_worker(state: GodState) -> None:
                     await do_reread_registers_work(state, queue_element)
                 elif isinstance(queue_element, SubscribeRequest):
                     await do_subscribe_requests_work(state, queue_element)
+                elif isinstance(queue_element, GetSpecifiersRequest):
+                    specifiers = []
+                    for specifier, messages_store in state.cyphal.message_stores_by_specifier.items():
+                        specifiers.append(str(specifier))
+                    specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
+                    state.queues.get_specifiers_responses.put_nowait(specifiers_return_value)
+                elif isinstance(queue_element, GetSyncSpecifiersRequest):
+                    specifiers = []
+                    for specifier, messages_store in state.cyphal.synchronized_message_stores.items():
+                        specifiers.append(str(specifier))
+                    specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
+                    state.queues.get_sync_specifiers_responses.put_nowait(specifiers_return_value)
+                elif isinstance(queue_element, GetMessagesRequest):
+                    specifiers_object = queue_element.specifiers_object
+                    dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
+                    mapping = {}
+                    for specifier, messages_store in state.cyphal.message_stores_by_specifier.items():
+                        for dto in dtos:
+                            if dto.does_equal_specifier(specifier):
+                                mapping[str(dto)] = messages_store.messages[dto.counter - messages_store.start_index :]
+                                break
+                    state.queues.get_messages_responses.put_nowait(mapping)
+                    # This jsonify is why I made sure
+                elif isinstance(queue_element, SubscribeSynchronizedRequest):
+                    await do_sync_subscribe_work(state, queue_element)
                 elif isinstance(queue_element, UnsubscribeRequest):
                     await do_unsubscribe_requests_work(state, queue_element)
                 elif isinstance(queue_element, RequestRunDronecan):
@@ -109,16 +140,20 @@ def cyphal_worker(state: GodState) -> None:
                     )
                 elif isinstance(queue_element, CreatePublisherRequest):
                     simple_publisher = SimplePublisher(str(uuid4()), state)
-                    simple_publisher.publisher = state.cyphal.local_node.make_publisher(
-                        load_dtype(queue_element.datatype_name), queue_element.port_id
-                    )
-                    thread_state["publishers_by_id"][simple_publisher.publisher_id] = simple_publisher
+                    # simple_publisher.publisher = state.cyphal.local_node.make_publisher(
+                    # load_dtype(queue_element.datatype_name), queue_element.port_id
+                    # )
+                    thread_state["publishers_by_id"][simple_publisher.id] = simple_publisher
                     state.queues.create_publisher_response.put_nowait(simple_publisher)
                 elif isinstance(queue_element, PublishRequest):
                     publisher = thread_state["publishers_by_id"].get(queue_element.publisher_id)
                     if not publisher:
                         logger.warning("No publisher with ID " + queue_element.publisher_id)
                         continue
+                    if not publisher.publisher:
+                        publisher.publisher = state.cyphal.local_node.make_publisher(
+                            load_dtype(queue_element.datatype_name), queue_element.port_id
+                        )
                     await publisher.publish()
                 elif isinstance(queue_element, StopFileserverRequest):
                     state.cyphal.file_server.close()

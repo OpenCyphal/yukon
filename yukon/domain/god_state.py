@@ -15,8 +15,8 @@ from yukon.domain.publisher import YukonPublisher
 import yukon.services.FileServer
 from yukon.domain.reactive_value_objects import ReactiveValue
 from yukon.domain.dronecan_traffic_queues import DroneCanTrafficQueues
-from yukon.domain.subscriptions.synchronized_subjects_specifier import SynchronizedSubjectsSpecifier
-from yukon.domain.subscriptions.synchronized_message_store import SynchronizedMessageStore
+from yukon.domain.subscriptions.sync_subjects_specifier import SynchronizedSubjectsSpecifier
+from yukon.domain.subscriptions.sync_message_store import SynchronizedMessageStore
 
 from yukon.services.FileServer import FileServer
 from yukon.services.CentralizedAllocator import CentralizedAllocator
@@ -73,6 +73,10 @@ class QueuesState:
     detach_transport_response: Queue[str] = field(default_factory=Queue)
     command_response: Queue[CommandSendResponse] = field(default_factory=Queue)
     create_publisher_response: Queue[SimplePublisher] = field(default_factory=Queue)
+    get_specifiers_responses: Queue[typing.Any] = field(default_factory=Queue)
+    get_sync_specifiers_responses: Queue[typing.Any] = field(default_factory=Queue)
+    get_sync_messages_responses: Queue[typing.Any] = field(default_factory=Queue)
+    get_messages_responses: Queue[typing.Any] = field(default_factory=Queue)
     god_queue: Queue[Any] = field(default_factory=Queue)
 
 

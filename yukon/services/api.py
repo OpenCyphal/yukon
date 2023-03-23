@@ -17,8 +17,14 @@ from time import time
 
 from yukon.domain.publisher import YukonPublisher
 from yukon.custom_tk_dialog import launch_yes_no_dialog
+from yukon.domain.publishers.create_publisher_request import CreatePublisherRequest
 from yukon.domain.publishers.publish_request import PublishRequest
 from yukon.domain.simple_publisher import SimplePublisher
+from yukon.domain.subscriptions.get_messages_request import GetMessagesRequest
+from yukon.domain.subscriptions.get_specifiers_request import GetSpecifiersRequest
+from yukon.domain.subscriptions.get_sync_specifiers_request import GetSyncSpecifiersRequest
+from yukon.domain.subscriptions.sync_subscribe_request import SubscribeSynchronizedRequest
+from yukon.domain.subscriptions.sync_subscribe_response import SubscribeSynchronizedResponse
 from yukon.services.messages_publisher import get_level_no
 
 from yukon.services.utils import get_all_datatypes, get_all_field_dtos, get_datatype_return_dto, quit_application
@@ -37,10 +43,10 @@ import pycyphal.dsdl
 
 import dronecan
 
-from yukon.domain.subscriptions.synchronized_message_carrier import SynchronizedMessageCarrier
-from yukon.domain.subscriptions.synchronized_message_store import SynchronizedMessageStore
-from yukon.domain.subscriptions.synchronized_message_group import SynchronizedMessageGroup
-from yukon.domain.subscriptions.synchronized_subjects_specifier import SynchronizedSubjectsSpecifier
+from yukon.domain.subscriptions.sync_message_carrier import SynchronizedMessageCarrier
+from yukon.domain.subscriptions.sync_message_store import SynchronizedMessageStore
+from yukon.domain.subscriptions.sync_message_group import SynchronizedMessageGroup
+from yukon.domain.subscriptions.sync_subjects_specifier import SynchronizedSubjectsSpecifier
 
 
 from yukon.domain.transport.detach_transport_request import DetachTransportRequest
@@ -582,14 +588,8 @@ class Api:
         """
         try:
             specifiers_object = json.loads(specifiers)
-            dtos = [SubjectSpecifierDto.from_string(x) for x in specifiers_object]
-            mapping = {}
-            for specifier, messages_store in self.state.cyphal.message_stores_by_specifier.items():
-                for dto in dtos:
-                    if dto.does_equal_specifier(specifier):
-                        mapping[str(dto)] = messages_store.messages[dto.counter - messages_store.start_index :]
-                        break
-            # This jsonify is why I made sure to set up the JSON encoder for dsdl
+            self.state.queues.god_queue.put_nowait(GetMessagesRequest(specifiers_object))
+            mapping = self.state.queues.get_messages_responses.get(timeout=5)
             return jsonify(mapping)
         except Exception as e:
             logger.error("Failed to fetch messages for subscription specifiers.", exc_info=True)
@@ -611,10 +611,8 @@ class Api:
 
     def make_simple_publisher_with_datatype_and_port_id(self, datatype: str, port_id: int) -> Response:
         try:
-            new_publisher = SimplePublisher(str(uuid4()), self.state)
-            new_publisher.datatype = datatype
-            new_publisher.port_id = int(port_id)
-            self.state.cyphal.publishers_by_id[new_publisher.id] = new_publisher
+            self.state.queues.god_queue.put(CreatePublisherRequest(datatype, int(port_id)))
+            new_publisher = self.state.queues.create_publisher_response.get(timeout=5)
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to make simple publisher.")
@@ -855,111 +853,13 @@ class Api:
             logger.error(str(tb))
 
     def subscribe_synchronized(self, specifiers: str) -> Response:
-        subscribe_request = 
+        request = SubscribeSynchronizedRequest(json.loads(specifiers))
+        self.state.queues.god_queue.put_nowait(request)
         try:
-            result_ready_event = threading.Event()
-            was_subscription_success: bool = False
-            message: str = ""
-            tolerance = 0.1
-
-            def subscribe_task() -> None:
-                nonlocal was_subscription_success, message
-                try:
-                    specifiers_object = json.loads(specifiers)
-                    synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
-                    if self.state.cyphal.synchronizers_by_specifier.get(synchronized_subjects_specifier):
-                        raise Exception("Already subscribed to synchronized messages for this specifier.")
-                    subscribers = []
-                    for dto in synchronized_subjects_specifier.specifiers:
-                        new_subscriber = self.state.cyphal.local_node.make_subscriber(
-                            load_dtype(dto.datatype), dto.subject_id
-                        )
-                        subscribers.append(new_subscriber)
-                    synchronizer = MonotonicClusteringSynchronizer(
-                        subscribers, get_local_reception_timestamp, tolerance
-                    )
-                    self.state.cyphal.synchronizers_by_specifier[synchronized_subjects_specifier] = synchronizer
-                    synchronized_message_store = SynchronizedMessageStore(specifiers)
-                    self.state.cyphal.synchronized_message_stores[
-                        synchronized_subjects_specifier
-                    ] = synchronized_message_store
-                    synchronized_message_store.specifiers = specifiers
-                    counter = 0
-                    prev_key: typing.Any = None
-
-                    def message_receiver(*messages: typing.Tuple[typing.Any, typing.Any]) -> None:
-                        nonlocal counter, prev_key, synchronized_message_store
-                        synchronized_message_group = SynchronizedMessageGroup()
-                        try:
-                            key = sum(get_local_reception_timestamp(x) for x in messages) / len(messages)
-                            if prev_key is not None:
-                                synchronizer.tolerance = clamp(
-                                    (1e-6, 10.0),
-                                    (synchronizer.tolerance + tolerance_from_key_delta(prev_key, key)) * 0.5,
-                                )
-                            prev_key = key
-                        except:
-                            tb = traceback.format_exc()
-                            logger.error(tb)
-                        for index, message in enumerate(messages):
-                            metadata = message[1]
-                            synchronized_message_carrier = SynchronizedMessageCarrier(
-                                pycyphal.dsdl.to_builtin(message[0]),
-                                {
-                                    "ts_system": str(metadata.timestamp.system),
-                                    "ts_monotonic": str(metadata.timestamp.monotonic),
-                                    "source_node_id": metadata.source_node_id,
-                                    "priority": metadata.priority,
-                                    "transfer_id": metadata.transfer_id,
-                                    "dtype": message[0].__class__.__module__,
-                                },
-                                counter,
-                                synchronized_subjects_specifier.specifiers[index].subject_id,
-                            )
-                            counter += 1
-                            synchronized_message_group.carriers.append(synchronized_message_carrier)
-                        synchronized_message_store.messages.append(synchronized_message_group)
-                        synchronized_message_store.counter += 1
-                        if (
-                            synchronized_message_store.counter - synchronized_message_store.start_index
-                        ) >= synchronized_message_store.capacity:
-                            synchronized_message_store.messages.pop(0)
-                            synchronized_message_store.start_index += 1
-
-                    synchronizer.receive_in_background(message_receiver)
-                    was_subscription_success = True
-                    result_ready_event.set()
-
-                except Exception as e:
-                    print("Exception in subscribe_synchronized: " + str(e))
-                    tb = traceback.format_exc()
-                    logger.error(tb)
-                    message = tb
-
-            self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(subscribe_task)
-            if result_ready_event.wait(1.7):
-                return jsonify(
-                    {
-                        "success": was_subscription_success,
-                        "specifiers": specifiers,
-                        "message": message,
-                        "tolerance": tolerance,
-                    }
-                )
-            else:
-                return jsonify(
-                    {
-                        "success": False,
-                        "specifiers": specifiers,
-                        "message": "Timed out waiting for a response from the Cyphal worker thread.",
-                        "tolerance": tolerance,
-                    }
-                )
-        except Exception as e:
-            tb = traceback.format_exc()
-            logger.error("Failed to subscribe to synchronized messages.")
-            logger.error(str(tb))
-            return jsonify({"success": False, "message": tb})
+            response = self.state.queues.subscribe_requests_responses.get(True, timeout=1.7)
+        except Empty as e:
+            response = {"success": False, "message": "Timed out waiting for a response from the Cyphal worker thread."}
+        return jsonify(response)
 
     def unsubscribe_synchronized(self, specifiers: str) -> Response:
         try:
@@ -987,26 +887,21 @@ class Api:
                 SynchronizedSubjectsSpecifier(specifier_objects)
             )
             if not synchronized_messages_store:
-                return jsonify(
-                    {"success": False, "message": "No synchronized messages for this specifier.", "messages": []}
-                )
+                response = {"success": False, "message": "No synchronized messages for this specifier.", "messages": []}
+                return jsonify(response)
             if synchronized_messages_store.start_index > counter:
-                return jsonify(
-                    {
-                        "success": True,
-                        "bestAvailableCounter": synchronized_messages_store.start_index,
-                        "messages": synchronized_messages_store.messages[0:],
-                    }
-                )
+                response = {
+                    "success": True,
+                    "bestAvailableCounter": synchronized_messages_store.start_index,
+                    "messages": synchronized_messages_store.messages[0:],
+                }
             else:
-                return jsonify(
-                    {
-                        "success": True,
-                        "messages": synchronized_messages_store.messages[
-                            counter - synchronized_messages_store.start_index :
-                        ],
-                    }
-                )
+                messages = synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :]
+                response = {
+                    "success": True,
+                    "messages": messages,
+                }
+            return jsonify(response)
         except Exception as e:
             logger.error("Failed to fetch synchronized messages.")
             tb = traceback.format_exc()
@@ -1016,11 +911,9 @@ class Api:
     def get_current_available_subscription_specifiers(self) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
         try:
-            specifiers = []
-            for specifier, messages_store in self.state.cyphal.message_stores_by_specifier.items():
-                specifiers.append(str(specifier))
-            specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
-            return jsonify(specifiers_return_value)
+            self.state.god_queue.put_nowait(GetSpecifiersRequest())
+            specifiers = self.state.get_specifiers_responses.get(True, timeout=1.7)
+            return jsonify(specifiers)
         except Exception as e:
             logger.error("Failed to get current available subscription specifiers.")
             tb = traceback.format_exc()
@@ -1030,10 +923,8 @@ class Api:
     def get_current_available_synchronized_subscription_specifiers(self) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
         try:
-            specifiers = []
-            for specifier, messages_store in self.state.cyphal.synchronized_message_stores.items():
-                specifiers.append(str(specifier))
-            specifiers_return_value = {"hash": hash(tuple(specifiers)), "specifiers": specifiers}
+            self.state.god_queue.put_nowait(GetSyncSpecifiersRequest())
+            specifiers_return_value = self.state.get_sync_specifiers_responses.get(True, timeout=1.7)
             return jsonify(specifiers_return_value)
         except Exception as e:
             logger.error("Failed to get current available synchronized subscription specifiers.")
