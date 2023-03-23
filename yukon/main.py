@@ -319,7 +319,6 @@ def run_gui_app(state: GodState, api: Api, api2: SendingApi) -> None:
 
     def exit_handler(_arg1: Any, _arg2: Any) -> None:
         state.gui.gui_running = False
-        state.dronecan_traffic_queues.output_queue.put_nowait(None)  # To stop the get method
         sys.exit(0)
 
     # dpg.enable_docking(dock_space=False)

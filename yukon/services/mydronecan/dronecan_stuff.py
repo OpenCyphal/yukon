@@ -41,7 +41,7 @@ class GoodDriver(AbstractDriver):
         frame = CANFrame(message_id, message, extended, canfd=canfd)
         if len(self.state.cyphal.local_node.presentation.transport.inferiors) > 0:
             logger.debug("Sending CAN frame: %r", frame)
-            self.state.god_queue.put_nowait(frame)
+            self.state.queues.god_queue.put_nowait(frame)
         else:
             logger.debug("Not sending CAN frame %r", frame)
 

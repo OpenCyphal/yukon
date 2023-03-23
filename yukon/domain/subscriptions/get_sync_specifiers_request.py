@@ -4,4 +4,4 @@ import typing
 
 @dataclass
 class GetSyncSpecifiersRequest:
-    specifiers_object: typing.Any
+    pass

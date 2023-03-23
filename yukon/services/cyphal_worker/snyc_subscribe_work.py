@@ -18,11 +18,11 @@ from yukon.services.utils import clamp, tolerance_from_key_delta
 logger = logging.getLogger(__name__)
 
 
-def do_sync_subscribe_work(state: GodState, request: SubscribeSynchronizedRequest) -> None:
+async def do_sync_subscribe_work(state: GodState, request: SubscribeSynchronizedRequest) -> None:
     tolerance = 0.1
     try:
         specifiers_object = request.specifiers
-        specifiers = json.stringify(specifiers_object)
+        specifiers = json.dumps(specifiers_object)
         synchronized_subjects_specifier = SynchronizedSubjectsSpecifier(specifiers_object)
         if state.cyphal.synchronizers_by_specifier.get(synchronized_subjects_specifier):
             raise Exception("Already subscribed to synchronized messages for this specifier.")
@@ -78,6 +78,9 @@ def do_sync_subscribe_work(state: GodState, request: SubscribeSynchronizedReques
                 synchronized_message_store.start_index += 1
 
         synchronizer.receive_in_background(message_receiver)
+        state.queues.subscribe_requests_responses.put(
+            {"success": True, "specifiers": specifiers, "tolerance": tolerance}
+        )
     except Exception as e:
         print("Exception in subscribe_synchronized: " + str(e))
         tb = traceback.format_exc()

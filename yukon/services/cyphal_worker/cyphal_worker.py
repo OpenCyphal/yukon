@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import threading
+from time import monotonic
 import traceback
 
 import typing
@@ -22,10 +23,13 @@ from yukon.domain.registers.reread_register_names_request import RereadRegisterN
 from yukon.domain.request_run_dronecan import RequestRunDronecan
 from yukon.domain.simple_publisher import SimplePublisher
 from yukon.domain.fileserver.stop_fileserver_request import StopFileserverRequest
+from yukon.domain.subject_specifier import SubjectSpecifier
 from yukon.domain.subscriptions.get_messages_request import GetMessagesRequest
 from yukon.domain.subscriptions.get_specifiers_request import GetSpecifiersRequest
+from yukon.domain.subscriptions.get_sync_messages_request import GetSyncMessagesRequest
 from yukon.domain.subscriptions.get_sync_specifiers_request import GetSyncSpecifiersRequest
 from yukon.domain.subscriptions.subject_specifier_dto import SubjectSpecifierDto
+from yukon.domain.subscriptions.sync_subjects_specifier import SynchronizedSubjectsSpecifier
 from yukon.domain.subscriptions.sync_subscribe_request import SubscribeSynchronizedRequest
 from yukon.services.FileServer import FileServer
 from yukon.domain.transport.detach_transport_request import DetachTransportRequest
@@ -121,6 +125,36 @@ def cyphal_worker(state: GodState) -> None:
                                 break
                     state.queues.get_messages_responses.put_nowait(mapping)
                     # This jsonify is why I made sure
+                elif isinstance(queue_element, GetSyncMessagesRequest):
+                    timestamp = monotonic()
+                    counter = queue_element.count
+                    specifier_objects = [SubjectSpecifier.from_string(x) for x in queue_element.specifiers_object]
+                    """An array containing arrays of synchronized messages"""
+                    synchronized_messages_store = state.cyphal.synchronized_message_stores.get(
+                        SynchronizedSubjectsSpecifier(specifier_objects)
+                    )
+                    if not synchronized_messages_store:
+                        response = {
+                            "success": False,
+                            "message": "No synchronized messages for this specifier.",
+                            "messages": [],
+                        }
+                    if synchronized_messages_store.start_index > counter:
+                        response = {
+                            "success": True,
+                            "bestAvailableCounter": synchronized_messages_store.start_index,
+                            "messages": synchronized_messages_store.messages[0:],
+                        }
+                    else:
+                        messages = synchronized_messages_store.messages[
+                            counter - synchronized_messages_store.start_index :
+                        ]
+                        response = {
+                            "success": True,
+                            "messages": messages,
+                        }
+                    if response:
+                        state.queues.get_sync_messages_responses.put_nowait(response)
                 elif isinstance(queue_element, SubscribeSynchronizedRequest):
                     await do_sync_subscribe_work(state, queue_element)
                 elif isinstance(queue_element, UnsubscribeRequest):
@@ -143,8 +177,13 @@ def cyphal_worker(state: GodState) -> None:
                     # simple_publisher.publisher = state.cyphal.local_node.make_publisher(
                     # load_dtype(queue_element.datatype_name), queue_element.port_id
                     # )
+                    state.cyphal.publishers_by_id[simple_publisher.id] = simple_publisher
                     thread_state["publishers_by_id"][simple_publisher.id] = simple_publisher
-                    state.queues.create_publisher_response.put_nowait(simple_publisher)
+                    if queue_element.datatype_name:
+                        simple_publisher.datatype = queue_element.datatype_name
+                    if queue_element.port_id:
+                        simple_publisher.port_id = queue_element.port_id
+                    state.queues.create_publisher_response.put_nowait({"success": True, "id": simple_publisher.id})
                 elif isinstance(queue_element, PublishRequest):
                     publisher = thread_state["publishers_by_id"].get(queue_element.publisher_id)
                     if not publisher:
@@ -152,7 +191,7 @@ def cyphal_worker(state: GodState) -> None:
                         continue
                     if not publisher.publisher:
                         publisher.publisher = state.cyphal.local_node.make_publisher(
-                            load_dtype(queue_element.datatype_name), queue_element.port_id
+                            load_dtype(publisher.datatype), publisher.port_id
                         )
                     await publisher.publish()
                 elif isinstance(queue_element, StopFileserverRequest):

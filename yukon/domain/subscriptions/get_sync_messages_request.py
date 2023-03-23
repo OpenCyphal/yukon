@@ -4,4 +4,5 @@ import typing
 
 @dataclass
 class GetSyncMessagesRequest:
-    return_object: typing.Any
+    specifiers_object: typing.Any
+    count: int

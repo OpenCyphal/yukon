@@ -22,6 +22,7 @@ from yukon.domain.publishers.publish_request import PublishRequest
 from yukon.domain.simple_publisher import SimplePublisher
 from yukon.domain.subscriptions.get_messages_request import GetMessagesRequest
 from yukon.domain.subscriptions.get_specifiers_request import GetSpecifiersRequest
+from yukon.domain.subscriptions.get_sync_messages_request import GetSyncMessagesRequest
 from yukon.domain.subscriptions.get_sync_specifiers_request import GetSyncSpecifiersRequest
 from yukon.domain.subscriptions.sync_subscribe_request import SubscribeSynchronizedRequest
 from yukon.domain.subscriptions.sync_subscribe_response import SubscribeSynchronizedResponse
@@ -600,7 +601,6 @@ class Api:
         try:
             self.state.queues.god_queue.put(CreatePublisherRequest())
             new_publisher = self.state.queues.create_publisher_response.get(timeout=5)
-
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to make simple publisher.")
@@ -612,14 +612,14 @@ class Api:
     def make_simple_publisher_with_datatype_and_port_id(self, datatype: str, port_id: int) -> Response:
         try:
             self.state.queues.god_queue.put(CreatePublisherRequest(datatype, int(port_id)))
-            new_publisher = self.state.queues.create_publisher_response.get(timeout=5)
+            response = self.state.queues.create_publisher_response.get(timeout=5)
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to make simple publisher.")
             logger.error(str(tb))
             return jsonify({"success": False, "message": traceback.format_exc()})
         else:
-            return jsonify({"success": True, "id": new_publisher.id})
+            return jsonify(response)
 
     def publish(self, publisher_id: str) -> Response:
         try:
@@ -879,28 +879,9 @@ class Api:
     def fetch_synchronized_messages_for_specifiers(self, specifiers: str, counter: int) -> Response:
         """Specifiers is a JSON serialized list of specifiers."""
         try:
-            timestamp = monotonic()
             specifiers_object = json.loads(specifiers)
-            specifier_objects = [SubjectSpecifier.from_string(x) for x in specifiers_object]
-            """An array containing arrays of synchronized messages"""
-            synchronized_messages_store = self.state.cyphal.synchronized_message_stores.get(
-                SynchronizedSubjectsSpecifier(specifier_objects)
-            )
-            if not synchronized_messages_store:
-                response = {"success": False, "message": "No synchronized messages for this specifier.", "messages": []}
-                return jsonify(response)
-            if synchronized_messages_store.start_index > counter:
-                response = {
-                    "success": True,
-                    "bestAvailableCounter": synchronized_messages_store.start_index,
-                    "messages": synchronized_messages_store.messages[0:],
-                }
-            else:
-                messages = synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :]
-                response = {
-                    "success": True,
-                    "messages": messages,
-                }
+            self.state.queues.god_queue.put_nowait(GetSyncMessagesRequest(specifiers_object, counter))
+            response = self.state.queues.get_sync_messages_responses.get(True, timeout=1.7)
             return jsonify(response)
         except Exception as e:
             logger.error("Failed to fetch synchronized messages.")
@@ -911,8 +892,8 @@ class Api:
     def get_current_available_subscription_specifiers(self) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
         try:
-            self.state.god_queue.put_nowait(GetSpecifiersRequest())
-            specifiers = self.state.get_specifiers_responses.get(True, timeout=1.7)
+            self.state.queues.god_queue.put_nowait(GetSpecifiersRequest())
+            specifiers = self.state.queues.get_specifiers_responses.get(True, timeout=1.7)
             return jsonify(specifiers)
         except Exception as e:
             logger.error("Failed to get current available subscription specifiers.")
@@ -923,8 +904,8 @@ class Api:
     def get_current_available_synchronized_subscription_specifiers(self) -> Response:
         """A specifier is a subject_id concatenated with a datatype, separated by a colon."""
         try:
-            self.state.god_queue.put_nowait(GetSyncSpecifiersRequest())
-            specifiers_return_value = self.state.get_sync_specifiers_responses.get(True, timeout=1.7)
+            self.state.queues.god_queue.put_nowait(GetSyncSpecifiersRequest())
+            specifiers_return_value = self.state.queues.get_sync_specifiers_responses.get(True, timeout=1.7)
             return jsonify(specifiers_return_value)
         except Exception as e:
             logger.error("Failed to get current available synchronized subscription specifiers.")
