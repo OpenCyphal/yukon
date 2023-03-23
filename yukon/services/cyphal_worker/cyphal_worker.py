@@ -12,6 +12,7 @@ import pycyphal.transport.can
 import dronecan
 from pycyphal.transport.can import CANCapture
 from pycyphal.transport.udp import UDPCapture
+from pycyphal.transport.can.media import DataFrame, FrameFormat, Envelope
 
 import uavcan
 import uavcan.pnp
@@ -30,7 +31,6 @@ from yukon.domain.transport.attach_transport_request import AttachTransportReque
 from yukon.domain.command_send_request import CommandSendRequest
 from yukon.domain.registers.reread_registers_request import RereadRegistersRequest
 from yukon.domain.registers.update_register_request import UpdateRegisterRequest
-from yukon.services.cyphal_worker.forward_dronecan_work import do_forward_dronecan_work
 from yukon.services.cyphal_worker.unsubscribe_requests_work import do_unsubscribe_requests_work
 from yukon.services.cyphal_worker.detach_transport_work import do_detach_transport_work
 from yukon.services.cyphal_worker.subscribe_requests_work import do_subscribe_requests_work
@@ -69,17 +69,6 @@ def cyphal_worker(state: GodState) -> None:
             )
 
             state.cyphal.local_node.start()
-
-            async def forward_dronecan_loop() -> None:
-                try:
-                    while state.gui.gui_running:
-                        await do_forward_dronecan_work(state)
-                except Exception as e:
-                    tb = traceback.format_exc()
-                    logger.error(tb)
-                logger.warn("DroneCAN forwarding done")
-
-            task = asyncio.create_task(forward_dronecan_loop())
 
             state.cyphal.pseudo_transport = state.cyphal.local_node.presentation.transport
 
@@ -126,12 +115,28 @@ def cyphal_worker(state: GodState) -> None:
                     thread_state["publishers_by_id"][simple_publisher.publisher_id] = simple_publisher
                     state.queues.create_publisher_response.put_nowait(simple_publisher)
                 elif isinstance(queue_element, PublishRequest):
-                    await thread_state["publishers_by_id"][queue_element.publisher_id].publish()
+                    publisher = thread_state["publishers_by_id"].get(queue_element.publisher_id)
+                    if not publisher:
+                        logger.warning("No publisher with ID " + queue_element.publisher_id)
+                        continue
+                    await publisher.publish()
                 elif isinstance(queue_element, StopFileserverRequest):
                     state.cyphal.file_server.close()
                     state.cyphal.file_server = None
                 elif isinstance(queue_element, ChangeFileserverPathRequest):
                     state.cyphal.file_server.roots = [queue_element.path]
+                elif isinstance(queue_element, CANCapture):
+                    frame: dronecan.driver.CANFrame = queue_element
+                    if not isinstance(frame, dronecan.driver.CANFrame):
+                        logger.warning("Not a dronecan frame")
+                        continue
+                    # This is a pycyphal construct
+                    frame_format: FrameFormat = FrameFormat.EXTENDED if frame.extended else FrameFormat.BASE
+                    # This is a pycyphal construct
+                    dataframe: DataFrame = DataFrame(frame_format, frame.id, frame.data)
+                    # This is a pycyphal construct
+                    for inferior in state.cyphal.local_node.presentation.transport.inferiors:
+                        await inferior.spoof_frames([dataframe], asyncio.get_running_loop().time() + 1)
 
         except Exception as e:
             logger.exception(e)

@@ -624,11 +624,9 @@ class Api:
             return jsonify({"success": True, "id": new_publisher.id})
 
     def publish(self, publisher_id: str) -> Response:
-        publisher = self.state.cyphal.publishers_by_id.get(publisher_id)
-        if publisher is None:
-            return jsonify({"success": False, "message": "Publisher %s not found." % publisher_id})
         try:
-            self.state.queues.god_queue.put(PublishRequest(publisher.publisher_id))
+            self.state.queues.god_queue.put(PublishRequest(publisher_id))
+            return jsonify({"success": True})
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to publish.")
@@ -857,6 +855,7 @@ class Api:
             logger.error(str(tb))
 
     def subscribe_synchronized(self, specifiers: str) -> Response:
+        subscribe_request = 
         try:
             result_ready_event = threading.Event()
             was_subscription_success: bool = False
