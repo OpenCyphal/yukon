@@ -41,7 +41,7 @@ if Path(".electron").exists():
     datas += [(".electron", "electron")]
 
 if my_os == "Linux":
-    datas += [("venv/lib/python3.10/site-packages/libpcap", "libpcap")]
+    datas += [("venv/lib/python3.11/site-packages/libpcap", "libpcap")]
 
 datas += [(".compiled", ".compiled")]
 
