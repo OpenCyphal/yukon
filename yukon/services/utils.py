@@ -52,6 +52,7 @@ class Datatype:
     is_fixed_id: bool
     name: str
     class_reference: typing.Any
+    is_service: bool
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -115,6 +116,7 @@ def scan_package_look_for_classes(
                 break
             counter += 1
             module_or_class, previous_module_or_class = queue.get_nowait()
+            is_potentially_a_service = False
             # Get all modules and classes that are seen in the imported module
             elements = inspect.getmembers(module_or_class, lambda x: inspect.ismodule(x) or inspect.isclass(x))
             for element in elements:
@@ -133,7 +135,13 @@ def scan_package_look_for_classes(
                 except Exception:
                     logger.exception("Failed to get model for %s", _class)
                     continue
-                classes.append(Datatype(hasattr(_class, "_FIXED_PORT_ID_"), model.full_name, _class))
+                if _class.__name__ == "Request" or _class.__name__ == "Response":
+                    is_potentially_a_service = True
+                classes.append(
+                    Datatype(
+                        hasattr(_class, "_FIXED_PORT_ID_"), model.full_name, _class, is_service=is_potentially_a_service
+                    )
+                )
     except Empty:
         pass
     # logger.debug(f"Loop {loop_unique_id} took {time.time() - loop_start} seconds")
@@ -152,12 +160,14 @@ def get_datatype_return_dto(all_classes: typing.List[Datatype]) -> typing.Any:
                 return_object["fixed_id_messages"][str(datatype.class_reference._FIXED_PORT_ID_)] = {
                     "short_name": datatype.class_reference.__name__,
                     "name": datatype.name,
+                    "is_service": datatype.is_service,
                 }
             else:
                 return_object["variable_id_messages"].append(
                     {
                         "short_name": datatype.class_reference.__name__,
                         "name": datatype.name,
+                        "is_service": datatype.is_service,
                     }
                 )
         except Exception as e:

@@ -579,7 +579,7 @@ export async function drawSubscriptions(subscriptionsDiv, settings, yukon_state)
             const select = document.createElement("select");
             async function updateSelectElements() {
                 select.innerHTML = "";
-                const datatypesOfPort = await getDatatypesForPort(subject_id_display.value, yukon_state);
+                const datatypesOfPort = await getDatatypesForPort(subject_id_display.value, "sub", yukon_state);
                 for (const datatype of datatypesOfPort) {
                     const option = document.createElement("option");
                     option.value = datatype;

@@ -455,7 +455,7 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
                 continue;
             }
             // Getting info about more links than necessary for later highlighting purposes
-            const relatedLinks = getRelatedLinks(port.port, yukon_state);
+            const relatedLinks = getRelatedLinks(port.port, port.type, yukon_state);
             const currentLinkObjects = relatedLinks.filter(link => link.port === port.port && link.type === matchingPort.type && link.node_id === avatar.node_id);
             function doStuff(currentLinkObject) {
                 let toggledOn = { value: false };
@@ -463,8 +463,15 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
                 let fixed_datatype_short = null;
                 let fixed_datatype_full = null;
                 if (datatypes_response["fixed_id_messages"] && datatypes_response["fixed_id_messages"][port.port] !== undefined) {
-                    fixed_datatype_short = datatypes_response["fixed_id_messages"][port.port]["short_name"];
-                    fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["name"];
+                    const type_of_interest = datatypes_response["fixed_id_messages"][port.port];
+                    console.log(`Type of interest is ${type_of_interest} and is_service is ${type_of_interest.is_service}`);
+                    const is_a_service_and_for_a_service = type_of_interest.is_service && (port.type === "cln" || port.type === "srv");
+                    const is_a_message_and_for_a_message = !type_of_interest.is_service && (port.type === "pub" || port.type === "sub");
+                    console.log(`Port type is ${port.type} and is_a_service_and_for_a_service is ${is_a_service_and_for_a_service} and is_a_message_and_for_a_message is ${is_a_message_and_for_a_message}, port id is ${port.port}`);
+                    if(is_a_service_and_for_a_service || is_a_message_and_for_a_message) {
+                        fixed_datatype_short = datatypes_response["fixed_id_messages"][port.port]["short_name"];
+                        fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["name"];
+                    }
                 }
                 if (currentLinkObject && !fixed_datatype_full) {
                     currentLinkDsdlDatatype = currentLinkObject.datatype || "";
@@ -931,8 +938,8 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     horizontal_line_label.style.width = "fit-content"; // settings.LinkInfoWidth  - settings.LabelLeftMargin + "px";
     horizontal_line_label.style.height = "fit-content";
     horizontal_line_label.style.position = "absolute";
-    if (currentLinkDsdlDatatype.endsWith(".Response")) {
-        currentLinkDsdlDatatype = currentLinkDsdlDatatype.replace(".Response", "");
+    if (currentLinkDsdlDatatype.endsWith(".Response") || currentLinkDsdlDatatype.endsWith(".Request")) {
+        currentLinkDsdlDatatype = currentLinkDsdlDatatype.replace(".Response", "").replace(".Request", "");
     }
     horizontal_line_label.innerHTML = currentLinkDsdlDatatype;
     horizontal_line_label.style.zIndex = "3";
@@ -1126,7 +1133,7 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
                 potentialPopup.remove();
                 potentialPopup = null;
             } else {
-                const datatypes = await getDatatypesForPort(port.port, yukon_state);
+                const datatypes = await getDatatypesForPort(port.port, port.type, yukon_state);
                 potentialPopup = document.createElement("div");
                 potentialPopup.classList.add("popup");
                 potentialPopup.style.position = "absolute";
