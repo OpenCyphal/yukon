@@ -1,5 +1,5 @@
 import { areThereAnyNewOrMissingHashes, updateLastHashes } from "../../hash_checks.module.js";
-import { getRelatedLinks } from "../../meanings.module.js";
+import { getRelatedLinks, decodeTelegaVSSC } from "../../meanings.module.js";
 import { waitForElm, getKnownDatatypes, doCommandFeedbackResult } from "../../utilities.module.js";
 import {
     getHoveredContainerElementAndContainerObject,
@@ -464,11 +464,9 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
                 let fixed_datatype_full = null;
                 if (datatypes_response["fixed_id_messages"] && datatypes_response["fixed_id_messages"][port.port] !== undefined) {
                     const type_of_interest = datatypes_response["fixed_id_messages"][port.port];
-                    console.log(`Type of interest is ${type_of_interest} and is_service is ${type_of_interest.is_service}`);
                     const is_a_service_and_for_a_service = type_of_interest.is_service && (port.type === "cln" || port.type === "srv");
                     const is_a_message_and_for_a_message = !type_of_interest.is_service && (port.type === "pub" || port.type === "sub");
-                    console.log(`Port type is ${port.type} and is_a_service_and_for_a_service is ${is_a_service_and_for_a_service} and is_a_message_and_for_a_message is ${is_a_message_and_for_a_message}, port id is ${port.port}`);
-                    if(is_a_service_and_for_a_service || is_a_message_and_for_a_message) {
+                    if (is_a_service_and_for_a_service || is_a_message_and_for_a_message) {
                         fixed_datatype_short = datatypes_response["fixed_id_messages"][port.port]["short_name"];
                         fixed_datatype_full = datatypes_response["fixed_id_messages"][port.port]["name"];
                     }
@@ -659,7 +657,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     // node.style.backgroundColor = avatar.color;
     node.innerText = text;
     if (avatar.is_being_queried) {
-        node.innerText += " (querying...)";
+        node.innerText += " (looking for registers...)";
     } else if (!avatar.has_port_list) {
         node.innerText += " (no port list)";
     }
@@ -670,6 +668,9 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         const fieldDiv = document.createElement("div");
         containerDiv.appendChild(fieldDiv);
         fieldDiv.classList.add("d-inline-flex", "field");
+        if (field === "VSSC" && fieldsObject["Name"] === "com.zubax.telega") {
+            fieldsObject[field] = decodeTelegaVSSC(parseInt(fieldsObject[field])) + " (" + fieldsObject[field] + ")";
+        }
         fieldDiv.innerHTML = field;
         fieldDiv.style.fontWeight = "bold";
         const valueDiv = document.createElement("div");
@@ -682,22 +683,36 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         if (field == Object.keys(fieldsObject)[Object.keys(fieldsObject).length - 1]) {
             containerDiv.style.marginBottom = "6px";
         }
+        valueDiv.style.removeProperty("color");
+        valueDiv.style.removeProperty("background-color");
         // This is for Health status
-        if (fieldsObject[field] === "CAUTION") {
-            valueDiv.style.backgroundColor = "orange";
-        } else if (fieldsObject[field] === "WARNING") {
-            valueDiv.style.backgroundColor = "red";
-        } else if (fieldsObject[field] === "ADVISORY") {
-            valueDiv.style.backgroundColor = "yellow";
+        if (field === "Health") {
+            valueDiv.style.paddingLeft = "3px";
+            valueDiv.style.paddingRight = "3px";
+            if (fieldsObject[field] === "Nominal") {
+                valueDiv.style.backgroundColor = "green";
+            } else if (fieldsObject[field] === "CAUTION") {
+                valueDiv.style.backgroundColor = "orange";
+            } else if (fieldsObject[field] === "WARNING") {
+                valueDiv.style.backgroundColor = "red";
+            } else if (fieldsObject[field] === "ADVISORY") {
+                valueDiv.style.backgroundColor = "yellow";
+                valueDiv.style.color = "black";
+            }
         }
-        if (fieldsObject[field] === "OPERATIONAL") {
-            valueDiv.style.backgroundColor = "green";
-        } else if (fieldsObject[field] === "INITIALIZATION") {
-            valueDiv.style.backgroundColor = "pink";
-        } else if (fieldsObject[field] === "MAINTENANCE") {
-            valueDiv.style.backgroundColor = "yellow";
-        } else if (fieldsObject[field] === "SOFTWARE_UPDATE") {
-            valueDiv.style.backgroundColor = "blue";
+        if (field === "Mode") {
+            valueDiv.style.paddingLeft = "3px";
+            valueDiv.style.paddingRight = "3px";
+            if (fieldsObject[field] === "OPERATIONAL") {
+                valueDiv.style.backgroundColor = "green";
+            } else if (fieldsObject[field] === "INITIALIZATION") {
+                valueDiv.style.backgroundColor = "pink";
+            } else if (fieldsObject[field] === "MAINTENANCE") {
+                valueDiv.style.backgroundColor = "yellow";
+                valueDiv.style.color = "black";
+            } else if (fieldsObject[field] === "SOFTWARE_UPDATE") {
+                valueDiv.style.backgroundColor = "blue";
+            }
         }
         if (field === "Uptime") {
             let intervalId = null;
@@ -727,17 +742,15 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     // Make an input-group for the buttons
     const inputGroup = document.createElement("div");
     inputGroup.classList.add("input-group");
+    inputGroup.style.width = "100%";
     inputGroup.style.setProperty("backgroundColor", "transparent", "important");
     let neededButtons = [{ "name": "Restart", "command": "65535", "title": "Restart device" }, { "name": "Save", "command": "65530", "title": "Save persistent states" }, { "name": "Estop", "command": "65531", "title": "Emergency stop" }];
-    const telegaButtons = [{ "name": "Cancel", "command": "0", "title": "Cancel" }, { "name": "SelfTest", "command": "1", "title": "SelfTest" }, { "name": "MotorID", "command": "2", "title": "MotorID" }];
-    if (fieldsObject && fieldsObject["Name"] && fieldsObject["Name"].includes("telega")) {
-        neededButtons.push(...telegaButtons);
-    }
     for (const button of neededButtons) {
         const btnButton = document.createElement("button");
         btnButton.style.fontSize = "12px";
         btnButton.id = "btn" + avatar.node_id + "_" + button.name;
         btnButton.classList.add("btn_button");
+        btnButton.style.flexGrow = "2";
         btnButton.classList.add("btn");
         btnButton.classList.add("btn-primary");
         btnButton.classList.add("btn-sm");
@@ -750,6 +763,33 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         inputGroup.appendChild(btnButton);
     }
     node.appendChild(inputGroup);
+    const telegaButtons = [{ "name": "Cancel", "command": "0", "title": "Cancel" }, { "name": "SelfTest", "command": "1", "title": "SelfTest" }, { "name": "MotorID", "command": "2", "title": "MotorID" }];
+    if (fieldsObject && fieldsObject["Name"] && fieldsObject["Name"].includes("telega")) {
+        const telegaInputGroup = document.createElement("div");
+        telegaInputGroup.classList.add("input-group");
+        telegaInputGroup.style.width = "100%";
+        telegaInputGroup.style.setProperty("backgroundColor", "transparent", "important");
+        for (const button of telegaButtons) {
+            const btnButton = document.createElement("button");
+            btnButton.style.fontSize = "12px";
+            btnButton.id = "btn" + avatar.node_id + "_" + button.name;
+            btnButton.classList.add("btn_button");
+            btnButton.style.flexGrow = "2";
+            btnButton.classList.add("btn");
+            btnButton.classList.add("btn-primary");
+            btnButton.classList.add("btn-sm");
+            btnButton.innerHTML = button.name;
+            btnButton.title = button.title;
+            btnButton.onclick = async () => {
+                const result = await yukon_state.zubax_apij.send_command(avatar.node_id, button.command, "");
+                doCommandFeedbackResult(result, feedbackMessage);
+            };
+            telegaInputGroup.appendChild(btnButton);
+        }
+        node.appendChild(telegaInputGroup);
+    }
+
+    
 
     // Add an input-group input-group-text for command id and command text argument, both should have inputs. Then add a send command button
     const customCommandInputGroup = document.createElement("div");
@@ -790,6 +830,8 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     inputGroup2.style.setProperty("backgroundColor", "transparent", "important");
     // Add a button for firmware update
     const btnFirmwareUpdate = document.createElement("button");
+    btnFirmwareUpdate.style.width = "100%";
+    btnFirmwareUpdate.title = "Please also enable firmware update in settings and choose the correct folder there."
     btnFirmwareUpdate.style.fontSize = "12px";
     btnFirmwareUpdate.classList.add("btn_button", "btn", "btn-secondary", "btn-sm");
     btnFirmwareUpdate.innerHTML = "Choose firmware";
@@ -809,6 +851,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     btnMore.classList.add("btn_button", "btn", "btn-secondary", "btn-sm");
     btnMore.innerHTML = "...";
     btnMore.title = "More commands"
+    btnMore.style.display = "none";
 
     btnMore.addEventListener("click", async function () {
         yukon_state.commandsComponent.parent.parent.setActiveContentItem(yukon_state.commandsComponent.parent);
@@ -943,16 +986,16 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     }
     horizontal_line_label.innerHTML = currentLinkDsdlDatatype;
     horizontal_line_label.style.zIndex = "3";
-    horizontal_line_label.style.backgroundColor = settings["LinkLabelColor"];
-    horizontal_line_label.style.color = settings["LinkLabelTextColor"];
+    // horizontal_line_label.style.backgroundColor = settings["LinkLabelColor"];
+    // horizontal_line_label.style.color = settings["LinkLabelTextColor"];
     horizontal_line_label.addEventListener("mouseover", () => {
-        horizontal_line_label.style.backgroundColor = settings["LinkLabelHighlightColor"];
-        horizontal_line_label.style.color = settings["LinkLabelHighlightTextColor"];
+        horizontal_line_label.style.setProperty("background-color", settings["LinkLabelHighlightColor"], "important");
+        horizontal_line_label.style.setProperty("color", settings["LinkLabelHighlightTextColor"], "important");
     });
     horizontal_line_label.addEventListener("mouseout", () => {
         if (!toggledOn.value) {
-            horizontal_line_label.style.backgroundColor = settings["LinkLabelColor"];
-            horizontal_line_label.style.color = settings["LinkLabelTextColor"];
+            horizontal_line_label.style.removeProperty("background-color");
+            horizontal_line_label.style.removeProperty("color");
         }
     });
     if (settings.ShowLinkNameOnSeparateLine && settings.ShowNameAboveDatatype && link_name_label) {
@@ -1140,7 +1183,7 @@ function addVerticalLines(monitor2Div, ports, y_counter, containerElement, setti
                 potentialPopup.style.top = port_label.getBoundingClientRect().height + "px";
                 potentialPopup.style.left = "0px";
                 potentialPopup.style.border = "1px solid black";
-                potentialPopup.style.borderRadius = "5px";
+                potentialPopup.style.borderRadius = "0px";
                 potentialPopup.style.padding = "5px";
                 potentialPopup.style.zIndex = "5";
                 potentialPopup.style.width = "fit-content(400px)";

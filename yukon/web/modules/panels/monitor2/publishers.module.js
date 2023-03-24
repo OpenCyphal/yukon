@@ -108,6 +108,7 @@ async function createPublisherFrame(publisher, yukon_state) {
     async function typeWasChosen() {
         // Create a vertical flexbox for holding rows of content
         chooseTypeField.disabled = true;
+
         const content = document.createElement('div');
         content.classList.add("publisher-content");
         frame.appendChild(content);
@@ -130,6 +131,7 @@ async function createPublisherFrame(publisher, yukon_state) {
         portIdInput.classList.add("port-id-input");
         portIdInput.placeholder = "Port ID";
         portIdInput.title = "Port ID"
+        portIdInput.disabled = true;
         // TODO: Get the port id value in case the datatype of the publisher
         // uses a fixed port id
         portIdInput.addEventListener('input', async () => {

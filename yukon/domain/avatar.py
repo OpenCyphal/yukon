@@ -341,7 +341,16 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(frozenset(self._ports.sub))
             ^ hash(frozenset(self._ports.cln))
             ^ hash(frozenset(self._ports.srv))
-            ^ hash(vendor_specific_status_code)
+            ^ hash(
+                json.dumps(
+                    {
+                        "vendor_specific_status_code": vendor_specific_status_code,
+                        "mode": mode_value,
+                        "health": health_value,
+                    },
+                    sort_keys=True,
+                )
+            )
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
             ^ hash(self.random_str_for_forced_update)  # This accounts for is_disappeared and is_being_queried
             ^ hash(self.disappeared_since)

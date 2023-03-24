@@ -112,7 +112,7 @@
     max-width: 700px;
     background-color: rgb(165 66 66);
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 0px;
     padding: 0.5em;
     margin-top: 0.5em;
     box-shadow: 0 1px 4px 0 rgba(0, 0, 0, .2);
@@ -146,7 +146,7 @@
     border-top-style: solid;
 }
 :root {
-    --line-color: rgb(178, 115, 33);
+    --line-color: silver;
 }
 
 @media (prefers-color-scheme: dark) {
