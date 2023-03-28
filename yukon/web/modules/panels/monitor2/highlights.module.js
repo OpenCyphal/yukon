@@ -38,12 +38,12 @@ export function setPortStateAsUnhiglighted(portNr, yukon_state) {
 }
 export function highlightElement(element, color, settings, yukon_state) {
     if (element.classList.contains("arrowhead")) {
-        element.style.setProperty("border-top-color", color);
+        element.style.setProperty("border-top-color", color, "important");
     } else if (element.classList.contains("horizontal_line_label") && element.tagName === "LABEL") {
-        element.style.setProperty("background-color", settings.LinkLabelHighlightColor);
-        element.style.setProperty("color", settings.LinkLabelHighlightTextColor);
+        element.style.setProperty("background-color", settings.LinkLabelHighlightColor, "important");
+        element.style.setProperty("color", settings.LinkLabelHighlightTextColor, "important");
     } else if (element.classList.contains("horizontal_line") || element.classList.contains("line") || element.classList.contains("circle")) {
-        element.style.setProperty("background-color", color);
+        element.style.setProperty("background-color", color, "important");
     }
 }
 export function highlightElements(objects, settings, yukon_state) {

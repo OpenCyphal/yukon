@@ -109,18 +109,23 @@ function createPortStructure(yukon_state) {
     }
     return ports;
 }
-export async function getDatatypesForPort(portNr, yukon_state) {
+export async function getDatatypesForPort(portNr, port_type, yukon_state) {
     const chosenDatatypes = {};
-    const relatedLinks = getRelatedLinks(portNr, yukon_state);
+    const relatedLinks = getRelatedLinks(portNr, port_type, yukon_state);
     //const ports = createPortStructure(yukon_state);
     const currentLinkObjects = relatedLinks.filter(link => link.port === portNr && (link.type === "sub" || link.type === "pub"));
     let fixed_datatype_short = null;
     let fixed_datatype_full = null;
     const datatypes_response = await yukon_state.zubax_apij.get_known_datatypes_from_dsdl();
     if (datatypes_response && datatypes_response["fixed_id_messages"] && datatypes_response["fixed_id_messages"][portNr] !== undefined) {
-        fixed_datatype_short = datatypes_response["fixed_id_messages"][portNr]["short_name"];
-        fixed_datatype_full = datatypes_response["fixed_id_messages"][portNr]["name"];
-        chosenDatatypes[fixed_datatype_full] = 1;
+        const fixed_datatype = datatypes_response["fixed_id_messages"][portNr];
+        const is_a_service_and_for_a_service = fixed_datatype.is_service && (port_type === "cln" || port_type === "srv");
+        const is_a_message_and_for_a_message = !fixed_datatype.is_service && (port_type === "pub" || port_type === "sub");
+        if(is_a_service_and_for_a_service || is_a_message_and_for_a_message) {
+            fixed_datatype_short = datatypes_response["fixed_id_messages"][portNr]["short_name"];
+            fixed_datatype_full = datatypes_response["fixed_id_messages"][portNr]["name"];
+            chosenDatatypes[fixed_datatype_full] = 1;
+        }
     }
     if (currentLinkObjects.length > 0) {
         for (const link of currentLinkObjects) {
