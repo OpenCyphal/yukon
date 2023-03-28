@@ -116,6 +116,8 @@ window.console = new Proxy(old_console, {
     if (!isRunningInElectron(yukon_state)) {
         zubax_api.announce_running_in_browser();
         document.title = "Yukon (browser)";
+    } else {
+        zubax_api.announce_running_in_electron();
     }
 
     function setUpMonitorComponent() {
