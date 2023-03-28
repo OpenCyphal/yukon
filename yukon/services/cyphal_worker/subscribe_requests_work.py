@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 async def do_subscribe_requests_work(state: GodState, subscribe_request: SubscribeRequest) -> None:
-    logger.debug("Current PYTHONPATH: %s", sys.path)
     try:
         if not subscribe_request.specifier.subject_id:
             new_subscriber = state.cyphal.local_node.make_subscriber(load_dtype(subscribe_request.specifier.datatype))
@@ -33,7 +32,14 @@ async def do_subscribe_requests_work(state: GodState, subscribe_request: Subscri
             if messages_store:
                 message_carrier = MessageCarrier(
                     pycyphal.dsdl.to_builtin(msg),
-                    {"source_node_id": metadata.source_node_id, "timestamp": str(metadata.timestamp.monotonic)},
+                    {
+                        "ts_system": str(metadata.timestamp.system),
+                        "ts_monotonic": str(metadata.timestamp.monotonic),
+                        "source_node_id": metadata.source_node_id,
+                        "priority": metadata.priority,
+                        "transfer_id": metadata.transfer_id,
+                        "dtype": msg.__class__.__module__,
+                    },
                     messages_store.counter,
                     subscribe_request.specifier.subject_id,
                 )

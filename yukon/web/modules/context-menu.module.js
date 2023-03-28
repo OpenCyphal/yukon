@@ -562,7 +562,7 @@ export function make_context_menus(yukon_state) {
                     },
                     click: async (e, elementOpenedOn) => {
                         const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
-                        const datatypes = await getDatatypesForPort(portNr, yukon_state);
+                        const datatypes = await getDatatypesForPort(portNr, "pub", yukon_state);
                         const response = await yukon_state.zubax_apiws.make_simple_publisher_with_datatype_and_port_id(datatypes[0], portNr);
                         const portType = elementOpenedOn.getAttribute("data-port-type"); // sub or pub or cln or srv
                         if (response && response.success) {
@@ -641,7 +641,7 @@ export function make_context_menus(yukon_state) {
                             elementOpenedOn.dispatchEvent(evt);
                         }
                         else
-                        elementOpenedOn.fireEvent("onchange");
+                            elementOpenedOn.fireEvent("onchange");
                     }
                 }
             }
@@ -658,7 +658,7 @@ export function make_context_menus(yukon_state) {
                     click: async (e, elementOpenedOn) => {
                         const node_id = elementOpenedOn.getAttribute("data-node-id");
                         const response = await yukon_state.zubax_apiws.remove_avatar(node_id);
-                        if(response && response.success) {
+                        if (response && response.success) {
                             addLocalMessage("Node " + node_id + " was removed from the monitor.", undefined)
                         } else {
                             addLocalMessage("Node " + node_id + " was not removed from the monitor.", 30)

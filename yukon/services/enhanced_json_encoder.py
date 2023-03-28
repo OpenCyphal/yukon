@@ -154,7 +154,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             # metadata["subject_id"] = o.subject_id
             return {
                 o.subject_id: {
-                    "message": o.message | {"_meta_": "empty"},
+                    "message": o.message,
                     "_meta_": o.metadata,
                 }
             }

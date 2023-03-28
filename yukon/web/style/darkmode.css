@@ -23,6 +23,10 @@
         background-size: 80% !important;
     }
 
+    .horizontal_line_label {
+        color: lightblue !important;
+    }
+
     .lm_content {
         background-color: rgb(26, 28, 29);
         color: #ffffff

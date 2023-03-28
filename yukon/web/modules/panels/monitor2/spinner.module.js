@@ -180,9 +180,9 @@ export function createSpinner(spinnerSizePx = "50px", valueChangedCallback = nul
     return {
         "spinnerElement": spinner,
         "setValue": (newValue) => {
-            const circle = Math.PI * 2;
-            spinnerValue = newValue // / multiplier();
-            spinnerAngle = spinnerValue - Math.floor(spinnerValue / circle) * circle;
+            const circle = Math.PI * 2.0;
+            spinnerValue = parseFloat(newValue);
+            spinnerAngle = spinnerValue / multiplier() - Math.floor(spinnerValue / circle) * circle;
             if (getMinValue) {
                 const minValue = getMinValue();
                 if (spinnerValue < minValue) {

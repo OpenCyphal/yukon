@@ -169,7 +169,6 @@ class GodState:
         self.allocation = AllocationState()
         self.hardcoded_initial_settings = {
             "DSDL search directories": [{"__type__": "dirpath", "value": ReactiveValue(str(Path.home() / ".cyphal"))}],
-            "UI": {"Registers": {"Column width (pixels)": 400, "Wrap cell text": False}},
             "Node allocation": {
                 "__type__": "radio",
                 "values": [
@@ -188,6 +187,12 @@ class GodState:
                 "Directory path": {"__type__": "dirpath", "value": ReactiveValue("")},
                 "File path": "__deleted__",
             },
+            "UDP subscription output": {
+                "Enabled": ReactiveValue(False),
+                "IP address": ReactiveValue("127.0.0.1"),
+                "Port": ReactiveValue(9870),
+            },
+            "UI": {"Registers": {"Column width (pixels)": 400, "Wrap cell text": False}},
             "Monitor view": {
                 "Show link name on another line": ReactiveValue(True),
                 "Link info width": ReactiveValue(150),
@@ -234,11 +239,6 @@ class GodState:
                     "Service color": ReactiveValue("lightblue"),
                     "Service text color": ReactiveValue("black"),
                 },
-            },
-            "UDP subscription output": {
-                "Enabled": ReactiveValue(False),
-                "IP address": ReactiveValue("127.0.0.1"),
-                "Port": ReactiveValue(9870),
             },
         }
         self.settings: typing.Optional[ReactiveValue] = None

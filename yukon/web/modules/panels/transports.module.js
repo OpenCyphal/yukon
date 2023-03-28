@@ -26,7 +26,7 @@ export function initTransports(container, yukon_state) {
         if (productId == 24600) {
             return "Dronecode probe"
         } else if (productId == 24775) {
-            return "Babel (CAN to USB)"
+            return "Zubax"
         }
         return null;
 
@@ -54,10 +54,15 @@ export function initTransports(container, yukon_state) {
                 if (port.already_used) {
                     option.disabled = true;
                 }
-                let device_name = detectDeviceFromProductId(port.product_id);
+                let device_name = port.usb_description;
+                // If the operating system is windows, then display detectDeviceFromProductId instead
+                if (window.navigator.platform == "Win32") {
+                    device_name = detectDeviceFromProductId(port.product_id);
+                }
                 if (device_name == null) {
                     device_name = port.description;
                 }
+                option.title = JSON.stringify(port);
                 option.text = port.device + " — " + device_name;
                 sTransport.add(option);
             }

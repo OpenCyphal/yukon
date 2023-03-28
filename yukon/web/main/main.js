@@ -114,6 +114,13 @@ window.console = new Proxy(old_console, {
             y: event.pageY
         };
     }
+    let elementPreviousParents = {}; // Component name and the corresponding previous parent element
+    if (!isRunningInElectron(yukon_state)) {
+        zubax_api.announce_running_in_browser();
+        document.title = "Yukon (browser)";
+    } else {
+        zubax_api.announce_running_in_electron();
+    }
 
 
     async function doStuffWhenReady() {

@@ -112,7 +112,7 @@
     max-width: 700px;
     background-color: rgb(165 66 66);
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 0px;
     padding: 0.5em;
     margin-top: 0.5em;
     box-shadow: 0 1px 4px 0 rgba(0, 0, 0, .2);
@@ -145,6 +145,9 @@
     border-right-style: solid;
     border-top-style: solid;
 }
+:root {
+    --line-color: silver;
+}
 
 @media (prefers-color-scheme: dark) {
     #monitor2 .node {
@@ -153,16 +156,16 @@
     }
 
     #monitor2 .line {
-        background-color: antiquewhite;
+        background-color: var(--line-color); 
         color: antiquewhite;
     }
 
     #monitor2 .circle {
-        background-color: antiquewhite;
+        background-color: var(--line-color);
     }
 
     #monitor2 .horizontal_line {
-        background-color: antiquewhite;
+        background-color: var(--line-color);
         color: antiquewhite;
         text-wrap: none;
     }
@@ -172,6 +175,6 @@
     }
 
     #monitor2>.arrowhead {
-        border-top-color: antiquewhite;
+        border-top-color: var(--line-color);
     }
 }
