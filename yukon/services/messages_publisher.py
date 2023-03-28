@@ -103,7 +103,9 @@ def print_message(state: "yukon.domain.god_state.GodState", text: str, severity:
     eprint(text, end="")
 
 
-def add_local_message2(state: "yukon.domain.god_state.GodState", text: str, severity: int, name: str = __name__) -> None:
+def add_local_message2(
+    state: "yukon.domain.god_state.GodState", text: str, severity: int, name: str = __name__
+) -> None:
     new_message = add_message_to_messages_queue(state, text, severity, name)
     print_message(state, str(new_message) + os.linesep, severity, name)
     log_message(state, str(new_message) + os.linesep)

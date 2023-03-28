@@ -239,10 +239,11 @@ def add_register_update_log_item(
         logger.error(f"Traceback: {str(tb)}")
 
 
-def websocket_response_wrapper(state: GodState, api):
-    events_by_id = {}
-    responses_by_id = {}
-    async def websocket_callback(websocket):
+def websocket_response_wrapper(state: GodState, api: typing.Any) -> typing.Callable:
+    events_by_id: typing.Any = {}
+    responses_by_id: typing.Any = {}
+
+    async def websocket_callback(websocket: typing.Any) -> None:
         async for message in websocket:
             try:
                 if message[0] != "{":
@@ -257,7 +258,12 @@ def websocket_response_wrapper(state: GodState, api):
                         if isinstance(response, (dict, list)):
                             response = json.dumps(response, cls=EnhancedJSONEncoder)
                         if response:
-                            await websocket.send(json.dumps({"type": "response", "response": response, "id": message_object["id"]}, cls=EnhancedJSONEncoder))
+                            await websocket.send(
+                                json.dumps(
+                                    {"type": "response", "response": response, "id": message_object["id"]},
+                                    cls=EnhancedJSONEncoder,
+                                )
+                            )
                             # events_by_id[message_object["id"]] = asyncio.Event()
                             # await events_by_id[message_object["id"]]
                 # elif message_object["type"] == "response":
@@ -265,20 +271,28 @@ def websocket_response_wrapper(state: GodState, api):
                 #     events_by_id[message_object["id"]].set()
                 else:
                     logger.error(f"Unknown message type: {message_object['type']}")
-                    await websocket.send(json.dumps({"type": "error", "message": "Unknown message type", "id": message_object["id"]}))
+                    await websocket.send(
+                        json.dumps({"type": "error", "message": "Unknown message type", "id": message_object["id"]})
+                    )
             except Exception as e:
                 tb = traceback.format_exc()
                 logger.error(tb)
                 raise e
+
     return websocket_callback
 
-async def createWebSocketServer(state: GodState, api):
-    loop = asyncio.get_running_loop()
-    stop = loop.create_future()
-    loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
-    logger.warning("Starting websocket server")
-    async with websockets.serve(websocket_response_wrapper(state, api), "127.0.0.1", 8001):
-        await asyncio.sleep(10000)
+
+async def createWebSocketServer(state: GodState, api: typing.Any) -> None:
+    try:
+        logger.warning("Starting websocket server")
+        async with websockets.serve(websocket_response_wrapper(state, api), "127.0.0.1", 8001):
+            await asyncio.sleep(1)
+    except KeyboardInterrupt:
+        raise
+    except Exception as e:
+        tb = traceback.format_exc()
+        logger.error(tb)
+
 
 class SendingApi:
     async def send_message(self, message: typing.Any) -> None:
@@ -306,9 +320,9 @@ class Api:
                 port["already_used"] = True
         _list_hash = json.dumps(_list, sort_keys=True)
         return {
-                "ports": _list,
-                "hash": _list_hash,
-            }
+            "ports": _list,
+            "hash": _list_hash,
+        }
 
     async def get_slcan_ports(self) -> typing.Dict[str, typing.Any]:
         _list = get_slcan_ports()
@@ -489,7 +503,7 @@ class Api:
         my_list = [x for x in list(self.state.queues.messages.queue) if not since_index or x.index_nr >= since_index]
         return json.dumps(my_list, cls=EnhancedJSONEncoder)
 
-    async def get_avatars2(self) -> None:
+    async def get_avatars2(self) -> typing.Any:
         self.state.gui.last_poll_received = monotonic()
         avatar_list = [avatar.to_builtin() for avatar in list(self.state.avatar.avatars_by_node_id.values())]
         avatar_dto = {"avatars": avatar_list, "hash": hash(json.dumps(avatar_list, sort_keys=True))}
@@ -510,9 +524,9 @@ class Api:
 
     async def get_connected_transport_interfaces(self) -> Response:
         return {
-                "interfaces": self.state.cyphal.transports_list,
-                "hash": hash(json.dumps(self.state.cyphal.transports_list, sort_keys=True, cls=EnhancedJSONEncoder)),
-            }
+            "interfaces": self.state.cyphal.transports_list,
+            "hash": hash(json.dumps(self.state.cyphal.transports_list, sort_keys=True, cls=EnhancedJSONEncoder)),
+        }
 
     async def send_command(self, node_id: str, command: str, text_argument: str) -> typing.Any:
         send_command_request = CommandSendRequest(int(node_id), int(command), text_argument)
@@ -572,7 +586,9 @@ class Api:
         text_response = Dumper().dumps(json.loads(json_in))
         return text_response
 
-    async def add_register_update_log_item(self, register_name: str, register_value: str, node_id: str, success: str) -> None:
+    async def add_register_update_log_item(
+        self, register_name: str, register_value: str, node_id: str, success: str
+    ) -> None:
         """This is useful to report failed user interactions which resulted in invalid requests to update registers."""
         add_register_update_log_item(self.state, register_name, register_value, node_id, bool(success))
 
@@ -612,9 +628,9 @@ class Api:
                 logger.error("Failed to receive a confirmation for unsubscribing.")
             else:
                 return {
-                        "success": response.success,
-                        "message": "Unsubscribed from " + specifier,
-                    }
+                    "success": response.success,
+                    "message": "Unsubscribed from " + specifier,
+                }
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to register unsubscribe intent.")
@@ -853,10 +869,10 @@ class Api:
                 bit_depth = int(_match.group(2))
                 is_signed = _match.group(1) != "Natural"
                 return {
-                        "success": True,
-                        "min": -(2 ** (bit_depth - 1)) if is_signed else 0,
-                        "max": 2 ** (bit_depth - 1) - 1 if is_signed else 2**bit_depth - 1,
-                    }
+                    "success": True,
+                    "min": -(2 ** (bit_depth - 1)) if is_signed else 0,
+                    "max": 2 ** (bit_depth - 1) - 1 if is_signed else 2**bit_depth - 1,
+                }
             return {"success": False, "message": "Unknown type name"}
         except Exception as e:
             tb = traceback.format_exc()
@@ -866,17 +882,17 @@ class Api:
 
     async def get_publish_type_names(self) -> Response:
         return [
-                "uavcan.primitive.array.Real64_1_0",
-                "uavcan.primitive.array.Real32_1_0",
-                "uavcan.primitive.array.Real16_1_0",
-                "uavcan.primitive.array.Integer64_1_0",
-                "uavcan.primitive.array.Integer32_1_0",
-                "uavcan.primitive.array.Integer16_1_0",
-                "uavcan.primitive.array.Natural64_1_0",
-                "uavcan.primitive.array.Natural32_1_0",
-                "uavcan.primitive.array.Natural16_1_0",
-                "uavcan.primitive.array.Natural8_1_0",
-            ]
+            "uavcan.primitive.array.Real64_1_0",
+            "uavcan.primitive.array.Real32_1_0",
+            "uavcan.primitive.array.Real16_1_0",
+            "uavcan.primitive.array.Integer64_1_0",
+            "uavcan.primitive.array.Integer32_1_0",
+            "uavcan.primitive.array.Integer16_1_0",
+            "uavcan.primitive.array.Natural64_1_0",
+            "uavcan.primitive.array.Natural32_1_0",
+            "uavcan.primitive.array.Natural16_1_0",
+            "uavcan.primitive.array.Natural8_1_0",
+        ]
 
     async def set_message_store_capacity(self, specifier: str, capacity: int) -> None:
         messages_store = self.state.cyphal.message_stores_by_specifier.get(SubjectSpecifier.from_string(specifier))
@@ -942,7 +958,7 @@ class Api:
                             tb = traceback.format_exc()
                             logger.error(tb)
                         for index, message in enumerate(messages):
-                            metadata = message[1]
+                            metadata = message[1]  # type: ignore
                             synchronized_message_carrier = SynchronizedMessageCarrier(
                                 pycyphal.dsdl.to_builtin(message[0]),
                                 {
@@ -960,7 +976,9 @@ class Api:
                             synchronized_message_group.carriers.append(synchronized_message_carrier)
                         synchronized_message_store.messages.append(synchronized_message_group)
                         synchronized_message_store.counter += 1
-                        if (synchronized_message_store.counter - synchronized_message_store.start_index) >= synchronized_message_store.capacity:
+                        if (
+                            synchronized_message_store.counter - synchronized_message_store.start_index
+                        ) >= synchronized_message_store.capacity:
                             synchronized_message_store.messages.pop(0)
                             synchronized_message_store.start_index += 1
 
@@ -977,18 +995,18 @@ class Api:
             self.state.cyphal_worker_asyncio_loop.call_soon_threadsafe(subscribe_task)
             if result_ready_event.wait(1.7):
                 return {
-                        "success": was_subscription_success,
-                        "specifiers": specifiers,
-                        "message": message,
-                        "tolerance": tolerance,
-                    }
+                    "success": was_subscription_success,
+                    "specifiers": specifiers,
+                    "message": message,
+                    "tolerance": tolerance,
+                }
             else:
                 return {
-                        "success": False,
-                        "specifiers": specifiers,
-                        "message": "Timed out waiting for a response from the Cyphal worker thread.",
-                        "tolerance": tolerance,
-                    }
+                    "success": False,
+                    "specifiers": specifiers,
+                    "message": "Timed out waiting for a response from the Cyphal worker thread.",
+                    "tolerance": tolerance,
+                }
         except Exception as e:
             tb = traceback.format_exc()
             logger.error("Failed to subscribe to synchronized messages.")
@@ -1009,7 +1027,7 @@ class Api:
             tb = traceback.format_exc()
             logger.error(str(tb))
             return {"success": False, "specifiers": specifiers, "message": tb}
-    
+
     async def fetch_synchronized_messages_for_specifiers2(self, specifiers: str, counter: int) -> dict:
         """Specifiers is a JSON serialized list of specifiers."""
         try:
@@ -1023,9 +1041,18 @@ class Api:
             if not synchronized_messages_store:
                 return {"success": False, "message": "No synchronized messages for this specifier.", "messages": []}
             if synchronized_messages_store.start_index > counter:
-                return {"success": True, "bestAvailableCounter": synchronized_messages_store.start_index, "messages": synchronized_messages_store.messages[0:]}
+                return {
+                    "success": True,
+                    "bestAvailableCounter": synchronized_messages_store.start_index,
+                    "messages": synchronized_messages_store.messages[0:],
+                }
             else:
-                return {"success": True, "messages": synchronized_messages_store.messages[counter - synchronized_messages_store.start_index :]}
+                return {
+                    "success": True,
+                    "messages": synchronized_messages_store.messages[
+                        counter - synchronized_messages_store.start_index :
+                    ],
+                }
         except Exception as e:
             logger.error("Failed to fetch synchronized messages.")
             tb = traceback.format_exc()
