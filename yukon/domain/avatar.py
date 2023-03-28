@@ -272,6 +272,8 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             software_version = getattr(info, "software_version")
             hardware_version = getattr(info, "hardware_version")
             software_vcs_revision_id = getattr(info, "software_vcs_revision_id")
+            if software_vcs_revision_id:
+                software_vcs_revision_id = hex(software_vcs_revision_id)
             software_major_version = getattr(software_version, "major", 0)
             software_minor_version = getattr(getattr(info, "software_version"), "minor", 0)
             hardware_major_version = getattr(hardware_version, "major", 0)
@@ -339,6 +341,16 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
             ^ hash(frozenset(self._ports.sub))
             ^ hash(frozenset(self._ports.cln))
             ^ hash(frozenset(self._ports.srv))
+            ^ hash(
+                json.dumps(
+                    {
+                        "vendor_specific_status_code": vendor_specific_status_code,
+                        "mode": mode_value,
+                        "health": health_value,
+                    },
+                    sort_keys=True,
+                )
+            )
             ^ hash(self._info.name.tobytes().decode() if self._info is not None else None)
             ^ hash(self.random_str_for_forced_update)  # This accounts for is_disappeared and is_being_queried
             ^ hash(self.disappeared_since)

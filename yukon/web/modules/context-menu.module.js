@@ -562,7 +562,7 @@ export function make_context_menus(yukon_state) {
                     },
                     click: async (e, elementOpenedOn) => {
                         const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
-                        const datatypes = await getDatatypesForPort(portNr, yukon_state);
+                        const datatypes = await getDatatypesForPort(portNr, "pub", yukon_state);
                         const response = await yukon_state.zubax_apij.make_simple_publisher_with_datatype_and_port_id(datatypes[0], portNr);
                         const portType = elementOpenedOn.getAttribute("data-port-type"); // sub or pub or cln or srv
                         if (response && response.success) {

@@ -24,6 +24,10 @@
     margin-left: 0px !important;
 }
 
+.horizontal_line_label {
+    color: darkblue !important;
+}
+
 .lm_header .lm_controls {
     display: flex;
     flex-direction: row;
@@ -43,7 +47,7 @@
 }
 
 label.port_number_label {
-    font-weight: 500;
+    font-weight: 400;
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -51,7 +55,7 @@ label.port_number_label {
 
 textarea.port_number_label,
 input.port_number_label {
-    font-weight: 500;
+    font-weight: 400;
     border: none;
     border-left: 6px solid SlateBlue;
 }
@@ -260,7 +264,7 @@ body {
 #toolbar button {
     border: 1px solid #000;
     height: 1.7em;
-    border-radius: 0.25em;
+    border-radius: 0;
     background-color: rgb(135, 135, 135);
     color: #fff;
     font-size: 1.5em;
@@ -312,7 +316,7 @@ button#btnShowHideToolbar {
     width: 1em;
     height: 1em;
     border: 1px solid #000;
-    border-radius: 0.25em;
+    border-radius: 0em;
     font-size: 1.5em;
     padding: 0.25em 0.5em;
     z-index: 3;
@@ -462,7 +466,7 @@ button#btnShowHideToolbar:active {
 .my-modal-content {
     margin-top: 10vh;
     padding: 20px 10px;
-    border-radius: 10px;
+    border-radius: 0px;
     width: 80%;
     background-color: white;
 }
