@@ -42,7 +42,7 @@ if do_download_electron and not Path(".electron").exists():
         electron_folder = [
             x for x in Path("electronbinaries").iterdir() if x.name.startswith("electron") and "linux" in x.name
         ][0]
-        if(electron_folder.name.endswith(".zip")):
+        if electron_folder.name.endswith(".zip"):
             shutil.unpack_archive(electron_folder, electron_folder.name.replace(".zip", ""))
         electron_folder = Path(electron_folder.name.replace(".zip", ""))
         # Check if it is a zip file instead, if it is a zip file, unpack the zip file, delete the zip file and
@@ -56,7 +56,7 @@ if do_download_electron and not Path(".electron").exists():
         electron_folder = [
             x for x in Path("electronbinaries").iterdir() if x.name.startswith("electron") and "win32" in x.name
         ][0]
-        if(electron_folder.name.endswith(".zip")):
+        if electron_folder.name.endswith(".zip"):
             shutil.unpack_archive(electron_folder, electron_folder.name.replace(".zip", ""))
         electron_folder = Path(electron_folder.name.replace(".zip", ""))
         # Copy the contents of the electron folder into the .electron folder
