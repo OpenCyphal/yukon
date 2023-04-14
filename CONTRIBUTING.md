@@ -4,13 +4,15 @@
 
       git clone https://github.com/OpenCyphal-Garage/yukon.git
 
-* Only on GNU/Linux: Make a venv and install the requirements
+* Only on GNU/Linux: Change to the cloned directory, make a venv and install the requirements
 
       python -m venv venv
       source venv/bin/activate
       pip install -r requirements.txt -r dev-requirements.txt
 
-* On Debian systems you may also require ```sudo apt install clang clang-format build-essentials python3.10-venv python3.10-dev python3.10-tk```.
+You will need to install python-is-python3.
+
+* On Debian systems you will also require ```sudo apt install clang clang-format build-essential python3-venv python3-dev python3-tk python3-pip```.
 
 * Only on Arch Linux: additional step when using systems where Tk is missing by default
 
@@ -41,6 +43,8 @@
   Without this step you will have to run Yukon in a browser.
 
       python build_exe.py
+
+On GNU/Linux you may have to precede this step by installing binutils. `sudo apt install binutils`.
 
 * On GNU/Linux: For ElectronJS Don't forget to run `chmod +x .electron/electron` to give the electron executable run permissions
 

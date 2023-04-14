@@ -669,7 +669,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         containerDiv.appendChild(fieldDiv);
         fieldDiv.classList.add("d-inline-flex", "field");
         if (field === "VSSC" && fieldsObject["Name"] === "com.zubax.telega") {
-            fieldsObject[field] = decodeTelegaVSSC(parseInt(fieldsObject[field])) + " (" + fieldsObject[field] + ")";
+            fieldsObject[field] = decodeTelegaVSSC(fieldsObject["Health"], fieldsObject["Mode"], parseInt(fieldsObject[field])) + " (" + fieldsObject[field] + ")";
         }
         fieldDiv.innerHTML = field;
         fieldDiv.style.fontWeight = "bold";
@@ -689,7 +689,7 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
         if (field === "Health") {
             valueDiv.style.paddingLeft = "3px";
             valueDiv.style.paddingRight = "3px";
-            if (fieldsObject[field] === "Nominal") {
+            if (fieldsObject[field] === "NOMINAL") {
                 valueDiv.style.backgroundColor = "green";
             } else if (fieldsObject[field] === "CAUTION") {
                 valueDiv.style.backgroundColor = "orange";
@@ -765,6 +765,11 @@ function createElementForNode(avatar, text, container, fieldsObject, get_up_to_d
     node.appendChild(inputGroup);
     const telegaButtons = [{ "name": "Cancel", "command": "0", "title": "Cancel" }, { "name": "SelfTest", "command": "1", "title": "SelfTest" }, { "name": "MotorID", "command": "2", "title": "MotorID" }];
     if (fieldsObject && fieldsObject["Name"] && fieldsObject["Name"].includes("telega")) {
+        const telegaLink = document.createElement("a");
+        telegaLink.innerHTML = "Telega docs";
+        telegaLink.target="_blank";
+        telegaLink.href = "https://telega.zubax.com/index.html";
+        node.appendChild(telegaLink);
         const telegaInputGroup = document.createElement("div");
         telegaInputGroup.classList.add("input-group");
         telegaInputGroup.style.width = "100%";

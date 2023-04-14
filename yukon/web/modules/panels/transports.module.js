@@ -259,7 +259,7 @@ export function initTransports(container, yukon_state) {
 
     function setCurrentTransport(tabRow, isTopMost) {
         if (isTopMost) {
-            currentSelectedTransportType = [tabRow, tabRow.tabNames[tabRow.selectedTabIndex]];
+            currentSelectedTransportType = [tabRow.parentTabName, tabRow.tabNames[tabRow.selectedTabIndex]];
         } else {
             currentSelectedTransportType = [tabRow.parentTabName, tabRow.tabNames[tabRow.selectedTabIndex]];
         }
@@ -472,6 +472,7 @@ export function initTransports(container, yukon_state) {
         feedbackMessageDiv.style.display = "none";
         feedbackMessageDiv.innerHTML = "";
         let result = null;
+        let usedInterfaceName = "";
         if (currentSelectedTransportType[1] == transports.UDP.UDP) {
             console.log("UDP");
             const udp_iface = containerElem.querySelector('#iUdpIface').value;
@@ -490,6 +491,7 @@ export function initTransports(container, yukon_state) {
                     port_type = "slcan";
                 }
                 port = port_type + ":" + sTransport.value;
+                usedInterfaceName = sTransport.options[sTransport.selectedIndex].text;
             } else {
                 port = iTransport.value;
             }
@@ -509,7 +511,23 @@ export function initTransports(container, yukon_state) {
             console.error("Error: " + resultObject.message);
             zubax_api.add_local_message(resultObject.message, 40);
             feedbackMessageDiv.style.display = "block";
-            feedbackMessageDiv.innerHTML = resultObject.message_short;
+            let messageToDisplay = resultObject.message;
+            if(resultObject.message_short !== undefined) {
+                messageToDisplay = resultObject.message_short;
+            }
+            feedbackMessageDiv.innerHTML = messageToDisplay;
+            if (currentSelectedTransportType[0] === "CAN" && usedInterfaceName.includes("Zubax") && feedbackMessageDiv.innerHTML.includes("Permission denied")) {
+                feedbackMessageDiv.innerHTML += "<p>With this error, make sure to use the <a target=\"_blank\" href=\"https://kb.zubax.com/pages/viewpage.action?pageId=2195511\">tutorial</a> to set up udev rules.</p>" +
+                "<p>Or just copy and run these commands:</p><pre>" +
+                `
+echo 'SUBSYSTEMS=="usb", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="60c7", MODE="0666"' | sudo tee /etc/udev/rules.d/10-zubax.rules
+echo 'SUBSYSTEMS=="usb", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="6018", MODE="0666"' | sudo tee -a /etc/udev/rules.d/10-zubax.rules
+sudo udevadm control --reload
+sudo usermod -a -G dialout $USER
+                </pre>
+                <p>Then you should log out and then log back in, or (better yet) just reboot.</p>
+                <p>And then open Yukon and click Start transport again.</p>`;
+            }
         }
     }
     const form = containerElem.querySelector("#transport-selection-form");

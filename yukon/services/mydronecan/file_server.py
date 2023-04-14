@@ -85,7 +85,7 @@ class SimpleFileServer(object):
             # Seek to the start and read the whole file to get the length
             self.open_file_handle.seek(0)
             self.file_length = len(self.open_file_handle.read())
-        logger.info("File read percentage: {0:.2f}%".format((e.request.offset / self.file_length) * 100))
+        logger.warning("Firmware update completion percentage: {0:.2f}%".format((e.request.offset / self.file_length) * 100))
         try:
             if self.open_file_handle is None:
                 self.open_file_handle = open(self.file_path, "rb")

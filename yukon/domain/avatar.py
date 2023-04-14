@@ -266,7 +266,7 @@ class Avatar:  # pylint: disable=too-many-instance-attributes
         )
 
     def to_builtin(self) -> Any:
-        health_meanings = {0: "Nominal", 1: "Advisory", 2: "Caution", 3: "Warning", 4: "No value"}
+        health_meanings = {0: "NOMINAL", 1: "ADVISORY", 2: "CAUTION", 3: "WARNING", 4: "NO VALUE"}
         info = getattr(self, "_info")
         if info:
             software_version = getattr(info, "software_version")

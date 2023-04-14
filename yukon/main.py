@@ -96,7 +96,7 @@ def run_electron(state: GodState) -> None:
         check_thread.start()
 
         with subprocess.Popen(
-            [exe_path, "--trace-warnings", Path(root_path) / "yukon/electron/main.js"],
+            [exe_path, "--trace-warnings", Path(root_path) / "yukon/electron_folder/main.js"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,

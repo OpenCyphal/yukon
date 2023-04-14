@@ -65,52 +65,67 @@ export function getRelatedLinks(port, port_type, yukon_state) {
     }
     return Array.from(new Set(links));
 }
-export function decodeTelegaVSSC(vssc) {
-    const high_number = vssc / 16;
+
+function decodeFaultCode(faultCode) {
+    if(faultCode >= 0 && faultCode <= 9) {
+        return `runtime error with code ${faultCode}`;
+    } else if (faultCode === 10) {
+        return "runtime error with error code greater than 9";
+    } else if (faultCode === 14) {
+        return "hardware error";
+    } else if (faultCode === 15) {
+        return "invalid parameters error";
+    }
+}
+
+// TODO: Don't forget to change the call of this
+export function decodeTelegaVSSC(health, mode, vssc) {
+    const high_number = Math.floor(vssc / 16);
     const low_number = vssc % 16;
-    if (low_number !== 0) {
-        if(high_number === 0) {
-            return "Fault in Standby, fault code: " + low_number;
-        } else if (high_number == 1) {
-            // self test
-            return "Fault in Self test, fault code: " + low_number;
-        } else if (high_number == 2) {
-            return "Fault in Motor ID, fault code: " + low_number;
-        } else if (high_number == 5) {
-            // drive
-            if(low_number === 1) {
-                return "Torque control mode";
-            } else if(low_number === 2) {
-                return "Voltage control mode";
-            } else if(low_number === 3) {
-                return "Velocity control mode";
-            } else if(low_number === 9) {
-                // Ratiometric torque control mode
-                return "Ratiometric torque control mode";
-            } else if (low_number === 10) {
-                // Ratiometric voltage control mode
-                return "Ratiometric voltage control mode";
-            } else {
-                return "Fault in Drive, fault code: " + low_number;
-            }
-        } else if (high_number == 7) {
-            // servo
-            return "Fault in Servo, fault code: " + low_number;
+    const fault_high_numbers = [0, 1, 2, 5, 7]
+    if(health === "WARNING") {
+        if(mode === "Initialization") {
+            return "Uninitialized state, normal operation impossible";
         }
-    } else {
-        if (high_number === 0) {
-            return "Standby";
-        } else if (high_number == 1) {
-            // self test
-            return "Self test";
-        } else if (high_number == 2) {
-            return "Motor ID";
-        } else if (high_number == 5) {
-            // drive
-            return "Drive";
-        } else if (high_number == 7) {
-            // servo
-            return "Servo";
+    } else if (health === "CAUTION" || (health === "NOMINAL" && mode === "MAINTENANCE")) {
+        if(mode === "OPERATIONAL") {
+            switch(high_number) {
+                case 0:
+                    return "standby " + decodeFaultCode(low_number);
+                case 1:
+                    return "self test " + decodeFaultCode(low_number);
+                case 2:
+                    return "motor ID " + decodeFaultCode(low_number);
+                case 5:
+                    return "drive " + decodeFaultCode(low_number);
+                case 7:
+                    return "servo " + decodeFaultCode(low_number);
+            }
+        }
+    } else if (health === "NOMINAL") {
+        switch (high_number) {
+            case 0:
+                return "standby";
+            case 1:
+                return "self test";
+            case 2:
+                return "motor ID";
+            case 5:
+                switch (low_number) {
+                    case 1:
+                        return "drive torque control mode";
+                    case 2:
+                        return "drive voltage control mode";
+                    case 3:
+                        return "drive velocity control mode";
+                    case 9:
+                        return "drive ratiometric torque control mode";
+                    case 10:
+                        return "drive ratiometric voltage control mode";
+                }
+                return "drive";
+            case 7:
+                return "servo"
         }
     }
     return "Unknown code";
