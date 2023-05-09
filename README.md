@@ -15,6 +15,7 @@ It is designed to run on GNU/Linux, Windows, and macOS.
 
 ⚠ While Yukon is usable, it is in the **alpha stage** and is known to contain bugs.
 Please use responsibly and report all issues you encounter via the [bug tracker](https://github.com/OpenCyphal/yukon/issues).
+If you are looking for a stable alternative, check out the [Yakut command-line tool](https://github.com/OpenCyphal/yakut).
 
 ## Minimal system requirements
 
