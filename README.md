@@ -23,6 +23,7 @@ If you are looking for a stable alternative, check out the [Yakut command-line t
 * RAM 8 GiB
 * 4x CPU (cores)
 * SSD
+* Baremetal system (not compatible with virtualized environments)
 
 ## Screenshots
 
