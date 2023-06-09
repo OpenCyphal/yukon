@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - issue-182
 
 # Ensures that only one workflow is running at a time
 concurrency:
@@ -21,7 +22,7 @@ jobs:
     if: startsWith(github.ref, 'refs/heads/')
     strategy:
       matrix:
-        os: [ubuntu-22.04, ubuntu-20.04, windows-latest]
+        os: [ubuntu-22.04, ubuntu-20.04, windows-2019-npcap]
     runs-on: ${{ matrix.os }}
     outputs:
       yukon-version: ${{ steps.release-version.outputs.version }}
@@ -74,9 +75,7 @@ jobs:
           nox -s mypy
           nox -s black
           nox -s pylint
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            nox -s pytest
-          fi
+          nox -s pytest
         shell: bash
 
       - name: Building release
@@ -102,7 +101,7 @@ jobs:
             echo "architecture=linux-x86_64_ubuntu-22.04-manjaro" >> $GITHUB_ENV
           elif [ "${{ matrix.os }}" == "ubuntu-20.04" ]; then
             echo "architecture=linux-x86_64" >> $GITHUB_ENV
-          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+          elif [ "${{ matrix.os }}" == "windows-2019-npcap" ]; then
             echo "architecture=windows-x86_64" >> $GITHUB_ENV
           else
             echo "architecture=other" >> $GITHUB_ENV
@@ -121,23 +120,23 @@ jobs:
   #
   # Deploy artifacts to files.zubax.com
   #
-  deploy-to-zubax:
-    name: Deploy
-    needs: yukon-build
-    uses: ./.github/workflows/deploy-to-zubax.yml
-    with:
-      product: org.opencyphal.yukon
-      version: ${{ needs.yukon-build.outputs.yukon-version }}
-    secrets: inherit
+  #deploy-to-zubax:
+  #  name: Deploy
+  #  needs: yukon-build
+  #  uses: ./.github/workflows/deploy-to-zubax.yml
+  #  with:
+  #    product: org.opencyphal.yukon
+  #    version: ${{ needs.yukon-build.outputs.yukon-version }}
+  #  secrets: inherit
 
   #
   # Deploy artifacts to GitHub Releases
   #
-  deploy-to-gh-releases:
-    name: Deploy
-    needs: yukon-build
-    uses: ./.github/workflows/deploy-to-gh-releases.yml
-    with:
-      version: ${{ needs.yukon-build.outputs.yukon-version }}
-    secrets: inherit
+  #deploy-to-gh-releases:
+  #  name: Deploy
+  #  needs: yukon-build
+  #  uses: ./.github/workflows/deploy-to-gh-releases.yml
+  #  with:
+  #    version: ${{ needs.yukon-build.outputs.yukon-version }}
+  #  secrets: inherit
 
