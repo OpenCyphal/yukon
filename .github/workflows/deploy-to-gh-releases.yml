@@ -31,7 +31,7 @@ jobs:
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.1
         with:
-          github_token: ${{ secrets.OPENCYPHAL_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: ${{ inputs.version }}
           tag_prefix: ''
 
@@ -58,5 +58,4 @@ jobs:
           artifacts: artifacts/*
           artifactErrorsFailBuild: true
           tag: ${{ inputs.version }}
-          token: ${{ secrets.OPENCYPHAL_TOKEN }}
 

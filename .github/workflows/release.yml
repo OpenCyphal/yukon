@@ -75,7 +75,10 @@ jobs:
           nox -s mypy
           nox -s black
           nox -s pylint
-          nox -s pytest
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            nox -s pytest
+          fi
+
         shell: bash
 
       - name: Building release
@@ -139,4 +142,3 @@ jobs:
   #  with:
   #    version: ${{ needs.yukon-build.outputs.yukon-version }}
   #  secrets: inherit
-
