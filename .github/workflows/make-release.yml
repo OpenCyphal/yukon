@@ -1,12 +1,14 @@
 name: 'Yukon application builder'
 
 # Builds Yukon OpenCyphal IDE artifacts
-
 on:
   push:
     branches:
       - main
       - issue-182
+  pull_request:
+    branches:
+      - main
 
 # Ensures that only one workflow is running at a time
 concurrency:
@@ -19,17 +21,18 @@ jobs:
   #
   yukon-build:
     name: Build Yukon
-    if: startsWith(github.ref, 'refs/heads/')
     strategy:
       matrix:
         os: [ubuntu-22.04, ubuntu-20.04, windows-2019-npcap]
+        exclude:
+          - os: windows-2019-npcap
     runs-on: ${{ matrix.os }}
     env:
       python_version: 3.11
     outputs:
       yukon_version: ${{ steps.release-version.outputs.yukon_version }}
     steps:
-      # Check code out of GitHub
+      # Check out yukon repository
       - name: Check out
         uses: actions/checkout@v3
 
@@ -81,11 +84,7 @@ jobs:
           nox -s mypy
           nox -s black
           nox -s pylint
-          #nox -s pytest
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            nox -s pytest
-          fi
-        shell: bash
+          nox -s pytest
 
       # Obtain the Yukon version number
       - id: release-version
@@ -128,6 +127,7 @@ jobs:
   deploy-to-zubax:
     name: Deploy to Zubax fileserver
     needs: yukon-build
+    if: (github.event_name == 'push') && (github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     env:
       yukon_product: org.opencyphal.yukon
@@ -177,6 +177,7 @@ jobs:
   deploy-to-gh-releases:
     name: Deploy to GH Releases
     needs: yukon-build
+    if: (github.event_name == 'push') && (github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     env:
       yukon_version: ${{ needs.yukon-build.outputs.yukon_version }}
