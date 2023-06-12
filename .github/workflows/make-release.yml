@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - issue-182
   pull_request:
     branches:
       - main
@@ -17,20 +16,16 @@ concurrency:
 
 jobs:
   #
-  # Yukon build
+  # Test Release
   #
-  yukon-build:
-    name: Build Yukon
+  yukon-test:
+    name: Test Yukon
     strategy:
       matrix:
         os: [ubuntu-22.04, ubuntu-20.04, windows-2019-npcap]
-        exclude:
-          - os: windows-2019-npcap
     runs-on: ${{ matrix.os }}
     env:
       python_version: 3.11
-    outputs:
-      yukon_version: ${{ steps.release-version.outputs.yukon_version }}
     steps:
       # Check out yukon repository
       - name: Check out
@@ -86,16 +81,77 @@ jobs:
           nox -s pylint
           nox -s pytest
 
-      # Obtain the Yukon version number
-      - id: release-version
-        name: Extracting release version
-        run: echo "yukon_version=$(python3 -c 'from yukon.version import __version__; print(__version__)')" >> $GITHUB_OUTPUT
+  #
+  # Build release
+  #
+  yukon-build:
+    name: Build release
+    needs: yukon-test
+    if: (github.event_name == 'push') && (github.ref == 'refs/heads/main')
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-20.04, windows-2019-npcap]
+    runs-on: ${{ matrix.os }}
+    env:
+      python_version: 3.11
+    outputs:
+      yukon_version: ${{ steps.release-version.outputs.yukon_version }}
+    steps:
+      # Check out yukon repository
+      - name: Check out
+        uses: actions/checkout@v3
+
+      # Install Python
+      - name: Install Python3
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.python_version }}
+          cache: "pip"
+
+      # Install Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+
+      # Set architecture specific variables
+      - name: Set architecture variables
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            echo "yukon_activate=source venv/bin/activate" >> $GITHUB_ENV
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            echo "yukon_activate=venv/Scripts/activate.bat" >> $GITHUB_ENV
+          else
+            echo "${{ runner.os }} not supported"
+            exit 1
+          fi
+        shell: bash
+
+      # Install build dependencies
+      - name: Install dependencies
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo update-alternatives --install /usr/bin/python python /opt/hostedtoolcache/Python/${{ env.python_version }}.*/x64/bin/python${{ env.python_version }} 1
+            sudo update-alternatives --install /usr/bin/python3 python3 /opt/hostedtoolcache/Python/${{ env.python_version }}.*/x64/bin/python${{ env.python_version }} 1
+          fi
+          python3 -m venv venv
+          ${{ env.yukon_activate }}
+          pip install wheel yakut
+          yakut compile -O.compiled ${{ env.master_path }}
+          pip install nox
+          pip install -r requirements.txt -r dev-requirements.txt
+        env:
+          master_path: https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
+        shell: bash
 
       # Create the executable file
       - name: Build release
         run: |
           ${{ env.yukon_activate }}
           python3 build_exe.py
+
+      # Obtain the Yukon version number
+      - id: release-version
+        name: Extracting release version
+        run: echo "yukon_version=$(python3 -c 'from yukon.version import __version__; print(__version__)')" >> $GITHUB_OUTPUT
 
       # Define the name for the artifact
       - name: Set artifact name
@@ -200,6 +256,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: ${{ env.yukon_version }}
           tag_prefix: ''
+          dry_run: true
 
       # Gather artifacts in one directory
       - name: Gather artifacts
@@ -224,4 +281,4 @@ jobs:
           artifacts: artifacts/*
           artifactErrorsFailBuild: true
           tag: ${{ env.yukon_version }}
-
+          skipIfReleaseExists: true
