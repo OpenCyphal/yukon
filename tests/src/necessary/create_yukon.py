@@ -17,7 +17,7 @@ async def create_yukon(attached_with_node_id: int):
     try:
         await session.post(
             "http://localhost:5001/api/attach_udp_transport",
-            json={"arguments": ["127.0.0.0", "1200", str(attached_with_node_id)]},
+            json={"arguments": ["127.0.0.1", "1200", str(attached_with_node_id)]},
             headers={},
             timeout=1.0,
         )
@@ -32,12 +32,12 @@ async def create_yukon(attached_with_node_id: int):
     time.sleep(10)
     logger.debug("Sending a request to attach transport")
     # Send a request to localhost:5000/api/attach_udp_transport, containing json
-    # {"arguments":["127.0.0.0","1200","127"]}
+    # {"arguments":["127.0.0.1","1200","127"]}
     # and check that the response.success == true
     try:
         response = await session.post(
             "http://localhost:5001/api/attach_udp_transport",
-            json={"arguments": ["127.0.0.0", "1200", str(attached_with_node_id)]},
+            json={"arguments": ["127.0.0.1", "1200", str(attached_with_node_id)]},
             timeout=3,
         )
     except (aiohttp.ClientConnectionError, asyncio.exceptions.TimeoutError):

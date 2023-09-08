@@ -27,7 +27,7 @@ def get_registry_with_transport_set_up(node_id: int) -> pycyphal.application.reg
     registry_dict = pycyphal.application.make_registry(
         ":memory:",
         environment_variables={
-            "UAVCAN__UDP__IFACE": "127.0.0.0",
+            "UAVCAN__UDP__IFACE": "127.0.0.1",
             "UAVCAN__NODE__ID": str(node_id),
         },
     )
@@ -333,7 +333,7 @@ class TestBackendTestSession:
             ).get("interfaces")
             main_interface_found = False
             for interface in interfaces_response_object:
-                if interface.get("udp_iface") == "127.0.0.0":
+                if interface.get("udp_iface") == "127.0.0.1":
                     interface_hash = interface.get("hash")
                     main_interface_found = True
                     break
