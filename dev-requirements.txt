@@ -1,4 +1,4 @@
-pyinstaller==5.6.*
+pyinstaller==5.13.2
 parsimonious
 nox==2022.8.*
 types-PyYAML

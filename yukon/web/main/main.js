@@ -132,6 +132,14 @@ window.console = new Proxy(old_console, {
     }
 
     yukon_state.addLocalMessage = function (message, severity) {
+        if(message === undefined) {
+            console.error("Message is undefined");
+            return;
+        }
+        if (severity === undefined) {
+            console.error("Severity is undefined");
+            return;
+        }
         zubax_api.add_local_message(message, severity);
     }
     yukon_state.addLocalMessage("Press CTRL+SPACE to maximize the panel under your mouse", 30);

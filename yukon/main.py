@@ -2,6 +2,7 @@ import signal
 import socket
 import threading
 import time
+import traceback
 import webbrowser
 import typing
 from typing import Optional, Any
@@ -172,6 +173,12 @@ def webbrowser_open_wrapper(url: str, state: GodState) -> bool:
 
 
 def open_webbrowser(state: GodState) -> None:
+    # Make sure the splash screen is not blocking the screen any more.
+    try:
+        import pyi_splash
+        pyi_splash.close()
+    except:
+        pass
     while not state.gui.is_port_decided:
         sleep(0.5)
     logger.info("Opening web browser")
@@ -241,8 +248,10 @@ def run_server(state: GodState) -> None:
             continue
         state.gui.is_port_decided = True
     try:
-        server.run(host="0.0.0.0", port=state.gui.server_port, threaded=True)
+        server.run(host="127.0.0.1", port=state.gui.server_port, threaded=True)
     except:  # pylint: disable=bare-except
+        tb = traceback.format_exc()
+        logger.critical(str(tb))
         logger.exception("Server was unable to start or crashed.")
 
 

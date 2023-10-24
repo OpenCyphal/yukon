@@ -28,7 +28,8 @@ try:
 except ImportError:
     from yaml import Loader  # type: ignore
 import websockets
-from flask import jsonify, Response
+from flask import Response
+from yukon.services.enhanced_json_encoder import jsonify
 
 from pycyphal.presentation.subscription_synchronizer import get_local_reception_timestamp
 from pycyphal.presentation.subscription_synchronizer.monotonic_clustering import MonotonicClusteringSynchronizer
