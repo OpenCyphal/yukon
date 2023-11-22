@@ -33,7 +33,7 @@ INFINITY = float("inf")
 _logger = logging.getLogger(__name__)
 
 # Flask has some broken code around this, making my own
-def jsonify(obj: typing.Any):
+def jsonify(obj: typing.Any) -> Response:
     return Response(json.dumps(obj, cls=EnhancedJSONEncoder), mimetype="application/json")
 
 class EnhancedJSONEncoder(json.JSONEncoder):

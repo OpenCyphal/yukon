@@ -563,6 +563,12 @@ export function make_context_menus(yukon_state) {
                     click: async (e, elementOpenedOn) => {
                         const portNr = parseInt(elementOpenedOn.getAttribute("data-port"));
                         const datatypes = await getDatatypesForPort(portNr, "pub", yukon_state);
+                        if(!datatypes[0]) {
+                            console.error(```
+                            Please make sure that registers exist for data type names for publication/subscription/client/server.
+                            https://github.com/OpenCyphal/public_regulated_data_types/blob/935973babe11755d8070e67452b3508b4b6833e2/uavcan/register/384.Access.1.0.dsdl#L154-L162
+                            ```);
+                        }
                         const response = await yukon_state.zubax_apij.make_simple_publisher_with_datatype_and_port_id(datatypes[0], portNr);
                         const portType = elementOpenedOn.getAttribute("data-port-type"); // sub or pub or cln or srv
                         if (response && response.success) {
