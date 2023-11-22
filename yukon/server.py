@@ -6,14 +6,13 @@ import typing
 
 from inspect import signature
 import sys
-from flask import Flask, Response, jsonify, request
-from flask.blueprints import T_after_request
+from flask import Flask, Response, request
 from werkzeug.serving import WSGIRequestHandler
 
 from yukon.domain.subject_specifier import SubjectSpecifier
 from yukon.services._dumper import Dumper
 
-from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder
+from yukon.services.enhanced_json_encoder import EnhancedJSONEncoder, jsonify
 from yukon.domain.god_state import GodState
 from yukon.services.api import Api
 
@@ -28,14 +27,13 @@ if not os.path.exists(gui_dir):  # frozen executable path
 
 server = Flask(__name__, static_folder=gui_dir, template_folder=gui_dir, static_url_path="")
 server.config["SEND_FILE_MAX_AGE_DEFAULT"] = 1  # disable caching
-server.json_encoder = EnhancedJSONEncoder
 WSGIRequestHandler.protocol_version = "HTTP/1.1"
 our_token = "ABC"
 logger = logging.getLogger(__name__)
 
 
 @server.after_request
-def add_header(response: T_after_request) -> T_after_request:
+def add_header(response):
     response.headers["Cache-Control"] = "no-store"
     response.headers["Access-Control-Allow-Origin"] = "*"
     response.headers["Access-Control-Allow-Methods"] = "GET,HEAD,OPTIONS,POST,PUT"
@@ -48,10 +46,13 @@ def make_landing_and_bridge(state: GodState, api: Api) -> None:
     def landing_and_bridge(path: str) -> typing.Any:
         _object: typing.Any = {"arguments": []}
         try:
-            _object = request.get_json()
+            request_data: bytes = request.get_data()
+            request_data_string: str = request_data.decode("utf-8")
+            _object = json.loads(request_data_string)
+            print(_object)
         except Exception as _:  # pylint: disable=broad-except
-            pass
-            # logger.warning("There was no json data attached")
+            tb = traceback.format_exc()
+            logger.critical(tb)
         try:
             found_method = getattr(api, path)
         except Exception:  # pylint: disable=broad-except

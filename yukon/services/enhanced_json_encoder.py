@@ -5,6 +5,8 @@ import logging
 from json.encoder import encode_basestring_ascii, encode_basestring, c_make_encoder, _make_iterencode  # type: ignore
 import typing
 from uuid import UUID
+from flask import Response
+from flask.json.provider import DefaultJSONProvider as FlaskJSONProvider
 
 import pycyphal
 
@@ -30,6 +32,9 @@ INFINITY = float("inf")
 
 _logger = logging.getLogger(__name__)
 
+# Flask has some broken code around this, making my own
+def jsonify(obj: typing.Any) -> Response:
+    return Response(json.dumps(obj, cls=EnhancedJSONEncoder), mimetype="application/json")
 
 class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, o: typing.Any) -> typing.Any:
@@ -302,3 +307,41 @@ class EnhancedJSONEncoderForSavingSettings(EnhancedJSONEncoder):
                 # Return a dict that doesn't contain keys that start with __id__
                 return {k: v for k, v in o.value.items() if not k.startswith("__id__")}
         return super().default(o)
+
+
+class FlaskEnhancedJSONEncoder(FlaskJSONProvider):
+    # Implement the FlaskJSONProvider API by using the Python JSON API
+    def dumps(self, obj: typing.Any, **kwargs: typing.Any) -> str:
+        """Serialize data as JSON.
+
+        :param obj: The data to serialize.
+        :param kwargs: May be passed to the underlying JSON library.
+        """
+        return json.dumps(obj, cls=EnhancedJSONEncoder, **kwargs)
+        
+
+    def dump(self, obj: typing.Any, fp: typing.IO[str], **kwargs: typing.Any) -> None:
+        """Serialize data as JSON and write to a file.
+
+        :param obj: The data to serialize.
+        :param fp: A file opened for writing text. Should use the UTF-8
+            encoding to be valid JSON.
+        :param kwargs: May be passed to the underlying JSON library.
+        """
+        json.dump(obj, fp, cls=EnhancedJSONEncoder, **kwargs)
+
+    def loads(self, s: str | bytes, **kwargs: typing.Any) -> typing.Any:
+        """Deserialize data as JSON.
+
+        :param s: Text or UTF-8 bytes.
+        :param kwargs: May be passed to the underlying JSON library.
+        """
+        return json.loads(s, cls=EnhancedJSONEncoder, **kwargs)        
+
+    def load(self, fp: typing.IO[typing.AnyStr], **kwargs: typing.Any) -> typing.Any:
+        """Deserialize data as JSON read from a file.
+
+        :param fp: A file opened for reading text or UTF-8 bytes.
+        :param kwargs: May be passed to the underlying JSON library.
+        """
+        return json.load(fp, cls=EnhancedJSONEncoder, **kwargs)

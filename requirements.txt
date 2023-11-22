@@ -7,7 +7,7 @@ setuptools
 numpy
 importlib_resources; python_version < "3.7"
 proxy_tools
-Flask==2.2.*
+Flask==3.*
 python-can==4.*
 requests
 websockets==10.*

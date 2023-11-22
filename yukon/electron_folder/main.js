@@ -202,7 +202,7 @@ let menuTemplate = [
 app.whenReady().then(() => {
     // Send a GET request to http://locahost:5000/api/announce_running_in_electron
     // to announce that the app is running in electron
-    http.get(`http://localhost:${yukon_server_port}/api/announce_running_in_electron`, (resp) => {
+    http.get(`http://127.0.0.1:${yukon_server_port}/api/announce_running_in_electron`, (resp) => {
     });
     console.log("Announcing that running in electron")
     ipcMain.handle('dialog:openPath', handlePathOpen);
@@ -232,7 +232,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-        http.get(`http://localhost:${yukon_server_port}/api/close_yukon`, (resp) => {
+        http.get(`http://127.0.0.1:${yukon_server_port}/api/close_yukon`, (resp) => {
         });
         app.quit();
     }

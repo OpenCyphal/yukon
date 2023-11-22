@@ -477,7 +477,16 @@ async function update_monitor2(containerElement, monitor2Div, yukon_state, force
                         currentLinkDsdlDatatype = currentLinkObject.name + ":" + currentLinkDsdlDatatype;
                     }
                 } else {
-                    currentLinkDsdlDatatype = fixed_datatype_full || "There is no info about this link";
+                    currentLinkDsdlDatatype = fixed_datatype_full;
+                }
+                if(currentLinkDsdlDatatype) {
+                    currentLinkDsdlDatatype = fixed_datatype_full;
+                } else {
+                    // Handling a special case where the developer of a Cyphal node hasn't got registers set up for data type names
+                    // https://github.com/OpenCyphal/public_regulated_data_types/blob/935973babe11755d8070e67452b3508b4b6833e2/uavcan/register/384.Access.1.0.dsdl#L154-L162
+                    // https://forum.opencyphal.org/t/developing-pico-node-using-yukon/1978
+                    // addHorizontalElements is going to give this a message and also make it clickable and hinted so that the link can be had from the label.
+                    currentLinkDsdlDatatype = null;
                 }
                 let isLast = false;
                 // If this is the last iteration of the loop, set a variable to true
@@ -988,6 +997,16 @@ function addHorizontalElements(monitor2Div, matchingPort, currentLinkDsdlDatatyp
     horizontal_line_label.style.position = "absolute";
     if (currentLinkDsdlDatatype.endsWith(".Response") || currentLinkDsdlDatatype.endsWith(".Request")) {
         currentLinkDsdlDatatype = currentLinkDsdlDatatype.replace(".Response", "").replace(".Request", "");
+    }
+    if(!currentLinkDsdlDatatype) {
+        horizontal_line_label.addEventListener("mousedown", () => {
+            console.error(```
+                            Please make sure that registers exist for data type names for publication/subscription/client/server.
+                            https://github.com/OpenCyphal/public_regulated_data_types/blob/935973babe11755d8070e67452b3508b4b6833e2/uavcan/register/384.Access.1.0.dsdl#L154-L162
+                            ```);
+        });
+        horizontal_line_label.title = "Click for more information in console."
+        currentLinkDsdlDatatype = "Missing data type name registers.";
     }
     horizontal_line_label.innerHTML = currentLinkDsdlDatatype;
     horizontal_line_label.style.zIndex = "3";
